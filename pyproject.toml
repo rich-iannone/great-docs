@@ -1,0 +1,134 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "great-theme"
+version = "0.1.0"
+description = "A comprehensive theming package for Python documentation sites built with quartodoc"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Rich Iannone", email = "riannone@me.com"}
+]
+maintainers = [
+    {name = "Rich Iannone", email = "riannone@me.com"}
+]
+keywords = ["quartodoc", "quarto", "documentation", "theme", "css", "python"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Documentation",
+    "Topic :: Software Development :: Documentation",
+    "Topic :: Text Processing :: Markup :: HTML",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "pyyaml>=5.4.0",
+    "importlib-resources>=1.3.0; python_version<'3.9'",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "pytest-cov>=3.0",
+    "ruff>=0.9.9",
+    "mypy>=0.800",
+    "build>=0.7",
+    "twine>=3.4",
+]
+
+[project.urls]
+Homepage = "https://github.com/rich-iannone/great-theme"
+Repository = "https://github.com/rich-iannone/great-theme"
+Documentation = "https://github.com/rich-iannone/great-theme#readme"
+"Bug Tracker" = "https://github.com/rich-iannone/great-theme/issues"
+
+[project.scripts]
+great-theme = "great_theme.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["great_theme*"]
+
+[tool.setuptools.package-data]
+great_theme = ["assets/*"]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "-v",
+]
+
+[tool.coverage.run]
+source = ["great_theme"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/site-packages/*",
+]
+branch = true
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+
+[tool.ruff.lint]
+exclude = ["docs", ".venv", "tests/*", "build/*", "dist/*"]
+
+# Select rule sets
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort (import sorting)
+]
+
+ignore = [
+    "E402",  # module level import not at top of file
+    "E501",  # line too long (handled by formatter)
+    "F811",  # redefinition of unused name
+    "E203",  # whitespace before ':'
+    "F841",  # local variable assigned but never used
+    "E702",  # multiple statements on one line (semicolon)
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "E402"]
+"tests/*" = ["F401", "E402"]

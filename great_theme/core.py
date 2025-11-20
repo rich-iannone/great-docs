@@ -24,9 +24,10 @@ class GreatTheme:
         """
         Initialize GreatTheme instance.
 
-        Args:
-            project_path: Path to the Quarto project directory.
-                         Defaults to current directory.
+        Parameters
+        ----------
+        project_path
+            Path to the Quarto project directory. Defaults to current directory.
         """
         self.project_path = Path(project_path or os.getcwd())
         try:
@@ -43,8 +44,36 @@ class GreatTheme:
         """
         Install great-theme assets and configuration to the project.
 
-        Args:
-            force: If True, overwrite existing files without prompting.
+        This method copies the necessary CSS files and post-render script to your Quarto project
+        directory, and automatically updates your `_quarto.yml` configuration file to use the
+        great-theme styling.
+
+        Parameters
+        ----------
+        force
+            If True, overwrite existing files without prompting. Default is False.
+
+        Examples
+        --------
+        Install the theme in the current directory:
+
+        ```python
+        from great_theme import GreatTheme
+
+        theme = GreatTheme()
+        theme.install()
+        ```
+
+        Install the theme in a specific project directory, overwriting existing files:
+
+        ```python
+        theme = GreatTheme("/path/to/my/project")
+        theme.install(force=True)
+        ```
+
+        See Also
+        --------
+        uninstall : Remove great-theme assets and configuration
         """
         print("Installing great-theme to your quartodoc project...")
 
@@ -91,7 +120,13 @@ class GreatTheme:
         print("2. The theme will automatically enhance your quartodoc reference pages")
 
     def _update_quarto_config(self) -> None:
-        """Update _quarto.yml with great-theme configuration."""
+        """
+        Update _quarto.yml with great-theme configuration.
+
+        This private method modifies the Quarto configuration file to include the
+        post-render script and CSS file required by great-theme. It preserves
+        existing configuration while adding the necessary great-theme settings.
+        """
         quarto_yml = self.project_path / "_quarto.yml"
 
         if not quarto_yml.exists():
@@ -136,7 +171,35 @@ class GreatTheme:
         print(f"Updated {quarto_yml} with great-theme configuration")
 
     def uninstall(self) -> None:
-        """Remove great-theme assets and configuration from the project."""
+        """
+        Remove great-theme assets and configuration from the project.
+
+        This method deletes the great-theme CSS file and post-render script,
+        and cleans up the `_quarto.yml` configuration file by removing
+        great-theme-specific settings.
+
+        Examples
+        --------
+        Uninstall the theme from the current directory:
+
+        ```python
+        from great_theme import GreatTheme
+
+        theme = GreatTheme()
+        theme.uninstall()
+        ```
+
+        Uninstall from a specific project directory:
+
+        ```python
+        theme = GreatTheme("/path/to/my/project")
+        theme.uninstall()
+        ```
+
+        See Also
+        --------
+        install : Install great-theme assets and configuration
+        """
         print("Uninstalling great-theme from your quartodoc project...")
 
         # Remove files
@@ -156,7 +219,13 @@ class GreatTheme:
         print("✅ Great-theme uninstalled successfully!")
 
     def _clean_quarto_config(self) -> None:
-        """Remove great-theme configuration from _quarto.yml."""
+        """
+        Remove great-theme configuration from _quarto.yml.
+
+        This private method removes the post-render script reference and CSS file
+        entry from the Quarto configuration file, reverting it to its pre-installation
+        state while preserving other user settings.
+        """
         quarto_yml = self.project_path / "_quarto.yml"
 
         if not quarto_yml.exists():

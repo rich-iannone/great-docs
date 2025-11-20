@@ -195,12 +195,17 @@ class GreatTheme:
         if not skip_quartodoc:
             self._add_quartodoc_config()
 
-        print("\nGreat-theme installation complete!")
+        print("\nGreat Theme installation complete!")
         if not skip_quartodoc:
             print("\nNext steps:")
             print("1. Review the generated quartodoc configuration in _quarto.yml")
-            print("2. Run `quartodoc build` to generate API reference pages")
-            print("3. Run `quarto render` to build your site with the new theme")
+            print("2. Run `great-theme build` to generate docs and build your site")
+            print("   (This runs `quartodoc build` followed by `quarto render`)")
+            print(f"3. Open {self.project_path / '_site' / 'index.html'} to preview your site")
+            print("\nOther helpful commands:")
+            print("  great-theme build          # Build everything")
+            print("  great-theme build --watch  # Watch for changes and rebuild")
+            print("  great-theme preview        # Build and serve locally")
         else:
             print("\nNext steps:")
             print("1. Run `quarto render` to build your site with the new theme")
@@ -379,7 +384,7 @@ class GreatTheme:
         Returns
         -------
         dict
-            Dictionary with categorized API objects.
+            Dictionary with categorized API objects and class method counts.
         """
         # Try to introspect the package
         try:
@@ -389,10 +394,17 @@ class GreatTheme:
             # Import the package
             pkg = importlib.import_module(package_name.replace("-", "_"))
 
-            categories = {"classes": [], "functions": [], "other": []}
+            categories = {"classes": [], "functions": [], "other": [], "class_methods": {}}
             failed_introspection = []
 
+            # Skip common metadata variables
+            skip_names = {"__version__", "__author__", "__email__", "__all__"}
+
             for name in exports:
+                # Skip metadata variables
+                if name in skip_names:
+                    continue
+
                 try:
                     obj = getattr(pkg, name, None)
                     if obj is None:
@@ -400,6 +412,14 @@ class GreatTheme:
                         failed_introspection.append(name)
                     elif inspect.isclass(obj):
                         categories["classes"].append(name)
+                        # Count public methods (exclude private/magic methods)
+                        method_count = sum(
+                            1
+                            for member_name, member in inspect.getmembers(obj)
+                            if not member_name.startswith("_")
+                            and (inspect.ismethod(member) or inspect.isfunction(member))
+                        )
+                        categories["class_methods"][name] = method_count
                     elif inspect.isfunction(obj) or inspect.isbuiltin(obj):
                         categories["functions"].append(name)
                     else:
@@ -420,11 +440,18 @@ class GreatTheme:
             print(
                 f"Warning: Package introspection failed ({type(e).__name__}), categorizing all as 'Other'"
             )
-            return {"classes": [], "functions": [], "other": exports}
+            # Filter out metadata variables even in fallback
+            skip_names = {"__version__", "__author__", "__email__", "__all__"}
+            filtered_exports = [e for e in exports if e not in skip_names]
+            return {"classes": [], "functions": [], "other": filtered_exports, "class_methods": {}}
 
     def _create_quartodoc_sections(self, package_name: str) -> Optional[list]:
         """
         Create quartodoc sections based on package's __all__.
+
+        Uses smart heuristics:
+        - Classes with ≤5 methods: documented inline
+        - Classes with >5 methods: separate pages for each method
 
         Parameters
         ----------
@@ -440,6 +467,13 @@ class GreatTheme:
         if not exports:
             return None
 
+        # Filter out metadata variables at the export level too
+        skip_names = {"__version__", "__author__", "__email__", "__all__"}
+        exports = [e for e in exports if e not in skip_names]
+
+        if not exports:
+            return None
+
         print(f"Found {len(exports)} exported names in __all__")
 
         # Categorize the exports
@@ -449,13 +483,34 @@ class GreatTheme:
 
         # Add classes section if there are any
         if categories["classes"]:
+            class_contents = []
+            classes_with_many_methods = []
+
+            for class_name in categories["classes"]:
+                method_count = categories["class_methods"].get(class_name, 0)
+
+                if method_count > 5:
+                    # Class with many methods: use empty members list
+                    class_contents.append({"name": class_name, "members": []})
+                    classes_with_many_methods.append((class_name, method_count))
+                else:
+                    # Class with few methods: document inline
+                    class_contents.append(class_name)
+
             sections.append(
                 {
                     "title": "Classes",
                     "desc": "Core classes and types",
-                    "contents": categories["classes"],
+                    "contents": class_contents,
                 }
             )
+
+            # Add note about classes with many methods
+            if classes_with_many_methods:
+                class_list = ", ".join(
+                    [f"{name} ({count} methods)" for name, count in classes_with_many_methods]
+                )
+                print(f"Note: Using separate pages for methods of: {class_list}")
 
         # Add functions section if there are any
         if categories["functions"]:
@@ -577,8 +632,10 @@ title: "Home"
         Update _quarto.yml with great-theme configuration.
 
         This private method modifies the Quarto configuration file to include the
-        post-render script and CSS file required by great-theme. It preserves
-        existing configuration while adding the necessary great-theme settings.
+        post-render script, CSS file, and website navigation required by great-theme.
+        It preserves existing configuration while adding the necessary great-theme
+        settings. If website navigation is not present, it adds a navbar with Home
+        and API Reference links, and sets the site title to the package name.
         """
         quarto_yml = self.project_path / "_quarto.yml"
 
@@ -616,6 +673,25 @@ title: "Home"
         # Ensure flatly theme is used (works well with great-theme)
         if "theme" not in config["format"]["html"]:
             config["format"]["html"]["theme"] = "flatly"
+
+        # Add website navigation if not present
+        if "website" not in config:
+            config["website"] = {}
+
+        # Set title to package name if not already set
+        if "title" not in config["website"]:
+            package_name = self._detect_package_name()
+            if package_name:
+                config["website"]["title"] = package_name.title()
+
+        # Add navbar with Home and API Reference links if not present
+        if "navbar" not in config["website"]:
+            config["website"]["navbar"] = {
+                "left": [
+                    {"text": "Home", "href": "index.qmd"},
+                    {"text": "API Reference", "href": "reference/index.qmd"},
+                ]
+            }
 
         # Write back to file
         with open(quarto_yml, "w") as f:
@@ -704,3 +780,121 @@ title: "Home"
             yaml.dump(config, f, default_flow_style=False, sort_keys=False)
 
         print(f"Cleaned great-theme configuration from {quarto_yml}")
+
+    def build(self, watch: bool = False) -> None:
+        """
+        Build the documentation site.
+
+        Runs quartodoc build followed by quarto render.
+
+        Parameters
+        ----------
+        watch
+            If True, watch for changes and rebuild automatically.
+
+        Examples
+        --------
+        Build the documentation:
+
+        ```python
+        from great_theme import GreatTheme
+
+        theme = GreatTheme()
+        theme.build()
+        ```
+
+        Build with watch mode:
+
+        ```python
+        theme.build(watch=True)
+        ```
+        """
+        import subprocess
+        import sys
+
+        print("Building documentation with great-theme...")
+
+        # Change to docs directory
+        original_dir = os.getcwd()
+        try:
+            os.chdir(self.project_path)
+
+            # Step 1: Run quartodoc build
+            print("\n📚 Step 1: Generating API reference with quartodoc...")
+            result = subprocess.run(["quartodoc", "build"], capture_output=True, text=True)
+
+            if result.returncode != 0:
+                print("❌ quartodoc build failed:")
+                print(result.stderr)
+                sys.exit(1)
+            else:
+                print("✅ API reference generated")
+
+            # Step 2: Run quarto render or preview
+            if watch:
+                print("\n🔄 Step 2: Starting Quarto in watch mode...")
+                print("Press Ctrl+C to stop watching")
+                subprocess.run(["quarto", "preview", "--no-browser"])
+            else:
+                print("\n🔨 Step 2: Building site with Quarto...")
+                result = subprocess.run(["quarto", "render"], capture_output=True, text=True)
+
+                if result.returncode != 0:
+                    print("❌ quarto render failed:")
+                    print(result.stderr)
+                    sys.exit(1)
+                else:
+                    print("✅ Site built successfully")
+                    site_path = self.project_path / "_site" / "index.html"
+                    if site_path.exists():
+                        print(f"\n🎉 Your site is ready! Open: {site_path}")
+                    else:
+                        print(f"\n🎉 Your site is ready in: {self.project_path / '_site'}")
+
+        finally:
+            os.chdir(original_dir)
+
+    def preview(self) -> None:
+        """
+        Build and serve the documentation site locally.
+
+        Runs quartodoc build, then starts a local server with quarto preview.
+
+        Examples
+        --------
+        Preview the documentation:
+
+        ```python
+        from great_theme import GreatTheme
+
+        theme = GreatTheme()
+        theme.preview()
+        ```
+        """
+        import subprocess
+
+        print("Building and previewing documentation...")
+
+        # Change to docs directory
+        original_dir = os.getcwd()
+        try:
+            os.chdir(self.project_path)
+
+            # Step 1: Run quartodoc build
+            print("\n📚 Step 1: Generating API reference with quartodoc...")
+            result = subprocess.run(["quartodoc", "build"], capture_output=True, text=True)
+
+            if result.returncode != 0:
+                print("❌ quartodoc build failed:")
+                print(result.stderr)
+                return
+            else:
+                print("✅ API reference generated")
+
+            # Step 2: Run quarto preview
+            print("\n🌐 Step 2: Starting preview server...")
+            print("Press Ctrl+C to stop the server")
+            subprocess.run(["quarto", "preview"])
+
+        finally:
+            os.chdir(original_dir)

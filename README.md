@@ -1,17 +1,17 @@
-# Great Theme for quartodoc
+# Great Theme for Quarto-Based Documentation Sites
 
-A comprehensive theming package that provides enhanced styling and functionality for Python documentation sites built with quartodoc.
+This is comprehensive theming package that provides enhanced styling and functionality for Python documentation sites built with Quarto and `quartodoc`.
 
 ## Features
 
-- enhanced Typography: monospace fonts for code elements and improved readability
-- smart Classification: automatic function/method/class labeling with color-coded badges
-- modern Styling: clean, professional appearance with gradient effects
-- mobile Responsive: optimized for all device sizes
-- easy Installation: simple CLI tool for quick setup
-- zero Configuration: works out of the box with sensible defaults
+- enhanced typography: monospace fonts for code elements and improved readability
+- smart classification: automatic function/method/class labeling with color-coded badges
+- modern styling: clean, professional appearance with gradient effects
+- mobile responsive: optimized for all device sizes
+- easy installation: simple CLI tool for quick setup
+- zero configuration: works out of the box with sensible defaults
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 

@@ -632,8 +632,9 @@ class GreatTheme:
             readme_content = f.read()
 
         # Create a simple qmd file with the README content
+        # Use empty title so "Home" doesn't appear on landing page
         qmd_content = f"""---
-title: "Home"
+title: ""
 ---
 
 {readme_content}

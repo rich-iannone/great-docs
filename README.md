@@ -6,8 +6,10 @@ This is comprehensive theming package that provides enhanced styling and functio
 
 - **enhanced typography**: monospace fonts for code elements and improved readability
 - **smart classification**: automatic function/method/class labeling with color-coded badges
+- **smart method splitting**: classes with >5 methods get separate pages for better navigation
 - **modern styling**: clean, professional appearance with gradient effects
 - **mobile responsive**: optimized for all device sizes
+- **streamlined workflow**: single `great-theme build` command handles everything
 - **easy installation**: simple CLI tool for quick setup
 - **intelligent setup**: auto-generates quartodoc configuration from your package's `__all__`
 - **zero configuration**: works out of the box with sensible defaults
@@ -74,6 +76,7 @@ The installer will:
 5. **Auto-create `index.qmd` from your `README.md`** (like pkgdown does)
 6. **Auto-detect your package name** from `pyproject.toml`, `setup.py`, or directory structure
 7. **Auto-generate API sections** by parsing `__all__` from your package's `__init__.py`
+8. **Add website navigation** with Home and API Reference links in the navbar
 
 That's it! The theme will automatically enhance your documentation site.
 
@@ -126,6 +129,15 @@ great-theme install --project-path /path/to/project --docs-dir documentation
 # Force overwrite existing files
 great-theme install --force
 
+# Build documentation (runs quartodoc build + quarto render)
+great-theme build
+
+# Build and watch for changes
+great-theme build --watch
+
+# Build and serve locally with live preview
+great-theme preview
+
 # Remove theme from project
 great-theme uninstall
 
@@ -143,6 +155,15 @@ theme = GreatTheme()
 
 # Install theme files and configuration
 theme.install()
+
+# Build documentation
+theme.build()
+
+# Build with watch mode
+theme.build(watch=True)
+
+# Preview locally
+theme.preview()
 
 # Initialize with specific project root
 theme = GreatTheme(project_path="/path/to/project")
@@ -222,11 +243,30 @@ Great-theme will search for your package in standard locations including:
 
 If `__all__` is not found, great-theme will create a basic configuration and you can manually add sections.
 
+### Smart Method Splitting
+
+Great-theme automatically applies smart heuristics for documenting classes:
+
+- **Classes with ≤5 methods**: Methods are documented inline on the class page
+- **Classes with >5 methods**: Methods get separate pages (like `Graph.add_node`, `Graph.add_edge`)
+
+This prevents overwhelming single-page documentation and improves navigation for large classes.
+
 ## Building Your Documentation
 
-After installation, follow these steps to build your documentation:
+After installation, the easiest way to build your documentation:
 
-1. **Edit the quartodoc sections** in `_quarto.yml` to organize your API:
+```bash
+great-theme build
+```
+
+This single command runs both `quartodoc build` and `quarto render` for you.
+
+### Detailed Steps
+
+If you prefer to run commands separately or customize the workflow:
+
+1. **(Optional) Edit the quartodoc sections** in `_quarto.yml` to organize your API:
 
    ```yaml
    quartodoc:
@@ -234,20 +274,29 @@ After installation, follow these steps to build your documentation:
        - title: Core Classes
          desc: Main classes for your package
          contents:
-           - YourClass
-           - AnotherClass
+           - name: Graph
+             members: [] # Empty list = separate pages for methods
    ```
 
 2. **Generate API reference pages**:
 
    ```bash
    quartodoc build
+   # or use: great-theme build
    ```
 
-3. **Build and preview your site**:
+3. **Build your site**:
 
    ```bash
-   quarto preview
+   quarto render
+   # or use: great-theme build (does both steps)
+   ```
+
+4. **Preview locally with live reload**:
+
+   ```bash
+   great-theme preview
+   # or: quarto preview
    ```
 
 Your documentation is now live with great-theme styling!

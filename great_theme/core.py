@@ -388,7 +388,12 @@ class GreatTheme:
         Returns
         -------
         dict
-            Dictionary with categorized API objects and class method counts.
+            Dictionary with:
+            - classes: list of class names
+            - functions: list of function names
+            - other: list of other object names
+            - class_methods: dict mapping class name to method count
+            - class_method_names: dict mapping class name to list of method names
         """
         try:
             import griffe
@@ -409,9 +414,16 @@ class GreatTheme:
                     "functions": [],
                     "other": filtered_exports,
                     "class_methods": {},
+                    "class_method_names": {},
                 }
 
-            categories = {"classes": [], "functions": [], "other": [], "class_methods": {}}
+            categories = {
+                "classes": [],
+                "functions": [],
+                "other": [],
+                "class_methods": {},
+                "class_method_names": {},
+            }
             failed_introspection = []
 
             # Skip common metadata variables
@@ -434,15 +446,16 @@ class GreatTheme:
                     # Categorize based on griffe's kind
                     if obj.kind.value == "class":
                         categories["classes"].append(name)
-                        # Count public methods (exclude private/magic methods)
-                        method_count = sum(
-                            1
+                        # Get public methods (exclude private/magic methods)
+                        method_names = [
+                            member_name
                             for member_name, member in obj.members.items()
                             if not member_name.startswith("_")
                             and member.kind.value in ("function", "method")
-                        )
-                        categories["class_methods"][name] = method_count
-                        print(f"  {name}: class with {method_count} public methods")
+                        ]
+                        categories["class_methods"][name] = len(method_names)
+                        categories["class_method_names"][name] = sorted(method_names)
+                        print(f"  {name}: class with {len(method_names)} public methods")
                     elif obj.kind.value == "function":
                         categories["functions"].append(name)
                     else:
@@ -467,7 +480,13 @@ class GreatTheme:
             # Fallback if griffe isn't installed
             skip_names = {"__version__", "__author__", "__email__", "__all__"}
             filtered_exports = [e for e in exports if e not in skip_names]
-            return {"classes": [], "functions": [], "other": filtered_exports, "class_methods": {}}
+            return {
+                "classes": [],
+                "functions": [],
+                "other": filtered_exports,
+                "class_methods": {},
+                "class_method_names": {},
+            }
 
     def _create_quartodoc_sections(self, package_name: str) -> Optional[list]:
         """
@@ -508,16 +527,15 @@ class GreatTheme:
         # Add classes section if there are any
         if categories["classes"]:
             class_contents = []
-            classes_with_many_methods = []
+            classes_with_separate_methods = []
 
             for class_name in categories["classes"]:
                 method_count = categories["class_methods"].get(class_name, 0)
 
                 if method_count > 5:
-                    # Class with many methods: just list the class name
-                    # quartodoc will auto-generate method pages in pkgdown style
+                    # Class with many methods: will create separate method section
                     class_contents.append(class_name)
-                    classes_with_many_methods.append((class_name, method_count))
+                    classes_with_separate_methods.append(class_name)
                 else:
                     # Class with few methods: document inline
                     class_contents.append(class_name)
@@ -530,14 +548,23 @@ class GreatTheme:
                 }
             )
 
-            # Add note about classes with many methods
-            if classes_with_many_methods:
-                class_list = ", ".join(
-                    [f"{name} ({count} methods)" for name, count in classes_with_many_methods]
+            # Create separate sections for methods of large classes
+            for class_name in classes_with_separate_methods:
+                method_names = categories["class_method_names"].get(class_name, [])
+                method_count = len(method_names)
+
+                # Create fully qualified method references
+                method_contents = [f"{class_name}.{method}" for method in method_names]
+
+                sections.append(
+                    {
+                        "title": f"{class_name} Methods",
+                        "desc": f"Methods for the {class_name} class",
+                        "contents": method_contents,
+                    }
                 )
-                print(
-                    f"Note: Classes with many methods will get separate method pages: {class_list}"
-                )
+
+                print(f"  Created separate section for {class_name} with {method_count} methods")
 
         # Add functions section if there are any
         if categories["functions"]:

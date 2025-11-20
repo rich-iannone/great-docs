@@ -4,12 +4,13 @@ This is comprehensive theming package that provides enhanced styling and functio
 
 ## Features
 
-- enhanced typography: monospace fonts for code elements and improved readability
-- smart classification: automatic function/method/class labeling with color-coded badges
-- modern styling: clean, professional appearance with gradient effects
-- mobile responsive: optimized for all device sizes
-- easy installation: simple CLI tool for quick setup
-- zero configuration: works out of the box with sensible defaults
+- **enhanced typography**: monospace fonts for code elements and improved readability
+- **smart classification**: automatic function/method/class labeling with color-coded badges
+- **modern styling**: clean, professional appearance with gradient effects
+- **mobile responsive**: optimized for all device sizes
+- **easy installation**: simple CLI tool for quick setup
+- **intelligent setup**: auto-generates quartodoc configuration from your package's `__all__`
+- **zero configuration**: works out of the box with sensible defaults
 
 ## Quick Start
 
@@ -70,6 +71,9 @@ The installer will:
 2. Look for existing `_quarto.yml` files to determine the correct location
 3. Prompt you to choose a location if no docs directory is found
 4. Install all necessary files to the detected or chosen directory
+5. **Auto-create `index.qmd` from your `README.md`** (like pkgdown does)
+6. **Auto-detect your package name** from `pyproject.toml`, `setup.py`, or directory structure
+7. **Auto-generate API sections** by parsing `__all__` from your package's `__init__.py`
 
 That's it! The theme will automatically enhance your documentation site.
 
@@ -160,12 +164,85 @@ When you run `great-theme install`, the following files are added to your docume
 your-project/
 ├── docs/                # Or your chosen docs directory
 │   ├── _quarto.yml      # Updated with theme configuration
+│   ├── index.qmd        # Auto-created from README.md
 │   ├── great-theme.css  # Main theme stylesheet
 │   └── scripts/
 │       └── post-render.py   # HTML post-processing script
 ```
 
 If you have an existing `_quarto.yml` or documentation directory, great-theme will detect and use it.
+
+### Auto-Generated Configuration
+
+The installer intelligently configures your project:
+
+1. **index.qmd from README.md**: Your README becomes your documentation homepage (like pkgdown)
+2. **quartodoc configuration**: Auto-detects your package name from:
+   - `pyproject.toml`
+   - `setup.py`
+   - Package directory structure
+3. **Auto-generated API sections**: Parses your package's `__init__.py` to read `__all__` and automatically creates organized sections for:
+   - Classes
+   - Functions
+   - Other exports
+4. **Sensible defaults**: Includes recommended settings:
+   ```yaml
+   quartodoc:
+     package: your-package # Auto-detected
+     dir: reference
+     title: API Reference
+     style: pkgdown
+     dynamic: true
+     renderer:
+       style: markdown
+       table_style: description-list
+     sections: # Auto-generated from __all__
+       - title: Classes
+         desc: Core classes and types
+         contents:
+           - YourClass
+           - AnotherClass
+       - title: Functions
+         desc: Public functions
+         contents:
+           - your_function
+   ```
+
+**Requirements for auto-generation**:
+
+- Your package must have `__all__` defined in `__init__.py`
+- Names in `__all__` should be importable from the package
+
+If `__all__` is not found, great-theme will create a basic configuration and you can manually add sections.
+
+## Building Your Documentation
+
+After installation, follow these steps to build your documentation:
+
+1. **Edit the quartodoc sections** in `_quarto.yml` to organize your API:
+
+   ```yaml
+   quartodoc:
+     sections:
+       - title: Core Classes
+         desc: Main classes for your package
+         contents:
+           - YourClass
+           - AnotherClass
+   ```
+
+2. **Generate API reference pages**:
+
+   ```bash
+   quartodoc build
+   ```
+
+3. **Build and preview your site**:
+   ```bash
+   quarto preview
+   ```
+
+Your documentation is now live with great-theme styling!
 
 ## Configuration
 

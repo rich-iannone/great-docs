@@ -251,11 +251,18 @@ Great-theme uses **griffe** (quartodoc's introspection library) to analyze your 
 - **Safe introspection**: Works with packages containing non-Python components (Rust/C bindings, etc.)
 - **Accurate method counting**: Counts actual public methods on each class
 - **Smart categorization**: Automatically identifies classes, functions, and other objects
+- **Automatic method enumeration**: Explicitly lists all methods for quartodoc to document
 
 Based on method count:
 
 - **Classes with ≤5 methods**: Methods are documented inline on the class page
-- **Classes with >5 methods**: Methods automatically get separate pages (like `Graph.add_node`, `Graph.add_edge`)
+- **Classes with >5 methods**: Creates a separate section with all methods explicitly listed (e.g., `Graph.add_node`, `Graph.add_edge`, etc.)
+
+For example, if your `Graph` class has 191 methods, great-theme will:
+
+1. Add `Graph` to the Classes section
+2. Create a new "Graph Methods" section listing all 191 methods: `Graph.add_node`, `Graph.add_edge`, `Graph.remove_node`, etc.
+3. Each method gets its own documentation page for better navigation
 
 This prevents overwhelming single-page documentation and improves navigation for large classes.
 

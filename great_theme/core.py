@@ -372,7 +372,11 @@ class GreatTheme:
 
     def _categorize_api_objects(self, package_name: str, exports: list) -> dict:
         """
-        Categorize API objects into classes, functions, etc.
+        Categorize API objects using griffe introspection.
+
+        Uses griffe (quartodoc's introspection library) to analyze the package
+        structure without importing it. This is safer and works with packages
+        that have non-Python components (e.g., Rust bindings).
 
         Parameters
         ----------
@@ -386,13 +390,26 @@ class GreatTheme:
         dict
             Dictionary with categorized API objects and class method counts.
         """
-        # Try to introspect the package
         try:
-            import importlib
-            import inspect
+            import griffe
 
-            # Import the package
-            pkg = importlib.import_module(package_name.replace("-", "_"))
+            # Load the package using griffe
+            normalized_name = package_name.replace("-", "_")
+
+            # Try to load the package with griffe
+            try:
+                pkg = griffe.load(normalized_name)
+            except Exception as e:
+                print(f"Warning: Could not load package with griffe ({type(e).__name__})")
+                # Fallback to simple categorization
+                skip_names = {"__version__", "__author__", "__email__", "__all__"}
+                filtered_exports = [e for e in exports if e not in skip_names]
+                return {
+                    "classes": [],
+                    "functions": [],
+                    "other": filtered_exports,
+                    "class_methods": {},
+                }
 
             categories = {"classes": [], "functions": [], "other": [], "class_methods": {}}
             failed_introspection = []
@@ -406,26 +423,35 @@ class GreatTheme:
                     continue
 
                 try:
-                    obj = getattr(pkg, name, None)
-                    if obj is None:
+                    # Get the object from the loaded package
+                    if name not in pkg.members:
                         categories["other"].append(name)
                         failed_introspection.append(name)
-                    elif inspect.isclass(obj):
+                        continue
+
+                    obj = pkg.members[name]
+
+                    # Categorize based on griffe's kind
+                    if obj.kind.value == "class":
                         categories["classes"].append(name)
                         # Count public methods (exclude private/magic methods)
                         method_count = sum(
                             1
-                            for member_name, member in inspect.getmembers(obj)
+                            for member_name, member in obj.members.items()
                             if not member_name.startswith("_")
-                            and (inspect.ismethod(member) or inspect.isfunction(member))
+                            and member.kind.value in ("function", "method")
                         )
                         categories["class_methods"][name] = method_count
-                    elif inspect.isfunction(obj) or inspect.isbuiltin(obj):
+                        print(f"  {name}: class with {method_count} public methods")
+                    elif obj.kind.value == "function":
                         categories["functions"].append(name)
                     else:
+                        # Attributes, modules, etc.
                         categories["other"].append(name)
+
                 except Exception as e:
                     # If introspection fails for a specific object, still include it
+                    print(f"  Warning: Could not introspect '{name}': {type(e).__name__}")
                     categories["other"].append(name)
                     failed_introspection.append(name)
 
@@ -435,12 +461,10 @@ class GreatTheme:
                 )
 
             return categories
-        except Exception as e:
-            # If introspection fails completely, return all as "other"
-            print(
-                f"Warning: Package introspection failed ({type(e).__name__}), categorizing all as 'Other'"
-            )
-            # Filter out metadata variables even in fallback
+
+        except ImportError:
+            print("Warning: griffe not available, using fallback categorization")
+            # Fallback if griffe isn't installed
             skip_names = {"__version__", "__author__", "__email__", "__all__"}
             filtered_exports = [e for e in exports if e not in skip_names]
             return {"classes": [], "functions": [], "other": filtered_exports, "class_methods": {}}
@@ -490,8 +514,9 @@ class GreatTheme:
                 method_count = categories["class_methods"].get(class_name, 0)
 
                 if method_count > 5:
-                    # Class with many methods: use empty members list
-                    class_contents.append({"name": class_name, "members": []})
+                    # Class with many methods: just list the class name
+                    # quartodoc will auto-generate method pages in pkgdown style
+                    class_contents.append(class_name)
                     classes_with_many_methods.append((class_name, method_count))
                 else:
                     # Class with few methods: document inline
@@ -510,7 +535,9 @@ class GreatTheme:
                 class_list = ", ".join(
                     [f"{name} ({count} methods)" for name, count in classes_with_many_methods]
                 )
-                print(f"Note: Using separate pages for methods of: {class_list}")
+                print(
+                    f"Note: Classes with many methods will get separate method pages: {class_list}"
+                )
 
         # Add functions section if there are any
         if categories["functions"]:
@@ -819,9 +846,12 @@ title: "Home"
         try:
             os.chdir(self.project_path)
 
-            # Step 1: Run quartodoc build
+            # Step 1: Run quartodoc build using Python module execution
+            # This ensures it uses the same Python environment as great-theme
             print("\n📚 Step 1: Generating API reference with quartodoc...")
-            result = subprocess.run(["quartodoc", "build"], capture_output=True, text=True)
+            result = subprocess.run(
+                [sys.executable, "-m", "quartodoc", "build"], capture_output=True, text=True
+            )
 
             if result.returncode != 0:
                 print("❌ quartodoc build failed:")

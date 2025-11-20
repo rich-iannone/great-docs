@@ -20,16 +20,21 @@ class GreatTheme:
     Quarto projects with the great-theme styling and functionality.
     """
 
-    def __init__(self, project_path: Optional[str] = None):
+    def __init__(self, project_path: Optional[str] = None, docs_dir: Optional[str] = None):
         """
         Initialize GreatTheme instance.
 
         Parameters
         ----------
         project_path
-            Path to the Quarto project directory. Defaults to current directory.
+            Path to the Quarto project root directory. Defaults to current directory.
+        docs_dir
+            Path to the documentation directory relative to project_path.
+            If not provided, will be auto-detected or user will be prompted.
         """
-        self.project_path = Path(project_path or os.getcwd())
+        self.project_root = Path(project_path or os.getcwd())
+        self.docs_dir = self._find_or_create_docs_dir(docs_dir)
+        self.project_path = self.project_root / self.docs_dir
         try:
             # Python 3.9+
             self.package_path = Path(resources.files("great_theme"))
@@ -39,6 +44,68 @@ class GreatTheme:
 
             self.package_path = Path(importlib_resources.files("great_theme"))
         self.assets_path = self.package_path / "assets"
+
+    def _find_or_create_docs_dir(self, docs_dir: Optional[str] = None) -> Path:
+        """
+        Find or create the documentation directory.
+
+        Parameters
+        ----------
+        docs_dir
+            User-specified docs directory path.
+
+        Returns
+        -------
+        Path
+            Path to the docs directory relative to project root.
+        """
+        if docs_dir:
+            return Path(docs_dir)
+
+        # Common documentation directory names
+        common_docs_dirs = ["docs", "documentation", "site", "docsrc", "doc"]
+
+        # First, look for existing _quarto.yml in common locations
+        for dir_name in common_docs_dirs:
+            potential_dir = self.project_root / dir_name
+            if (potential_dir / "_quarto.yml").exists():
+                print(f"Found existing Quarto project in '{dir_name}/' directory")
+                return Path(dir_name)
+
+        # Check if _quarto.yml exists in project root
+        if (self.project_root / "_quarto.yml").exists():
+            print("Found _quarto.yml in project root")
+            return Path(".")
+
+        # Look for any existing common docs directories (even without _quarto.yml)
+        for dir_name in common_docs_dirs:
+            potential_dir = self.project_root / dir_name
+            if potential_dir.exists() and potential_dir.is_dir():
+                response = input(
+                    f"Found existing '{dir_name}/' directory. Install great-theme here? [Y/n]: "
+                )
+                if response.lower() != "n":
+                    return Path(dir_name)
+
+        # No existing docs directory found - ask user
+        print("\nNo documentation directory detected.")
+        print("Where would you like to install great-theme?")
+        print("  1. docs/ (recommended for most projects)")
+        print("  2. Current directory (project root)")
+        print("  3. Custom directory")
+
+        choice = input("Enter choice [1]: ").strip() or "1"
+
+        if choice == "1":
+            return Path("docs")
+        elif choice == "2":
+            return Path(".")
+        elif choice == "3":
+            custom_dir = input("Enter directory path: ").strip()
+            return Path(custom_dir) if custom_dir else Path("docs")
+        else:
+            print("Invalid choice, using 'docs/' as default")
+            return Path("docs")
 
     def install(self, force: bool = False) -> None:
         """
@@ -76,6 +143,10 @@ class GreatTheme:
         uninstall : Remove great-theme assets and configuration
         """
         print("Installing great-theme to your quartodoc project...")
+
+        # Create docs directory if it doesn't exist
+        self.project_path.mkdir(parents=True, exist_ok=True)
+        print(f"Using directory: {self.project_path.relative_to(self.project_root)}")
 
         # Create necessary directories
         scripts_dir = self.project_path / "scripts"
@@ -201,6 +272,7 @@ class GreatTheme:
         install : Install great-theme assets and configuration
         """
         print("Uninstalling great-theme from your quartodoc project...")
+        print(f"Removing from: {self.project_path.relative_to(self.project_root)}")
 
         # Remove files
         files_to_remove = [

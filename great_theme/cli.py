@@ -17,17 +17,22 @@ def cli():
 @click.option(
     "--project-path",
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
-    help="Path to your Quarto project directory (default: current directory)",
+    help="Path to your Quarto project root directory (default: current directory)",
+)
+@click.option(
+    "--docs-dir",
+    type=str,
+    help="Path to documentation directory relative to project root (e.g., 'docs', 'site')",
 )
 @click.option(
     "--force",
     is_flag=True,
     help="Overwrite existing files without prompting",
 )
-def install(project_path, force):
+def install(project_path, docs_dir, force):
     """Install great-theme to your quartodoc project."""
     try:
-        theme = GreatTheme(project_path=project_path)
+        theme = GreatTheme(project_path=project_path, docs_dir=docs_dir)
         theme.install(force=force)
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
@@ -38,12 +43,17 @@ def install(project_path, force):
 @click.option(
     "--project-path",
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
-    help="Path to your Quarto project directory (default: current directory)",
+    help="Path to your Quarto project root directory (default: current directory)",
 )
-def uninstall(project_path):
+@click.option(
+    "--docs-dir",
+    type=str,
+    help="Path to documentation directory relative to project root (e.g., 'docs', 'site')",
+)
+def uninstall(project_path, docs_dir):
     """Remove great-theme from your quartodoc project."""
     try:
-        theme = GreatTheme(project_path=project_path)
+        theme = GreatTheme(project_path=project_path, docs_dir=docs_dir)
         theme.uninstall()
     except Exception as e:
         click.echo(f"Error: {e}", err=True)

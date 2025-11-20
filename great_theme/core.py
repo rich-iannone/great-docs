@@ -889,6 +889,18 @@ title: "Home"
         """
         import subprocess
         import sys
+        import threading
+        import time
+
+        def show_progress(stop_event, message):
+            """Show a simple spinner while command is running."""
+            spinner = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+            idx = 0
+            while not stop_event.is_set():
+                print(f"\r{message} {spinner[idx % len(spinner)]}", end="", flush=True)
+                idx += 1
+                time.sleep(0.1)
+            print(f"\r{message} ", end="", flush=True)
 
         print("Building documentation with great-theme...")
 
@@ -900,16 +912,26 @@ title: "Home"
             # Step 1: Run quartodoc build using Python module execution
             # This ensures it uses the same Python environment as great-theme
             print("\n📚 Step 1: Generating API reference with quartodoc...")
+
+            stop_event = threading.Event()
+            progress_thread = threading.Thread(
+                target=show_progress, args=(stop_event, "   Processing")
+            )
+            progress_thread.start()
+
             result = subprocess.run(
                 [sys.executable, "-m", "quartodoc", "build"], capture_output=True, text=True
             )
 
+            stop_event.set()
+            progress_thread.join()
+
             if result.returncode != 0:
-                print("❌ quartodoc build failed:")
+                print("\n❌ quartodoc build failed:")
                 print(result.stderr)
                 sys.exit(1)
             else:
-                print("✅ API reference generated")
+                print("\n✅ API reference generated")
 
             # Step 2: Run quarto render or preview
             if watch:
@@ -918,14 +940,24 @@ title: "Home"
                 subprocess.run(["quarto", "preview", "--no-browser"])
             else:
                 print("\n🔨 Step 2: Building site with Quarto...")
+
+                stop_event = threading.Event()
+                progress_thread = threading.Thread(
+                    target=show_progress, args=(stop_event, "   Rendering")
+                )
+                progress_thread.start()
+
                 result = subprocess.run(["quarto", "render"], capture_output=True, text=True)
 
+                stop_event.set()
+                progress_thread.join()
+
                 if result.returncode != 0:
-                    print("❌ quarto render failed:")
+                    print("\n❌ quarto render failed:")
                     print(result.stderr)
                     sys.exit(1)
                 else:
-                    print("✅ Site built successfully")
+                    print("\n✅ Site built successfully")
                     site_path = self.project_path / "_site" / "index.html"
                     if site_path.exists():
                         print(f"\n🎉 Your site is ready! Open: {site_path}")

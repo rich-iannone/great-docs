@@ -310,7 +310,7 @@ After installation, the easiest way to build your documentation:
 great-theme build
 ```
 
-This single command runs both `quartodoc build` and `quarto render` for you.
+This single command runs both `quartodoc build` and `quarto render` for you, with a progress indicator so you can see the build activity.
 
 ### Detailed Steps
 

@@ -85,7 +85,7 @@ class GreatTheme:
         # Update _quarto.yml configuration
         self._update_quarto_config()
 
-        print("\n✅ Great-theme installation complete!")
+        print("\nGreat-theme installation complete!")
         print("\nNext steps:")
         print("1. Run `quarto render` to build your site with the new theme")
         print("2. The theme will automatically enhance your quartodoc reference pages")

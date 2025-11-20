@@ -1,7 +1,7 @@
 try:
     from importlib.metadata import PackageNotFoundError, version
 except ImportError:  # pragma: no cover
-    from importlib_metadata import PackageNotFoundError, version
+    from importlib_metadata import PackageNotFoundError, version  # type: ignore[import-not-found]
 
 try:  # pragma: no cover
     __version__ = version("great-theme")

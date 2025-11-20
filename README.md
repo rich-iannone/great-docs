@@ -213,6 +213,13 @@ The installer intelligently configures your project:
 - Your package must have `__all__` defined in `__init__.py`
 - Names in `__all__` should be importable from the package
 
+Great-theme will search for your package in standard locations including:
+
+- Project root (e.g., `your-package/`)
+- `python/` directory (common for Rust/Python hybrid packages)
+- `src/` directory
+- `lib/` directory
+
 If `__all__` is not found, great-theme will create a basic configuration and you can manually add sections.
 
 ## Building Your Documentation
@@ -238,9 +245,22 @@ After installation, follow these steps to build your documentation:
    ```
 
 3. **Build and preview your site**:
+
    ```bash
    quarto preview
    ```
+
+Your documentation is now live with great-theme styling!
+
+### Troubleshooting
+
+**CyclicAliasError from quartodoc**: If `quartodoc build` fails with a `CyclicAliasError` for certain exports, you may need to exclude problematic items from your quartodoc configuration. This can happen with re-exported constants or objects that create circular references in the import graph.
+
+**quartodoc not installed**: Great-theme requires `quartodoc` to generate API documentation. Install it with:
+
+```bash
+pip install quartodoc
+```
 
 Your documentation is now live with great-theme styling!
 

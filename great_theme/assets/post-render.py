@@ -206,25 +206,6 @@ for html_file in html_files:
         usage_label = '<p style="font-size: 12px; color: rgb(170, 170, 170); margin-bottom: -14px;">USAGE</p>\n'
         content.insert(sourcecode_line, usage_label)
 
-    # Style the first and second <dl> tags with different borders
-    dl_count = 0
-    for i, line in enumerate(content):
-        if "<dl>" in line:
-            dl_count += 1
-            if dl_count == 1:
-                # First <dl> tag - green border
-                content[i] = line.replace(
-                    "<dl>",
-                    '<dl style="border-style: solid; border-width: 2px; border-color: #00AC1480; padding: 1rem; padding-bottom: 0.25rem;">',
-                )
-            elif dl_count == 2:
-                # Second <dl> tag - indigo border
-                content[i] = line.replace(
-                    "<dl>",
-                    '<dl style="border-style: solid; border-width: 2px; border-color: #0059AC80; padding: 1rem; padding-bottom: 0.25rem;">',
-                )
-                break  # Stop after finding the second one
-
     # Fix return value formatting in individual function pages, removing the `:` before the
     # return value and adjusting the style of the parameter annotation separator
     content_str = "".join(content)
@@ -245,45 +226,10 @@ for html_file in html_files:
     # Turn all h2 tags into h3 tags
     content = [line.replace("<h2", "<h3").replace("</h2>", "</h3>") for line in content]
 
-    # Add gradient animation to Examples headers and horizontal rules
-    content_str = "".join(content)
-
-    # Find and replace Examples headers with animated gradient styling
-    examples_pattern = (
-        r'(<h3[^>]*class="[^"]*doc-section-examples[^"]*"[^>]*>)(.*?Examples.*?)(</h3>)'
-    )
-    examples_replacement = r"""\1<span style="
-        background: linear-gradient(-45deg, #D63031, #00B894, #0984E3, #6C5CE7, #FDCB6E, #A29BFE, #E84393, #2D3436);
-        background-size: 400% 400%;
-        animation: examplesGradient 8s ease-in-out infinite;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        font-weight: bold;
-        font-size: 1.2em;
-    ">\2</span>\3
-    <hr style="
-        background: linear-gradient(-45deg, #D63031, #00B894, #0984E3, #6C5CE7, #FDCB6E, #A29BFE, #E84393, #2D3436);
-        background-size: 400% 400%;
-        animation: examplesGradient 16s ease-in-out infinite;
-        height: 3px;
-        border: none;
-        margin: 10px 0;
-        border-radius: 2px;
-    ">"""
-
-    content_str = re.sub(examples_pattern, examples_replacement, content_str, flags=re.DOTALL)
-
-    content = content_str.splitlines(keepends=True)
-
     # Place a horizontal rule at the end of each reference page
     content_str = "".join(content)
     main_end_pattern = r"</main>"
-    main_end_replacement = (
-        "</main>\n"
-        '<hr style="padding: 0; margin: 0;">\n'
-        '<div style="text-align: center; padding: 0; margin-top: -60px; color: #B3B3B3;">⦾</div>'
-    )
+    main_end_replacement = '</main>\n<hr style="padding: 0; margin: 0;">\n'
     content_str = re.sub(main_end_pattern, main_end_replacement, content_str)
     content = content_str.splitlines(keepends=True)
 
@@ -336,8 +282,8 @@ if os.path.exists(index_file):
 
         # Rules for adding ():
         # - Don't touch capitalized content (classes)
-        # - Add () if text has a period (methods like Validate.col_vals_gt)
-        # - Add () if text doesn't start with capital (functions like starts_with, load_dataset)
+        # - Add () if text has a period (methods)
+        # - Add () if text doesn't start with capital (functions)
         if "." in link_text or (link_text and not link_text[0].isupper()):
             # Replace the link text with the same text + ()
             return full_tag.replace(f">{link_text}</a>", f">{link_text}()</a>")
@@ -381,6 +327,5 @@ for html_file in all_html_files:
 
         with open(html_file, "w") as file:
             file.write(content)
-
 
 print("Finished processing all files")

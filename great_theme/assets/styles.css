@@ -177,21 +177,7 @@ a.sidebar-item-text.sidebar-link.text-start > span {
 }
 
 .navbar {
-	background: linear-gradient(-45deg, #04778B, #1C7FF0, #006C93, #05614C);
-	background-size: 200% 100%;
-	animation: gradient 20s ease infinite;
-}
-
-@keyframes gradient {
-	0% {
-		background-position: 0% 50%;
-	}
-	50% {
-		background-position: 100% 50%;
-	}
-	100% {
-		background-position: 0% 50%;
-	}
+	background: #2d2d2d;
 }
 
 .nav-link.active {
@@ -209,59 +195,12 @@ a.sidebar-item-text.sidebar-link.text-start > span {
     zoom: 60%;
 }
 
-.nav-footer {
-    background: linear-gradient(-45deg,
-        rgba(4, 119, 139, 0.15),
-        rgba(28, 127, 240, 0.2),
-        rgba(0, 108, 147, 0.12),
-        rgba(5, 97, 76, 0.18),
-        rgba(173, 216, 230, 0.25));
-    background-size: 400% 400%;
-    animation: footerGradient 15s ease infinite;
-    padding-top: 20px;
-    border-top-color: rgba(4, 119, 139, 0.4);
-    border-top-style: solid;
-    border-top-width: 2px;
-}
-
 .nav-footer-left {
     color: rgb(48, 48, 48);
 }
 
 .nav-footer-right {
     color: rgb(48, 48, 48);
-}
-
-#examples {
-    padding-left: 20px;
-    padding-right: 20px;
-    padding-top: 1px;
-    padding-bottom: 10px;
-    background-color: rgb(241, 252, 243);
-}
-
-@keyframes footerGradient {
-    0% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-    100% {
-        background-position: 0% 50%;
-    }
-}
-
-@keyframes examplesGradient {
-    0% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-    100% {
-        background-position: 0% 50%;
-    }
 }
 
 /* Adjust mobile secondary nav positioning */

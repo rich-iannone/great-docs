@@ -6,14 +6,21 @@ from . import __version__
 from .core import GreatTheme
 
 
-@click.group()
+class OrderedGroup(click.Group):
+    """Click group that lists commands in the order they were added."""
+
+    def list_commands(self, ctx):
+        return list(self.commands.keys())
+
+
+@click.group(cls=OrderedGroup)
 @click.version_option(version=__version__, prog_name="great-theme")
 def cli():
     """Great Theme for quartodoc - Enhanced styling for Python documentation sites."""
     pass
 
 
-@cli.command()
+@click.command()
 @click.option(
     "--project-path",
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
@@ -39,7 +46,7 @@ def init(project_path, docs_dir, force):
         sys.exit(1)
 
 
-@cli.command()
+@click.command()
 @click.option(
     "--project-path",
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
@@ -67,7 +74,7 @@ def build(project_path, docs_dir, watch):
         sys.exit(1)
 
 
-@cli.command()
+@click.command()
 @click.option(
     "--project-path",
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
@@ -88,7 +95,7 @@ def uninstall(project_path, docs_dir):
         sys.exit(1)
 
 
-@cli.command()
+@click.command()
 @click.option(
     "--project-path",
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
@@ -109,6 +116,13 @@ def preview(project_path, docs_dir):
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
+
+
+# Register commands in the desired order
+cli.add_command(init)
+cli.add_command(build)
+cli.add_command(preview)
+cli.add_command(uninstall)
 
 
 def main():

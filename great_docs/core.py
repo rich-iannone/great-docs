@@ -747,25 +747,9 @@ class GreatDocs:
         This mimics pkgdown's behavior of using the README as the homepage.
         Includes a metadata sidebar with package information (license, authors, links, etc.)
         """
-        index_qmd = self.project_path / "index.qmd"
-
-        if index_qmd.exists():
-            print("index.qmd already exists, skipping creation")
-            return
-
         package_root = self._find_package_root()
-        readme_path = package_root / "README.md"
-        if not readme_path.exists():
-            print("No README.md found in project root, skipping index.qmd creation")
-            return
 
-        print("Creating index.qmd from README.md...")
-
-        # Read README content
-        with open(readme_path, "r", encoding="utf-8") as f:
-            readme_content = f.read()
-
-        # Create license.qmd if LICENSE file exists
+        # Always create license.qmd if LICENSE file exists
         license_path = package_root / "LICENSE"
         license_link = None
         if license_path.exists():
@@ -786,7 +770,7 @@ title: "License"
             print(f"Created {license_qmd}")
             license_link = "license.qmd"
 
-        # Create citation.qmd if CITATION.cff exists
+        # Always create citation.qmd if CITATION.cff exists
         citation_path = package_root / "CITATION.cff"
         citation_link = None
         if citation_path.exists():
@@ -882,13 +866,27 @@ title: "Authors and Citation"
                 f.write(citation_qmd_content)
             print(f"Created {citation_qmd}")
             citation_link = "citation.qmd"
-        else:
-            # Get package metadata for sidebar
-            metadata = self._get_package_metadata()
 
-        # If we didn't get metadata yet (no citation file), get it now
-        if not citation_path.exists():
-            metadata = self._get_package_metadata()
+        # Now check if we should create index.qmd
+        index_qmd = self.project_path / "index.qmd"
+
+        if index_qmd.exists():
+            print("index.qmd already exists, skipping creation")
+            return
+
+        readme_path = package_root / "README.md"
+        if not readme_path.exists():
+            print("No README.md found in project root, skipping index.qmd creation")
+            return
+
+        print("Creating index.qmd from README.md...")
+
+        # Read README content
+        with open(readme_path, "r", encoding="utf-8") as f:
+            readme_content = f.read()
+
+        # Get package metadata for sidebar
+        metadata = self._get_package_metadata()
 
         # Build margin content sections (right sidebar)
         margin_sections = []
@@ -900,13 +898,13 @@ title: "Authors and Citation"
         package_name = self._detect_package_name()
         if package_name:
             pypi_url = f"https://pypi.org/project/{package_name}/"
-            margin_sections.append("## Links\n")
+            margin_sections.append("#### Links\n")
             margin_sections.append(f"[View on PyPI]({pypi_url})  ")
             links_added.append("pypi")
 
         if metadata.get("urls"):
             if not links_added:
-                margin_sections.append("## Links\n")
+                margin_sections.append("#### Links\n")
 
             urls = metadata["urls"]
 
@@ -928,10 +926,10 @@ title: "Authors and Citation"
 
         # License section
         if license_link:
-            margin_sections.append("\n## License\n")
+            margin_sections.append("\n#### License\n")
             margin_sections.append(f"[Full license]({license_link})  ")
         elif metadata.get("license"):
-            margin_sections.append("\n## License\n")
+            margin_sections.append("\n#### License\n")
             margin_sections.append(f"{metadata['license']}")
 
         # Community section - check for CONTRIBUTING.md and CODE_OF_CONDUCT.md
@@ -972,7 +970,7 @@ title: "Code of Conduct"
             print(f"Created {coc_qmd}")
 
         if community_items:
-            margin_sections.append("\n## Community\n")
+            margin_sections.append("\n#### Community\n")
             margin_sections.extend(community_items)
 
         # Developers section (Authors)
@@ -980,7 +978,7 @@ title: "Code of Conduct"
         authors_to_display = metadata.get("rich_authors") or metadata.get("authors", [])
 
         if authors_to_display:
-            margin_sections.append("\n## Developers\n")
+            margin_sections.append("\n#### Developers\n")
 
             # Try to extract GitHub username from repository URL as fallback
             fallback_github = None
@@ -1077,14 +1075,13 @@ title: "Code of Conduct"
                 meta_items.append(f"**Provides-Extra:** {extras_formatted}")
 
         if meta_items:
-            margin_sections.append("\n## Meta\n")
+            margin_sections.append("\n#### Meta\n")
             margin_sections.append("  \n".join(meta_items))
 
         # Citation section (if CITATION.cff exists)
-        citation_file = package_root / "CITATION.cff"
-        if citation_file.exists():
-            margin_sections.append("\n## Citation\n")
-            margin_sections.append("[Citing great-docs](citation.qmd)")
+        if citation_link:
+            margin_sections.append("\n#### Citation\n")
+            margin_sections.append(f"[Citing great-docs]({citation_link})")
 
         # Build margin content
         margin_content = "\n".join(margin_sections) if margin_sections else ""

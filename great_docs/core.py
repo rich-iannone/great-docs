@@ -1029,15 +1029,13 @@ title: "Code of Conduct"
                     # Build author line with name
                     author_parts = [f"**{name}**" if role else name]
 
-                    # Add role/affiliation as subtitle if available
-                    subtitle_parts = []
+                    # Add role/affiliation on separate lines if available
                     if role:
-                        subtitle_parts.append(role)
+                        author_parts.append(f"<br><small>{role}</small>")
                     if affiliation:
-                        subtitle_parts.append(affiliation)
-
-                    if subtitle_parts:
-                        author_parts.append(f"<br><small>{', '.join(subtitle_parts)}</small>")
+                        author_parts.append(
+                            f'<br><small style="margin-top: -0.15em; display: block;">{affiliation}</small>'
+                        )
 
                     # Add icon links
                     icon_links = []
@@ -1071,7 +1069,11 @@ title: "Code of Conduct"
                         )
 
                     if icon_links:
-                        author_parts.append("<br>" + " ".join(icon_links))
+                        author_parts.append(
+                            '<span style="margin-top: -0.15em; display: block;">'
+                            + " ".join(icon_links)
+                            + "</span>"
+                        )
 
                     # Wrap in <p> tag with padding for non-first authors
                     author_content = " ".join(author_parts)

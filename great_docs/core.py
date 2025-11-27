@@ -269,6 +269,26 @@ class GreatDocs:
 
         return None
 
+    def _normalize_package_name(self, package_name: str) -> str:
+        """
+        Convert a package name to its importable form.
+        
+        PyPI package names can use hyphens (e.g., 'great-docs') but Python
+        imports must use underscores (e.g., 'great_docs'). This method handles
+        the conversion.
+        
+        Parameters
+        ----------
+        package_name
+            The package name (potentially with hyphens)
+            
+        Returns
+        -------
+        str
+            The importable package name (with underscores)
+        """
+        return package_name.replace("-", "_")
+
     def _find_package_init(self, package_name: str) -> Optional[Path]:
         """
         Find the __init__.py file for a package, searching common locations.
@@ -675,12 +695,16 @@ title: ""
 
         print(f"Adding quartodoc configuration for package: {package_name}")
 
+        # Convert package name to importable form (hyphens -> underscores)
+        importable_name = self._normalize_package_name(package_name)
+
         # Try to auto-generate sections from __all__
-        sections = self._create_quartodoc_sections(package_name)
+        sections = self._create_quartodoc_sections(importable_name)
 
         # Add quartodoc configuration with sensible defaults
+        # Use the importable name (with underscores) for the package field
         quartodoc_config = {
-            "package": package_name,
+            "package": importable_name,
             "dir": "reference",
             "title": "API Reference",
             "style": "pkgdown",
@@ -929,7 +953,15 @@ title: ""
 
             if result.returncode != 0:
                 print("\n❌ quartodoc build failed:")
-                print(result.stderr)
+                # Check if quartodoc is not installed
+                if "No module named quartodoc" in result.stderr:
+                    print("\n⚠️  quartodoc is not installed in your environment.")
+                    print("\nTo fix this, install quartodoc:")
+                    print(f"  {sys.executable} -m pip install quartodoc")
+                    print("\nOr if using pip directly:")
+                    print("  pip install quartodoc")
+                else:
+                    print(result.stderr)
                 sys.exit(1)
             else:
                 print("\n✅ API reference generated")
@@ -986,6 +1018,7 @@ title: ""
         ```
         """
         import subprocess
+        import sys
 
         print("Building and previewing documentation...")
 
@@ -996,11 +1029,21 @@ title: ""
 
             # Step 1: Run quartodoc build
             print("\n📚 Step 1: Generating API reference with quartodoc...")
-            result = subprocess.run(["quartodoc", "build"], capture_output=True, text=True)
+            result = subprocess.run(
+                [sys.executable, "-m", "quartodoc", "build"], capture_output=True, text=True
+            )
 
             if result.returncode != 0:
                 print("❌ quartodoc build failed:")
-                print(result.stderr)
+                # Check if quartodoc is not installed
+                if "No module named quartodoc" in result.stderr:
+                    print("\n⚠️  quartodoc is not installed in your environment.")
+                    print("\nTo fix this, install quartodoc:")
+                    print(f"  {sys.executable} -m pip install quartodoc")
+                    print("\nOr if using pip directly:")
+                    print("  pip install quartodoc")
+                else:
+                    print(result.stderr)
                 return
             else:
                 print("✅ API reference generated")

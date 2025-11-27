@@ -16,7 +16,7 @@ class GreatDocs:
     """
     GreatDocs class for applying enhanced theming to quartodoc sites.
 
-    This class provides methods to install theme assets and configure
+    This class provides methods to install assets and configure
     Quarto projects with the great-docs styling and functionality.
     """
 
@@ -82,14 +82,14 @@ class GreatDocs:
             potential_dir = self.project_root / dir_name
             if potential_dir.exists() and potential_dir.is_dir():
                 response = input(
-                    f"Found existing '{dir_name}/' directory. Install great-theme here? [Y/n]: "
+                    f"Found existing '{dir_name}/' directory. Install great-docs here? [Y/n]: "
                 )
                 if response.lower() != "n":
                     return Path(dir_name)
 
         # No existing docs directory found - ask user
         print("\nNo documentation directory detected.")
-        print("Where would you like to install great-theme?")
+        print("Where would you like to install great-docs?")
         print("  1. docs/ (recommended for most projects)")
         print("  2. Current directory (project root)")
         print("  3. Custom directory")
@@ -109,11 +109,11 @@ class GreatDocs:
 
     def install(self, force: bool = False, skip_quartodoc: bool = False) -> None:
         """
-        Install great-theme assets and configuration to the project.
+        Install great-docs assets and configuration to the project.
 
         This method copies the necessary CSS files and post-render script to your Quarto project
         directory, and automatically updates your `_quarto.yml` configuration file to use the
-        great-theme styling.
+        great-docs styling.
 
         Parameters
         ----------
@@ -125,27 +125,27 @@ class GreatDocs:
 
         Examples
         --------
-        Install the theme in the current directory:
+        Install documentation in the current directory:
 
         ```python
         from great_docs import GreatDocs
 
-        theme = GreatDocs()
-        theme.install()
+        docs = GreatDocs()
+        docs.install()
         ```
 
-        Install the theme in a specific project directory, overwriting existing files:
+        Install documentation in a specific project directory, overwriting existing files:
 
         ```python
-        theme = GreatDocs("/path/to/my/project")
-        theme.install(force=True)
+        docs = GreatDocs("/path/to/my/project")
+        docs.install(force=True)
         ```
 
         See Also
         --------
-        uninstall : Remove great-theme assets and configuration
+        uninstall : Remove great-docs assets and configuration
         """
-        print("Installing great-theme to your quartodoc project...")
+        print("Installing great-docs to your quartodoc project...")
 
         # Create docs directory if it doesn't exist
         self.project_path.mkdir(parents=True, exist_ok=True)
@@ -195,20 +195,20 @@ class GreatDocs:
         if not skip_quartodoc:
             self._add_quartodoc_config()
 
-        print("\nGreat Theme installation complete!")
+        print("\nGreat Docs installation complete!")
         if not skip_quartodoc:
             print("\nNext steps:")
             print("1. Review the generated quartodoc configuration in _quarto.yml")
-            print("2. Run `great-theme build` to generate docs and build your site")
+            print("2. Run `great-docs build` to generate docs and build your site")
             print("   (This runs `quartodoc build` followed by `quarto render`)")
             print(f"3. Open {self.project_path / '_site' / 'index.html'} to preview your site")
             print("\nOther helpful commands:")
-            print("  great-theme build          # Build everything")
-            print("  great-theme build --watch  # Watch for changes and rebuild")
-            print("  great-theme preview        # Build and serve locally")
+            print("  great-docs build          # Build everything")
+            print("  great-docs build --watch  # Watch for changes and rebuild")
+            print("  great-docs preview        # Build and serve locally")
         else:
             print("\nNext steps:")
-            print("1. Run `quarto render` to build your site with the new theme")
+            print("1. Run `quarto render` to build your site")
 
     def _detect_package_name(self) -> Optional[str]:
         """
@@ -708,11 +708,11 @@ title: ""
 
     def _update_quarto_config(self) -> None:
         """
-        Update _quarto.yml with great-theme configuration.
+        Update _quarto.yml with great-docs configuration.
 
         This private method modifies the Quarto configuration file to include the
-        post-render script, CSS file, and website navigation required by great-theme.
-        It preserves existing configuration while adding the necessary great-theme
+        post-render script, CSS file, and website navigation required by great-docs.
+        It preserves existing configuration while adding the necessary great-docs
         settings. If website navigation is not present, it adds a navbar with Home
         and API Reference links, and sets the site title to the package name.
         """
@@ -776,32 +776,32 @@ title: ""
         with open(quarto_yml, "w") as f:
             yaml.dump(config, f, default_flow_style=False, sort_keys=False)
 
-        print(f"Updated {quarto_yml} with great-theme configuration")
+        print(f"Updated {quarto_yml} with great-docs configuration")
 
     def uninstall(self) -> None:
         """
-        Remove great-theme assets and configuration from the project.
+        Remove great-docs assets and configuration from the project.
 
-        This method deletes the great-theme CSS file and post-render script,
+        This method deletes the great-docs CSS file and post-render script,
         and cleans up the `_quarto.yml` configuration file by removing
-        great-theme-specific settings.
+        great-docs-specific settings.
 
         Examples
         --------
-        Uninstall the theme from the current directory:
+        Uninstall the docs from the current directory:
 
         ```python
         from great_docs import GreatDocs
 
-        theme = GreatDocs()
-        theme.uninstall()
+        docs = GreatDocs()
+        docs.uninstall()
         ```
 
         Uninstall from a specific project directory:
 
         ```python
-        theme = GreatDocs("/path/to/my/project")
-        theme.uninstall()
+        docs = GreatDocs("/path/to/my/project")
+        docs.uninstall()
         ```
 
         See Also
@@ -825,11 +825,11 @@ title: ""
         # Clean up _quarto.yml
         self._clean_quarto_config()
 
-        print("✅ Great-theme uninstalled successfully!")
+        print("✅ Great-docs uninstalled successfully!")
 
     def _clean_quarto_config(self) -> None:
         """
-        Remove great-theme configuration from _quarto.yml.
+        Remove great-docs configuration from _quarto.yml.
 
         This private method removes the post-render script reference and CSS file
         entry from the Quarto configuration file, reverting it to its pre-installation
@@ -858,7 +858,7 @@ title: ""
         with open(quarto_yml, "w") as f:
             yaml.dump(config, f, default_flow_style=False, sort_keys=False)
 
-        print(f"Cleaned great-theme configuration from {quarto_yml}")
+        print(f"Cleaned great-docs configuration from {quarto_yml}")
 
     def build(self, watch: bool = False) -> None:
         """
@@ -878,14 +878,14 @@ title: ""
         ```python
         from great_docs import GreatDocs
 
-        theme = GreatDocs()
-        theme.build()
+        docs = GreatDocs()
+        docs.build()
         ```
 
         Build with watch mode:
 
         ```python
-        theme.build(watch=True)
+        docs.build(watch=True)
         ```
         """
         import subprocess
@@ -903,7 +903,7 @@ title: ""
                 time.sleep(0.1)
             print(f"\r{message} ", end="", flush=True)
 
-        print("Building documentation with great-theme...")
+        print("Building documentation with great-docs...")
 
         # Change to docs directory
         original_dir = os.getcwd()
@@ -981,8 +981,8 @@ title: ""
         ```python
         from great_docs import GreatDocs
 
-        theme = GreatDocs()
-        theme.preview()
+        docs = GreatDocs()
+        docs.preview()
         ```
         """
         import subprocess

@@ -934,14 +934,28 @@ title: "Authors and Citation"
 
         # Community section - check for CONTRIBUTING.md and CODE_OF_CONDUCT.md
         community_items = []
+
+        # Check for CONTRIBUTING.md in root or .github directory
         contributing_path = package_root / "CONTRIBUTING.md"
+        if not contributing_path.exists():
+            contributing_path = package_root / ".github" / "CONTRIBUTING.md"
+
+        # Check for CODE_OF_CONDUCT.md in root or .github directory
         coc_path = package_root / "CODE_OF_CONDUCT.md"
+        if not coc_path.exists():
+            coc_path = package_root / ".github" / "CODE_OF_CONDUCT.md"
 
         if contributing_path.exists():
             community_items.append("[Contributing guide](contributing.qmd)  ")
             # Create contributing.qmd
             with open(contributing_path, "r", encoding="utf-8") as f:
                 contributing_content = f.read()
+
+            # Strip first heading if it exists to avoid duplication with title
+            lines = contributing_content.split("\n")
+            if lines and lines[0].startswith("# "):
+                contributing_content = "\n".join(lines[1:]).lstrip()
+
             contributing_qmd = self.project_path / "contributing.qmd"
             contributing_qmd_content = f"""---
 title: "Contributing"
@@ -958,6 +972,12 @@ title: "Contributing"
             # Create code-of-conduct.qmd
             with open(coc_path, "r", encoding="utf-8") as f:
                 coc_content = f.read()
+
+            # Strip first heading if it exists to avoid duplication with title
+            lines = coc_content.split("\n")
+            if lines and lines[0].startswith("# "):
+                coc_content = "\n".join(lines[1:]).lstrip()
+
             coc_qmd = self.project_path / "code-of-conduct.qmd"
             coc_qmd_content = f"""---
 title: "Code of Conduct"

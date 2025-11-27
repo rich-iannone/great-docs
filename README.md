@@ -1,17 +1,17 @@
-# Great Docs for Quarto-Based Documentation Sites
+# Great Docs for Python Documentation Sites
 
-This is comprehensive theming package that provides enhanced styling and functionality for Python documentation sites built with Quarto and `quartodoc`.
+A comprehensive documentation site generator for Python packages. Great Docs automatically creates beautiful, professional documentation sites with auto-generated API references, smart navigation, and modern styling.
 
 ## Features
 
+- **one-command setup**: single `great-docs init` creates your entire docs site
+- **auto-generated API docs**: automatically discovers and documents your package's API
+- **smart organization**: intelligent class/method/function categorization
 - **enhanced typography**: monospace fonts for code elements and improved readability
-- **smart classification**: automatic function/method/class labeling with color-coded badges
-- **smart method splitting**: classes with >5 methods get separate pages for better navigation (uses griffe introspection)
 - **modern styling**: clean, professional appearance
 - **mobile responsive**: optimized for all device sizes
 - **streamlined workflow**: single `great-docs build` command handles everything
-- **easy installation**: simple CLI tool for quick setup
-- **intelligent setup**: auto-generates quartodoc configuration from your package's `__all__`
+- **intelligent setup**: auto-generates configuration from your package's `__all__`
 - **safe introspection**: works with packages containing non-Python components
 - **zero configuration**: works out of the box with sensible defaults
 
@@ -83,7 +83,7 @@ This up-and-running site sets you up for success with your documentation dreams.
 
 ## What Gets Enhanced
 
-Great Docs automatically initializes a quartodoc site and includes:
+Great Docs automatically creates a complete documentation site with:
 
 ### Nice Visuals
 
@@ -124,7 +124,7 @@ great-docs init --project-path /path/to/project --docs-dir documentation
 # Force overwrite existing files
 great-docs init --force
 
-# Build documentation (runs quartodoc build + quarto render)
+# Build documentation
 great-docs build
 
 # Build and watch for changes
@@ -190,10 +190,10 @@ If you have an existing `_quarto.yml` or documentation directory, great-docs wil
 
 ### Auto-Generated Configuration
 
-The installer intelligently configures your project:
+The installer intelligently configures your documentation site:
 
 1. **index.qmd from README.md**: Your README becomes your documentation homepage (like pkgdown)
-2. **quartodoc configuration**: Auto-detects your package name from:
+2. **API reference configuration**: Auto-detects your package name from:
    - `pyproject.toml`
    - `setup.py`
    - Package directory structure
@@ -231,17 +231,17 @@ The installer intelligently configures your project:
 
 **Filtering non-documentable items**:
 
-If your package includes items that can't be documented by quartodoc (e.g., Rust types, C bindings), you can exclude them using `__gt_exclude__`:
+If your package includes items that can't be auto-documented (e.g., Rust types, C bindings), you can exclude them using `__gt_exclude__`:
 
 ```python
 # In your package's __init__.py
 __all__ = ["Graph", "Node", "Edge", "some_function"]
 
-# Exclude items that quartodoc can't document
+# Exclude items that can't be auto-documented
 __gt_exclude__ = ["Node", "Edge"]  # Rust types
 ```
 
-Great Docs will automatically filter out items in `__gt_exclude__` when generating the quartodoc configuration.
+Great Docs will automatically filter out items in `__gt_exclude__` when generating the configuration.
 
 Great Docs will search for your package in standard locations including:
 
@@ -259,7 +259,7 @@ Great Docs uses **griffe** to analyze your package without importing it. This en
 - **Safe introspection**: Works with packages containing non-Python components
 - **Accurate method counting**: Counts actual public methods on each class
 - **Smart categorization**: Automatically identifies classes, functions, and other objects
-- **Automatic method enumeration**: Explicitly lists all methods for quartodoc to document
+- **Automatic method enumeration**: Explicitly lists all methods for documentation
 
 Based on method count:
 
@@ -304,13 +304,13 @@ After installation, the easiest way to build your documentation:
 great-docs build
 ```
 
-This single command runs both `quartodoc build` and `quarto render` for you, with a progress indicator so you can see the build activity.
+This single command handles all the build steps for you, with a progress indicator so you can see the activity.
 
 ### Detailed Steps
 
 If you prefer to run commands separately or customize the workflow:
 
-1. **(Optional) Edit the quartodoc sections** in `_quarto.yml` to organize your API documentation as needed.
+1. **(Optional) Edit the API documentation sections** in `_quarto.yml` to organize your documentation as needed.
 
 2. **Generate API reference pages**:
 
@@ -337,7 +337,7 @@ Your documentation is now live with great-docs styling!
 
 ### Troubleshooting
 
-**CyclicAliasError from quartodoc**: If `quartodoc build` fails with a `CyclicAliasError` for certain exports, you may need to exclude problematic items from your quartodoc configuration. This can happen with re-exported constants or objects that create circular references in the import graph.
+**CyclicAliasError during build**: If the build fails with a `CyclicAliasError` for certain exports, you may need to exclude problematic items from your configuration. This can happen with re-exported constants or objects that create circular references in the import graph.
 
 **quartodoc not installed**: Great Docs requires `quartodoc` to generate API documentation. Install it with:
 

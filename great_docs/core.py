@@ -911,7 +911,7 @@ title: ""
             os.chdir(self.project_path)
 
             # Step 1: Run quartodoc build using Python module execution
-            # This ensures it uses the same Python environment as great-theme
+            # This ensures it uses the same Python environment as great-docs
             print("\n📚 Step 1: Generating API reference with quartodoc...")
 
             stop_event = threading.Event()

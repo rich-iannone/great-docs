@@ -777,35 +777,33 @@ title: "License"
         if metadata.get("urls"):
             margin_sections.append("## Links\n")
             urls = metadata["urls"]
-            
+
             # Map common URL names to display text
             url_map = {
                 "homepage": "View on PyPI",
                 "repository": "Browse source code",
                 "bug_tracker": "Report a bug",
-                "documentation": "Documentation"
+                "documentation": "Documentation",
             }
-            
+
             for name, url in urls.items():
                 name_lower = name.lower().replace(" ", "_")
                 display_name = url_map.get(name_lower, name.replace("_", " ").title())
                 margin_sections.append(f"[{display_name}]({url})  ")
 
         # License section
-        if license_link or metadata.get("license"):
+        if license_link:
             margin_sections.append("\n## License\n")
-            license_name = metadata.get("license", "LICENSE")
-            if license_link:
-                margin_sections.append(f"[Full license]({license_link})  ")
-                margin_sections.append(f"{license_name}")
-            else:
-                margin_sections.append(f"{license_name}")
+            margin_sections.append(f"[Full license]({license_link})  ")
+        elif metadata.get("license"):
+            margin_sections.append("\n## License\n")
+            margin_sections.append(f"{metadata['license']}")
 
         # Community section - check for CONTRIBUTING.md and CODE_OF_CONDUCT.md
         community_items = []
         contributing_path = package_root / "CONTRIBUTING.md"
         coc_path = package_root / "CODE_OF_CONDUCT.md"
-        
+
         if contributing_path.exists():
             community_items.append("[Contributing guide](contributing.qmd)  ")
             # Create contributing.qmd
@@ -821,7 +819,7 @@ title: "Contributing"
             with open(contributing_qmd, "w", encoding="utf-8") as f:
                 f.write(contributing_qmd_content)
             print(f"Created {contributing_qmd}")
-        
+
         if coc_path.exists():
             community_items.append("[Code of conduct](code-of-conduct.qmd)  ")
             # Create code-of-conduct.qmd
@@ -837,7 +835,7 @@ title: "Code of Conduct"
             with open(coc_qmd, "w", encoding="utf-8") as f:
                 f.write(coc_qmd_content)
             print(f"Created {coc_qmd}")
-        
+
         if community_items:
             margin_sections.append("\n## Community\n")
             margin_sections.extend(community_items)

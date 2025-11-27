@@ -16,7 +16,7 @@ test: ## Run tests with pytest
 .PHONY: test-coverage
 test-coverage: ## Run tests with coverage report
 	@$(PYTHON) -m pytest \
-		--cov=great_theme \
+		--cov=great_docs \
 		--cov-report=term-missing \
 		--cov-report=html \
 		tests/ -v
@@ -41,11 +41,11 @@ check-format: ## Check code formatting without making changes
 
 .PHONY: type-check
 type-check: ## Run type checking with mypy
-	@$(PYTHON) -m mypy great_theme --python-version 3.8
-	@$(PYTHON) -m mypy great_theme --python-version 3.9
-	@$(PYTHON) -m mypy great_theme --python-version 3.10
-	@$(PYTHON) -m mypy great_theme --python-version 3.11
-	@$(PYTHON) -m mypy great_theme --python-version 3.12
+	@$(PYTHON) -m mypy great_docs --python-version 3.8
+	@$(PYTHON) -m mypy great_docs --python-version 3.9
+	@$(PYTHON) -m mypy great_docs --python-version 3.10
+	@$(PYTHON) -m mypy great_docs --python-version 3.11
+	@$(PYTHON) -m mypy great_docs --python-version 3.12
 
 .PHONY: check
 check: lint test ## Run all checks (lint and test)
@@ -93,7 +93,7 @@ install-dev: ## Install package with development dependencies
 
 .PHONY: uninstall
 uninstall: ## Uninstall the package
-	@pip uninstall -y great-theme
+	@pip uninstall -y great-docs
 
 .PHONY: reinstall
 reinstall: uninstall install ## Reinstall the package
@@ -109,17 +109,17 @@ publish: clean build ## Publish to PyPI
 .PHONY: test-install
 test-install: build ## Test installation in a clean environment
 	@echo "Testing installation from wheel..."
-	@pip install --force-reinstall dist/great_theme*.whl
-	@great-theme --version
-	@great-theme --help
+	@pip install --force-reinstall dist/great_docs*.whl
+	@great-docs --version
+	@great-docs --help
 
 .PHONY: test-cli
 test-cli: ## Test the CLI in a temp directory
 	@echo "Testing CLI installation..."
-	@mkdir -p /tmp/test_great_theme
-	@cd /tmp/test_great_theme && great-theme init --force
+	@mkdir -p /tmp/test_great_docs
+	@cd /tmp/test_great_docs && great-docs init --force
 	@echo "CLI test passed"
-	@rm -rf /tmp/test_great_theme
+	@rm -rf /tmp/test_great_docs
 
 .PHONY: dev-setup
 dev-setup: ## Set up development environment

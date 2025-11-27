@@ -12,17 +12,17 @@ except ImportError:
     import importlib_resources as resources  # type: ignore[import-not-found]
 
 
-class GreatTheme:
+class GreatDocs:
     """
-    GreatTheme class for applying enhanced theming to quartodoc sites.
+    GreatDocs class for applying enhanced theming to quartodoc sites.
 
     This class provides methods to install theme assets and configure
-    Quarto projects with the great-theme styling and functionality.
+    Quarto projects with the great-docs styling and functionality.
     """
 
     def __init__(self, project_path: Optional[str] = None, docs_dir: Optional[str] = None):
         """
-        Initialize GreatTheme instance.
+        Initialize GreatDocs instance.
 
         Parameters
         ----------
@@ -37,12 +37,12 @@ class GreatTheme:
         self.project_path = self.project_root / self.docs_dir
         try:
             # Python 3.9+
-            self.package_path = Path(resources.files("great_theme"))
+            self.package_path = Path(resources.files("great_docs"))
         except AttributeError:
             # Fallback for older Python versions
             import importlib_resources  # type: ignore[import-not-found]
 
-            self.package_path = Path(importlib_resources.files("great_theme"))
+            self.package_path = Path(importlib_resources.files("great_docs"))
         self.assets_path = self.package_path / "assets"
 
     def _find_or_create_docs_dir(self, docs_dir: Optional[str] = None) -> Path:
@@ -128,16 +128,16 @@ class GreatTheme:
         Install the theme in the current directory:
 
         ```python
-        from great_theme import GreatTheme
+        from great_docs import GreatDocs
 
-        theme = GreatTheme()
+        theme = GreatDocs()
         theme.install()
         ```
 
         Install the theme in a specific project directory, overwriting existing files:
 
         ```python
-        theme = GreatTheme("/path/to/my/project")
+        theme = GreatDocs("/path/to/my/project")
         theme.install(force=True)
         ```
 
@@ -172,12 +172,12 @@ class GreatTheme:
 
         # Copy CSS file
         css_src = self.assets_path / "styles.css"
-        css_dst = self.project_path / "great-theme.css"
+        css_dst = self.project_path / "great-docs.css"
 
         if css_dst.exists() and not force:
             response = input(f"{css_dst} already exists. Overwrite? [y/N]: ")
             if response.lower() != "y":
-                print("Skipping great-theme.css")
+                print("Skipping great-docs.css")
             else:
                 shutil.copy2(css_src, css_dst)
                 print(f"Copied {css_dst}")
@@ -722,7 +722,7 @@ title: ""
             print("Warning: _quarto.yml not found. Creating minimal configuration...")
             config = {
                 "project": {"type": "website", "post-render": "scripts/post-render.py"},
-                "format": {"html": {"theme": "flatly", "css": ["great-theme.css"]}},
+                "format": {"html": {"theme": "flatly", "css": ["great-docs.css"]}},
             }
         else:
             # Load existing configuration
@@ -746,10 +746,10 @@ title: ""
         elif isinstance(config["format"]["html"]["css"], str):
             config["format"]["html"]["css"] = [config["format"]["html"]["css"]]
 
-        if "great-theme.css" not in config["format"]["html"]["css"]:
-            config["format"]["html"]["css"].append("great-theme.css")
+        if "great-docs.css" not in config["format"]["html"]["css"]:
+            config["format"]["html"]["css"].append("great-docs.css")
 
-        # Ensure flatly theme is used (works well with great-theme)
+        # Ensure flatly theme is used (works well with great-docs)
         if "theme" not in config["format"]["html"]:
             config["format"]["html"]["theme"] = "flatly"
 
@@ -791,30 +791,30 @@ title: ""
         Uninstall the theme from the current directory:
 
         ```python
-        from great_theme import GreatTheme
+        from great_docs import GreatDocs
 
-        theme = GreatTheme()
+        theme = GreatDocs()
         theme.uninstall()
         ```
 
         Uninstall from a specific project directory:
 
         ```python
-        theme = GreatTheme("/path/to/my/project")
+        theme = GreatDocs("/path/to/my/project")
         theme.uninstall()
         ```
 
         See Also
         --------
-        install : Install great-theme assets and configuration
+        install : Install great-docs assets and configuration
         """
-        print("Uninstalling great-theme from your quartodoc project...")
+        print("Uninstalling great-docs from your quartodoc project...")
         print(f"Removing from: {self.project_path.relative_to(self.project_root)}")
 
         # Remove files
         files_to_remove = [
             self.project_path / "scripts" / "post-render.py",
-            self.project_path / "great-theme.css",
+            self.project_path / "great-docs.css",
         ]
 
         for file_path in files_to_remove:
@@ -849,8 +849,8 @@ title: ""
 
         # Remove CSS file
         css_list = config.get("format", {}).get("html", {}).get("css", [])
-        if isinstance(css_list, list) and "great-theme.css" in css_list:
-            css_list.remove("great-theme.css")
+        if isinstance(css_list, list) and "great-docs.css" in css_list:
+            css_list.remove("great-docs.css")
             if not css_list:
                 del config["format"]["html"]["css"]
 
@@ -876,9 +876,9 @@ title: ""
         Build the documentation:
 
         ```python
-        from great_theme import GreatTheme
+        from great_docs import GreatDocs
 
-        theme = GreatTheme()
+        theme = GreatDocs()
         theme.build()
         ```
 
@@ -979,9 +979,9 @@ title: ""
         Preview the documentation:
 
         ```python
-        from great_theme import GreatTheme
+        from great_docs import GreatDocs
 
-        theme = GreatTheme()
+        theme = GreatDocs()
         theme.preview()
         ```
         """

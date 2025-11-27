@@ -1,19 +1,19 @@
-# Example Quarto Configuration with Great Theme
+# Example Quarto Configuration with Great Docs
 
-This example shows how to configure your quartodoc project to use great-theme.
+This example shows how to configure your quartodoc project to use great-docs.
 
 ## Method 1: Using the CLI (Recommended)
 
-After installing great-theme, simply run:
+After installing great-docs, simply run:
 
 ```bash
-great-theme init
+great-docs init
 ```
 
 This will automatically:
 
 - Copy the post-render script to `scripts/post-render.py`
-- Copy the CSS file to `great-theme.css`
+- Copy the CSS file to `great-docs.css`
 - Update your `_quarto.yml` configuration
 
 ## Method 2: Manual Configuration
@@ -27,9 +27,9 @@ project:
 
 format:
   html:
-    theme: flatly # Works well with great-theme
+    theme: flatly # Works well with great-docs
     css:
-      - great-theme.css
+      - great-docs.css
     toc: true
     grid:
       sidebar-width: 270px
@@ -46,10 +46,10 @@ website:
 ### 2. Copy theme files
 
 ```python
-from great_theme import GreatTheme
+from great_docs import GreatDocs
 
 # Initialize theme for current directory
-theme = GreatTheme()
+theme = GreatDocs()
 
 # Install theme files
 theme.install()
@@ -59,6 +59,6 @@ theme.install()
 
 You can customize the theme by:
 
-1. Editing the copied `great-theme.css` file
+1. Editing the copied `great-docs.css` file
 2. Modifying the `scripts/post-render.py` script
 3. Adding additional CSS files to your `_quarto.yml`

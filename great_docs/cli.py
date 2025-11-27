@@ -3,7 +3,7 @@ import sys
 import click
 
 from . import __version__
-from .core import GreatTheme
+from .core import GreatDocs
 
 
 class OrderedGroup(click.Group):
@@ -14,9 +14,9 @@ class OrderedGroup(click.Group):
 
 
 @click.group(cls=OrderedGroup)
-@click.version_option(version=__version__, prog_name="great-theme")
+@click.version_option(version=__version__, prog_name="great-docs")
 def cli():
-    """Great Theme for quartodoc - Enhanced styling for Python documentation sites."""
+    """Great Docs - A great way to quickly initialize your Python docs site."""
     pass
 
 
@@ -37,10 +37,10 @@ def cli():
     help="Overwrite existing files without prompting",
 )
 def init(project_path, docs_dir, force):
-    """Initialize great-theme in your quartodoc project."""
+    """Initialize great-docs in your quartodoc project."""
     try:
-        theme = GreatTheme(project_path=project_path, docs_dir=docs_dir)
-        theme.install(force=force)
+        docs = GreatDocs(project_path=project_path, docs_dir=docs_dir)
+        docs.install(force=force)
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
@@ -65,8 +65,8 @@ def init(project_path, docs_dir, force):
 def build(project_path, docs_dir, watch):
     """Build documentation (runs quartodoc build + quarto render)."""
     try:
-        theme = GreatTheme(project_path=project_path, docs_dir=docs_dir)
-        theme.build(watch=watch)
+        docs = GreatDocs(project_path=project_path, docs_dir=docs_dir)
+        docs.build(watch=watch)
     except KeyboardInterrupt:
         click.echo("\n👋 Stopped watching")
     except Exception as e:
@@ -86,10 +86,10 @@ def build(project_path, docs_dir, watch):
     help="Path to documentation directory relative to project root (e.g., 'docs', 'site')",
 )
 def uninstall(project_path, docs_dir):
-    """Remove great-theme from your quartodoc project."""
+    """Remove great-docs from your quartodoc project."""
     try:
-        theme = GreatTheme(project_path=project_path, docs_dir=docs_dir)
-        theme.uninstall()
+        docs = GreatDocs(project_path=project_path, docs_dir=docs_dir)
+        docs.uninstall()
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
@@ -109,8 +109,8 @@ def uninstall(project_path, docs_dir):
 def preview(project_path, docs_dir):
     """Build and serve documentation locally."""
     try:
-        theme = GreatTheme(project_path=project_path, docs_dir=docs_dir)
-        theme.preview()
+        docs = GreatDocs(project_path=project_path, docs_dir=docs_dir)
+        docs.preview()
     except KeyboardInterrupt:
         click.echo("\n👋 Server stopped")
     except Exception as e:
@@ -126,7 +126,7 @@ cli.add_command(uninstall)
 
 
 def main():
-    """Main CLI entry point for great-theme."""
+    """Main CLI entry point for great-docs."""
     cli()
 
 

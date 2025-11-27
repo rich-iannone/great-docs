@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "great-theme"
+name = "great-docs"
 version = "0.1.0"
 description = "A comprehensive theming package for Python documentation sites built with quartodoc"
 readme = "README.md"
@@ -14,7 +14,7 @@ authors = [
 maintainers = [
     {name = "Rich Iannone", email = "riannone@me.com"}
 ]
-keywords = ["quartodoc", "quarto", "documentation", "theme", "css", "python"]
+keywords = ["documentation", "documentation-generator", "api-documentation", "quarto", "python"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -50,20 +50,20 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/rich-iannone/great-theme"
-Repository = "https://github.com/rich-iannone/great-theme"
-Documentation = "https://github.com/rich-iannone/great-theme#readme"
-"Bug Tracker" = "https://github.com/rich-iannone/great-theme/issues"
+Homepage = "https://github.com/rich-iannone/great-docs"
+Repository = "https://github.com/rich-iannone/great-docs"
+Documentation = "https://github.com/rich-iannone/great-docs#readme"
+"Bug Tracker" = "https://github.com/rich-iannone/great-docs/issues"
 
 [project.scripts]
-great-theme = "great_theme.cli:main"
+great-docs = "great_docs.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["great_theme*"]
+include = ["great_docs*"]
 
 [tool.setuptools.package-data]
-great_theme = ["assets/*"]
+great_docs = ["assets/*"]
 
 [tool.setuptools]
 include-package-data = true
@@ -80,7 +80,7 @@ addopts = [
 ]
 
 [tool.coverage.run]
-source = ["great_theme"]
+source = ["great_docs"]
 omit = [
     "*/tests/*",
     "*/test_*.py",

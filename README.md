@@ -1,4 +1,4 @@
-# Great Theme for Quarto-Based Documentation Sites
+# Great Docs for Quarto-Based Documentation Sites
 
 This is comprehensive theming package that provides enhanced styling and functionality for Python documentation sites built with Quarto and `quartodoc`.
 
@@ -9,7 +9,7 @@ This is comprehensive theming package that provides enhanced styling and functio
 - **smart method splitting**: classes with >5 methods get separate pages for better navigation (uses griffe introspection)
 - **modern styling**: clean, professional appearance
 - **mobile responsive**: optimized for all device sizes
-- **streamlined workflow**: single `great-theme build` command handles everything
+- **streamlined workflow**: single `great-docs build` command handles everything
 - **easy installation**: simple CLI tool for quick setup
 - **intelligent setup**: auto-generates quartodoc configuration from your package's `__all__`
 - **safe introspection**: works with packages containing non-Python components
@@ -22,7 +22,7 @@ This is comprehensive theming package that provides enhanced styling and functio
 #### From PyPI (when published)
 
 ```bash
-pip install great-theme
+pip install great-docs
 ```
 
 #### From GitHub
@@ -30,28 +30,28 @@ pip install great-theme
 Install the latest version directly from the GitHub repository:
 
 ```bash
-pip install git+https://github.com/rich-iannone/great-theme.git
+pip install git+https://github.com/rich-iannone/great-docs.git
 ```
 
 Or install a specific branch, tag, or commit:
 
 ```bash
 # Install from a specific branch
-pip install git+https://github.com/rich-iannone/great-theme.git@main
+pip install git+https://github.com/rich-iannone/great-docs.git@main
 
 # Install from a specific tag
-pip install git+https://github.com/rich-iannone/great-theme.git@v0.1.0
+pip install git+https://github.com/rich-iannone/great-docs.git@v0.1.0
 
 # Install from a specific commit
-pip install git+https://github.com/rich-iannone/great-theme.git@abc1234
+pip install git+https://github.com/rich-iannone/great-docs.git@abc1234
 ```
 
 For development or editable installation:
 
 ```bash
 # Clone the repository
-git clone https://github.com/rich-iannone/great-theme.git
-cd great-theme
+git clone https://github.com/rich-iannone/great-docs.git
+cd great-docs
 
 # Install in editable mode
 pip install -e .
@@ -65,7 +65,7 @@ pip install -e ".[dev]"
 Navigate to your project root directory and run:
 
 ```bash
-great-theme init
+great-docs init
 ```
 
 The installer will:
@@ -83,7 +83,7 @@ This up-and-running site sets you up for success with your documentation dreams.
 
 ## What Gets Enhanced
 
-Great Theme automatically initializes a quartodoc site and includes:
+Great Docs automatically initializes a quartodoc site and includes:
 
 ### Nice Visuals
 
@@ -110,43 +110,43 @@ Great Theme automatically initializes a quartodoc site and includes:
 
 ```bash
 # Initialize theme (auto-detects docs directory)
-great-theme init
+great-docs init
 
 # Initialize to specific docs directory
-great-theme init --docs-dir docs
+great-docs init --docs-dir docs
 
 # Initialize to specific project
-great-theme init --project-path /path/to/project
+great-docs init --project-path /path/to/project
 
 # Initialize with specific docs directory in a project
-great-theme init --project-path /path/to/project --docs-dir documentation
+great-docs init --project-path /path/to/project --docs-dir documentation
 
 # Force overwrite existing files
-great-theme init --force
+great-docs init --force
 
 # Build documentation (runs quartodoc build + quarto render)
-great-theme build
+great-docs build
 
 # Build and watch for changes
-great-theme build --watch
+great-docs build --watch
 
 # Build and serve locally with live preview
-great-theme preview
+great-docs preview
 
 # Remove theme from project
-great-theme uninstall
+great-docs uninstall
 
 # Uninstall from specific docs directory
-great-theme uninstall --docs-dir docs
+great-docs uninstall --docs-dir docs
 ```
 
 ### Python API
 
 ```python
-from great_theme import GreatTheme
+from great_docs import GreatDocs
 
 # Initialize for current directory (auto-detects docs dir)
-theme = GreatTheme()
+theme = GreatDocs()
 
 # Install theme files and configuration
 theme.install()
@@ -161,11 +161,11 @@ theme.build(watch=True)
 theme.preview()
 
 # Initialize with specific project root
-theme = GreatTheme(project_path="/path/to/project")
+theme = GreatDocs(project_path="/path/to/project")
 theme.install()
 
 # Initialize with specific docs directory
-theme = GreatTheme(project_path="/path/to/project", docs_dir="docs")
+theme = GreatDocs(project_path="/path/to/project", docs_dir="docs")
 theme.install()
 
 # Remove theme
@@ -174,19 +174,19 @@ theme.uninstall()
 
 ## What Gets Installed
 
-When you run `great-theme init`, the following files are added to your documentation directory:
+When you run `great-docs init`, the following files are added to your documentation directory:
 
 ```
 your-project/
 ├── docs/                # Or your chosen docs directory
 │   ├── _quarto.yml      # Updated with theme configuration
 │   ├── index.qmd        # Auto-created from README.md
-│   ├── great-theme.css  # Main theme stylesheet
+│   ├── great-docs.css  # Main theme stylesheet
 │   └── scripts/
 │       └── post-render.py   # HTML post-processing script
 ```
 
-If you have an existing `_quarto.yml` or documentation directory, great-theme will detect and use it.
+If you have an existing `_quarto.yml` or documentation directory, great-docs will detect and use it.
 
 ### Auto-Generated Configuration
 
@@ -241,20 +241,20 @@ __all__ = ["Graph", "Node", "Edge", "some_function"]
 __gt_exclude__ = ["Node", "Edge"]  # Rust types
 ```
 
-Great Theme will automatically filter out items in `__gt_exclude__` when generating the quartodoc configuration.
+Great Docs will automatically filter out items in `__gt_exclude__` when generating the quartodoc configuration.
 
-Great Theme will search for your package in standard locations including:
+Great Docs will search for your package in standard locations including:
 
 - Project root (e.g., `your-package/`)
 - `python/` directory (common for Rust/Python hybrid packages)
 - `src/` directory
 - `lib/` directory
 
-If `__all__` is not found, Great Theme will create a basic configuration and you can manually add sections.
+If `__all__` is not found, Great Docs will create a basic configuration and you can manually add sections.
 
 ### Smart Method Splitting
 
-Great Theme uses **griffe** to analyze your package without importing it. This enables:
+Great Docs uses **griffe** to analyze your package without importing it. This enables:
 
 - **Safe introspection**: Works with packages containing non-Python components
 - **Accurate method counting**: Counts actual public methods on each class
@@ -269,7 +269,7 @@ Based on method count:
   - Creates a separate section with all methods explicitly listed
   - Each method gets its own documentation page
 
-For example, if your `Graph` class has 191 methods, Great Theme will:
+For example, if your `Graph` class has 191 methods, Great Docs will:
 
 1. Add `Graph` to the Classes section with `members: []` (suppresses inline method docs)
 2. Create a new "Graph Methods" section listing all 191 methods: `Graph.add_node`, `Graph.add_edge`, etc.
@@ -301,7 +301,7 @@ This prevents overwhelming single-page documentation and improves navigation for
 After installation, the easiest way to build your documentation:
 
 ```bash
-great-theme build
+great-docs build
 ```
 
 This single command runs both `quartodoc build` and `quarto render` for you, with a progress indicator so you can see the build activity.
@@ -360,7 +360,7 @@ format:
   html:
     theme: flatly # Recommended base theme
     css:
-      - great-theme.css
+      - great-docs.css
 ```
 
 ## License

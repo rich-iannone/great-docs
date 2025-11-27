@@ -231,7 +231,15 @@ The installer intelligently configures your documentation site:
 
 **Filtering non-documentable items**:
 
-If your package includes items that can't be auto-documented (e.g., Rust types, C bindings), you can exclude them using `__gt_exclude__`:
+If your package includes items that can't be auto-documented (e.g., Rust types, C bindings), you can exclude them in your `pyproject.toml`:
+
+```toml
+# In your pyproject.toml
+[tool.great-docs]
+exclude = ["Node", "Edge"]  # Items to exclude from documentation
+```
+
+Alternatively, you can use `__gt_exclude__` directly in your `__init__.py` (legacy method):
 
 ```python
 # In your package's __init__.py
@@ -241,7 +249,7 @@ __all__ = ["Graph", "Node", "Edge", "some_function"]
 __gt_exclude__ = ["Node", "Edge"]  # Rust types
 ```
 
-Great Docs will automatically filter out items in `__gt_exclude__` when generating the configuration.
+Great Docs will automatically filter out items from either source when generating the configuration. Using `[tool.great-docs] exclude` in `pyproject.toml` is recommended as it keeps configuration centralized.
 
 Great Docs will search for your package in standard locations including:
 
@@ -346,6 +354,72 @@ pip install quartodoc
 ```
 
 Your documentation is now live with Great Docs styling!
+
+## Customization
+
+### Landing Page Metadata Sidebar
+
+Great Docs automatically creates a metadata sidebar on your landing page (like pkgdown) that displays:
+
+- **Links**: PyPI, source code, bug tracker
+- **License**: Link to full license text
+- **Developers**: Author information with contact links
+- **Meta**: Python version requirements and optional dependencies
+
+The sidebar is automatically populated from your `pyproject.toml` metadata. To enhance the developer information with rich metadata, add a `[tool.great-docs]` section:
+
+```toml
+# In your pyproject.toml
+
+# Standard author information (required for PyPI)
+[project]
+authors = [
+    {name = "Your Name", email = "you@example.com"}
+]
+
+# Rich author metadata for documentation (optional)
+[tool.great-docs]
+
+[[tool.great-docs.authors]]
+name = "Your Name"
+email = "you@example.com"
+role = "Lead Developer"           # Optional: e.g., "Lead Developer", "Contributor"
+affiliation = "Your Organization" # Optional: e.g., "Posit", "University Name"
+github = "yourusername"           # Optional: GitHub username
+homepage = "https://yoursite.com" # Optional: Personal website
+orcid = "0000-0002-1234-5678"     # Optional: ORCID ID or full URL
+
+# Add more authors by repeating the [[tool.great-docs.authors]] section
+[[tool.great-docs.authors]]
+name = "Second Author"
+email = "second@example.com"
+role = "Contributor"
+github = "secondauthor"
+```
+
+Supported fields (all optional except `name`):
+
+- `name` (required): Author's full name
+- `email`: Email address (creates a clickable email icon)
+- `role`: Role in the project (e.g., "Lead Developer", "Contributor", "Maintainer")
+- `affiliation`: Organization or institution (e.g., "Posit", "MIT")
+- `github`: GitHub username (creates a clickable GitHub icon)
+- `homepage`: Personal website URL (creates a clickable home icon)
+- `orcid`: ORCID identifier or full URL (creates a clickable ORCID icon)
+
+If `[tool.great-docs.authors]` is not present, Great Docs falls back to using the standard `project.authors` with automatically extracted GitHub information from your repository URL.
+
+**Example output in sidebar**:
+
+```
+## Developers
+
+Your Name
+Lead Developer, Your Organization
+📧 🐙 🏠
+```
+
+Where the icons link to email, GitHub, and homepage respectively.
 
 ## Configuration
 

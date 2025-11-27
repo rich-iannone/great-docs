@@ -193,7 +193,7 @@ class GreatDocs:
             # Append to existing .gitignore if it doesn't already contain our entries
             with open(gitignore_dst, "r") as f:
                 existing_content = f.read()
-            
+
             if "_site/" not in existing_content:
                 with open(gitignore_src, "r") as f:
                     new_content = f.read()
@@ -293,22 +293,94 @@ class GreatDocs:
     def _normalize_package_name(self, package_name: str) -> str:
         """
         Convert a package name to its importable form.
-        
+
         PyPI package names can use hyphens (e.g., 'great-docs') but Python
         imports must use underscores (e.g., 'great_docs'). This method handles
         the conversion.
-        
+
         Parameters
         ----------
         package_name
             The package name (potentially with hyphens)
-            
+
         Returns
         -------
         str
             The importable package name (with underscores)
         """
         return package_name.replace("-", "_")
+
+    def _find_package_root(self) -> Path:
+        """
+        Find the actual package root directory (where pyproject.toml or setup.py exists).
+
+        When the docs directory is the current directory, project_root might point to
+        the docs dir rather than the package root. This method searches upward to find
+        the actual package root.
+
+        Returns
+        -------
+        Path
+            The package root directory
+        """
+        current = self.project_root
+
+        # Search upward from current directory
+        for _ in range(5):  # Limit search to 5 levels up
+            if (current / "pyproject.toml").exists() or (current / "setup.py").exists():
+                return current
+            parent = current.parent
+            if parent == current:  # Reached filesystem root
+                break
+            current = parent
+
+        # Fallback to project_root if we can't find it
+        return self.project_root
+
+    def _get_package_metadata(self) -> dict:
+        """
+        Extract package metadata from pyproject.toml for sidebar.
+
+        Returns
+        -------
+        dict
+            Dictionary containing package metadata like license, authors, URLs, etc.
+        """
+        metadata = {}
+        package_root = self._find_package_root()
+        pyproject_path = package_root / "pyproject.toml"
+
+        if not pyproject_path.exists():
+            return metadata
+
+        try:
+            import tomli  # type: ignore[import-not-found]
+        except ImportError:
+            try:
+                import tomllib as tomli  # Python 3.11+
+            except ImportError:
+                return metadata
+
+        try:
+            with open(pyproject_path, "rb") as f:
+                data = tomli.load(f)
+                project = data.get("project", {})
+
+                # Extract relevant fields
+                metadata["license"] = project.get("license", {}).get("text") or project.get(
+                    "license", {}
+                ).get("file", "")
+                metadata["authors"] = project.get("authors", [])
+                metadata["maintainers"] = project.get("maintainers", [])
+                metadata["urls"] = project.get("urls", {})
+                metadata["requires_python"] = project.get("requires-python", "")
+                metadata["keywords"] = project.get("keywords", [])
+                metadata["description"] = project.get("description", "")
+
+        except Exception:
+            pass
+
+        return metadata
 
     def _find_package_init(self, package_name: str) -> Optional[Path]:
         """
@@ -654,6 +726,7 @@ class GreatDocs:
         Create index.qmd from README.md if it doesn't exist.
 
         This mimics pkgdown's behavior of using the README as the homepage.
+        Includes a metadata sidebar with package information (license, authors, links, etc.)
         """
         index_qmd = self.project_path / "index.qmd"
 
@@ -661,7 +734,8 @@ class GreatDocs:
             print("index.qmd already exists, skipping creation")
             return
 
-        readme_path = self.project_root / "README.md"
+        package_root = self._find_package_root()
+        readme_path = package_root / "README.md"
         if not readme_path.exists():
             print("No README.md found in project root, skipping index.qmd creation")
             return
@@ -672,9 +746,136 @@ class GreatDocs:
         with open(readme_path, "r", encoding="utf-8") as f:
             readme_content = f.read()
 
-        # Create a simple qmd file with the README content
+        # Create license.qmd if LICENSE file exists
+        license_path = package_root / "LICENSE"
+        license_link = None
+        if license_path.exists():
+            license_qmd = self.project_path / "license.qmd"
+            with open(license_path, "r", encoding="utf-8") as f:
+                license_content = f.read()
+
+            license_qmd_content = f"""---
+title: "License"
+---
+
+```
+{license_content}
+```
+"""
+            with open(license_qmd, "w", encoding="utf-8") as f:
+                f.write(license_qmd_content)
+            print(f"Created {license_qmd}")
+            license_link = "license.qmd"
+
+        # Get package metadata for sidebar
+        metadata = self._get_package_metadata()
+
+        # Build margin content sections (right sidebar)
+        margin_sections = []
+
+        # Links section
+        if metadata.get("urls"):
+            margin_sections.append("## Links\n")
+            urls = metadata["urls"]
+            
+            # Map common URL names to display text
+            url_map = {
+                "homepage": "View on PyPI",
+                "repository": "Browse source code",
+                "bug_tracker": "Report a bug",
+                "documentation": "Documentation"
+            }
+            
+            for name, url in urls.items():
+                name_lower = name.lower().replace(" ", "_")
+                display_name = url_map.get(name_lower, name.replace("_", " ").title())
+                margin_sections.append(f"[{display_name}]({url})  ")
+
+        # License section
+        if license_link or metadata.get("license"):
+            margin_sections.append("\n## License\n")
+            license_name = metadata.get("license", "LICENSE")
+            if license_link:
+                margin_sections.append(f"[Full license]({license_link})  ")
+                margin_sections.append(f"{license_name}")
+            else:
+                margin_sections.append(f"{license_name}")
+
+        # Community section - check for CONTRIBUTING.md and CODE_OF_CONDUCT.md
+        community_items = []
+        contributing_path = package_root / "CONTRIBUTING.md"
+        coc_path = package_root / "CODE_OF_CONDUCT.md"
+        
+        if contributing_path.exists():
+            community_items.append("[Contributing guide](contributing.qmd)  ")
+            # Create contributing.qmd
+            with open(contributing_path, "r", encoding="utf-8") as f:
+                contributing_content = f.read()
+            contributing_qmd = self.project_path / "contributing.qmd"
+            contributing_qmd_content = f"""---
+title: "Contributing"
+---
+
+{contributing_content}
+"""
+            with open(contributing_qmd, "w", encoding="utf-8") as f:
+                f.write(contributing_qmd_content)
+            print(f"Created {contributing_qmd}")
+        
+        if coc_path.exists():
+            community_items.append("[Code of conduct](code-of-conduct.qmd)  ")
+            # Create code-of-conduct.qmd
+            with open(coc_path, "r", encoding="utf-8") as f:
+                coc_content = f.read()
+            coc_qmd = self.project_path / "code-of-conduct.qmd"
+            coc_qmd_content = f"""---
+title: "Code of Conduct"
+---
+
+{coc_content}
+"""
+            with open(coc_qmd, "w", encoding="utf-8") as f:
+                f.write(coc_qmd_content)
+            print(f"Created {coc_qmd}")
+        
+        if community_items:
+            margin_sections.append("\n## Community\n")
+            margin_sections.extend(community_items)
+
+        # Developers section (Authors)
+        if metadata.get("authors"):
+            margin_sections.append("\n## Developers\n")
+            for author in metadata["authors"]:
+                if isinstance(author, dict):
+                    name = author.get("name", "")
+                    if author.get("email"):
+                        margin_sections.append(f"{name} &lt;{author['email']}&gt;  ")
+                    else:
+                        margin_sections.append(f"{name}  ")
+
+        # Meta section (Python version) - removed keywords
+        if metadata.get("requires_python"):
+            margin_sections.append(f"\n**Python {metadata['requires_python']}**")
+
+        # Build margin content
+        margin_content = "\n".join(margin_sections) if margin_sections else ""
+
+        # Create a qmd file with the README content
         # Use empty title so "Home" doesn't appear on landing page
-        qmd_content = f"""---
+        # Add margin content in a special div that Quarto will place in the margin
+        if margin_content:
+            qmd_content = f"""---
+title: ""
+---
+
+::: {{.column-margin}}
+{margin_content}
+:::
+
+{readme_content}
+"""
+        else:
+            qmd_content = f"""---
 title: ""
 ---
 

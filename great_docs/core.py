@@ -1247,6 +1247,16 @@ title: ""
         if "theme" not in config["format"]["html"]:
             config["format"]["html"]["theme"] = "flatly"
 
+        # Add table of contents configuration for API reference navigation
+        if "toc" not in config["format"]["html"]:
+            config["format"]["html"]["toc"] = True
+        if "toc-depth" not in config["format"]["html"]:
+            config["format"]["html"]["toc-depth"] = 2
+        if "toc-title" not in config["format"]["html"]:
+            config["format"]["html"]["toc-title"] = "On this page"
+        if "shift-heading-level-by" not in config["format"]["html"]:
+            config["format"]["html"]["shift-heading-level-by"] = -1
+
         # Add Font Awesome for ORCID icon support
         if "include-in-header" not in config["format"]["html"]:
             config["format"]["html"]["include-in-header"] = []
@@ -1270,6 +1280,10 @@ title: ""
         # Add website navigation if not present
         if "website" not in config:
             config["website"] = {}
+
+        # Enable page navigation for TOC
+        if "page-navigation" not in config["website"]:
+            config["website"]["page-navigation"] = True
 
         # Set title to package name if not already set
         if "title" not in config["website"]:

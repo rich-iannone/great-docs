@@ -1,4 +1,4 @@
-from ._qrenderer import QRenderer
+from ._renderer import Renderer
 from ._render.doc import RenderDoc
 from ._render.docattribute import RenderDocAttribute
 from ._render.docclass import RenderDocClass
@@ -17,7 +17,7 @@ from ._render.page import RenderPage
 from ._render.section import RenderSection
 
 __all__ = (
-    "QRenderer",
+    "Renderer",
     "RenderDoc",
     "RenderDocClass",
     "RenderDocFunction",

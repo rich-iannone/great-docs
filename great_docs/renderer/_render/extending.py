@@ -31,11 +31,12 @@ def extend_base_class(cls: type[RenderBase]):
 
     See Also
     --------
-    qrenderer.QRenderer : The bridge between these renderers and
-        quartodoc's main renderers.
+    great_docs.renderer.Renderer : The bridge between these renderers and
+        quartodoc's main renderer.
 
-    qrenderer.RenderDocClass, qrenderer.RenderDocFunction,
-        qrenderer.RenderDocAttribute, qrenderer.RenderDocModule : Classes
+    great_docs.renderer.RenderDocClass, great_docs.renderer.RenderDocFunction,
+        great_docs.renderer.RenderDocAttribute,
+        great_docs.renderer.RenderDocModule : Classes
         you are most likely to extend.
     """
     # Attributes that should not be copied when extending a base class
@@ -130,7 +131,7 @@ def exclude_parameters(spec: dict[str, str | Sequence[str]]):
     We would use
 
     ```python
-    from qrenderer import exclude_parameters
+    from great_docs.renderer import exclude_parameters
 
     exclude_parameters({
         "package.ClassA": "p1",
@@ -150,10 +151,11 @@ def exclude_parameters(spec: dict[str, str | Sequence[str]]):
     Notes
     -----
     When you exclude the parameter of a dataclass, it will show up in the
-    attributes unless you use [](`~qrenderer.exclude_attributes`) to remove
-    it from there as well.
+    attributes unless you use
+    [](`~great_docs.renderer.exclude_attributes`)
+    to remove it from there as well.
     """
-    from qrenderer._globals import EXCLUDE_PARAMETERS
+    from .._globals import EXCLUDE_PARAMETERS
 
     EXCLUDE_PARAMETERS.update(spec)
 
@@ -196,7 +198,7 @@ def exclude_attributes(spec: dict[str, str | Sequence[str]]):
     We would use this to exclude the attributes from the documentation.
 
     ```python
-    from qrenderer import exclude_attributes
+    from great_docs.renderer import exclude_attributes
 
     exclude_attributes({
         "package.ClassA": "c",
@@ -204,7 +206,7 @@ def exclude_attributes(spec: dict[str, str | Sequence[str]]):
     })
     ```
     """
-    from qrenderer._globals import EXCLUDE_ATTRIBUTES
+    from .._globals import EXCLUDE_ATTRIBUTES
 
     EXCLUDE_ATTRIBUTES.update(spec)
 
@@ -242,14 +244,14 @@ def exclude_functions(spec: dict[str, str | Sequence[str]]):
     documentation.
 
     ```python
-    from qrenderer import exclude_functions
+    from great_docs.renderer import exclude_functions
 
     exclude_functions({
         "package.ClassA": "func_a",
     })
     ```
     """
-    from qrenderer._globals import EXCLUDE_FUNCTIONS
+    from .._globals import EXCLUDE_FUNCTIONS
 
     EXCLUDE_FUNCTIONS.update(spec)
 
@@ -286,13 +288,13 @@ def exclude_classes(spec: dict[str, str | Sequence[str]]):
     We would use this to exclude the class from the documentation.
 
     ```python
-    from qrenderer import exclude_classes
+    from great_docs.renderer import exclude_classes
 
     exclude_classes({
         "package.ClassA": "Contained1",
     })
     ```
     """
-    from qrenderer._globals import EXCLUDE_CLASSES
+    from .._globals import EXCLUDE_CLASSES
 
     EXCLUDE_CLASSES.update(spec)

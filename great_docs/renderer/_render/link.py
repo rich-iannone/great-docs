@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
     from quartodoc.layout import Link
 
-    from qrenderer.typing import SummaryItem
+    from ..typing import SummaryItem
 
 
 class __RenderLink(RenderBase):

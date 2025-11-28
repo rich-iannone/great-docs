@@ -10,8 +10,8 @@ import griffe as gf
 import quartodoc.layout as layout
 from quartodoc import get_object
 
-from qrenderer import (
-    QRenderer,
+from . import (
+    Renderer,
     RenderDocAttribute,
     RenderDocClass,
     RenderDocFunction,
@@ -21,7 +21,7 @@ from qrenderer import (
 if TYPE_CHECKING:
     from types import MethodType
 
-    from qrenderer.typing import DocType
+    from .typing import DocType
 
 
 __all__ = (
@@ -67,7 +67,7 @@ def _render(obj: gf.Object):
         case layout.DocModule():
             _Render = RenderDocModule
 
-    return str(_Render(layout_obj, QRenderer()))
+    return str(_Render(layout_obj, Renderer()))
 
 
 def render_code_variable(code: str, name: str | None = None) -> str:

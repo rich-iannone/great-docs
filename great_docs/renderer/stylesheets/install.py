@@ -6,7 +6,7 @@ from pathlib import Path
 
 def install(dest_dir: str | Path | None = None):
     """
-    Install qrenderer stylesheets into a directory
+    Install renderer stylesheets into a directory
 
     If dest_dir is None, the stylesheets are install into the current
     working directory.
@@ -17,7 +17,7 @@ def install(dest_dir: str | Path | None = None):
         dest_dir = Path(dest_dir)
 
     exts = {".scss", ".css"}
-    resource = importlib.resources.files("qrenderer.stylesheets")
+    resource = importlib.resources.files("great_docs.renderer.stylesheets")
     with importlib.resources.as_file(resource) as styles_path:
         for src in styles_path.iterdir():
             if src.suffix in exts:

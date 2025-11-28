@@ -22,8 +22,8 @@ if TYPE_CHECKING:
 
     from quartodoc.layout import Page
 
-    from qrenderer import RenderDoc
-    from qrenderer.typing import RenderObjType, SummaryItem
+    from .doc import RenderDoc
+    from ..typing import RenderObjType, SummaryItem
 
 
 class __RenderPage(RenderBase):

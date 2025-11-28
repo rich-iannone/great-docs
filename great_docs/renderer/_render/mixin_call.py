@@ -104,7 +104,7 @@ class __RenderDocCallMixin(RenderDoc):
         """
         Return the parameters of the callable
         """
-        from qrenderer._globals import EXCLUDE_PARAMETERS
+        from .._globals import EXCLUDE_PARAMETERS
 
         obj = self.obj
         parameters = obj.parameters

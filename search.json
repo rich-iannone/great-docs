@@ -14,46 +14,66 @@
     "text": "Other Restrictions\n\nMisleading identity. Impersonating someone else for any reason, or pretending to be someone else to evade enforcement actions.\nFailing to credit sources. Not properly crediting the sources of content you contribute.\nPromotional materials. Sharing marketing or other commercial content in a way that is outside the norms of the community.\nIrresponsible communication. Failing to responsibly present content which includes, links or describes any other restricted behaviors."
   },
   {
-    "objectID": "citation.html",
-    "href": "citation.html",
-    "title": "Authors and Citation",
+    "objectID": "reference/GreatDocs.html",
+    "href": "reference/GreatDocs.html",
+    "title": "GreatDocs",
     "section": "",
-    "text": "Authors\nRich Iannone. Maintainer.\n\n\nCitation\nSource: CITATION.cff\nIannone R (2025). Great Docs: A comprehensive documentation site generator for Python packages. Python package version 0.1.0, https://github.com/rich-iannone/great-docs.\n@Manual{,\n  title = {Great Docs: A comprehensive documentation site generator for Python packages.},\n  author = {Rich Iannone},\n  year = {2025},\n  note = {Python package version 0.1.0},\n  url = {https://github.com/rich-iannone/great-docs},\n}"
+    "text": "GreatDocs(project_path=None, docs_dir=None)\nGreatDocs class for applying enhanced theming to quartodoc sites.\nThis class provides methods to install assets and configure Quarto projects with the great-docs styling and functionality.",
+    "crumbs": [
+      "Classes",
+      "GreatDocs"
+    ]
   },
   {
-    "objectID": "contributing.html",
-    "href": "contributing.html",
-    "title": "Contributing",
+    "objectID": "reference/GreatDocs.html#great_docs.GreatDocs.build",
+    "href": "reference/GreatDocs.html#great_docs.GreatDocs.build",
+    "title": "GreatDocs",
+    "section": "build",
+    "text": "build\nGreatDocs.build(watch=False)\nBuild the documentation site.\nRuns quartodoc build followed by quarto render.\n\nParameters\n\nwatch : bool = False\n\nIf True, watch for changes and rebuild automatically.\n\n\n\n\nExamples\nBuild the documentation:\nfrom great_docs import GreatDocs\n\ndocs = GreatDocs()\ndocs.build()\nBuild with watch mode:\ndocs.build(watch=True)",
+    "crumbs": [
+      "Classes",
+      "GreatDocs"
+    ]
+  },
+  {
+    "objectID": "reference/GreatDocs.html#great_docs.GreatDocs.install",
+    "href": "reference/GreatDocs.html#great_docs.GreatDocs.install",
+    "title": "GreatDocs",
+    "section": "install",
+    "text": "install\nGreatDocs.install(force=False, skip_quartodoc=False)\nInstall great-docs assets and configuration to the project.\nThis method copies the necessary CSS files and post-render script to your Quarto project directory, and automatically updates your _quarto.yml configuration file to use the great-docs styling.\n\nParameters\n\nforce : bool = False\n\nIf True, overwrite existing files without prompting. Default is False.\n\nskip_quartodoc : bool = False\n\nIf True, skip adding quartodoc configuration. Useful for testing or when quartodoc is not needed. Default is False.\n\n\n\n\nExamples\nInstall documentation in the current directory:\nfrom great_docs import GreatDocs\n\ndocs = GreatDocs()\ndocs.install()\nInstall documentation in a specific project directory, overwriting existing files:\ndocs = GreatDocs(\"/path/to/my/project\")\ndocs.install(force=True)\n\n\nSee Also\nuninstall : Remove great-docs assets and configuration",
+    "crumbs": [
+      "Classes",
+      "GreatDocs"
+    ]
+  },
+  {
+    "objectID": "reference/GreatDocs.html#great_docs.GreatDocs.preview",
+    "href": "reference/GreatDocs.html#great_docs.GreatDocs.preview",
+    "title": "GreatDocs",
+    "section": "preview",
+    "text": "preview\nGreatDocs.preview()\nBuild and serve the documentation site locally.\nRuns quartodoc build, then starts a local server with quarto preview.\n\nExamples\nPreview the documentation:\nfrom great_docs import GreatDocs\n\ndocs = GreatDocs()\ndocs.preview()",
+    "crumbs": [
+      "Classes",
+      "GreatDocs"
+    ]
+  },
+  {
+    "objectID": "reference/GreatDocs.html#great_docs.GreatDocs.uninstall",
+    "href": "reference/GreatDocs.html#great_docs.GreatDocs.uninstall",
+    "title": "GreatDocs",
+    "section": "uninstall",
+    "text": "uninstall\nGreatDocs.uninstall()\nRemove great-docs assets and configuration from the project.\nThis method deletes the great-docs CSS file and post-render script, and cleans up the _quarto.yml configuration file by removing great-docs-specific settings.\n\nExamples\nUninstall the docs from the current directory:\nfrom great_docs import GreatDocs\n\ndocs = GreatDocs()\ndocs.uninstall()\nUninstall from a specific project directory:\ndocs = GreatDocs(\"/path/to/my/project\")\ndocs.uninstall()\n\n\nSee Also\ninstall : Install great-docs assets and configuration",
+    "crumbs": [
+      "Classes",
+      "GreatDocs"
+    ]
+  },
+  {
+    "objectID": "reference/index.html",
+    "href": "reference/index.html",
+    "title": "API Reference",
     "section": "",
-    "text": "Thank you for your interest in contributing to Great Docs! We welcome contributions from the community."
-  },
-  {
-    "objectID": "contributing.html#reporting-issues",
-    "href": "contributing.html#reporting-issues",
-    "title": "Contributing",
-    "section": "Reporting Issues",
-    "text": "Reporting Issues\nIf you find a bug or have a suggestion for improvement:\n\nCheck if the issue already exists in the issue tracker\nIf not, create a new issue with a clear description\nInclude steps to reproduce (for bugs) or use cases (for features)"
-  },
-  {
-    "objectID": "contributing.html#submitting-pull-requests",
-    "href": "contributing.html#submitting-pull-requests",
-    "title": "Contributing",
-    "section": "Submitting Pull Requests",
-    "text": "Submitting Pull Requests\n\nFork the repository\nCreate a new branch for your changes: git checkout -b feature/your-feature-name\nMake your changes and commit them with clear, descriptive messages\nAdd tests for new functionality\nEnsure all tests pass: pytest\nPush to your fork and submit a pull request"
-  },
-  {
-    "objectID": "contributing.html#development-setup",
-    "href": "contributing.html#development-setup",
-    "title": "Contributing",
-    "section": "Development Setup",
-    "text": "Development Setup\n# Clone your fork\ngit clone https://github.com/YOUR-USERNAME/great-docs.git\ncd great-docs\n\n# Create a virtual environment\npython -m venv .venv\nsource .venv/bin/activate  # On Windows: .venv\\Scripts\\activate\n\n# Install in development mode\npip install -e \".[dev]\"\n\n# Run tests\npytest"
-  },
-  {
-    "objectID": "contributing.html#code-style",
-    "href": "contributing.html#code-style",
-    "title": "Contributing",
-    "section": "Code Style",
-    "text": "Code Style\n\nFollow PEP 8 guidelines\nUse meaningful variable and function names\nAdd docstrings to functions and classes\nKeep functions focused and concise"
+    "text": "Classes\nCore classes and types\n\n\n\nGreatDocs\nGreatDocs class for applying enhanced theming to quartodoc sites.\n\n\n\n\n\nFunctions\nPublic functions\n\n\n\nmain\nMain CLI entry point for great-docs."
   },
   {
     "objectID": "index.html",
@@ -145,6 +165,59 @@
     "title": "Features",
     "section": "Landing Page Metadata Sidebar",
     "text": "Landing Page Metadata Sidebar\nGreat Docs automatically creates a metadata sidebar on your landing page (like pkgdown) that displays:\n\nLinks: PyPI, source code, bug tracker\nLicense: Link to full license text\nDevelopers: Author information with contact links\nMeta: Python version requirements and optional dependencies\n\nThe sidebar is automatically populated from your pyproject.toml metadata. To enhance the developer information with rich metadata, add a [tool.great-docs] section:\n# In your pyproject.toml\n\n# Standard author information (required for PyPI)\n[project]\nauthors = [\n    {name = \"Your Name\", email = \"you@example.com\"}\n]\n\n# Rich author metadata for documentation (optional)\n[tool.great-docs]\n\n[[tool.great-docs.authors]]\nname = \"Your Name\"\nemail = \"you@example.com\"\nrole = \"Lead Developer\"           # Optional: e.g., \"Lead Developer\", \"Contributor\"\naffiliation = \"Your Organization\" # Optional: e.g., \"Posit\", \"University Name\"\ngithub = \"yourusername\"           # Optional: GitHub username\nhomepage = \"https://yoursite.com\" # Optional: Personal website\norcid = \"0000-0002-1234-5678\"     # Optional: ORCID ID or full URL\n\n# Add more authors by repeating the [[tool.great-docs.authors]] section\n[[tool.great-docs.authors]]\nname = \"Second Author\"\nemail = \"second@example.com\"\nrole = \"Contributor\"\ngithub = \"secondauthor\"\nSupported fields (all optional except name):\n\nname (required): Author’s full name\nemail: Email address (creates a clickable email icon)\nrole: Role in the project (e.g., “Lead Developer”, “Contributor”, “Maintainer”)\naffiliation: Organization or institution (e.g., “Posit”, “MIT”)\ngithub: GitHub username (creates a clickable GitHub icon)\nhomepage: Personal website URL (creates a clickable home icon)\norcid: ORCID identifier or full URL (creates a clickable ORCID icon)\n\nIf [tool.great-docs.authors] is not present, Great Docs falls back to using the standard project.authors with automatically extracted GitHub information from your repository URL.\nExample output in sidebar:\n## Developers\n\nYour Name\nLead Developer, Your Organization\n📧 🐙 🏠\nWhere the icons link to email, GitHub, and homepage respectively."
+  },
+  {
+    "objectID": "contributing.html",
+    "href": "contributing.html",
+    "title": "Contributing",
+    "section": "",
+    "text": "Thank you for your interest in contributing to Great Docs! We welcome contributions from the community."
+  },
+  {
+    "objectID": "contributing.html#reporting-issues",
+    "href": "contributing.html#reporting-issues",
+    "title": "Contributing",
+    "section": "Reporting Issues",
+    "text": "Reporting Issues\nIf you find a bug or have a suggestion for improvement:\n\nCheck if the issue already exists in the issue tracker\nIf not, create a new issue with a clear description\nInclude steps to reproduce (for bugs) or use cases (for features)"
+  },
+  {
+    "objectID": "contributing.html#submitting-pull-requests",
+    "href": "contributing.html#submitting-pull-requests",
+    "title": "Contributing",
+    "section": "Submitting Pull Requests",
+    "text": "Submitting Pull Requests\n\nFork the repository\nCreate a new branch for your changes: git checkout -b feature/your-feature-name\nMake your changes and commit them with clear, descriptive messages\nAdd tests for new functionality\nEnsure all tests pass: pytest\nPush to your fork and submit a pull request"
+  },
+  {
+    "objectID": "contributing.html#development-setup",
+    "href": "contributing.html#development-setup",
+    "title": "Contributing",
+    "section": "Development Setup",
+    "text": "Development Setup\n# Clone your fork\ngit clone https://github.com/YOUR-USERNAME/great-docs.git\ncd great-docs\n\n# Create a virtual environment\npython -m venv .venv\nsource .venv/bin/activate  # On Windows: .venv\\Scripts\\activate\n\n# Install in development mode\npip install -e \".[dev]\"\n\n# Run tests\npytest"
+  },
+  {
+    "objectID": "contributing.html#code-style",
+    "href": "contributing.html#code-style",
+    "title": "Contributing",
+    "section": "Code Style",
+    "text": "Code Style\n\nFollow PEP 8 guidelines\nUse meaningful variable and function names\nAdd docstrings to functions and classes\nKeep functions focused and concise"
+  },
+  {
+    "objectID": "citation.html",
+    "href": "citation.html",
+    "title": "Authors and Citation",
+    "section": "",
+    "text": "Authors\nRich Iannone. Maintainer.\n\n\nCitation\nSource: CITATION.cff\nIannone R (2025). Great Docs: A comprehensive documentation site generator for Python packages. Python package version 0.1.0, https://github.com/rich-iannone/great-docs.\n@Manual{,\n  title = {Great Docs: A comprehensive documentation site generator for Python packages.},\n  author = {Rich Iannone},\n  year = {2025},\n  note = {Python package version 0.1.0},\n  url = {https://github.com/rich-iannone/great-docs},\n}"
+  },
+  {
+    "objectID": "reference/main.html",
+    "href": "reference/main.html",
+    "title": "main",
+    "section": "",
+    "text": "main()\nMain CLI entry point for great-docs.",
+    "crumbs": [
+      "Functions",
+      "main"
+    ]
   },
   {
     "objectID": "license.html",

@@ -15,17 +15,14 @@ from quartodoc.pandoc.blocks import (
 )
 
 from ._pandoc.blocks import Meta
-from ._render import (
-    RenderDocAttribute,
-    RenderDocClass,
-    get_render_type,
-)
+from . import RenderDocAttribute, RenderDocClass
+from ._render import get_render_type
 from ._utils import griffe_to_doc, is_protocol, is_typealias, is_typevar
 
 if TYPE_CHECKING:
     import griffe as gf
 
-    from ._qrenderer import QRenderer
+    from ._renderer import Renderer
 
 
 @dataclass
@@ -33,7 +30,7 @@ class TypeSections(Block):
     protocols_items: list[layout.Item]
     typevars_items: list[layout.Item]
     typealiases_items: list[layout.Item]
-    renderer: QRenderer
+    renderer: Renderer
 
     def __post_init__(self):
         def make_render(item: layout.Item):
@@ -114,7 +111,7 @@ class TypeSections(Block):
 @dataclass
 class TypeInformation(Block):
     module_path: str
-    renderer: QRenderer
+    renderer: Renderer
     builder: Builder
 
     def __post_init__(self):

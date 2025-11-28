@@ -17,7 +17,7 @@ from quartodoc.layout import (
 )
 from quartodoc.pandoc.blocks import InlineContent
 
-from qrenderer import (
+from . import (
     RenderDoc,
     RenderDocAttribute,
     RenderDocClass,

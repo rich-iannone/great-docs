@@ -116,7 +116,7 @@ class __RenderDoc(RenderBase):
     sections:
       - title: RenderClasses
         - name: base.RenderBase
-          package: qrenderer._render
+          package: great_docs.renderer._render
         - RenderDoc
     ```
 

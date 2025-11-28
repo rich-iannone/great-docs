@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Literal
 
-from quartodoc.renderers.base import Renderer
+from quartodoc.renderers.base import Renderer as _Renderer
 
 from .typing_information import TypeInformation
 
@@ -14,17 +14,13 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class QRenderer(Renderer):
+class Renderer(_Renderer):
     """
     Render strings to markdown
 
     This class provides a scafolding around quartodocs base
     renderer and it helps connect the rendering done by this
     package to the official quartodoc renderer API.
-
-    See Also
-    --------
-    qrenderer.extend_base_class
     """
 
     header_level: int = 1

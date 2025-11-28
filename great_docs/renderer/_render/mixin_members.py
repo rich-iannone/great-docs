@@ -94,7 +94,7 @@ class __RenderDocMembersMixin(RenderDoc):
         For a module, this will be the objects at the top level that
         are not classes or functions.
         """
-        from qrenderer._globals import EXCLUDE_ATTRIBUTES
+        from .._globals import EXCLUDE_ATTRIBUTES
 
         exclude = EXCLUDE_ATTRIBUTES.get(self.obj.path, ())
         if isinstance(exclude, str):
@@ -126,7 +126,7 @@ class __RenderDocMembersMixin(RenderDoc):
                 pass
         ```
         """
-        from qrenderer._globals import EXCLUDE_CLASSES
+        from .._globals import EXCLUDE_CLASSES
 
         exclude = EXCLUDE_CLASSES.get(self.obj.path, ())
         if isinstance(exclude, str):
@@ -148,7 +148,7 @@ class __RenderDocMembersMixin(RenderDoc):
         For a class, this will be the instance methods, static methods
         and class methods.
         """
-        from qrenderer._globals import EXCLUDE_FUNCTIONS
+        from .._globals import EXCLUDE_FUNCTIONS
 
         exclude = EXCLUDE_FUNCTIONS.get(self.obj.path, ())
         if isinstance(exclude, str):

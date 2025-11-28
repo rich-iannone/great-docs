@@ -15,7 +15,7 @@ from .base import RenderBase
 if TYPE_CHECKING:
     from quartodoc.layout import Section
 
-    from qrenderer.typing import RenderObjType
+    from ..typing import RenderObjType
 
 
 class __RenderSection(RenderBase):

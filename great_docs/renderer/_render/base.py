@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
     from quartodoc import layout
 
-    from .. import QRenderer
+    from .. import Renderer
     from ..typing import SummaryItem
 
 
@@ -40,7 +40,7 @@ class __RenderBase(Block):
     )
     """Layout object to be documented"""
 
-    renderer: QRenderer
+    renderer: Renderer
     """Renderer that holds the configured values"""
 
     level: int = 1
@@ -209,5 +209,5 @@ class RenderBase(__RenderBase):
         #
         # The "filling in" should only happen when extending the Render*
         # classes outside the package.
-        if cls.__module__[:10] != "qrenderer.":
+        if cls.__module__[:10] != "great_docs":
             extend_base_class(cls)

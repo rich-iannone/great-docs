@@ -21,7 +21,7 @@ from .page import RenderPage
 from .section import RenderSection
 
 if TYPE_CHECKING:
-    from qrenderer.typing import Documentable, RenderObjType
+    from ..typing import Documentable, RenderObjType
 
 
 _class_mapping: dict[type[Documentable], type[RenderObjType]] = {

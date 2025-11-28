@@ -146,3 +146,7 @@ __marimo__/
 
 /*.md
 !README.md
+
+# Quartodoc generated files
+docs/objects.json
+docs/_site/

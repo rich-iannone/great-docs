@@ -1116,6 +1116,7 @@ title: "Code of Conduct"
         if margin_content:
             qmd_content = f"""---
 title: ""
+toc: false
 ---
 
 ::: {{.column-margin}}
@@ -1127,6 +1128,7 @@ title: ""
         else:
             qmd_content = f"""---
 title: ""
+toc: false
 ---
 
 {readme_content}

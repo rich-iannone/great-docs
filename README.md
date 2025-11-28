@@ -406,18 +406,6 @@ The generated workflow includes three jobs:
 
 All builds are cached for faster execution on subsequent runs.
 
-### Troubleshooting
-
-**CyclicAliasError during build**: If the build fails with a `CyclicAliasError` for certain exports, you may need to exclude problematic items from your configuration. This can happen with re-exported constants or objects that create circular references in the import graph.
-
-**quartodoc not installed**: Great Docs requires `quartodoc` to generate API documentation. Install it with:
-
-```bash
-pip install quartodoc
-```
-
-Your documentation is now live with Great Docs styling!
-
 ## Customization
 
 ### Landing Page Metadata Sidebar

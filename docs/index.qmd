@@ -34,11 +34,11 @@ toc: false
 [Citing great-docs](citation.qmd)
 :::
 
-# Great Docs for Python Documentation Sites
+## Great Docs for Python Documentation Sites
 
 A comprehensive documentation site generator for Python packages. Great Docs automatically creates beautiful, professional documentation sites with auto-generated API references, smart navigation, and modern styling.
 
-## Features
+### Features
 
 - **one-command setup**: single `great-docs init` creates your entire docs site
 - **auto-generated API docs**: automatically discovers and documents your package's API
@@ -51,17 +51,17 @@ A comprehensive documentation site generator for Python packages. Great Docs aut
 - **safe introspection**: works with packages containing non-Python components
 - **zero configuration**: works out of the box with sensible defaults
 
-## Quick Start
+### Quick Start
 
-### Installation
+#### Installation
 
-#### From PyPI (when published)
+##### From PyPI (when published)
 
 ```bash
 pip install great-docs
 ```
 
-#### From GitHub
+##### From GitHub
 
 Install the latest version directly from the GitHub repository:
 
@@ -72,31 +72,31 @@ pip install git+https://github.com/rich-iannone/great-docs.git
 Or install a specific branch, tag, or commit:
 
 ```bash
-# Install from a specific branch
+## Install from a specific branch
 pip install git+https://github.com/rich-iannone/great-docs.git@main
 
-# Install from a specific tag
+## Install from a specific tag
 pip install git+https://github.com/rich-iannone/great-docs.git@v0.1.0
 
-# Install from a specific commit
+## Install from a specific commit
 pip install git+https://github.com/rich-iannone/great-docs.git@abc1234
 ```
 
 For development or editable installation:
 
 ```bash
-# Clone the repository
+## Clone the repository
 git clone https://github.com/rich-iannone/great-docs.git
 cd great-docs
 
-# Install in editable mode
+## Install in editable mode
 pip install -e .
 
-# Or install with development dependencies
+## Or install with development dependencies
 pip install -e ".[dev]"
 ```
 
-### Apply to Your Project
+#### Apply to Your Project
 
 Navigate to your project root directory and run:
 
@@ -117,98 +117,98 @@ The installer will:
 
 This up-and-running site sets you up for success with your documentation dreams.
 
-## What Gets Enhanced
+### What Gets Enhanced
 
 Great Docs automatically creates a complete documentation site with:
 
-### Nice Visuals
+#### Nice Visuals
 
 - **function signatures** styled with monospace fonts
 - **type annotations** with improved formatting
 - **parameter descriptions** with better spacing
 - **code blocks** with enhanced syntax highlighting
 
-### Smart Labeling
+#### Smart Labeling
 
 - **classes** get green labels and styling
 - **methods** get blue labels (e.g., `Class.method()`)
 - **functions** get orange labels (e.g., `function()`)
 
-### Responsive Design
+#### Responsive Design
 
 - mobile-friendly navigation
 - optimized sidebar behavior
 - touch-friendly interface elements
 
-## Usage
+### Usage
 
-### CLI Commands
+#### CLI Commands
 
 ```bash
-# Initialize the docs (auto-detects docs directory)
+## Initialize the docs (auto-detects docs directory)
 great-docs init
 
-# Initialize to specific docs directory
+## Initialize to specific docs directory
 great-docs init --docs-dir docs
 
-# Initialize to specific project
+## Initialize to specific project
 great-docs init --project-path /path/to/project
 
-# Initialize with specific docs directory in a project
+## Initialize with specific docs directory in a project
 great-docs init --project-path /path/to/project --docs-dir documentation
 
-# Force overwrite existing files
+## Force overwrite existing files
 great-docs init --force
 
-# Build documentation
+## Build documentation
 great-docs build
 
-# Build and watch for changes
+## Build and watch for changes
 great-docs build --watch
 
-# Build and serve locally with live preview
+## Build and serve locally with live preview
 great-docs preview
 
-# Remove docs from project
+## Remove docs from project
 great-docs uninstall
 
-# Uninstall from specific docs directory
+## Uninstall from specific docs directory
 great-docs uninstall --docs-dir docs
 ```
 
-### Python API
+#### Python API
 
 ```python
 from great_docs import GreatDocs
 
-# Initialize for current directory (auto-detects docs dir)
+## Initialize for current directory (auto-detects docs dir)
 docs = GreatDocs()
 
-# Install docs files and configuration
+## Install docs files and configuration
 docs.install()
 
-# Build documentation
+## Build documentation
 docs.build()
 
-# Build with watch mode
+## Build with watch mode
 docs.build(watch=True)
 
-# Preview locally
+## Preview locally
 docs.preview()
 
-# Initialize with specific project root
+## Initialize with specific project root
 docs = GreatDocs(project_path="/path/to/project")
 docs.install()
 
-# Initialize with specific docs directory
+## Initialize with specific docs directory
 docs = GreatDocs(project_path="/path/to/project", docs_dir="docs")
 docs.install()
 
-# Remove the docs
+## Remove the docs
 docs.uninstall()
 ```
 
-## What Gets Installed
+### What Gets Installed
 
 When you run `great-docs init`, the following files are added to your documentation directory:
 
@@ -224,7 +224,7 @@ your-project/
 
 If you have an existing `_quarto.yml` or documentation directory, great-docs will detect and use it.
 
-### Auto-Generated Configuration
+#### Auto-Generated Configuration
 
 The installer intelligently configures your documentation site:
 
@@ -270,7 +270,7 @@ The installer intelligently configures your documentation site:
 If your package includes items that can't be auto-documented (e.g., Rust types, C bindings), you can exclude them in your `pyproject.toml`:
 
 ```toml
-# In your pyproject.toml
+## In your pyproject.toml
 [tool.great-docs]
 exclude = ["Node", "Edge"]  # Items to exclude from documentation
 ```
@@ -278,10 +278,10 @@ exclude = ["Node", "Edge"]  # Items to exclude from documentation
 Alternatively, you can use `__gt_exclude__` directly in your `__init__.py` (legacy method):
 
 ```python
-# In your package's __init__.py
+## In your package's __init__.py
 __all__ = ["Graph", "Node", "Edge", "some_function"]
 
-# Exclude items that can't be auto-documented
+## Exclude items that can't be auto-documented
 __gt_exclude__ = ["Node", "Edge"]  # Rust types
 ```
 
@@ -296,7 +296,7 @@ Great Docs will search for your package in standard locations including:
 
 If `__all__` is not found, Great Docs will create a basic configuration and you can manually add sections.
 
-### Smart Method Splitting
+#### Smart Method Splitting
 
 Great Docs uses **griffe** to analyze your package without importing it. This enables:
 
@@ -340,7 +340,7 @@ quartodoc:
 
 This prevents overwhelming single-page documentation and improves navigation for large classes.
 
-## Building Your Documentation
+### Building Your Documentation
 
 After installation, the easiest way to build your documentation:
 
@@ -350,7 +350,7 @@ great-docs build
 
 This single command handles all the build steps for you, with a progress indicator so you can see the activity.
 
-### Detailed Steps
+#### Detailed Steps
 
 If you prefer to run commands separately or customize the workflow:
 
@@ -379,7 +379,7 @@ If you prefer to run commands separately or customize the workflow:
 
 Your documentation is now live with great-docs styling!
 
-### Troubleshooting
+#### Troubleshooting
 
 **CyclicAliasError during build**: If the build fails with a `CyclicAliasError` for certain exports, you may need to exclude problematic items from your configuration. This can happen with re-exported constants or objects that create circular references in the import graph.
 
@@ -391,9 +391,9 @@ pip install quartodoc
 
 Your documentation is now live with Great Docs styling!
 
-## Customization
+### Customization
 
-### Landing Page Metadata Sidebar
+#### Landing Page Metadata Sidebar
 
 Great Docs automatically creates a metadata sidebar on your landing page (like pkgdown) that displays:
 
@@ -405,15 +405,15 @@ Great Docs automatically creates a metadata sidebar on your landing page (like p
 The sidebar is automatically populated from your `pyproject.toml` metadata. To enhance the developer information with rich metadata, add a `[tool.great-docs]` section:
 
 ```toml
-# In your pyproject.toml
+## In your pyproject.toml
 
-# Standard author information (required for PyPI)
+## Standard author information (required for PyPI)
 [project]
 authors = [
     {name = "Your Name", email = "you@example.com"}
 ]
 
-# Rich author metadata for documentation (optional)
+## Rich author metadata for documentation (optional)
 [tool.great-docs]
 
 [[tool.great-docs.authors]]
@@ -425,7 +425,7 @@ github = "yourusername"           # Optional: GitHub username
 homepage = "https://yoursite.com" # Optional: Personal website
 orcid = "0000-0002-1234-5678"     # Optional: ORCID ID or full URL
 
-# Add more authors by repeating the [[tool.great-docs.authors]] section
+## Add more authors by repeating the [[tool.great-docs.authors]] section
 [[tool.great-docs.authors]]
 name = "Second Author"
 email = "second@example.com"
@@ -448,7 +448,7 @@ If `[tool.great-docs.authors]` is not present, Great Docs falls back to using th
 **Example output in sidebar**:
 
 ```
-## Developers
+### Developers
 
 Your Name
 Lead Developer, Your Organization
@@ -457,7 +457,7 @@ Lead Developer, Your Organization
 
 Where the icons link to email, GitHub, and homepage respectively.
 
-## Configuration
+### Configuration
 
 This all should work with any existing `_quarto.yml` configuration. After installation, your config will include:
 
@@ -473,7 +473,7 @@ format:
       - great-docs.css
 ```
 
-## License
+### License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 

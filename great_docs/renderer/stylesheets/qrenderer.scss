@@ -1,0 +1,304 @@
+// Ref:
+// - https://getbootstrap.com/docs/5.3/utilities/spacing/
+// - https://github.com/twbs/bootstrap/blob/main/scss/_variables.scss
+// - https://quarto.org/docs/output-formats/html-themes-more.html
+
+/*-- scss:defaults --*/
+
+/*-- scss:mixins --*/
+$headings-font-weight: 300 !default;
+$table-striped-bg: mix($primary, #FDFDFD, 2%);
+$table-striped-order: even;
+
+/*-- scss:rules --*/
+$class-symbol-color: $primary;
+$method-symbol-color: mix($primary, $teal-500, 20%);
+$function-symbol-color: mix($primary, $cyan-500, 20%);
+$alias-symbol-color: mix($primary, $green-500, 20%);
+$module-symbol-color: mix($primary, $red-500, 20%);
+$attribute-symbol-color: mix($primary, $orange-500, 20%);
+$type-symbol-color: mix($primary, $purple-500, 20%);
+$typevar-symbol-color: mix($primary, $yellow-500, 20%);
+$signature-background-color: shade-color(tint-color($primary, 96%), 2%);
+
+a {
+   text-decoration: none;
+}
+
+h2, .h2 {
+   border-bottom: 0rem;
+}
+
+// Set headings boldness back to the bootstrap default.
+// quarto changes it for h1, h2, h3!
+h1, .h2, h2, .h2, h3, .h3 {
+   @extend .fw-medium;
+}
+
+h5, .h5 {
+   @extend .mt-3;
+}
+
+table {
+   @extend .table-bordered;
+   @extend .table-striped;
+}
+
+.table > tbody {
+   // quarto adds a bottom color that is different from the border color,
+   // that looks good the default
+   border-bottom-color: $table-border-color;
+}
+
+// The default background color for the dropdown is
+// off-white and it washes out the text color.
+.navbar .dropdown-item {
+   color: $gray-800;
+}
+
+// docstring spacing and indentation
+section.doc-attributes > section.doc-attribute,
+section.doc-methods > section.doc-method {
+   @extend .ps-4;
+   border-left: 0.025rem solid $gray-500;
+   backgroud-color: cyan;
+}
+
+// docstring signatures
+.doc-signature > div:first-child {
+   background-color: $signature-background-color;
+}
+
+.doc-signature code {
+   max-height: 20rem;
+   overflow: auto;
+}
+
+.doc-signature > p:first-child {
+   @extend .my-3;
+   border-radius: 0.25rem;
+}
+
+.doc-signature > p:first-child code {
+   @extend .p-2;
+   display: block;
+}
+
+.doc-signature > p:first-child code a {
+   color: $primary;
+}
+
+// docstring object-name
+
+.doc-object span.doc-object-name:not(h1.title > span) {
+   opacity: 0.85;
+}
+
+// docstring definition-items
+.doc-text dl > dt,
+.doc-definition-items dt,
+.doc-see-also > dl > dt {
+   font-weight: normal;
+}
+
+.doc-text dl > dt,
+.doc-definition-items > dl > dt:not(:first-child) {
+   @extend .mt-3;
+}
+
+.doc-text dl > dd,
+.doc-definition-items > dl > dd,
+.doc-see-also > dl > dd {
+   @extend .mt-1;
+   @extend .mb-0;
+   @extend .ms-5;
+}
+
+.doc-definition-items > dl > dd > table {
+   min-width: 33%;
+   width: 0;
+}
+
+.doc-definition-items > dl > dd > table > thead {
+   border-top: 0rem solid $border-color;
+   border-bottom: 0.15em solid $border-color;
+}
+
+.doc-definition-items > dl > dd > table td {
+   @extend .px-2;
+   @extend .py-1;
+}
+
+// Definitions that are code
+.doc-definition-items dt code,
+.doc-signature > p > code {
+   @extend .p-2;
+   display: block;
+   font-weight: normal;
+   color: var(--quarto-hl-ot-color);
+   background-color: $signature-background-color;
+}
+
+.doc-text dt code {
+   @extend .p-1;
+   font-weight: normal;
+   color: var(--quarto-hl-ot-color);
+   background-color: $signature-background-color;
+}
+
+.doc-definition-items dt code a,
+.doc-signature > p > code a {
+   color: $primary;
+}
+
+// docstring object symbols
+.content code.doc-symbol {
+   font-size: 0.9rem;
+}
+
+// Reference/Index
+
+// Give all the tables on the index page the same with.
+// It looks better, but as table cells do not respond to
+// min-width styling, this is not a perfect solution.
+.doc-summary-table td:first-child{
+   width: 30%;
+}
+
+// sidebar
+.sidebar nav li > a > code {
+   color: $code-color;
+   background-color: $gray-100;
+   padding: 0.075rem 0.075rem;
+}
+
+.sidebar code.doc-symbol {
+   @extend .px-1;
+   font-size: 0.55rem;
+}
+
+.sidebar ul > li > a:has(.doc-symbol) {
+   white-space: nowrap;
+}
+
+.content code.doc-symbol-class,
+.sidebar code.doc-symbol-class {
+   color: $class-symbol-color;
+   background-color: tint-color($class-symbol-color, 95%);
+}
+
+.content code.doc-symbol-method,
+.sidebar code.doc-symbol-method {
+   color: $method-symbol-color;
+   background-color: tint-color($method-symbol-color, 95%);
+}
+
+.content code.doc-symbol-module,
+.sidebar code.doc-symbol-module {
+   color: $module-symbol-color;
+   background-color: tint-color($module-symbol-color, 95%);
+}
+
+.content code.doc-symbol-function,
+.sidebar code.doc-symbol-function {
+   color: $function-symbol-color;
+   background-color: tint-color($function-symbol-color, 95%);
+}
+
+.content code.doc-symbol-alias,
+.sidebar code.doc-symbol-alias {
+   color: $alias-symbol-color;
+   background-color: tint-color($alias-symbol-color, 95%);
+}
+
+.content code.doc-symbol-attribute,
+.sidebar code.doc-symbol-attribute {
+   color: $attribute-symbol-color;
+   background-color: tint-color($attribute-symbol-color, 95%);
+}
+
+.content code.doc-symbol-type,
+.sidebar code.doc-symbol-type {
+   color: $type-symbol-color;
+   background-color: tint-color($type-symbol-color, 95%);
+}
+
+.content code.doc-symbol-typevar,
+.sidebar code.doc-symbol-typevar {
+   color: $typevar-symbol-color;
+   background-color: tint-color($typevar-symbol-color, 95%);
+}
+
+code.doc-symbol-class::after {
+   content: "class";
+}
+
+code.doc-symbol-method::after {
+   content: "meth";
+}
+
+code.doc-symbol-module::after {
+   content: "mod";
+}
+
+code.doc-symbol-function::after {
+   content: "func";
+}
+
+code.doc-symbol-alias::after {
+   content: "alias";
+}
+
+code.doc-symbol-attribute::after {
+   content: "attr";
+}
+
+code.doc-symbol-type::after {
+   content: "type";
+}
+
+code.doc-symbol-typevar::after {
+   content: "typevar";
+}
+
+// docstring object labels
+
+.content code.doc-label {
+   @extend .fw-normal;
+   @extend .small;
+   font-size: 0.785rem;
+   color: $gray-800;
+   background-color: $gray-100;
+}
+
+.content code.doc-label-staticmethod::after {
+   content: "staticmethod";
+}
+
+.content code.doc-label-classmethod::after {
+   content: "classmethod";
+}
+
+.content code.doc-label-abstractmethod::after {
+   content: "abstractmethod";
+}
+
+.content code.doc-label-cached::after {
+   content: "cached";
+}
+
+.content code.doc-label-property::after {
+   content: "property";
+}
+
+.content code.doc-label-overload::after {
+   content: "typing.overload";
+}
+
+.content code.doc-label-protocol::after {
+   content: "Protocol";
+}
+
+/*-- scss:functions --*/
+
+/*-- scss:uses --*/

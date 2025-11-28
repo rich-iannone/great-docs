@@ -887,6 +887,18 @@ title: "Authors and Citation"
         with open(readme_path, "r", encoding="utf-8") as f:
             readme_content = f.read()
 
+        # Adjust heading levels: bump all headings up by one level
+        # This prevents h1 from becoming paragraphs and keeps proper hierarchy
+        # Replace headings from highest to lowest level to avoid double-replacement
+        import re
+
+        readme_content = re.sub(r"^######\s+", r"####### ", readme_content, flags=re.MULTILINE)
+        readme_content = re.sub(r"^#####\s+", r"###### ", readme_content, flags=re.MULTILINE)
+        readme_content = re.sub(r"^####\s+", r"##### ", readme_content, flags=re.MULTILINE)
+        readme_content = re.sub(r"^###\s+", r"#### ", readme_content, flags=re.MULTILINE)
+        readme_content = re.sub(r"^##\s+", r"### ", readme_content, flags=re.MULTILINE)
+        readme_content = re.sub(r"^#\s+", r"## ", readme_content, flags=re.MULTILINE)
+
         # Get package metadata for sidebar
         metadata = self._get_package_metadata()
 

@@ -901,7 +901,7 @@ title: "Authors and Citation"
         if package_name:
             pypi_url = f"https://pypi.org/project/{package_name}/"
             margin_sections.append("#### Links\n")
-            margin_sections.append(f"[View on PyPI]({pypi_url})  ")
+            margin_sections.append(f"[View on PyPI]({pypi_url})<br>")
             links_added.append("pypi")
 
         if metadata.get("urls"):
@@ -924,12 +924,12 @@ title: "Authors and Citation"
 
                 # Skip if display_name is None (homepage/documentation)
                 if display_name:
-                    margin_sections.append(f"[{display_name}]({url})  ")
+                    margin_sections.append(f"[{display_name}]({url})<br>")
 
         # License section
         if license_link:
             margin_sections.append("\n#### License\n")
-            margin_sections.append(f"[Full license]({license_link})  ")
+            margin_sections.append(f"[Full license]({license_link})<br>")
         elif metadata.get("license"):
             margin_sections.append("\n#### License\n")
             margin_sections.append(f"{metadata['license']}")
@@ -948,7 +948,7 @@ title: "Authors and Citation"
             coc_path = package_root / ".github" / "CODE_OF_CONDUCT.md"
 
         if contributing_path.exists():
-            community_items.append("[Contributing guide](contributing.qmd)  ")
+            community_items.append("[Contributing guide](contributing.qmd)<br>")
             # Create contributing.qmd
             with open(contributing_path, "r", encoding="utf-8") as f:
                 contributing_content = f.read()
@@ -970,7 +970,7 @@ title: "Contributing"
             print(f"Created {contributing_qmd}")
 
         if coc_path.exists():
-            community_items.append("[Code of conduct](code-of-conduct.qmd)  ")
+            community_items.append("[Code of conduct](code-of-conduct.qmd)<br>")
             # Create code-of-conduct.qmd
             with open(coc_path, "r", encoding="utf-8") as f:
                 coc_content = f.read()
@@ -1100,7 +1100,7 @@ title: "Code of Conduct"
 
         if meta_items:
             margin_sections.append("\n#### Meta\n")
-            margin_sections.append("  \n".join(meta_items))
+            margin_sections.append("<br>\n".join(meta_items))
 
         # Citation section (if CITATION.cff exists)
         if citation_link:

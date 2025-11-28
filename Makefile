@@ -125,3 +125,15 @@ test-cli: ## Test the CLI in a temp directory
 dev-setup: ## Set up development environment
 	@pip install -e ".[dev]"
 	@echo "Development environment ready"
+
+.PHONY: docs-build
+docs-build: ## Build documentation with Quarto
+	@cd docs && quarto render
+
+.PHONY: docs-preview
+docs-preview: ## Preview documentation locally
+	@cd docs && quarto preview
+
+.PHONY: docs-install
+docs-install: ## Install documentation dependencies
+	@pip install -e ".[docs]"

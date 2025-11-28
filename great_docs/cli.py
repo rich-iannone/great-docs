@@ -182,22 +182,16 @@ def setup_github_pages(project_path, docs_dir, main_branch, python_version, forc
         # Load template
         try:
             # For Python 3.9+
-            import importlib.resources as resources
+            from importlib.resources import files
 
-            template_content = (
-                resources.files("great_docs.assets")
-                .joinpath("github-workflow-template.yml")
-                .read_text()
-            )
-        except AttributeError:
-            # For Python 3.8
-            import importlib_resources as resources
+            template_file = files("great_docs").joinpath("assets/github-workflow-template.yml")
+            template_content = template_file.read_text()
+        except (ImportError, AttributeError):
+            # For Python 3.8 or earlier
+            from importlib_resources import files
 
-            template_content = (
-                resources.files("great_docs.assets")
-                .joinpath("github-workflow-template.yml")
-                .read_text()
-            )
+            template_file = files("great_docs").joinpath("assets/github-workflow-template.yml")
+            template_content = template_file.read_text()
 
         # Replace placeholders
         workflow_content = template_content.format(

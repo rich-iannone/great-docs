@@ -251,3 +251,88 @@ def some_function():
         assert "Node" not in exports
         assert "Edge" not in exports
         assert len(exports) == 2
+
+
+def test_setup_github_pages_command():
+    """Test the setup-github-pages CLI command."""
+    from click.testing import CliRunner
+    from great_docs.cli import setup_github_pages
+
+    runner = CliRunner()
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Run the command
+        result = runner.invoke(setup_github_pages, ["--project-path", tmp_dir, "--force"])
+
+        # Check it succeeded
+        assert result.exit_code == 0
+        assert "✅ Created GitHub Actions workflow" in result.output
+
+        # Check the file was created
+        workflow_file = Path(tmp_dir) / ".github" / "workflows" / "docs.yml"
+        assert workflow_file.exists()
+
+        # Check the content is valid YAML and contains expected keys
+        import yaml
+
+        with open(workflow_file) as f:
+            workflow = yaml.safe_load(f)
+
+        assert "name" in workflow
+        assert workflow["name"] == "CI Docs"
+        assert "jobs" in workflow
+        assert "build-docs" in workflow["jobs"]
+        assert "publish-docs" in workflow["jobs"]
+        assert "preview-docs" in workflow["jobs"]
+
+
+def test_setup_github_pages_custom_options():
+    """Test setup-github-pages with custom options."""
+    from click.testing import CliRunner
+    from great_docs.cli import setup_github_pages
+
+    runner = CliRunner()
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        result = runner.invoke(
+            setup_github_pages,
+            [
+                "--project-path",
+                tmp_dir,
+                "--docs-dir",
+                "site",
+                "--main-branch",
+                "develop",
+                "--python-version",
+                "3.12",
+                "--force",
+            ],
+        )
+
+        assert result.exit_code == 0
+
+        workflow_file = Path(tmp_dir) / ".github" / "workflows" / "docs.yml"
+        content = workflow_file.read_text()
+
+        # Check customizations were applied
+        assert "site" in content
+        assert "develop" in content
+        assert "3.12" in content
+
+
+def test_setup_github_pages_overwrite_protection():
+    """Test that setup-github-pages protects against overwrites."""
+    from click.testing import CliRunner
+    from great_docs.cli import setup_github_pages
+
+    runner = CliRunner()
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Create the workflow first
+        runner.invoke(setup_github_pages, ["--project-path", tmp_dir, "--force"])
+
+        # Try again without force
+        result = runner.invoke(setup_github_pages, ["--project-path", tmp_dir], input="n\n")
+
+        assert result.exit_code == 1
+        assert "Aborted" in result.output

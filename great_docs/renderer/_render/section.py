@@ -54,7 +54,7 @@ class __RenderSection(RenderBase):
         from . import get_render_type
 
         render_objs: list[RenderObjType] = [
-            get_render_type(c)(c, self.renderer)  # type: ignore
+            get_render_type(c)(c, self.renderer)  # pyright: ignore[reportCallIssue,reportArgumentType]
             for c in self.section.contents
         ]
         rows = [row for r in render_objs for row in r.render_summary()]

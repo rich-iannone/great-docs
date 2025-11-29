@@ -51,7 +51,7 @@ class __RenderPage(RenderBase):
 
         level = self.level if self._has_one_object else self.level + 1
         render_objs: list[RenderObjType] = [
-            get_render_type(c)(c, self.renderer, level)  # type: ignore
+            get_render_type(c)(c, self.renderer, level)  # pyright: ignore[reportCallIssue,reportArgumentType]
             for c in self.page.contents
         ]
         return render_objs

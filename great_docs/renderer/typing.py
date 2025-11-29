@@ -28,9 +28,7 @@ from . import (
     RenderSection,
 )
 
-DisplayNameFormat: TypeAlias = Literal[
-    "full", "name", "short", "relative", "canonical"
-]
+DisplayNameFormat: TypeAlias = Literal["full", "name", "short", "relative", "canonical"]
 DocObjectKind: TypeAlias = Literal[
     "module",
     "class",

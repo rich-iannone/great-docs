@@ -22,8 +22,8 @@ if TYPE_CHECKING:
 
     from quartodoc.layout import Page
 
-    from .doc import RenderDoc
     from ..typing import RenderObjType, SummaryItem
+    from .doc import RenderDoc
 
 
 class __RenderPage(RenderBase):
@@ -75,9 +75,7 @@ class __RenderPage(RenderBase):
         header = RawHTMLBlockTag(
             "header",
             Div(title, Attr(classes=["quarto-title"])),
-            Attr(
-                "title-block-header", classes=["quarto-title-block", "default"]
-            ),
+            Attr("title-block-header", classes=["quarto-title-block", "default"]),
         )
         return header
 
@@ -106,9 +104,7 @@ class __RenderPage(RenderBase):
             )
             raise ValueError(msg)
         else:
-            items = [
-                row for d in self.render_objs for row in d.render_summary()
-            ]
+            items = [row for d in self.render_objs for row in d.render_summary()]
         return items
 
 

@@ -64,11 +64,7 @@ class __RenderDocClass(RenderDocMembersMixin, RenderDocCallMixin, RenderDoc):
 
         # We only want to extend the sections for dataclasses
         # that do not have a parameters section
-        if (
-            not self.is_dataclass
-            or "parameters" in set(section_kinds)
-            or not len(self.parameters)
-        ):
+        if not self.is_dataclass or "parameters" in set(section_kinds) or not len(self.parameters):
             return sections, section_kinds
 
         # Create Parameters

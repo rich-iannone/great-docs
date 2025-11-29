@@ -14,8 +14,8 @@ from quartodoc.pandoc.blocks import (
     Header,
 )
 
-from ._pandoc.blocks import Meta
 from . import RenderDocAttribute, RenderDocClass
+from ._pandoc.blocks import Meta
 from ._render import get_render_type
 from ._utils import griffe_to_doc, is_protocol, is_typealias, is_typevar
 
@@ -154,9 +154,7 @@ class TypeInformation(Block):
         return TypeSections(
             protocols_items=[make_item(m) for m in members if is_protocol(m)],
             typevars_items=[make_item(m) for m in members if is_typevar(m)],
-            typealiases_items=[
-                make_item(m) for m in members if is_typealias(m)
-            ],
+            typealiases_items=[make_item(m) for m in members if is_typealias(m)],
             renderer=self.renderer,
         )
 

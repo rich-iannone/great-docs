@@ -62,9 +62,7 @@ class RawHTMLBlockTag(Block):
         """
         content = blockcontent_to_str(self.content)
         attr = (self.attr and f" {self.attr.html}") or ""
-        return RawHTMLBlockTag_TPL.format(
-            tag=self.tag, content=content, attr=attr
-        )
+        return RawHTMLBlockTag_TPL.format(tag=self.tag, content=content, attr=attr)
 
 
 @dataclass

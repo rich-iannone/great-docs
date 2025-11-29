@@ -37,13 +37,9 @@ class __RenderDocAttribute(RenderDoc):
 
         name = self.signature_name if self.show_signature_name else ""
         annotation = (
-            pretty_code(str(self.render_annotation()))
-            if self.show_signature_annotation
-            else ""
+            pretty_code(str(self.render_annotation())) if self.show_signature_annotation else ""
         )
-        declaration = str(
-            self.render_variable_definition(name, annotation, self.obj.value)
-        )
+        declaration = str(self.render_variable_definition(name, annotation, self.obj.value))
         return Div(
             Code(declaration).html,
             Attr(classes=["doc-signature", f"doc-{self.kind}"]),

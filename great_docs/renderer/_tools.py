@@ -11,11 +11,11 @@ import quartodoc.layout as layout
 from quartodoc import get_object
 
 from . import (
-    Renderer,
     RenderDocAttribute,
     RenderDocClass,
     RenderDocFunction,
     RenderDocModule,
+    Renderer,
 )
 
 if TYPE_CHECKING:

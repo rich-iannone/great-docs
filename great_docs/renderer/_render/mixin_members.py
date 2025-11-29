@@ -101,11 +101,7 @@ class __RenderDocMembersMixin(RenderDoc):
             exclude = (exclude,)
         exclude = set(exclude)
 
-        return [
-            x
-            for x in self.doc.members
-            if isDoc.Attribute(x) and x.name not in exclude
-        ]
+        return [x for x in self.doc.members if isDoc.Attribute(x) and x.name not in exclude]
 
     @cached_property
     def classes(self) -> list[DocClass]:
@@ -133,11 +129,7 @@ class __RenderDocMembersMixin(RenderDoc):
             exclude = (exclude,)
         exclude = set(exclude)
 
-        return [
-            x
-            for x in self.doc.members
-            if isDoc.Class(x) and x.name not in exclude
-        ]
+        return [x for x in self.doc.members if isDoc.Class(x) and x.name not in exclude]
 
     @cached_property
     def functions(self) -> list[DocFunction]:
@@ -155,41 +147,25 @@ class __RenderDocMembersMixin(RenderDoc):
             exclude = (exclude,)
         exclude = set(exclude)
 
-        return [
-            x
-            for x in self.doc.members
-            if isDoc.Function(x) and x.name not in exclude
-        ]
+        return [x for x in self.doc.members if isDoc.Function(x) and x.name not in exclude]
 
     def render_classes(self) -> RenderedMembersGroup | None:
         """
         Render the class members of the Doc
         """
-        return (
-            self._render_members_group("classes")
-            if self.show_classes
-            else None
-        )
+        return self._render_members_group("classes") if self.show_classes else None
 
     def render_functions(self) -> RenderedMembersGroup | None:
         """
         Render the function members of the Doc
         """
-        return (
-            self._render_members_group("functions")
-            if self.show_functions
-            else None
-        )
+        return self._render_members_group("functions") if self.show_functions else None
 
     def render_attributes(self) -> RenderedMembersGroup | None:
         """
         Render the function members of the Doc
         """
-        return (
-            self._render_members_group("attributes")
-            if self.show_attributes
-            else None
-        )
+        return self._render_members_group("attributes") if self.show_attributes else None
 
     def _render_members_group(
         self,
@@ -220,11 +196,7 @@ class __RenderDocMembersMixin(RenderDoc):
 
         show_summary: bool = getattr(self, f"show_{group}_summary")
         show_body: bool = getattr(self, f"show_{group}_body")
-        slug = (
-            "methods"
-            if group == "functions" and isinstance(self.doc, DocClass)
-            else group
-        )
+        slug = "methods" if group == "functions" and isinstance(self.doc, DocClass) else group
 
         title = Header(
             self.level + 1,
@@ -233,8 +205,7 @@ class __RenderDocMembersMixin(RenderDoc):
         )
 
         render_objs = [
-            Render(obj, self.renderer, self.level + 2, contained=True)
-            for obj in docables
+            Render(obj, self.renderer, self.level + 2, contained=True) for obj in docables
         ]
 
         if self.show_members_summary and show_summary:

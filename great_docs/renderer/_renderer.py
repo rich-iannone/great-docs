@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Literal
 
 from quartodoc.renderers.base import Renderer as _Renderer
 
-
 if TYPE_CHECKING:
     from quartodoc import Builder, layout
 

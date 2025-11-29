@@ -69,9 +69,7 @@ class __RenderDocCallMixin(RenderDoc):
             name = getattr(el, "name", None) or ""
             default = getattr(el, "default", None)
             annotation = (
-                pretty_code(str(self.render_annotation(el.annotation)))
-                if el.annotation
-                else None
+                pretty_code(str(self.render_annotation(el.annotation))) if el.annotation else None
             )
 
             # Parameter of kind *args or **kwargs have not default values
@@ -83,9 +81,7 @@ class __RenderDocCallMixin(RenderDoc):
                 ):
                     default = None
 
-            term = str(
-                self.render_variable_definition(name, annotation, default)
-            )
+            term = str(self.render_variable_definition(name, annotation, default))
 
             # Annotations are expressed in html so that contained interlink
             # references can be processed. Pandoc does not process any markup
@@ -118,17 +114,15 @@ class __RenderDocCallMixin(RenderDoc):
             return parameters
 
         param = obj.parameters[0].name
-        omit_first_parameter = (
-            obj.parent.is_class and param in ("self", "cls")
-        ) or (obj.parent.is_module and obj.is_class and param == "self")
+        omit_first_parameter = (obj.parent.is_class and param in ("self", "cls")) or (
+            obj.parent.is_module and obj.is_class and param == "self"
+        )
 
         if omit_first_parameter:
             parameters = gf.Parameters(*list(parameters)[1:])
 
         if exclude:
-            parameters = gf.Parameters(
-                *[p for p in parameters if p.name not in exclude]
-            )
+            parameters = gf.Parameters(*[p for p in parameters if p.name not in exclude])
 
         return parameters
 
@@ -155,9 +149,9 @@ class __RenderDocCallMixin(RenderDoc):
 
         for parameter in self.parameters:
             state = state[cur], str(parameter.kind)
-            append_transition_token = state[prev] != state[cur] and state[
-                prev
-            ] != str(gf.ParameterKind.var_positional)
+            append_transition_token = state[prev] != state[cur] and state[prev] != str(
+                gf.ParameterKind.var_positional
+            )
 
             if append_transition_token:
                 if state[prev] == str(gf.ParameterKind.positional_only):

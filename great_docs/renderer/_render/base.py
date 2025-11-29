@@ -142,11 +142,7 @@ class __RenderBase(Block):
         # This is the first line of the docstring
         parts = obj.docstring.parsed if obj.docstring else []
         section = parts[0] if parts else None
-        return (
-            section.value.split("\n")[0]
-            if isinstance(section, gf.DocstringSectionText)
-            else ""
-        )
+        return section.value.split("\n")[0] if isinstance(section, gf.DocstringSectionText) else ""
 
     def render_title(self) -> BlockContent:
         """

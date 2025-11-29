@@ -45,10 +45,7 @@ class __RenderLayout(RenderBase):
     def render_body(self) -> BlockContent:
         from . import get_render_type
 
-        render_objs = [
-            get_render_type(s)(s, self.renderer, self.level)
-            for s in self.sections
-        ]
+        render_objs = [get_render_type(s)(s, self.renderer, self.level) for s in self.sections]
         return Blocks(render_objs)
 
 

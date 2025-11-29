@@ -177,11 +177,7 @@ class __RenderDoc(RenderBase):
             "typing.overload",
         )
         if self.obj.is_function or self.obj.is_attribute:
-            return tuple(
-                label.replace(".", "-")
-                for label in lst
-                if label in self.obj.labels
-            )
+            return tuple(label.replace(".", "-") for label in lst if label in self.obj.labels)
         elif self.obj.is_class and is_protocol(self.obj):
             return ("Protocol",)
         else:
@@ -239,14 +235,11 @@ class __RenderDoc(RenderBase):
             return ""
 
         codes = [
-            Code(" ", Attr(classes=["doc-label", f"doc-label-{l.lower()}"]))
-            for l in self.labels
+            Code(" ", Attr(classes=["doc-label", f"doc-label-{l.lower()}"])) for l in self.labels
         ]
         return Span(codes, Attr(classes=["doc-labels"]))
 
-    def render_annotation(
-        self, annotation: Annotation | None = None
-    ) -> Inline | str:
+    def render_annotation(self, annotation: Annotation | None = None) -> Inline | str:
         """
         Render an annotation
 
@@ -312,13 +305,9 @@ class __RenderDoc(RenderBase):
 
         if annotation:
             if name:
-                lst.append(
-                    Span(":", Attr(classes=["doc-parameter-annotation-sep"]))
-                )
+                lst.append(Span(":", Attr(classes=["doc-parameter-annotation-sep"])))
             annotation = pretty_code(annotation)
-            lst.append(
-                Span(annotation, Attr(classes=["doc-parameter-annotation"]))
-            )
+            lst.append(Span(annotation, Attr(classes=["doc-parameter-annotation"])))
 
         # Equal sign depends on name and annotation
         if name:
@@ -407,7 +396,6 @@ class __RenderDoc(RenderBase):
 
         return sections, section_kinds
 
-
     def render_body(self) -> BlockContent:
         """
         Render the docsting of the Doc object
@@ -442,9 +430,7 @@ class __RenderDoc(RenderBase):
 
     @render_section.register
     def _(self, el: gf.DocstringSectionExamples):
-        return Blocks(
-            [self.render_section(qast.transform(c)) for c in el.value]
-        )
+        return Blocks([self.render_section(qast.transform(c)) for c in el.value])
 
     @render_section.register
     def _(self, el: gf.DocstringSectionDeprecated):

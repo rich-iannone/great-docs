@@ -1,4 +1,3 @@
-from ._renderer import Renderer
 from ._render.doc import RenderDoc
 from ._render.docattribute import RenderDocAttribute
 from ._render.docclass import RenderDocClass
@@ -15,6 +14,7 @@ from ._render.mixin_call import RenderDocCallMixin
 from ._render.mixin_members import RenderDocMembersMixin
 from ._render.page import RenderPage
 from ._render.section import RenderSection
+from ._renderer import Renderer
 
 __all__ = (
     "Renderer",

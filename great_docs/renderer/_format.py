@@ -98,9 +98,7 @@ def format_see_also(s: str) -> str:
     def replace_func(m: re.Match[str]) -> str:
         # There should only one string in the groups
         txt = [g for g in m.groups() if g][0]
-        res = ", ".join(
-            [str(InterLink(target=f"~{s.strip()}")) for s in txt.split(",")]
-        )
+        res = ", ".join([str(InterLink(target=f"~{s.strip()}")) for s in txt.split(",")])
         return res
 
     content = QUALNAME_RE.sub(replace_func, dedent(s))
@@ -261,9 +259,7 @@ def render_dataclass_init_parameter(param: gf.Parameter) -> str:
         The parameter
     """
     try:
-        annotation = cast(
-            "gf.Expr", cast("gf.ExprSubscript", param.annotation).slice
-        )
+        annotation = cast("gf.Expr", cast("gf.ExprSubscript", param.annotation).slice)
     except AttributeError:
         # A dataclass that also defines an __init__ may have parameters
         # that do not have annotations.

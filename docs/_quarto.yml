@@ -21,6 +21,9 @@ website:
       href: index.qmd
     - text: API Reference
       href: reference/index.qmd
+    right:
+    - icon: github
+      href: https://github.com/rich-iannone/great-docs
   sidebar:
   - id: reference
     contents:

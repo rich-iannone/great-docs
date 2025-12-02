@@ -1,15 +1,9 @@
 import os
 import shutil
+from importlib import resources
 from pathlib import Path
-from typing import List, Optional, Tuple
 
 import yaml
-
-try:
-    from importlib import resources
-except ImportError:
-    # Fallback for Python < 3.9
-    import importlib_resources as resources  # type: ignore[import-not-found]
 
 
 class GreatDocs:
@@ -20,7 +14,7 @@ class GreatDocs:
     Quarto projects with the great-docs styling and functionality.
     """
 
-    def __init__(self, project_path: Optional[str] = None, docs_dir: Optional[str] = None):
+    def __init__(self, project_path: str | None = None, docs_dir: str | None = None):
         """
         Initialize GreatDocs instance.
 
@@ -45,7 +39,7 @@ class GreatDocs:
             self.package_path = Path(importlib_resources.files("great_docs"))
         self.assets_path = self.package_path / "assets"
 
-    def _find_or_create_docs_dir(self, docs_dir: Optional[str] = None) -> Path:
+    def _find_or_create_docs_dir(self, docs_dir: str | None = None) -> Path:
         """
         Find or create the documentation directory.
 
@@ -233,38 +227,23 @@ class GreatDocs:
             print("\nNext steps:")
             print("1. Run `quarto render` to build your site")
 
-    def _detect_package_name(self) -> Optional[str]:
+    def _detect_package_name(self) -> str | None:
         """
         Detect the Python package name from project structure.
 
         Returns
         -------
-        Optional[str]
+        str | None
             The detected package name, or None if not found.
         """
         # Look for pyproject.toml
         pyproject_path = self.project_root / "pyproject.toml"
         if pyproject_path.exists():
-            try:
-                import tomli  # type: ignore[import-not-found]
-            except ImportError:
-                try:
-                    import tomllib as tomli  # Python 3.11+
-                except ImportError:
-                    # Fallback: try to parse manually
-                    with open(pyproject_path, "r") as f:
-                        for line in f:
-                            if line.strip().startswith("name"):
-                                # Extract name from: name = "package-name"
-                                parts = line.split("=", 1)
-                                if len(parts) == 2:
-                                    name = parts[1].strip().strip('"').strip("'")
-                                    return name
-                    return None
+            import tomllib
 
             with open(pyproject_path, "rb") as f:
                 try:
-                    data = tomli.load(f)
+                    data = tomllib.load(f)
                     return data.get("project", {}).get("name")
                 except Exception:
                     return None
@@ -355,17 +334,11 @@ class GreatDocs:
         if not pyproject_path.exists():
             return metadata
 
-        try:
-            import tomli  # type: ignore[import-not-found]
-        except ImportError:
-            try:
-                import tomllib as tomli  # Python 3.11+
-            except ImportError:
-                return metadata
+        import tomllib
 
         try:
             with open(pyproject_path, "rb") as f:
-                data = tomli.load(f)
+                data = tomllib.load(f)
                 project = data.get("project", {})
 
                 # Extract relevant fields
@@ -390,7 +363,7 @@ class GreatDocs:
 
         return metadata
 
-    def _find_package_init(self, package_name: str) -> Optional[Path]:
+    def _find_package_init(self, package_name: str) -> Path | None:
         """
         Find the __init__.py file for a package, searching common locations.
 
@@ -404,7 +377,7 @@ class GreatDocs:
 
         Returns
         -------
-        Optional[Path]
+        Path | None
             Path to the __init__.py file, or None if not found.
         """
         # Normalize package name (replace dashes with underscores)
@@ -440,7 +413,7 @@ class GreatDocs:
 
         return None
 
-    def _parse_package_exports(self, package_name: str) -> Optional[list]:
+    def _parse_package_exports(self, package_name: str) -> list | None:
         """
         Parse __all__ from package's __init__.py to get public API.
 
@@ -454,7 +427,7 @@ class GreatDocs:
 
         Returns
         -------
-        Optional[list]
+        list | None
             List of public names from __all__ (filtered by exclusions), or None if not found.
         """
         # Find the package's __init__.py file
@@ -646,7 +619,7 @@ class GreatDocs:
                 "class_method_names": {},
             }
 
-    def _create_quartodoc_sections(self, package_name: str) -> Optional[list]:
+    def _create_quartodoc_sections(self, package_name: str) -> list | None:
         """
         Create quartodoc sections based on package's __all__.
 
@@ -661,7 +634,7 @@ class GreatDocs:
 
         Returns
         -------
-        Optional[list]
+        list | None
             List of section dictionaries, or None if no sections could be created.
         """
         exports = self._parse_package_exports(package_name)
@@ -742,7 +715,7 @@ class GreatDocs:
 
         return sections if sections else None
 
-    def _find_index_source_file(self) -> Tuple[Optional[Path], List[str]]:
+    def _find_index_source_file(self) -> tuple[Path | None, list[str]]:
         """
         Find the best source file for index.qmd based on priority.
 
@@ -753,7 +726,7 @@ class GreatDocs:
 
         Returns
         -------
-        Tuple[Optional[Path], List[str]]
+        tuple[Path | None, list[str]]
             A tuple of (source_file_path, warnings_list).
             source_file_path is None if no suitable file is found.
         """

@@ -1388,12 +1388,25 @@ toc: false
 
         # Add navbar with Home and API Reference links if not present
         if "navbar" not in config["website"]:
-            config["website"]["navbar"] = {
+            navbar_config = {
                 "left": [
                     {"text": "Home", "href": "index.qmd"},
                     {"text": "API Reference", "href": "reference/index.qmd"},
                 ]
             }
+
+            # Add GitHub icon link on the right if repository URL is available
+            metadata = self._get_package_metadata()
+            repo_url = None
+            if metadata.get("urls"):
+                repo_url = metadata["urls"].get("repository") or metadata["urls"].get(
+                    "Repository"
+                )
+
+            if repo_url and "github.com" in repo_url:
+                navbar_config["right"] = [{"icon": "github", "href": repo_url}]
+
+            config["website"]["navbar"] = navbar_config
 
         # Add sidebar navigation for reference pages
         if "sidebar" not in config["website"]:

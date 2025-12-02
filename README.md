@@ -4,16 +4,16 @@ A comprehensive documentation site generator for Python packages. Great Docs aut
 
 ## Features
 
-- **one-command setup**: single `great-docs init` creates your entire docs site
-- **auto-generated API docs**: automatically discovers and documents your package's API
-- **smart organization**: intelligent class/method/function categorization
-- **enhanced typography**: monospace fonts for code elements and improved readability
-- **modern styling**: clean, professional appearance
-- **mobile responsive**: optimized for all device sizes
-- **streamlined workflow**: single `great-docs build` command handles everything
-- **intelligent setup**: auto-generates configuration from your package's `__all__`
-- **safe introspection**: works with packages containing non-Python components
-- **zero configuration**: works out of the box with sensible defaults
+- one-command setup: single `great-docs init` creates your entire docs site
+- auto-generated API docs: automatically discovers and documents your package's API
+- smart organization: intelligent class/method/function categorization
+- enhanced typography: monospace fonts for code elements and improved readability
+- modern styling: clean, professional appearance
+- mobile responsive: optimized for all device sizes
+- streamlined workflow: single `great-docs build` command handles everything
+- intelligent setup: auto-generates configuration from your package's `__all__`
+- safe introspection: works with packages containing non-Python components
+- zero configuration: works out of the box with sensible defaults
 
 ## Quick Start
 
@@ -70,14 +70,14 @@ great-docs init
 
 The installer will:
 
-1. Automatically detect existing documentation directories (`docs/`, `site/`, etc.)
-2. Look for existing `_quarto.yml` files to determine the correct location
-3. Prompt you to choose a location if no docs directory is found
-4. Install all necessary files to the detected or chosen directory
-5. **Auto-create `index.qmd` from your `README.md`** (like pkgdown does)
-6. **Auto-detect your package name** from `pyproject.toml`, `setup.py`, or directory structure
-7. **Auto-generate API sections** by parsing `__all__` from your package's `__init__.py`
-8. **Add website navigation** with Home and API Reference links in the navbar
+1. automatically detect existing documentation directories (`docs/`, `site/`, etc.)
+2. look for existing `_quarto.yml` files to determine the correct location
+3. prompt you to choose a location if no docs directory is found
+4. install all necessary files to the detected or chosen directory
+5. auto-create `index.qmd` from your `README.md`
+6. auto-detect your package name from `pyproject.toml`, `setup.py`, or directory structure
+7. auto-generate API sections by parsing `__all__` from your package's `__init__.py`
+8. add website navigation with Home and API Reference links in the navbar
 
 This up-and-running site sets you up for success with your documentation dreams.
 
@@ -87,16 +87,16 @@ Great Docs automatically creates a complete documentation site with:
 
 ### Nice Visuals
 
-- **function signatures** styled with monospace fonts
-- **type annotations** with improved formatting
-- **parameter descriptions** with better spacing
-- **code blocks** with enhanced syntax highlighting
+- function signatures styled with monospace fonts
+- type annotations with improved formatting
+- parameter descriptions with better spacing
+- code blocks with enhanced syntax highlighting
 
 ### Smart Labeling
 
-- **classes** get green labels and styling
-- **methods** get blue labels (e.g., `Class.method()`)
-- **functions** get orange labels (e.g., `function()`)
+- _classes_ get green labels and styling
+- _methods_ get blue labels (e.g., `Class.method()`)
+- _functions_ get orange labels (e.g., `function()`)
 
 ### Responsive Design
 
@@ -240,7 +240,7 @@ The installer intelligently configures your documentation site:
 
 **Filtering non-documentable items**:
 
-If your package includes items that can't be auto-documented (e.g., Rust types, C bindings), you can exclude them in your `pyproject.toml`:
+If your package includes items that can't be auto-documented, you can exclude them in your `pyproject.toml`:
 
 ```toml
 # In your pyproject.toml
@@ -248,17 +248,7 @@ If your package includes items that can't be auto-documented (e.g., Rust types, 
 exclude = ["Node", "Edge"]  # Items to exclude from documentation
 ```
 
-Alternatively, you can use `__gt_exclude__` directly in your `__init__.py` (legacy method):
-
-```python
-# In your package's __init__.py
-__all__ = ["Graph", "Node", "Edge", "some_function"]
-
-# Exclude items that can't be auto-documented
-__gt_exclude__ = ["Node", "Edge"]  # Rust types
-```
-
-Great Docs will automatically filter out items from either source when generating the configuration. Using `[tool.great-docs] exclude` in `pyproject.toml` is recommended as it keeps configuration centralized.
+Great Docs will automatically filter out these items when generating the configuration.
 
 Great Docs will search for your package in standard locations including:
 
@@ -271,26 +261,24 @@ If `__all__` is not found, Great Docs will create a basic configuration and you 
 
 ### Smart Method Splitting
 
-Great Docs uses **griffe** to analyze your package without importing it. This enables:
+Great Docs will analyze your package to enable:
 
-- **Safe introspection**: Works with packages containing non-Python components
-- **Accurate method counting**: Counts actual public methods on each class
-- **Smart categorization**: Automatically identifies classes, functions, and other objects
-- **Automatic method enumeration**: Explicitly lists all methods for documentation
+- automatically identify classes, functions, and other objects
+- enumerate all methods for documentation
 
 Based on method count:
 
-- **Classes with ≤5 methods**: Methods are documented inline on the class page
-- **Classes with >5 methods**:
-  - Class page is created with `members: []` to suppress inline method documentation
-  - Creates a separate section with all methods explicitly listed
-  - Each method gets its own documentation page
+- classes with ≤5 methods are documented inline on the class page
+- for classes with >5 methods:
+  - the class page will suppress inline method documentation
+  - a separate section will be created with all these methods explicitly listed
+  - each method gets its own documentation page
 
-For example, if your `Graph` class has 191 methods, Great Docs will:
+For example, if your `Graph` class has 190 methods, Great Docs will:
 
-1. Add `Graph` to the Classes section with `members: []` (suppresses inline method docs)
-2. Create a new "Graph Methods" section listing all 191 methods: `Graph.add_node`, `Graph.add_edge`, etc.
-3. Each method gets its own documentation page for better navigation
+1. add `Graph` to the Classes section with `members: []` (suppressing inline method docs)
+2. create a new `"Graph Methods"` section listing all 190 methods: `Graph.add_node`, `Graph.add_edge`, etc.
+3. build documentation pages for each of the methods for better navigation
 
 Generated configuration:
 
@@ -308,7 +296,7 @@ quartodoc:
       contents:
         - Graph.add_node
         - Graph.add_edge
-        # ... all 191 methods
+        # ... all 190 methods
 ```
 
 This prevents overwhelming single-page documentation and improves navigation for large classes.
@@ -323,35 +311,6 @@ great-docs build
 
 This single command handles all the build steps for you, with a progress indicator so you can see the activity.
 
-### Detailed Steps
-
-If you prefer to run commands separately or customize the workflow:
-
-1. **(Optional) Edit the API documentation sections** in `_quarto.yml` to organize your documentation as needed.
-
-2. **Generate API reference pages**:
-
-   ```bash
-   quartodoc build
-   # or use: great-docs build
-   ```
-
-3. **Build your site**:
-
-   ```bash
-   quarto render
-   # or use: great-docs build (does both steps)
-   ```
-
-4. **Preview locally with live reload**:
-
-   ```bash
-   great-docs preview
-   # or: quarto preview
-   ```
-
-Your documentation is now live with great-docs styling!
-
 ## Deploying to GitHub Pages
 
 Great Docs makes it easy to deploy your documentation to GitHub Pages with a single command:
@@ -362,10 +321,10 @@ great-docs setup-github-pages
 
 This command creates a complete GitHub Actions workflow (`.github/workflows/docs.yml`) that will:
 
-- **Build documentation** automatically on every push to main
-- **Deploy to GitHub Pages** when changes are merged to main
-- **Create preview deployments** for pull requests
-- **Cache dependencies** for faster builds
+- build documentation automatically on every push to main
+- deploy to GitHub Pages when changes are merged to main
+- create preview deployments for pull requests
+- cache dependencies for faster builds
 
 ### Customizing the Workflow
 
@@ -389,10 +348,10 @@ great-docs setup-github-pages --docs-dir site --main-branch develop --python-ver
 
 After generating the workflow:
 
-1. **Commit and push** the workflow file to your repository
-2. Go to your repository **Settings → Pages**
-3. Set **Source** to "GitHub Actions"
-4. Push changes to your main branch to trigger the first deployment
+1. commit and push the workflow file to your repository
+2. go to your repository _Settings -> Pages_
+3. set _Source_ to `GitHub Actions`
+4. push changes to your main branch to trigger the first deployment
 
 Your documentation will be automatically published at `https://[username].github.io/[repository]`.
 
@@ -400,9 +359,9 @@ Your documentation will be automatically published at `https://[username].github
 
 The generated workflow includes three jobs:
 
-- **build-docs**: Installs dependencies, sets up Quarto, and builds your documentation
-- **publish-docs**: Deploys to GitHub Pages (main branch only)
-- **preview-docs**: Creates preview deployments for pull requests
+- `build-docs`: Installs dependencies, sets up Quarto, and builds your documentation
+- `publish-docs`: Deploys to GitHub Pages (main branch only)
+- `preview-docs`: Creates preview deployments for pull requests
 
 All builds are cached for faster execution on subsequent runs.
 
@@ -410,35 +369,33 @@ All builds are cached for faster execution on subsequent runs.
 
 ### Landing Page Metadata Sidebar
 
-Great Docs automatically creates a metadata sidebar on your landing page (like pkgdown) that displays:
+Great Docs automatically creates a metadata sidebar on your landing page that displays:
 
-- **Links**: PyPI, source code, bug tracker
-- **License**: Link to full license text
-- **Developers**: Author information with contact links
-- **Meta**: Python version requirements and optional dependencies
+- links to PyPI, source code, bug tracker
+- a link to the full license text
+- author information with contact links
+- metadata such as Python version requirements and optional dependencies
 
-The sidebar is automatically populated from your `pyproject.toml` metadata. To enhance the developer information with rich metadata, add a `[tool.great-docs]` section:
+The sidebar is automatically populated from your `pyproject.toml` metadata. To enhance the developer information with such metadata, add a `[tool.great-docs]` section to `pyproject.toml`:
 
 ```toml
-# In your pyproject.toml
-
-# Standard author information (required for PyPI)
+# Standard author information (used by PyPI)
 [project]
 authors = [
     {name = "Your Name", email = "you@example.com"}
 ]
 
-# Rich author metadata for documentation (optional)
+# Author metadata for documentation (optional)
 [tool.great-docs]
 
 [[tool.great-docs.authors]]
 name = "Your Name"
 email = "you@example.com"
-role = "Lead Developer"           # Optional: e.g., "Lead Developer", "Contributor"
-affiliation = "Your Organization" # Optional: e.g., "Posit", "University Name"
-github = "yourusername"           # Optional: GitHub username
-homepage = "https://yoursite.com" # Optional: Personal website
-orcid = "0000-0002-1234-5678"     # Optional: ORCID ID or full URL
+role = "Lead Developer"         # Optional: e.g., "Lead Developer", "Contributor"
+affiliation = "Organization"    # Optional: e.g., "Company Name", "University Name"
+github = "yourusername"         # Optional: GitHub username
+homepage = "https://asite.com"  # Optional: Personal website
+orcid = "0000-0002-1234-5678"   # Optional: ORCID ID or full URL
 
 # Add more authors by repeating the [[tool.great-docs.authors]] section
 [[tool.great-docs.authors]]
@@ -448,7 +405,7 @@ role = "Contributor"
 github = "secondauthor"
 ```
 
-Supported fields (all optional except `name`):
+Supported fields (all optional except for `name`):
 
 - `name` (required): Author's full name
 - `email`: Email address (creates a clickable email icon)
@@ -459,18 +416,6 @@ Supported fields (all optional except `name`):
 - `orcid`: ORCID identifier or full URL (creates a clickable ORCID icon)
 
 If `[tool.great-docs.authors]` is not present, Great Docs falls back to using the standard `project.authors` with automatically extracted GitHub information from your repository URL.
-
-**Example output in sidebar**:
-
-```
-## Developers
-
-Your Name
-Lead Developer, Your Organization
-📧 🐙 🏠
-```
-
-Where the icons link to email, GitHub, and homepage respectively.
 
 ## Configuration
 

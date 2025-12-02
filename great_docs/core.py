@@ -742,12 +742,79 @@ class GreatDocs:
 
         return sections if sections else None
 
-    def _create_index_from_readme(self) -> None:
+    def _find_index_source_file(self) -> tuple[Path | None, list[str]]:
         """
-        Create index.qmd from README.md if it doesn't exist.
+        Find the best source file for index.qmd based on priority.
+
+        Priority order (highest to lowest):
+        1. index.qmd in project root
+        2. index.md in project root
+        3. README.md in project root
+
+        Returns
+        -------
+        tuple[Path | None, list[str]]
+            A tuple of (source_file_path, warnings_list).
+            source_file_path is None if no suitable file is found.
+        """
+        package_root = self._find_package_root()
+        warnings = []
+
+        index_qmd_root = package_root / "index.qmd"
+        index_md_root = package_root / "index.md"
+        readme_path = package_root / "README.md"
+
+        # Check which files exist
+        has_index_qmd = index_qmd_root.exists()
+        has_index_md = index_md_root.exists()
+        has_readme = readme_path.exists()
+
+        # Generate warnings for multiple source files
+        if has_index_qmd and (has_index_md or has_readme):
+            other_files = []
+            if has_index_md:
+                other_files.append("index.md")
+            if has_readme:
+                other_files.append("README.md")
+            warnings.append(
+                f"⚠️  Multiple index source files detected. Using index.qmd "
+                f"(ignoring {', '.join(other_files)})"
+            )
+            return index_qmd_root, warnings
+
+        if has_index_md and has_readme:
+            warnings.append(
+                "⚠️  Multiple index source files detected. Using index.md (ignoring README.md)"
+            )
+            return index_md_root, warnings
+
+        # Return based on priority
+        if has_index_qmd:
+            return index_qmd_root, warnings
+        if has_index_md:
+            return index_md_root, warnings
+        if has_readme:
+            return readme_path, warnings
+
+        return None, warnings
+
+    def _create_index_from_readme(self, force_rebuild: bool = False) -> None:
+        """
+        Create or update index.qmd from the best available source file.
+
+        Source file priority (highest to lowest):
+        1. index.qmd in project root
+        2. index.md in project root
+        3. README.md in project root
 
         This mimics pkgdown's behavior of using the README as the homepage.
         Includes a metadata sidebar with package information (license, authors, links, etc.)
+
+        Parameters
+        ----------
+        force_rebuild
+            If True, always rebuild index.qmd even if it exists.
+            Used by the build command to sync with source file changes.
         """
         package_root = self._find_package_root()
 
@@ -872,19 +939,31 @@ title: "Authors and Citation"
         # Now check if we should create index.qmd
         index_qmd = self.project_path / "index.qmd"
 
-        if index_qmd.exists():
+        if index_qmd.exists() and not force_rebuild:
             print("index.qmd already exists, skipping creation")
             return
 
-        readme_path = package_root / "README.md"
-        if not readme_path.exists():
-            print("No README.md found in project root, skipping index.qmd creation")
+        # Find the best source file
+        source_file, warnings = self._find_index_source_file()
+
+        # Print any warnings about multiple source files
+        for warning in warnings:
+            print(warning)
+
+        if source_file is None:
+            print(
+                "No index source file found (index.qmd, index.md, or README.md), skipping index.qmd creation"
+            )
             return
 
-        print("Creating index.qmd from README.md...")
+        source_name = source_file.name
+        if force_rebuild:
+            print(f"Rebuilding index.qmd from {source_name}...")
+        else:
+            print(f"Creating index.qmd from {source_name}...")
 
-        # Read README content
-        with open(readme_path, "r", encoding="utf-8") as f:
+        # Read source content
+        with open(source_file, "r", encoding="utf-8") as f:
             readme_content = f.read()
 
         # Adjust heading levels: bump all headings up by one level
@@ -1557,6 +1636,10 @@ toc: false
         original_dir = os.getcwd()
         try:
             os.chdir(self.project_path)
+
+            # Step 0: Rebuild index.qmd from source file (README.md, index.md, or index.qmd)
+            print("\n📄 Step 0: Syncing landing page with source file...")
+            self._create_index_from_readme(force_rebuild=True)
 
             # Step 1: Run quartodoc build using Python module execution
             # This ensures it uses the same Python environment as great-docs

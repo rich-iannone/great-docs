@@ -1425,8 +1425,12 @@ toc: false
                 # Handle both string and dict formats
                 if isinstance(item, str):
                     section_entry["contents"].append(f"reference/{item}.qmd")
+                elif isinstance(item, dict):
+                    # Extract the name from dict format (e.g., {'name': 'Graph', 'members': []})
+                    item_name = item.get("name", str(item))
+                    section_entry["contents"].append(f"reference/{item_name}.qmd")
                 else:
-                    # If it's a dict with name/contents, handle appropriately
+                    # Fallback for unexpected types
                     section_entry["contents"].append(f"reference/{item}.qmd")
 
             sidebar_contents.append(section_entry)
@@ -1447,7 +1451,7 @@ toc: false
             yaml.dump(config, f, default_flow_style=False, sort_keys=False)
 
     def _update_reference_index_frontmatter(self) -> None:
-        """Add frontmatter to reference/index.qmd to hide the sidebar."""
+        """Ensure reference/index.qmd has proper frontmatter."""
         index_path = self.docs_dir / "reference" / "index.qmd"
 
         if not index_path.exists():
@@ -1457,21 +1461,12 @@ toc: false
         with open(index_path, "r") as f:
             content = f.read()
 
-        # Check if frontmatter already exists
+        # Check if frontmatter already exists - if so, leave it as is
         if content.startswith("---"):
-            # Parse existing frontmatter
-            parts = content.split("---", 2)
-            if len(parts) >= 3:
-                frontmatter = parts[1]
-                body = parts[2]
+            return
 
-                # Add sidebar: false if not present
-                if "sidebar:" not in frontmatter:
-                    frontmatter = frontmatter.rstrip() + "\nsidebar: false\n"
-                    content = f"---{frontmatter}---{body}"
-        else:
-            # Add new frontmatter
-            content = f"---\nsidebar: false\n---\n\n{content}"
+        # Add minimal frontmatter if none exists
+        content = f"---\n---\n\n{content}"
 
         # Write updated content
         with open(index_path, "w") as f:

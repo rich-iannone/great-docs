@@ -627,6 +627,7 @@ class GreatDocs:
             # - Cyclic aliases
             # - Unresolvable aliases
             # - Rust/PyO3 objects (KeyError)
+            # - Submodules (which would cause recursive documentation issues)
             # - Any other edge case that would crash quartodoc build
             safe_exports = []
             failed_exports = {}  # name -> error type for reporting
@@ -643,7 +644,27 @@ class GreatDocs:
             except ImportError:
                 pass
 
+            # Try to import the actual package to detect modules
+            actual_package = None
+            try:
+                import importlib
+
+                actual_package = importlib.import_module(normalized_name)
+            except ImportError:
+                pass
+
             for name in filtered:
+                # First check if this is a submodule - these should be excluded
+                # because documenting them recursively documents all their members
+                if actual_package is not None:
+                    runtime_obj = getattr(actual_package, name, None)
+                    if runtime_obj is not None:
+                        import types
+
+                        if isinstance(runtime_obj, types.ModuleType):
+                            failed_exports[name] = "submodule (excluded from top-level docs)"
+                            continue
+
                 if quartodoc_get_object is not None:
                     try:
                         # Try to load the object exactly as quartodoc would
@@ -755,6 +776,17 @@ class GreatDocs:
             # Load the package using griffe
             normalized_name = package_name.replace("-", "_")
 
+            # Try to use quartodoc's get_object for validation
+            quartodoc_get_object = None
+            try:
+                from functools import partial
+
+                from quartodoc import get_object as qd_get_object
+
+                quartodoc_get_object = partial(qd_get_object, dynamic=True, parser="numpy")
+            except ImportError:
+                pass
+
             # Try to load the package with griffe
             try:
                 pkg = griffe.load(normalized_name)
@@ -805,8 +837,9 @@ class GreatDocs:
                         categories["classes"].append(name)
                         # Get public methods (exclude private/magic methods)
                         # We need to handle each member individually to catch cyclic aliases
+                        # AND validate each method with quartodoc to catch type hint issues
                         method_names = []
-                        class_cyclic_aliases = []
+                        skipped_methods = []
                         try:
                             for member_name, member in obj.members.items():
                                 if member_name.startswith("_"):
@@ -814,25 +847,39 @@ class GreatDocs:
                                 try:
                                     # Accessing member.kind can trigger alias resolution
                                     if member.kind.value in ("function", "method"):
-                                        method_names.append(member_name)
+                                        # Validate with quartodoc if available
+                                        if quartodoc_get_object is not None:
+                                            try:
+                                                qd_obj = quartodoc_get_object(
+                                                    f"{normalized_name}:{name}.{member_name}"
+                                                )
+                                                # Try to access properties that might fail
+                                                _ = qd_obj.members
+                                                _ = qd_obj.kind
+                                                method_names.append(member_name)
+                                            except Exception:
+                                                # Method can't be documented by quartodoc
+                                                skipped_methods.append(member_name)
+                                        else:
+                                            method_names.append(member_name)
                                 except (
                                     griffe.CyclicAliasError,
                                     griffe.AliasResolutionError,
                                 ):
                                     # Skip cyclic/unresolvable class members
-                                    class_cyclic_aliases.append(member_name)
+                                    skipped_methods.append(member_name)
                                 except Exception:
                                     # Skip members that can't be introspected
                                     pass
                         except (griffe.CyclicAliasError, griffe.AliasResolutionError):
                             # If we can't even iterate members, class has issues
-                            class_cyclic_aliases.append("<members>")
+                            skipped_methods.append("<members>")
 
-                        if class_cyclic_aliases:
+                        if skipped_methods:
                             print(
                                 f"  {name}: class with {len(method_names)} public methods "
-                                f"(skipped {len(class_cyclic_aliases)} problematic member(s): "
-                                f"{', '.join(class_cyclic_aliases[:3])}{'...' if len(class_cyclic_aliases) > 3 else ''})"
+                                f"(skipped {len(skipped_methods)} undocumentable method(s): "
+                                f"{', '.join(skipped_methods[:3])}{'...' if len(skipped_methods) > 3 else ''})"
                             )
                         else:
                             print(f"  {name}: class with {len(method_names)} public methods")

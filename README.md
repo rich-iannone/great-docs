@@ -14,6 +14,7 @@ A comprehensive documentation site generator for Python packages. Great Docs aut
 - intelligent setup: auto-generates configuration from your package's public API
 - safe introspection: uses static analysis by default, with `__all__` as an option
 - zero configuration: works out of the box with sensible defaults
+- LLM-friendly docs: auto-generates `llms.txt` file for AI/LLM documentation indexing
 
 ## Quick Start
 

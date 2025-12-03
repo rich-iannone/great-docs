@@ -8,7 +8,7 @@ import yaml
 
 class GreatDocs:
     """
-    GreatDocs class for applying enhanced theming to quartodoc sites.
+    GreatDocs class for creating beautiful API documentation sites.
 
     This class provides methods to install assets and configure
     Quarto projects with the great-docs styling and functionality.
@@ -1305,6 +1305,14 @@ title: "Authors and Citation"
                 if display_name:
                     margin_sections.append(f"[{display_name}]({url})<br>")
 
+        # Add llms.txt link at the end of Links section
+        if links_added or metadata.get("urls"):
+            margin_sections.append("[llms.txt](llms.txt)<br>")
+        else:
+            # If no links section exists yet, create one just for llms.txt
+            margin_sections.append("#### Links\n")
+            margin_sections.append("[llms.txt](llms.txt)<br>")
+
         # License section
         if license_link:
             margin_sections.append("\n#### License\n")
@@ -1853,6 +1861,157 @@ toc: false
         with open(index_path, "w") as f:
             f.write(content)
 
+    def _generate_llms_txt(self) -> None:
+        """
+        Generate an llms.txt file for LLM documentation indexing.
+
+        Creates a structured markdown file that indexes the API reference pages,
+        following the llms.txt standard format for LLM-readable documentation.
+        The file is saved to the docs directory and will be included in the built site.
+
+        The format follows the structure:
+        - Package title with description
+        - API Reference section with links to each documented item
+        """
+        quarto_yml = self.project_path / "_quarto.yml"
+
+        if not quarto_yml.exists():
+            return
+
+        with open(quarto_yml, "r") as f:
+            config = yaml.safe_load(f) or {}
+
+        # Get quartodoc sections and package info
+        if "quartodoc" not in config:
+            return
+
+        quartodoc_config = config["quartodoc"]
+        sections = quartodoc_config.get("sections", [])
+        package_name = quartodoc_config.get("package")
+
+        if not package_name or not sections:
+            return
+
+        # Get package metadata for description
+        metadata = self._get_package_metadata()
+        description = metadata.get("description", "")
+
+        # Get the site URL from config if available
+        site_url = config.get("website", {}).get("site-url", "")
+        if site_url and not site_url.endswith("/"):
+            site_url += "/"
+
+        # Build the llms.txt content
+        lines = []
+
+        # Header with package name
+        lines.append(f"# {package_name}")
+        lines.append("")
+
+        # Description
+        if description:
+            lines.append(f"> {description}")
+            lines.append("")
+
+        # API Reference section
+        lines.append("## Docs")
+        lines.append("")
+        lines.append("### API Reference")
+        lines.append("")
+
+        # Process each section
+        for section in sections:
+            section_title = section.get("title", "")
+            section_desc = section.get("desc", "")
+
+            # Add section header as a comment or sub-heading if there are multiple sections
+            if len(sections) > 1 and section_title:
+                lines.append(f"#### {section_title}")
+                if section_desc:
+                    lines.append(f"> {section_desc}")
+                lines.append("")
+
+            # Add each item in the section
+            for item in section.get("contents", []):
+                # Handle both string and dict formats
+                if isinstance(item, str):
+                    item_name = item
+                    item_desc = ""
+                elif isinstance(item, dict):
+                    item_name = item.get("name", str(item))
+                    item_desc = ""
+                else:
+                    continue
+
+                # Get description from docstring if available
+                if not item_desc:
+                    item_desc = self._get_docstring_summary(package_name, item_name)
+
+                # Build the URL
+                if site_url:
+                    url = f"{site_url}reference/{item_name}.html"
+                else:
+                    url = f"reference/{item_name}.html"
+
+                # Format the line
+                if item_desc:
+                    lines.append(f"- [{item_name}]({url}): {item_desc}")
+                else:
+                    lines.append(f"- [{item_name}]({url})")
+
+            lines.append("")
+
+        # Write the llms.txt file
+        llms_txt_path = self.project_path / "llms.txt"
+        with open(llms_txt_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines))
+
+        print(f"Created {llms_txt_path}")
+
+    def _get_docstring_summary(self, package_name: str, item_name: str) -> str:
+        """
+        Get the first line of a docstring for an item.
+
+        Parameters
+        ----------
+        package_name
+            The name of the package containing the item.
+        item_name
+            The name of the class, function, or module to get the docstring for.
+
+        Returns
+        -------
+        str
+            The first line of the docstring, or empty string if not available.
+        """
+        try:
+            import importlib
+
+            # Normalize package name
+            normalized_name = package_name.replace("-", "_")
+            module = importlib.import_module(normalized_name)
+
+            # Try to get the object
+            obj = getattr(module, item_name, None)
+            if obj is None:
+                return ""
+
+            # Get docstring
+            docstring = getattr(obj, "__doc__", None)
+            if not docstring:
+                return ""
+
+            # Extract first line/sentence
+            first_line = docstring.strip().split("\n")[0].strip()
+
+            # Clean up the line (remove trailing periods, normalize whitespace)
+            first_line = first_line.rstrip(".")
+
+            return first_line
+
+        except Exception:
+            return ""
+
     def uninstall(self) -> None:
         """
         Remove great-docs assets and configuration from the project.
@@ -2016,6 +2175,10 @@ toc: false
             if refresh:
                 print("\n🔄 Refreshing quartodoc configuration...")
                 self._refresh_quartodoc_config()
+
+            # Step 0.6: Generate llms.txt file
+            print("\n📝 Generating llms.txt...")
+            self._generate_llms_txt()
 
             # Step 1: Run quartodoc build using Python module execution
             # This ensures it uses the same Python environment as great-docs

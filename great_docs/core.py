@@ -357,6 +357,9 @@ class GreatDocs:
                 tool_config = data.get("tool", {}).get("great-docs", {})
                 metadata["rich_authors"] = tool_config.get("authors", [])
                 metadata["exclude"] = tool_config.get("exclude", [])
+                metadata["include"] = tool_config.get("include", [])
+                # Discovery method: "dir" (default) or "all" (use __all__)
+                metadata["discovery_method"] = tool_config.get("discovery_method", "dir")
 
         except Exception:
             pass
@@ -501,6 +504,164 @@ class GreatDocs:
             print(f"Error parsing __all__: {type(e).__name__}: {e}")
             return None
 
+    # Auto-excluded names that are typically not meant for documentation
+    # These are common internal/utility exports that most packages don't want documented
+    AUTO_EXCLUDE = {
+        # CLI and entry points
+        "main",  # CLI entry point function
+        "cli",  # CLI module
+        # Version and metadata
+        "version",  # Version string/function
+        "VERSION",  # Uppercase version constant
+        "VERSION_INFO",  # Version info tuple
+        # Common module re-exports
+        "core",  # Core module
+        "utils",  # Utilities module
+        "helpers",  # Helpers module
+        "constants",  # Constants module
+        "config",  # Config module
+        "settings",  # Settings module
+        # Standard library re-exports
+        "PackageNotFoundError",  # importlib.metadata exception
+        "typing",  # typing module re-export
+        "annotations",  # annotations module re-export
+        "TYPE_CHECKING",  # typing.TYPE_CHECKING constant
+        # Logging
+        "logger",  # Module-level logger instance
+        "log",  # Alternative logger name
+        "logging",  # logging module re-export
+    }
+
+    def _discover_package_exports(self, package_name: str) -> list | None:
+        """
+        Discover public API objects using griffe introspection.
+
+        This method uses griffe (quartodoc's introspection library) to statically analyze the
+        package and discover all public objects by filtering out private/internal names (those
+        starting with underscore).
+
+        Auto-excludes common internal names (see `AUTO_EXCLUDE`) unless they are explicitly included
+        via the `include` option in `pyproject.toml`.
+
+        Parameters
+        ----------
+        package_name
+            The name of the package to discover exports from.
+
+        Returns
+        -------
+        list | None
+            List of public names discovered (filtered by exclusions), or `None` if discovery failed.
+        """
+        try:
+            import griffe
+
+            # Normalize package name (replace dashes with underscores)
+            normalized_name = package_name.replace("-", "_")
+
+            # Load the package using griffe
+            try:
+                pkg = griffe.load(normalized_name)
+            except Exception as e:
+                print(f"Warning: Could not load package with griffe ({type(e).__name__})")
+                return None
+
+            # Get all members from the package (equivalent to dir(package))
+            all_members = list(pkg.members.keys())
+
+            # Filter out private names (starting with underscore)
+            # This also filters out dunder names like __version__, __all__, etc.
+            public_members = [name for name in all_members if not name.startswith("_")]
+
+            print(f"Discovered {len(public_members)} public names")
+
+            # Get config from pyproject.toml [tool.great-docs]
+            metadata = self._get_package_metadata()
+            config_exclude = set(metadata.get("exclude", []))
+            config_include = set(metadata.get("include", []))
+
+            # Apply auto-exclusions (but respect explicit includes)
+            auto_excluded = self.AUTO_EXCLUDE - config_include
+            if auto_excluded:
+                auto_excluded_found = [name for name in public_members if name in auto_excluded]
+                if auto_excluded_found:
+                    print(
+                        f"Auto-excluding {len(auto_excluded_found)} item(s): "
+                        f"{', '.join(sorted(auto_excluded_found))}"
+                    )
+
+            # Combine all exclusions (auto + user-specified), minus explicit includes
+            all_exclude = (auto_excluded | config_exclude) - config_include
+
+            # Filter out excluded items
+            filtered = [name for name in public_members if name not in all_exclude]
+
+            # Report user-specified exclusions separately
+            if config_exclude:
+                user_excluded_found = [
+                    name
+                    for name in public_members
+                    if name in config_exclude and name not in auto_excluded
+                ]
+                if user_excluded_found:
+                    print(
+                        f"Filtered out {len(user_excluded_found)} item(s) from [tool.great-docs] exclude: "
+                        f"{', '.join(sorted(user_excluded_found))}"
+                    )
+
+            # Report explicit includes that overrode auto-exclusions
+            if config_include:
+                overridden = [
+                    name
+                    for name in public_members
+                    if name in config_include and name in self.AUTO_EXCLUDE
+                ]
+                if overridden:
+                    print(
+                        f"Including {len(overridden)} auto-excluded item(s) via [tool.great-docs] include: "
+                        f"{', '.join(sorted(overridden))}"
+                    )
+
+            return filtered
+
+        except ImportError:
+            print("Warning: griffe not available, cannot use dir() discovery")
+            return None
+        except Exception as e:
+            print(f"Error discovering exports via dir(): {type(e).__name__}: {e}")
+            return None
+
+    def _get_package_exports(self, package_name: str) -> list | None:
+        """
+        Get package exports using the configured discovery method.
+
+        By default, uses dir() to discover public objects. If `discovery_method`
+        is set to "all" in [tool.great-docs], uses __all__ instead.
+
+        Parameters
+        ----------
+        package_name
+            The name of the package to get exports from.
+
+        Returns
+        -------
+        list | None
+            List of exported/public names, or None if discovery failed.
+        """
+        metadata = self._get_package_metadata()
+        discovery_method = metadata.get("discovery_method", "dir")
+
+        if discovery_method == "all":
+            print("Using __all__ discovery method (configured in pyproject.toml)")
+            return self._parse_package_exports(package_name)
+        else:
+            print("Using griffe introspection discovery method (default)")
+            exports = self._discover_package_exports(package_name)
+            if exports is None:
+                print("Falling back to __all__ discovery method")
+                return self._parse_package_exports(package_name)
+            return exports
+
     def _categorize_api_objects(self, package_name: str, exports: list) -> dict:
         """
         Categorize API objects using griffe introspection.
@@ -621,7 +782,9 @@ class GreatDocs:
 
     def _create_quartodoc_sections(self, package_name: str) -> list | None:
         """
-        Create quartodoc sections based on package's __all__.
+        Create quartodoc sections based on discovered package exports.
+
+        Uses the configured discovery method (dir() by default, or __all__ if specified).
 
         Uses smart heuristics:
         - Classes with ≤5 methods: documented inline
@@ -637,7 +800,7 @@ class GreatDocs:
         list | None
             List of section dictionaries, or None if no sections could be created.
         """
-        exports = self._parse_package_exports(package_name)
+        exports = self._get_package_exports(package_name)
         if not exports:
             return None
 
@@ -648,7 +811,7 @@ class GreatDocs:
         if not exports:
             return None
 
-        print(f"Found {len(exports)} exported names in __all__")
+        print(f"Found {len(exports)} exported names to document")
 
         # Categorize the exports
         categories = self._categorize_api_objects(package_name, exports)
@@ -1249,7 +1412,7 @@ toc: false
         # Convert package name to importable form (hyphens -> underscores)
         importable_name = self._normalize_package_name(package_name)
 
-        # Try to auto-generate sections from __all__
+        # Try to auto-generate sections from discovered exports
         sections = self._create_quartodoc_sections(importable_name)
 
         # Add quartodoc configuration with sensible defaults
@@ -1266,9 +1429,9 @@ toc: false
         # Add sections if we found them
         if sections:
             quartodoc_config["sections"] = sections
-            print(f"Auto-generated {len(sections)} section(s) from __all__")
+            print(f"Auto-generated {len(sections)} section(s) from package exports")
         else:
-            print("Could not auto-generate sections from __all__")
+            print("Could not auto-generate sections from package exports")
             print("You'll need to manually add sections to organize your API documentation.")
 
         config["quartodoc"] = quartodoc_config

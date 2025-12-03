@@ -3,6 +3,15 @@ title: ""
 toc: false
 ---
 
+<style>
+section.level1:first-of-type > h1:first-child,
+section.level2:first-of-type > h2:first-child,
+.column-body-outset-right > section.level1:first-of-type > h1,
+#quarto-document-content > section:first-of-type > h1 {
+  margin-top: 4px !important;
+}
+</style>
+
 ::: {.column-margin}
 #### Links
 

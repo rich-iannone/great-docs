@@ -6,4 +6,4 @@
 
 ### API Reference
 
-- [GreatDocs](reference/GreatDocs.html): GreatDocs class for creating beautiful API documentation sites
+- [GreatDocs](https://rich-iannone.github.io/great-docs/reference/GreatDocs.html): GreatDocs class for creating beautiful API documentation sites

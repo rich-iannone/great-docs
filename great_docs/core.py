@@ -632,8 +632,12 @@ class GreatDocs:
                 try:
                     obj = pkg.members[name]
                     # Try to access properties that trigger alias resolution
-                    # This will raise CyclicAliasError or AliasResolutionError if problematic
+                    # quartodoc accesses both obj.kind and obj.members, so we need to
+                    # check both to ensure the export won't cause issues
                     _ = obj.kind
+                    # Also try to access members - this is what quartodoc does
+                    # and it can trigger CyclicAliasError even if kind doesn't
+                    _ = obj.members
                     safe_exports.append(name)
                 except griffe.CyclicAliasError:
                     cyclic_aliases.append(name)
@@ -775,15 +779,41 @@ class GreatDocs:
                     if obj.kind.value == "class":
                         categories["classes"].append(name)
                         # Get public methods (exclude private/magic methods)
-                        method_names = [
-                            member_name
-                            for member_name, member in obj.members.items()
-                            if not member_name.startswith("_")
-                            and member.kind.value in ("function", "method")
-                        ]
+                        # We need to handle each member individually to catch cyclic aliases
+                        method_names = []
+                        class_cyclic_aliases = []
+                        try:
+                            for member_name, member in obj.members.items():
+                                if member_name.startswith("_"):
+                                    continue
+                                try:
+                                    # Accessing member.kind can trigger alias resolution
+                                    if member.kind.value in ("function", "method"):
+                                        method_names.append(member_name)
+                                except (
+                                    griffe.CyclicAliasError,
+                                    griffe.AliasResolutionError,
+                                ):
+                                    # Skip cyclic/unresolvable class members
+                                    class_cyclic_aliases.append(member_name)
+                                except Exception:
+                                    # Skip members that can't be introspected
+                                    pass
+                        except (griffe.CyclicAliasError, griffe.AliasResolutionError):
+                            # If we can't even iterate members, class has issues
+                            class_cyclic_aliases.append("<members>")
+
+                        if class_cyclic_aliases:
+                            print(
+                                f"  {name}: class with {len(method_names)} public methods "
+                                f"(skipped {len(class_cyclic_aliases)} problematic member(s): "
+                                f"{', '.join(class_cyclic_aliases[:3])}{'...' if len(class_cyclic_aliases) > 3 else ''})"
+                            )
+                        else:
+                            print(f"  {name}: class with {len(method_names)} public methods")
+
                         categories["class_methods"][name] = len(method_names)
                         categories["class_method_names"][name] = sorted(method_names)
-                        print(f"  {name}: class with {len(method_names)} public methods")
                     elif obj.kind.value == "function":
                         categories["functions"].append(name)
                     else:

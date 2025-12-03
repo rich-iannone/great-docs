@@ -242,19 +242,11 @@ The installer intelligently configures your documentation site:
 
 **API Discovery Methods**:
 
-By default, Great Docs uses static analysis (via griffe) to discover public objects in your package. This safely finds all non-private names (those not starting with an underscore) without importing your package or requiring `__all__` to be defined.
-
-Alternatively, you can use the traditional `__all__`-based discovery by setting the `discovery_method` option:
-
-```toml
-# In your pyproject.toml
-[tool.great-docs]
-discovery_method = "all"  # Use __all__ instead of static analysis for discovery
-```
+Great Docs uses static analysis to discover public objects in your package. This safely finds all non-private names (e.g., those not starting with an underscore) without importing your package or requiring `__all__` to be defined.
 
 **Auto-excluded objects**:
 
-When using the default discovery method, Great Docs automatically excludes common internal/utility names that most packages don't want in their documentation:
+Great Docs automatically excludes common internal/utility names that most packages don't want in their documentation:
 
 | Category          | Names                                                            |
 | ----------------- | ---------------------------------------------------------------- |

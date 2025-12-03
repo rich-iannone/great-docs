@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "great-docs"
 version = "0.1.0"
-description = "A comprehensive theming package for Python documentation sites built with quartodoc"
+description = "An easy-to-use documentation site generator for Python packages"
 readme = "README.md"
 license = {file = "LICENSE"}
 authors = [

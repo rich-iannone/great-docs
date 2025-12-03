@@ -15,9 +15,9 @@ section.level2:first-of-type > h2:first-child,
 ::: {.column-margin}
 #### Links
 
-[View on PyPI](https://pypi.org/project/great-docs/)<br>
 [Browse source code](https://github.com/rich-iannone/great-docs)<br>
 [Report a bug](https://github.com/rich-iannone/great-docs/issues)<br>
+[llms.txt](llms.txt)<br>
 
 #### License
 
@@ -59,6 +59,7 @@ A comprehensive documentation site generator for Python packages. Great Docs aut
 - intelligent setup: auto-generates configuration from your package's public API
 - safe introspection: uses static analysis by default, with `__all__` as an option
 - zero configuration: works out of the box with sensible defaults
+- LLM-friendly docs: auto-generates `llms.txt` file for AI/LLM documentation indexing
 
 ### Quick Start
 
@@ -169,8 +170,11 @@ great-docs init --project-path /path/to/project --docs-dir documentation
 ## Force overwrite existing files
 great-docs init --force
 
-## Build documentation
+## Build documentation (re-discovers API and updates config)
 great-docs build
+
+## Build without refreshing API config (faster when API unchanged)
+great-docs build --no-refresh
 
 ## Build and watch for changes
 great-docs build --watch
@@ -205,8 +209,11 @@ docs = GreatDocs()
 ## Install docs files and configuration
 docs.install()
 
-## Build documentation
+## Build documentation (re-discovers API by default)
 docs.build()
+
+## Build without refreshing API config (faster rebuild)
+docs.build(refresh=False)
 
 ## Build with watch mode
 docs.build(watch=True)

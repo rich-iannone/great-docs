@@ -260,7 +260,9 @@ for html_file in html_files:
         else:
             return match.group(0)
 
-    content_str = re.sub(method_section_pattern, add_method_source_link, content_str, flags=re.DOTALL)
+    content_str = re.sub(
+        method_section_pattern, add_method_source_link, content_str, flags=re.DOTALL
+    )
     content = content_str.splitlines(keepends=True)
 
     # Fix return value formatting in individual function pages, removing the `:` before the

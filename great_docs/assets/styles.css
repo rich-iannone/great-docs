@@ -243,6 +243,23 @@ a.sidebar-item-text.sidebar-link.text-start > span {
     margin-bottom: -14px;
 }
 
+/* Fix copy button positioning when usage-source-row is inside code-copy-outer-scaffold */
+.code-copy-outer-scaffold > .usage-source-row {
+    position: relative;
+    z-index: 1;
+}
+
+.code-copy-outer-scaffold {
+    position: relative;
+}
+
+.code-copy-outer-scaffold > .code-copy-button {
+    position: absolute;
+    top: auto;
+    bottom: 0.5em;
+    right: 0.5em;
+}
+
 /* Adjust mobile secondary nav positioning */
 @media (max-width: 991.98px) {
     #quarto-header .container-fluid.d-flex {

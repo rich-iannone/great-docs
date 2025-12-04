@@ -14,6 +14,7 @@ A comprehensive documentation site generator for Python packages. Great Docs aut
 - intelligent setup: auto-generates configuration from your package's public API
 - zero configuration: works out of the box with sensible defaults
 - LLM-friendly docs: auto-generates `llms.txt` file for AI/LLM documentation indexing
+- source links: automatic links to source code lines on GitHub
 
 ## Quick Start
 
@@ -100,9 +101,16 @@ Great Docs automatically creates a complete documentation site with:
 
 ### Responsive Design
 
-- mobile-friendly navigation
-- optimized sidebar behavior
-- touch-friendly interface elements
+- carefully crafted mobile viewing experience
+- touch-optimized navigation and sidebar behavior
+- readable typography and spacing on all screen sizes
+- collapsible sections that work well on small screens
+
+### Source Code Links
+
+- automatic "source" links on API reference pages
+- links directly to the relevant line numbers on GitHub
+- this helps users understand implementation details
 
 ## Usage
 

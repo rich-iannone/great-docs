@@ -1,0 +1,32 @@
+{
+  "GreatDocs": {
+    "url": "https://github.com/rich-iannone/great-docs/blob/feat-view-source/great_docs/core.py#L21-L2625",
+    "file": "/Users/riannone/py_projects/great-docs/great_docs/core.py",
+    "start_line": 21,
+    "end_line": 2625
+  },
+  "GreatDocs.build": {
+    "url": "https://github.com/rich-iannone/great-docs/blob/feat-view-source/great_docs/core.py#L2425-L2569",
+    "file": "/Users/riannone/py_projects/great-docs/great_docs/core.py",
+    "start_line": 2425,
+    "end_line": 2569
+  },
+  "GreatDocs.install": {
+    "url": "https://github.com/rich-iannone/great-docs/blob/feat-view-source/great_docs/core.py#L116-L236",
+    "file": "/Users/riannone/py_projects/great-docs/great_docs/core.py",
+    "start_line": 116,
+    "end_line": 236
+  },
+  "GreatDocs.preview": {
+    "url": "https://github.com/rich-iannone/great-docs/blob/feat-view-source/great_docs/core.py#L2571-L2625",
+    "file": "/Users/riannone/py_projects/great-docs/great_docs/core.py",
+    "start_line": 2571,
+    "end_line": 2625
+  },
+  "GreatDocs.uninstall": {
+    "url": "https://github.com/rich-iannone/great-docs/blob/feat-view-source/great_docs/core.py#L2331-L2390",
+    "file": "/Users/riannone/py_projects/great-docs/great_docs/core.py",
+    "start_line": 2331,
+    "end_line": 2390
+  }
+}

@@ -270,4 +270,38 @@ a.sidebar-item-text.sidebar-link.text-start > span {
     .quarto-secondary-nav-title {
         padding-top: 7px;
     }
+
+    /* Move margin/sidebar content below main content on mobile (like pkgdown) */
+    #quarto-document-content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* The column-margin content should appear after main content */
+    .column-margin {
+        order: 2;
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+
+    /* Main content comes first */
+    #quarto-document-content > *:not(.column-margin) {
+        order: 1;
+    }
+
+    /* Style adjustments for the collapsed sidebar content */
+    .column-margin h4 {
+        font-size: 0.9rem;
+        color: #495057;
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .column-margin h4:first-child {
+        margin-top: 0;
+    }
 }

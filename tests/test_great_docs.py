@@ -413,3 +413,149 @@ quartodoc:
         llms_txt = Path(tmp_dir) / "llms.txt"
         content = llms_txt.read_text()
         assert "https://example.com/docs/reference/foo.html" in content
+
+
+def test_get_github_repo_info():
+    """Test GitHub repository info extraction from pyproject.toml."""
+    # Test on great-docs's own pyproject.toml
+    docs = GreatDocs(docs_dir=".")
+    owner, repo, base_url = docs._get_github_repo_info()
+
+    assert owner == "rich-iannone"
+    assert repo == "great-docs"
+    assert base_url == "https://github.com/rich-iannone/great-docs"
+
+
+def test_get_github_repo_info_no_repo():
+    """Test GitHub repo info when no repository URL exists."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Create a minimal pyproject.toml without repository URL
+        pyproject = Path(tmp_dir) / "pyproject.toml"
+        pyproject.write_text("""
+[project]
+name = "test-package"
+version = "0.1.0"
+""")
+
+        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+        owner, repo, base_url = docs._get_github_repo_info()
+
+        assert owner is None
+        assert repo is None
+        assert base_url is None
+
+
+def test_get_source_location():
+    """Test source location detection for classes and methods."""
+    docs = GreatDocs(docs_dir=".")
+    source_loc = docs._get_source_location("great_docs", "GreatDocs")
+
+    assert source_loc is not None
+    assert "file" in source_loc
+    assert "start_line" in source_loc
+    assert "end_line" in source_loc
+    assert source_loc["start_line"] > 0
+    assert source_loc["end_line"] >= source_loc["start_line"]
+    assert "core.py" in source_loc["file"]
+
+
+def test_get_source_location_method():
+    """Test source location detection for methods."""
+    docs = GreatDocs(docs_dir=".")
+    source_loc = docs._get_source_location("great_docs", "GreatDocs.install")
+
+    assert source_loc is not None
+    assert "file" in source_loc
+    assert "start_line" in source_loc
+    assert source_loc["start_line"] > 0
+
+
+def test_get_source_location_not_found():
+    """Test source location returns None for non-existent items."""
+    docs = GreatDocs(docs_dir=".")
+    source_loc = docs._get_source_location("great_docs", "NonExistentClass")
+
+    assert source_loc is None
+
+
+def test_build_github_source_url():
+    """Test GitHub source URL construction."""
+    docs = GreatDocs(docs_dir=".")
+
+    source_loc = {
+        "file": "/path/to/great_docs/core.py",
+        "start_line": 42,
+        "end_line": 58,
+    }
+
+    url = docs._build_github_source_url(source_loc, branch="main")
+
+    assert url is not None
+    assert "https://github.com/rich-iannone/great-docs" in url
+    assert "blob/main" in url
+    assert "#L42-L58" in url
+
+
+def test_build_github_source_url_single_line():
+    """Test GitHub source URL with single line."""
+    docs = GreatDocs(docs_dir=".")
+
+    source_loc = {
+        "file": "/path/to/great_docs/core.py",
+        "start_line": 42,
+        "end_line": 42,
+    }
+
+    url = docs._build_github_source_url(source_loc, branch="main")
+
+    assert url is not None
+    assert "#L42" in url
+    # Should not have the range format
+    assert "#L42-L42" not in url
+
+
+def test_source_link_config_defaults():
+    """Test that source link configuration has proper defaults."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Create pyproject.toml without source config
+        pyproject = Path(tmp_dir) / "pyproject.toml"
+        pyproject.write_text("""
+[project]
+name = "test-package"
+version = "0.1.0"
+""")
+
+        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+        metadata = docs._get_package_metadata()
+
+        # Defaults should be: enabled=True, branch=None, path=None, placement="usage"
+        assert metadata.get("source_link_enabled", True) is True
+        assert metadata.get("source_link_branch") is None
+        assert metadata.get("source_link_path") is None
+        assert metadata.get("source_link_placement", "usage") == "usage"
+
+
+def test_source_link_config_custom():
+    """Test custom source link configuration."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Create pyproject.toml with custom source config
+        pyproject = Path(tmp_dir) / "pyproject.toml"
+        pyproject.write_text("""
+[project]
+name = "test-package"
+version = "0.1.0"
+
+[tool.great-docs.source]
+enabled = false
+branch = "develop"
+path = "src/mypackage"
+placement = "title"
+""")
+
+        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+        metadata = docs._get_package_metadata()
+
+        assert metadata.get("source_link_enabled") is False
+        assert metadata.get("source_link_branch") == "develop"
+        assert metadata.get("source_link_path") == "src/mypackage"
+        assert metadata.get("source_link_placement") == "title"

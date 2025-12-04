@@ -1,4 +1,5 @@
 import glob
+import json
 import os
 import re
 
@@ -12,6 +13,26 @@ print("Files in working directory:", files)
 site_files = os.listdir("_site")
 print("Files in '_site' directory:", site_files)
 
+# Load source links if available
+source_links = {}
+source_links_path = "_source_links.json"
+if os.path.exists(source_links_path):
+    print(f"Loading source links from {source_links_path}")
+    with open(source_links_path, "r") as f:
+        source_links = json.load(f)
+    print(f"Loaded {len(source_links)} source links")
+else:
+    print("No source links file found, skipping source link injection")
+
+
+def get_source_link_html(item_name):
+    """Generate HTML for a source link given an item name."""
+    if item_name in source_links:
+        url = source_links[item_name]["url"]
+        return f'<a href="{url}" class="source-link" target="_blank" rel="noopener">SOURCE</a>'
+    return ""
+
+
 # Process all HTML files in the `_site/reference/` directory (except `index.html`)
 # and apply the specified transformations
 html_files = [f for f in glob.glob("_site/reference/*.html") if not f.endswith("index.html")]
@@ -20,6 +41,9 @@ print(f"Found {len(html_files)} HTML files to process")
 
 for html_file in html_files:
     print(f"Processing: {html_file}")
+
+    # Extract the item name from the filename (e.g., "GreatDocs.html" -> "GreatDocs")
+    item_name_from_file = os.path.basename(html_file).replace(".html", "")
 
     with open(html_file, "r") as file:
         content = file.readlines()
@@ -202,9 +226,44 @@ for html_file in html_files:
         # Adjust sourcecode_line since we added lines before it
         sourcecode_line += 3
 
-        # Add "USAGE" label before the sourceCode div
-        usage_label = '<p style="font-size: 12px; color: rgb(170, 170, 170); margin-bottom: -14px;">USAGE</p>\n'
-        content.insert(sourcecode_line, usage_label)
+        # Add "USAGE" label and "SOURCE" link before the sourceCode div
+        # The SOURCE link will be on the right side, USAGE on the left
+        source_link = get_source_link_html(item_name_from_file)
+        if source_link:
+            usage_row = f'<div class="usage-source-row" style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: -14px;"><span style="font-size: 12px; color: rgb(170, 170, 170);">USAGE</span>{source_link}</div>\n'
+        else:
+            usage_row = '<p style="font-size: 12px; color: rgb(170, 170, 170); margin-bottom: -14px;">USAGE</p>\n'
+        content.insert(sourcecode_line, usage_row)
+
+    # Add source links for methods within class pages
+    # Methods have sections with IDs like "great_docs.GreatDocs.build"
+    content_str = "".join(content)
+
+    # Find all method sections and add source links to their sourceCode blocks
+    # Pattern: <section id="package.ClassName.method_name"...><h3...>method_name</h3>...<div class="sourceCode"
+    method_section_pattern = r'(<section[^>]*id="[^"]*\.([^"]+)"[^>]*>.*?<h[34][^>]*>.*?</h[34]>)(.*?)(<div class="sourceCode")'
+
+    def add_method_source_link(match):
+        section_start = match.group(1)
+        method_name = match.group(2)
+        between_content = match.group(3)
+        sourcecode_div = match.group(4)
+
+        # Build the full method name (ClassName.method_name)
+        full_method_name = f"{item_name_from_file}.{method_name}"
+        method_source_link = get_source_link_html(full_method_name)
+
+        if method_source_link:
+            # Add usage/source row before the sourceCode div
+            usage_row = f'<div class="usage-source-row" style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: -14px;"><span style="font-size: 12px; color: rgb(170, 170, 170);">USAGE</span>{method_source_link}</div>\n'
+            return section_start + between_content + usage_row + sourcecode_div
+        else:
+            return match.group(0)
+
+    content_str = re.sub(
+        method_section_pattern, add_method_source_link, content_str, flags=re.DOTALL
+    )
+    content = content_str.splitlines(keepends=True)
 
     # Fix return value formatting in individual function pages, removing the `:` before the
     # return value and adjusting the style of the parameter annotation separator

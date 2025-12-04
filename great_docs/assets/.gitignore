@@ -5,6 +5,9 @@ _site/
 reference/
 objects.json
 
+# Great-docs generated files
+_source_links.json
+
 # Python cache
 __pycache__/
 *.py[cod]

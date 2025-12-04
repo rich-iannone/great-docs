@@ -218,6 +218,31 @@ a.sidebar-item-text.sidebar-link.text-start > span {
     color: rgb(48, 48, 48);
 }
 
+/* Source link styling */
+.source-link {
+    font-size: 12px;
+    font-weight: 600;
+    color: steelblue !important;
+    text-decoration: underline !important;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1.5px;
+    letter-spacing: 0.5px;
+    transition: color 0.2s ease;
+}
+
+.source-link:hover {
+    color: #2a5f8a !important;
+    text-decoration-thickness: 2px;
+}
+
+/* Usage/Source row container */
+.usage-source-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: -14px;
+}
+
 /* Adjust mobile secondary nav positioning */
 @media (max-width: 991.98px) {
     #quarto-header .container-fluid.d-flex {

@@ -235,36 +235,6 @@ for html_file in html_files:
             usage_row = '<p style="font-size: 12px; color: rgb(170, 170, 170); margin-bottom: -14px;">USAGE</p>\n'
         content.insert(sourcecode_line, usage_row)
 
-    # Add source links for methods within class pages
-    # Methods have sections with IDs like "great_docs.GreatDocs.build"
-    content_str = "".join(content)
-
-    # Find all method sections and add source links to their sourceCode blocks
-    # Pattern: <section id="package.ClassName.method_name"...><h3...>method_name</h3>...<div class="sourceCode"
-    method_section_pattern = r'(<section[^>]*id="[^"]*\.([^"]+)"[^>]*>.*?<h[34][^>]*>.*?</h[34]>)(.*?)(<div class="sourceCode")'
-
-    def add_method_source_link(match):
-        section_start = match.group(1)
-        method_name = match.group(2)
-        between_content = match.group(3)
-        sourcecode_div = match.group(4)
-
-        # Build the full method name (ClassName.method_name)
-        full_method_name = f"{item_name_from_file}.{method_name}"
-        method_source_link = get_source_link_html(full_method_name)
-
-        if method_source_link:
-            # Add usage/source row before the sourceCode div
-            usage_row = f'<div class="usage-source-row" style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: -14px;"><span style="font-size: 12px; color: rgb(170, 170, 170);">USAGE</span>{method_source_link}</div>\n'
-            return section_start + between_content + usage_row + sourcecode_div
-        else:
-            return match.group(0)
-
-    content_str = re.sub(
-        method_section_pattern, add_method_source_link, content_str, flags=re.DOTALL
-    )
-    content = content_str.splitlines(keepends=True)
-
     # Fix return value formatting in individual function pages, removing the `:` before the
     # return value and adjusting the style of the parameter annotation separator
     content_str = "".join(content)

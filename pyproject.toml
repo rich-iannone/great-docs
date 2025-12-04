@@ -192,6 +192,13 @@ ignore_missing_imports = true
 # Exclude additional items from auto-documentation
 # exclude = ["item_1", "item_2"]
 
+# Source link configuration (for "View source" links on reference pages)
+# [tool.great-docs.source]
+# enabled = true              # Enable/disable source links (default: true)
+# branch = "main"             # Git branch/tag to link to (default: auto-detect)
+# path = "src/package"        # Custom source path for monorepos (default: auto-detect)
+# placement = "usage"         # Where to place the link: "usage" (default) or "title"
+
 # Rich author metadata (optional); this augments the standard project.authors
 # All fields except 'name' are optional
 [[tool.great-docs.authors]]

@@ -3,18 +3,8 @@ import re
 import shutil
 from importlib import resources
 from pathlib import Path
-from typing import TypedDict
 
 import yaml
-
-
-class SourceLocation(TypedDict, total=False):
-    """Type for source location information."""
-
-    file: str
-    start_line: int
-    end_line: int
-    github_url: str | None
 
 
 class GreatDocs:
@@ -418,7 +408,7 @@ class GreatDocs:
 
         return None, None, None
 
-    def _get_source_location(self, package_name: str, item_name: str) -> SourceLocation | None:
+    def _get_source_location(self, package_name: str, item_name: str) -> dict | None:
         """
         Get source file and line numbers for a class, method, or function.
 
@@ -433,7 +423,7 @@ class GreatDocs:
 
         Returns
         -------
-        SourceLocation | None
+        dict | None
             Dictionary with file path and line numbers, or None if not found.
         """
         try:
@@ -469,11 +459,11 @@ class GreatDocs:
             # Get end line number
             end_lineno = getattr(obj, "endlineno", obj.lineno)
 
-            return SourceLocation(
-                file=filepath,
-                start_line=obj.lineno,
-                end_line=end_lineno or obj.lineno,
-            )
+            return {
+                "file": filepath,
+                "start_line": obj.lineno,
+                "end_line": end_lineno or obj.lineno,
+            }
 
         except ImportError:
             return None
@@ -481,7 +471,7 @@ class GreatDocs:
             return None
 
     def _build_github_source_url(
-        self, source_location: SourceLocation, branch: str | None = None
+        self, source_location: dict, branch: str | None = None
     ) -> str | None:
         """
         Build a GitHub URL for viewing source code at specific line numbers.

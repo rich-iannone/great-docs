@@ -304,4 +304,10 @@ a.sidebar-item-text.sidebar-link.text-start > span {
     .column-margin h4:first-child {
         margin-top: 0;
     }
+
+    /* Add horizontal padding to main content on mobile */
+    #quarto-content {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
 }

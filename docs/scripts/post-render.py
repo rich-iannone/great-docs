@@ -36,7 +36,7 @@ def get_source_link_html(item_name):
 def format_signature_multiline(html_content):
     """
     Format function/method signatures with multiple arguments onto separate lines.
-    
+
     If a signature has more than one argument, format it as:
         FunctionName(
             arg1=default1,
@@ -46,28 +46,28 @@ def format_signature_multiline(html_content):
     # Pattern to match the content inside signature spans
     # The signature is inside <span id="cbN-1">...(args)</span>
     # We need to handle HTML tags within the arguments
-    
+
     def reformat_signature(match):
         full_match = match.group(0)
         span_start = match.group(1)
         anchor = match.group(2) or ""
         content = match.group(3)
         span_end = match.group(4)
-        
+
         # Find the opening paren position
-        paren_pos = content.find('(')
+        paren_pos = content.find("(")
         if paren_pos == -1:
             return full_match
-            
-        func_name = content[:paren_pos + 1]  # Include the (
-        
+
+        func_name = content[: paren_pos + 1]  # Include the (
+
         # Find the closing paren - it's the last ) in the content
-        close_paren_pos = content.rfind(')')
+        close_paren_pos = content.rfind(")")
         if close_paren_pos == -1:
             return full_match
-            
-        args_content = content[paren_pos + 1:close_paren_pos]
-        
+
+        args_content = content[paren_pos + 1 : close_paren_pos]
+
         # Count arguments by looking for commas not inside HTML tags or nested parens
         # We need to track both HTML tag depth and paren depth
         arg_count = 1 if args_content.strip() else 0
@@ -75,23 +75,23 @@ def format_signature_multiline(html_content):
         paren_depth = 0
         i = 0
         while i < len(args_content):
-            if args_content[i:i+1] == '<':
+            if args_content[i : i + 1] == "<":
                 html_depth += 1
-            elif args_content[i:i+1] == '>':
+            elif args_content[i : i + 1] == ">":
                 html_depth -= 1
             elif html_depth == 0:
-                if args_content[i] in '([{':
+                if args_content[i] in "([{":
                     paren_depth += 1
-                elif args_content[i] in ')]}':
+                elif args_content[i] in ")]}":
                     paren_depth -= 1
-                elif args_content[i] == ',' and paren_depth == 0:
+                elif args_content[i] == "," and paren_depth == 0:
                     arg_count += 1
             i += 1
-        
+
         # Only reformat if more than 1 argument
         if arg_count <= 1:
             return full_match
-        
+
         # Split arguments while preserving HTML
         args = []
         current_arg = ""
@@ -100,20 +100,20 @@ def format_signature_multiline(html_content):
         i = 0
         while i < len(args_content):
             char = args_content[i]
-            if char == '<':
+            if char == "<":
                 html_depth += 1
                 current_arg += char
-            elif char == '>':
+            elif char == ">":
                 html_depth -= 1
                 current_arg += char
             elif html_depth == 0:
-                if char in '([{':
+                if char in "([{":
                     paren_depth += 1
                     current_arg += char
-                elif char in ')]}':
+                elif char in ")]}":
                     paren_depth -= 1
                     current_arg += char
-                elif char == ',' and paren_depth == 0:
+                elif char == "," and paren_depth == 0:
                     args.append(current_arg.strip())
                     current_arg = ""
                 else:
@@ -123,23 +123,23 @@ def format_signature_multiline(html_content):
             i += 1
         if current_arg.strip():
             args.append(current_arg.strip())
-        
+
         # Build multi-line signature
         formatted_args = ",\n    ".join(args)
         new_content = f"{func_name}\n    {formatted_args},\n)"
-        
+
         return f"{span_start}{anchor}{new_content}{span_end}"
-    
+
     # Only match the FIRST code block (cb1) which is always the main signature
     # Other code blocks (cb2, cb3, etc.) are method signatures or examples
     signature_pattern = re.compile(
         r'(<span id="cb1-1"[^>]*>)'
-        r'(<a[^>]*></a>)?'
-        r'(.*?\))'
-        r'(</span>)',
-        re.DOTALL
+        r"(<a[^>]*></a>)?"
+        r"(.*?\))"
+        r"(</span>)",
+        re.DOTALL,
     )
-    
+
     return signature_pattern.sub(reformat_signature, html_content)
 
 
@@ -160,7 +160,7 @@ for html_file in html_files:
 
     # Format signatures with multiple arguments onto separate lines
     content = format_signature_multiline(content)
-    
+
     # Convert back to lines for line-by-line processing
     content = content.splitlines(keepends=True)
 

@@ -1495,14 +1495,16 @@ class GreatDocs:
         # Build family map: family_name -> list of items
         family_map: dict[str, list[dict]] = {}
         items_with_family: set[str] = set()
+        excluded_items: set[str] = set()  # Track %nodoc items
 
         # Process top-level exports
         for item_name in exports:
             directives = directive_map.get(item_name, DocDirectives())
 
-            # Skip items marked @nodoc
+            # Skip items marked %nodoc
             if directives.nodoc:
-                print(f"  Excluding '{item_name}' (@nodoc)")
+                print(f"  Excluding '{item_name}' (%nodoc)")
+                excluded_items.add(item_name)
                 continue
 
             if directives.family:
@@ -1525,7 +1527,7 @@ class GreatDocs:
                 )
                 items_with_family.add(item_name)
 
-        # Process class methods that might have their own @family
+        # Process class methods that might have their own %family
         for class_name in categories.get("classes", []):
             method_names = categories.get("class_method_names", {}).get(class_name, [])
             for method_name in method_names:
@@ -1533,6 +1535,7 @@ class GreatDocs:
                 directives = directive_map.get(full_name, DocDirectives())
 
                 if directives.nodoc:
+                    excluded_items.add(full_name)
                     continue
 
                 if directives.family:
@@ -1602,14 +1605,20 @@ class GreatDocs:
 
             print(f"  {title}: {len(items)} item(s)")
 
-        # Add items without @family to fallback sections
+        # Add items without %family to fallback sections
+        # Exclude both items with families AND items marked %nodoc
         unassigned_classes = [
-            c for c in categories.get("classes", []) if c not in items_with_family
+            c for c in categories.get("classes", [])
+            if c not in items_with_family and c not in excluded_items
         ]
         unassigned_functions = [
-            f for f in categories.get("functions", []) if f not in items_with_family
+            f for f in categories.get("functions", [])
+            if f not in items_with_family and f not in excluded_items
         ]
-        unassigned_other = [o for o in categories.get("other", []) if o not in items_with_family]
+        unassigned_other = [
+            o for o in categories.get("other", [])
+            if o not in items_with_family and o not in excluded_items
+        ]
 
         if unassigned_classes:
             class_contents = []

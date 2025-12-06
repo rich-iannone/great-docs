@@ -189,6 +189,62 @@ def strip_directives_from_html(html_content):
     return cleaned
 
 
+def extract_seealso_from_html(html_content):
+    """
+    Extract %seealso values from HTML content before stripping.
+
+    Returns a list of referenced item names, or empty list if none found.
+    """
+    # Match %seealso in <p> tags (most common after markdown rendering)
+    p_pattern = re.compile(
+        r"<p>\s*%seealso\s+([^<]+)</p>",
+        re.IGNORECASE,
+    )
+
+    # Match standalone %seealso lines
+    standalone_pattern = re.compile(
+        r"^\s*%seealso\s+(.+?)\s*$",
+        re.MULTILINE | re.IGNORECASE,
+    )
+
+    # Try <p> pattern first
+    match = p_pattern.search(html_content)
+    if not match:
+        match = standalone_pattern.search(html_content)
+
+    if match:
+        # Parse comma-separated list
+        items_str = match.group(1).strip()
+        items = [item.strip() for item in items_str.split(",")]
+        return [item for item in items if item]
+
+    return []
+
+
+def generate_seealso_html(seealso_items):
+    """
+    Generate HTML for a "See Also" section with links to other reference pages.
+    """
+    if not seealso_items:
+        return ""
+
+    links = []
+    for item in seealso_items:
+        # Generate link to the reference page
+        # Item could be "Graph.add_edge" or just "add_edge"
+        html_filename = f"{item}.html"
+        links.append(f'<a href="{html_filename}">{item}</a>')
+
+    links_html = ", ".join(links)
+
+    return f"""
+<div class="see-also" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #dee2e6;">
+<h3 style="font-size: 0.9rem; font-weight: 600; color: #6c757d; margin-bottom: 0.5rem;">See Also</h3>
+<p style="margin: 0;">{links_html}</p>
+</div>
+"""
+
+
 # Process all HTML files in the `_site/reference/` directory (except `index.html`)
 # and apply the specified transformations
 html_files = [f for f in glob.glob("_site/reference/*.html") if not f.endswith("index.html")]
@@ -204,7 +260,10 @@ for html_file in html_files:
     with open(html_file, "r") as file:
         content = file.read()
 
-    # Strip @directive: lines from rendered HTML (safety net for docstring directives)
+    # Extract %seealso before stripping directives
+    seealso_items = extract_seealso_from_html(content)
+
+    # Strip %directive lines from rendered HTML (safety net for docstring directives)
     content = strip_directives_from_html(content)
 
     # Format signatures with multiple arguments onto separate lines
@@ -420,8 +479,14 @@ for html_file in html_files:
     # Turn all h2 tags into h3 tags
     content = [line.replace("<h2", "<h3").replace("</h2>", "</h3>") for line in content]
 
-    # Place a horizontal rule at the end of each reference page
+    # Inject "See Also" section if %seealso was found
     content_str = "".join(content)
+    if seealso_items:
+        seealso_html = generate_seealso_html(seealso_items)
+        # Insert before </main>
+        content_str = content_str.replace("</main>", f"{seealso_html}</main>")
+
+    # Place a horizontal rule at the end of each reference page
     main_end_pattern = r"</main>"
     main_end_replacement = '</main>\n<hr style="padding: 0; margin: 0;">\n'
     content_str = re.sub(main_end_pattern, main_end_replacement, content_str)

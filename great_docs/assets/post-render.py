@@ -196,15 +196,16 @@ def extract_seealso_from_html(html_content):
     Returns a list of referenced item names, or empty list if none found.
     """
     # Match %seealso in <p> tags (most common after markdown rendering)
+    # This handles both standalone %seealso and when it follows other directives
     p_pattern = re.compile(
-        r"<p>\s*%seealso\s+([^<]+)</p>",
+        r"<p>[^<]*%seealso\s+([^<%]+?)(?:%|</p>)",
         re.IGNORECASE,
     )
 
-    # Match standalone %seealso lines
+    # Match standalone %seealso lines (not in HTML tags)
     standalone_pattern = re.compile(
-        r"^\s*%seealso\s+(.+?)\s*$",
-        re.MULTILINE | re.IGNORECASE,
+        r"%seealso\s+([^\n%<]+)",
+        re.IGNORECASE,
     )
 
     # Try <p> pattern first

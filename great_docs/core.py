@@ -2270,12 +2270,12 @@ toc: false
             config["quartodoc"]["sections"] = sections
             print(f"Updated quartodoc config with {len(sections)} section(s)")
 
-            # Also update the sidebar to match the new sections
-            self._update_sidebar_from_sections()
-
-            # Write back to file
+            # Write back to file first, so sidebar update reads the new sections
             with open(quarto_yml, "w") as f:
                 yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+
+            # Now update the sidebar to match the new sections
+            self._update_sidebar_from_sections()
 
             print(f"✅ Refreshed quartodoc configuration in {quarto_yml}")
         else:

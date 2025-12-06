@@ -365,6 +365,9 @@ class GreatDocs:
                 metadata["source_link_path"] = source_config.get("path", None)
                 metadata["source_link_placement"] = source_config.get("placement", "usage")
 
+                # Family/group configuration for API organization
+                metadata["families"] = tool_config.get("families", {})
+
         except Exception:
             pass
 
@@ -1331,6 +1334,323 @@ class GreatDocs:
 
         return sections if sections else None
 
+    def _extract_all_directives(self, package_name: str) -> dict:
+        """
+        Extract Great Docs directives from all docstrings in the package.
+
+        Scans all exported classes, methods, and functions for @family, @order,
+        @seealso, and @nodoc directives.
+
+        Parameters
+        ----------
+        package_name
+            The name of the package to scan.
+
+        Returns
+        -------
+        dict
+            Mapping of object names to their DocDirectives.
+            Keys are either simple names (e.g., "MyClass") or qualified names
+            (e.g., "MyClass.my_method").
+        """
+        from .directives import extract_directives
+
+        try:
+            import griffe
+
+            normalized_name = package_name.replace("-", "_")
+
+            try:
+                pkg = griffe.load(normalized_name)
+            except Exception as e:
+                print(f"Warning: Could not load package with griffe ({type(e).__name__})")
+                return {}
+
+            directive_map = {}
+
+            for name, obj in pkg.members.items():
+                # Skip private members
+                if name.startswith("_"):
+                    continue
+
+                # Extract directives from the object's docstring
+                if obj.docstring:
+                    directives = extract_directives(obj.docstring.value)
+                    if directives:
+                        directive_map[name] = directives
+
+                # For classes, also process methods
+                try:
+                    if obj.kind.value == "class":
+                        for method_name, method in obj.members.items():
+                            if method_name.startswith("_"):
+                                continue
+                            if method.docstring:
+                                method_directives = extract_directives(method.docstring.value)
+                                if method_directives:
+                                    directive_map[f"{name}.{method_name}"] = method_directives
+                except Exception:
+                    # Skip if we can't introspect the class
+                    pass
+
+            return directive_map
+
+        except ImportError:
+            print("Warning: griffe not available for directive extraction")
+            return {}
+        except Exception as e:
+            print(f"Error extracting directives: {type(e).__name__}: {e}")
+            return {}
+
+    def _get_family_config(self) -> dict:
+        """
+        Get family configuration from pyproject.toml.
+
+        Returns
+        -------
+        dict
+            Family configuration with titles, descriptions, and ordering.
+        """
+        metadata = self._get_package_metadata()
+        return metadata.get("families", {})
+
+    def _auto_title(self, family_name: str) -> str:
+        """
+        Generate a display title from a family name.
+
+        Converts kebab-case or snake_case to Title Case.
+
+        Parameters
+        ----------
+        family_name
+            The family name (e.g., "family-name" or "family_name").
+
+        Returns
+        -------
+        str
+            Title-cased name (e.g., "Family Name").
+        """
+        # Replace hyphens and underscores with spaces, then title case
+        return family_name.replace("-", " ").replace("_", " ").title()
+
+    def _normalize_family_key(self, family_name: str) -> str:
+        """
+        Normalize a family name to a configuration key.
+
+        Converts "Family Name" -> "family-name" for config lookup.
+
+        Parameters
+        ----------
+        family_name
+            The family name as written in the docstring.
+
+        Returns
+        -------
+        str
+            Normalized key for configuration lookup.
+        """
+        return family_name.lower().replace(" ", "-").replace("_", "-")
+
+    def _create_quartodoc_sections_from_families(self, package_name: str) -> list | None:
+        """
+        Create quartodoc sections based on @family directives in docstrings.
+
+        This method scans all docstrings for @family, @order, and @nodoc directives
+        and generates organized sections. Items without @family directives are
+        placed in auto-generated categories (Classes, Functions, Other).
+
+        Parameters
+        ----------
+        package_name
+            The name of the package.
+
+        Returns
+        -------
+        list | None
+            List of section dictionaries organized by family, or None if
+            no exports found.
+        """
+        from .directives import DocDirectives
+
+        exports = self._get_package_exports(package_name)
+        if not exports:
+            return None
+
+        # Filter out metadata variables
+        skip_names = {"__version__", "__author__", "__email__", "__all__"}
+        exports = [e for e in exports if e not in skip_names]
+
+        if not exports:
+            return None
+
+        # Extract directives from all docstrings
+        directive_map = self._extract_all_directives(package_name)
+
+        # Get family configuration from pyproject.toml
+        family_config = self._get_family_config()
+
+        # Categorize exports for fallback (items without @family)
+        categories = self._categorize_api_objects(package_name, exports)
+
+        # Build family map: family_name -> list of items
+        family_map: dict[str, list[dict]] = {}
+        items_with_family: set[str] = set()
+
+        # Process top-level exports
+        for item_name in exports:
+            directives = directive_map.get(item_name, DocDirectives())
+
+            # Skip items marked @nodoc
+            if directives.nodoc:
+                print(f"  Excluding '{item_name}' (@nodoc)")
+                continue
+
+            if directives.family:
+                family = directives.family
+                if family not in family_map:
+                    family_map[family] = []
+
+                # Determine if this is a class with methods
+                is_class = item_name in categories.get("classes", [])
+                method_count = categories.get("class_methods", {}).get(item_name, 0)
+
+                family_map[family].append(
+                    {
+                        "name": item_name,
+                        "order": directives.order if directives.order is not None else 999,
+                        "seealso": directives.seealso,
+                        "is_class": is_class,
+                        "method_count": method_count,
+                    }
+                )
+                items_with_family.add(item_name)
+
+        # Process class methods that might have their own @family
+        for class_name in categories.get("classes", []):
+            method_names = categories.get("class_method_names", {}).get(class_name, [])
+            for method_name in method_names:
+                full_name = f"{class_name}.{method_name}"
+                directives = directive_map.get(full_name, DocDirectives())
+
+                if directives.nodoc:
+                    continue
+
+                if directives.family:
+                    family = directives.family
+                    if family not in family_map:
+                        family_map[family] = []
+
+                    family_map[family].append(
+                        {
+                            "name": full_name,
+                            "order": directives.order if directives.order is not None else 999,
+                            "seealso": directives.seealso,
+                            "is_class": False,
+                            "method_count": 0,
+                        }
+                    )
+                    items_with_family.add(full_name)
+
+        # If no families found, fall back to default categorization
+        if not family_map:
+            print("No @family directives found, using default categorization")
+            return self._create_quartodoc_sections(package_name)
+
+        print(f"Found {len(family_map)} family group(s) from @family directives")
+
+        # Build sections from families
+        sections = []
+
+        # Sort families by their configured order, then alphabetically
+        def family_sort_key(family_name: str) -> tuple:
+            config_key = self._normalize_family_key(family_name)
+            config = family_config.get(config_key, {})
+            order = config.get("order", 999)
+            return (order, family_name.lower())
+
+        sorted_families = sorted(family_map.keys(), key=family_sort_key)
+
+        for family_name in sorted_families:
+            items = family_map[family_name]
+
+            # Sort items by order, then alphabetically
+            items.sort(key=lambda x: (x["order"], x["name"].lower()))
+
+            # Get display name and description from config
+            config_key = self._normalize_family_key(family_name)
+            config = family_config.get(config_key, {})
+            title = config.get("title", family_name)  # Use family name as-is if no config
+            desc = config.get("desc", "")
+
+            # Format contents for quartodoc
+            contents = []
+            for item in items:
+                name = item["name"]
+                if item["is_class"] and item["method_count"] > 5:
+                    # Large class: suppress inline method docs
+                    contents.append({"name": name, "members": []})
+                else:
+                    contents.append(name)
+
+            sections.append(
+                {
+                    "title": title,
+                    "desc": desc,
+                    "contents": contents,
+                }
+            )
+
+            print(f"  {title}: {len(items)} item(s)")
+
+        # Add items without @family to fallback sections
+        unassigned_classes = [
+            c for c in categories.get("classes", []) if c not in items_with_family
+        ]
+        unassigned_functions = [
+            f for f in categories.get("functions", []) if f not in items_with_family
+        ]
+        unassigned_other = [o for o in categories.get("other", []) if o not in items_with_family]
+
+        if unassigned_classes:
+            class_contents = []
+            for class_name in unassigned_classes:
+                method_count = categories.get("class_methods", {}).get(class_name, 0)
+                if method_count > 5:
+                    class_contents.append({"name": class_name, "members": []})
+                else:
+                    class_contents.append(class_name)
+
+            sections.append(
+                {
+                    "title": "Classes",
+                    "desc": "Core classes and types",
+                    "contents": class_contents,
+                }
+            )
+            print(f"  Classes (unassigned): {len(unassigned_classes)} item(s)")
+
+        if unassigned_functions:
+            sections.append(
+                {
+                    "title": "Functions",
+                    "desc": "Public functions",
+                    "contents": unassigned_functions,
+                }
+            )
+            print(f"  Functions (unassigned): {len(unassigned_functions)} item(s)")
+
+        if unassigned_other:
+            sections.append(
+                {
+                    "title": "Other",
+                    "desc": "Additional exports",
+                    "contents": unassigned_other,
+                }
+            )
+            print(f"  Other (unassigned): {len(unassigned_other)} item(s)")
+
+        return sections if sections else None
+
     def _find_index_source_file(self) -> tuple[Path | None, list[str]]:
         """
         Find the best source file for index.qmd based on priority.
@@ -1874,7 +2194,9 @@ toc: false
         importable_name = self._normalize_package_name(package_name)
 
         # Try to auto-generate sections from discovered exports
-        sections = self._create_quartodoc_sections(importable_name)
+        # First try family-based organization (from @family directives)
+        # Falls back to default categorization if no directives found
+        sections = self._create_quartodoc_sections_from_families(importable_name)
 
         # Add quartodoc configuration with sensible defaults
         # Use the importable name (with underscores) for the package field
@@ -1941,7 +2263,8 @@ toc: false
         print(f"Re-discovering exports for package: {package_name}")
 
         # Re-generate sections from current package exports
-        sections = self._create_quartodoc_sections(package_name)
+        # Uses family-based organization if @family directives are found
+        sections = self._create_quartodoc_sections_from_families(package_name)
 
         if sections:
             config["quartodoc"]["sections"] = sections

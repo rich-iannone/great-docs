@@ -10,5 +10,13 @@ except PackageNotFoundError:  # pragma: no cover
 
 from .cli import main
 from .core import GreatDocs
+from .directives import DocDirectives, extract_directives, has_directives, strip_directives
 
-__all__ = ["GreatDocs", "main"]
+__all__ = [
+    "GreatDocs",
+    "main",
+    "DocDirectives",
+    "extract_directives",
+    "strip_directives",
+    "has_directives",
+]

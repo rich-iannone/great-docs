@@ -130,6 +130,127 @@ cli.add_command(preview)
 cli.add_command(uninstall)
 
 
+@click.command()
+@click.option(
+    "--project-path",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    help="Path to your project root directory (default: current directory)",
+)
+@click.option(
+    "--docs-dir",
+    type=str,
+    help="Path to documentation directory relative to project root",
+)
+@click.option(
+    "--verbose",
+    "-v",
+    is_flag=True,
+    help="Show detailed information including @seealso and @order values",
+)
+def scan(project_path, docs_dir, verbose):
+    """Scan docstrings for @family directives and preview API organization.
+
+    This command analyzes your package's docstrings to find @family, @order,
+    @seealso, and @nodoc directives, then shows how the API reference would
+    be organized.
+
+    Use this to preview your documentation structure before building.
+    """
+
+    try:
+        docs = GreatDocs(project_path=project_path, docs_dir=docs_dir)
+
+        # Detect package name
+        package_name = docs._detect_package_name()
+        if not package_name:
+            click.echo("Error: Could not detect package name.", err=True)
+            sys.exit(1)
+
+        importable_name = docs._normalize_package_name(package_name)
+        click.echo(f"Scanning package: {importable_name}\n")
+
+        # Extract all directives
+        directive_map = docs._extract_all_directives(importable_name)
+
+        if not directive_map:
+            click.echo("No @family directives found in docstrings.")
+            click.echo("\nTo organize your API documentation, add directives to your docstrings:")
+            click.echo("    @family: Family Name")
+            click.echo("    @order: 1")
+            click.echo("    @seealso: other_func, AnotherClass")
+            sys.exit(0)
+
+        # Group by family
+        families: dict[str, list] = {}
+        nodoc_items = []
+
+        for name, directives in directive_map.items():
+            if directives.nodoc:
+                nodoc_items.append(name)
+                continue
+
+            if directives.family:
+                family = directives.family
+                if family not in families:
+                    families[family] = []
+                families[family].append(
+                    {
+                        "name": name,
+                        "order": directives.order,
+                        "seealso": directives.seealso,
+                    }
+                )
+
+        # Display results
+        click.echo(f"Found {len(directive_map)} item(s) with directives:\n")
+
+        # Show families
+        if families:
+            click.echo("📁 Families:")
+            click.echo("-" * 50)
+
+            for family_name in sorted(families.keys()):
+                items = families[family_name]
+                # Sort by order, then name
+                items.sort(key=lambda x: (x["order"] or 999, x["name"]))
+
+                click.echo(f"\n  {family_name} ({len(items)} item(s)):")
+                for item in items:
+                    order_str = f" [@order: {item['order']}]" if item["order"] is not None else ""
+                    click.echo(f"    • {item['name']}{order_str}")
+
+                    if verbose and item["seealso"]:
+                        seealso_str = ", ".join(item["seealso"])
+                        click.echo(f"      └─ @seealso: {seealso_str}")
+
+        # Show nodoc items
+        if nodoc_items:
+            click.echo(f"\n🚫 Excluded (@nodoc): {len(nodoc_items)} item(s)")
+            if verbose:
+                for item in sorted(nodoc_items):
+                    click.echo(f"    • {item}")
+
+        # Show configuration hint
+        family_config = docs._get_family_config()
+        unconfigured = [
+            f for f in families.keys() if docs._normalize_family_key(f) not in family_config
+        ]
+
+        if unconfigured:
+            click.echo("\n💡 Tip: Add descriptions for your families in pyproject.toml:")
+            click.echo("   [tool.great-docs.families.validation-steps]")
+            click.echo('   title = "Family Name"')
+            click.echo('   desc = "Methods for validating data."')
+            click.echo("   order = 1")
+
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+cli.add_command(scan)
+
+
 @click.command(name="setup-github-pages")
 @click.option(
     "--project-path",

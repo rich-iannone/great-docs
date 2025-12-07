@@ -197,6 +197,21 @@ class GreatDocs:
             shutil.copy2(gitignore_src, gitignore_dst)
             print(f"Copied {gitignore_dst}")
 
+        # Copy GitHub widget JavaScript file
+        gh_widget_src = self.assets_path / "github-widget.js"
+        gh_widget_dst = self.project_path / "github-widget.js"
+
+        if gh_widget_dst.exists() and not force:
+            response = input(f"{gh_widget_dst} already exists. Overwrite? [y/N]: ")
+            if response.lower() != "y":
+                print("Skipping github-widget.js")
+            else:
+                shutil.copy2(gh_widget_src, gh_widget_dst)
+                print(f"Copied {gh_widget_dst}")
+        else:
+            shutil.copy2(gh_widget_src, gh_widget_dst)
+            print(f"Copied {gh_widget_dst}")
+
         # Update _quarto.yml configuration
         self._update_quarto_config()
 
@@ -2393,16 +2408,41 @@ toc: false
                 ]
             }
 
-            # Add GitHub icon link on the right if repository URL is available
-            metadata = self._get_package_metadata()
-            repo_url = None
-            if metadata.get("urls"):
-                repo_url = metadata["urls"].get("repository") or metadata["urls"].get("Repository")
+            # Add GitHub widget on the right if repository URL is available
+            owner, repo, repo_url = self._get_github_repo_info()
 
-            if repo_url and "github.com" in repo_url:
+            if owner and repo and repo_url:
+                # Create GitHub widget HTML with data attributes
+                gh_widget_html = (
+                    f'<div id="github-widget" data-owner="{owner}" data-repo="{repo}"></div>'
+                )
+                navbar_config["right"] = [{"text": gh_widget_html}]
+            elif repo_url:
+                # Fallback to simple icon if we can't parse owner/repo
                 navbar_config["right"] = [{"icon": "github", "href": repo_url}]
 
             config["website"]["navbar"] = navbar_config
+
+        # Add GitHub widget script to page if not present
+        owner, repo, _ = self._get_github_repo_info()
+        if owner and repo:
+            if "include-after-body" not in config["format"]["html"]:
+                config["format"]["html"]["include-after-body"] = []
+            elif isinstance(config["format"]["html"]["include-after-body"], str):
+                config["format"]["html"]["include-after-body"] = [
+                    config["format"]["html"]["include-after-body"]
+                ]
+
+            # Add the GitHub widget script
+            gh_script_entry = {"text": '<script src="github-widget.js"></script>'}
+            if gh_script_entry not in config["format"]["html"]["include-after-body"]:
+                # Check if github-widget.js is already included
+                has_gh_widget = any(
+                    "github-widget" in str(item)
+                    for item in config["format"]["html"]["include-after-body"]
+                )
+                if not has_gh_widget:
+                    config["format"]["html"]["include-after-body"].append(gh_script_entry)
 
         # Add sidebar navigation for reference pages
         if "sidebar" not in config["website"]:
@@ -2843,6 +2883,12 @@ toc: false
             post_render_dst = scripts_dir / "post-render.py"
             if post_render_src.exists():
                 shutil.copy2(post_render_src, post_render_dst)
+
+            # Ensure GitHub widget JS is in place
+            gh_widget_src = self.assets_path / "github-widget.js"
+            gh_widget_dst = self.project_path / "github-widget.js"
+            if gh_widget_src.exists():
+                shutil.copy2(gh_widget_src, gh_widget_dst)
 
             # Step 0: Rebuild index.qmd from source file (README.md, index.md, or index.qmd)
             print("\n📄 Step 0: Syncing landing page with source file...")

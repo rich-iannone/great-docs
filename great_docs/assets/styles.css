@@ -8,6 +8,36 @@
     text-decoration-thickness: 2px;
 }
 
+/* Signature highlighting - class name (e.g., "Graph" in Graph.add_node) */
+code span.sig-class {
+    color: #0e84b5;
+    font-weight: 600;
+}
+
+/* Signature highlighting - method/function name (e.g., "add_node" in Graph.add_node) */
+code span.sig-name {
+    color: #4758AB;
+    font-weight: 600;
+}
+
+/* Signature highlighting - None constant */
+code span.cn-none {
+    color: #7D4E9E;
+    font-weight: 500;
+}
+
+/* Signature highlighting - True/False boolean constants */
+code span.cn-bool {
+    color: #0077AA;
+    font-weight: 600;
+}
+
+/* Signature highlighting - operators (=, **, etc.) - override Quarto default */
+#cb1 code span.op {
+    color: #D14D00;
+    font-weight: 500;
+}
+
 .navbar-brand img {
     max-height: 45px;
     padding-right: 0px;

@@ -1608,15 +1608,18 @@ class GreatDocs:
         # Add items without %family to fallback sections
         # Exclude both items with families AND items marked %nodoc
         unassigned_classes = [
-            c for c in categories.get("classes", [])
+            c
+            for c in categories.get("classes", [])
             if c not in items_with_family and c not in excluded_items
         ]
         unassigned_functions = [
-            f for f in categories.get("functions", [])
+            f
+            for f in categories.get("functions", [])
             if f not in items_with_family and f not in excluded_items
         ]
         unassigned_other = [
-            o for o in categories.get("other", [])
+            o
+            for o in categories.get("other", [])
             if o not in items_with_family and o not in excluded_items
         ]
 

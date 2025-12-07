@@ -3,6 +3,9 @@ import json
 import os
 import re
 
+from pygments.lexers import PythonLexer
+from pygments.token import Token
+
 # Print the working directory
 print("Current working directory:", os.getcwd())
 
@@ -23,6 +26,77 @@ if os.path.exists(source_links_path):
     print(f"Loaded {len(source_links)} source links")
 else:
     print("No source links file found, skipping source link injection")
+
+
+# Mapping from Pygments token types to Quarto/highlight.js class names
+PYGMENTS_TO_QUARTO_CLASS = {
+    Token.Keyword: "kw",  # Keywords like def, return, if, etc.
+    Token.Keyword.Constant: "va",  # True, False, None
+    Token.Name.Function: "fu",  # Function names
+    Token.Name.Class: "fu",  # Class names (treat like functions)
+    Token.Name.Builtin: "bu",  # Built-in names like str, int, list, dict
+    Token.Name.Builtin.Pseudo: "va",  # self, cls
+    Token.Name.Decorator: "at",  # @decorator
+    Token.Name: "op",  # Generic names (parameters, variables)
+    Token.Operator: "op",  # Operators like =, |, etc.
+    Token.Punctuation: "op",  # Punctuation like (, ), [, ], etc.
+    Token.Literal.String: "st",  # Strings
+    Token.Literal.String.Single: "st",
+    Token.Literal.String.Double: "st",
+    Token.Literal.String.Doc: "st",  # Docstrings
+    Token.Literal.Number: "dv",  # Numbers
+    Token.Literal.Number.Integer: "dv",
+    Token.Literal.Number.Float: "fl",
+    Token.Comment: "co",  # Comments
+    Token.Comment.Single: "co",
+}
+
+
+def get_quarto_class(token_type):
+    """Get the Quarto highlight class for a Pygments token type."""
+    # Check exact match first
+    if token_type in PYGMENTS_TO_QUARTO_CLASS:
+        return PYGMENTS_TO_QUARTO_CLASS[token_type]
+
+    # Check parent types
+    for parent in token_type.split():
+        if parent in PYGMENTS_TO_QUARTO_CLASS:
+            return PYGMENTS_TO_QUARTO_CLASS[parent]
+
+    # Default to no special class
+    return None
+
+
+def highlight_signature_with_pygments(signature_text):
+    """
+    Use Pygments to tokenize a Python signature and apply Quarto-compatible highlighting.
+
+    This produces syntax highlighting that matches Quarto's code block styling.
+    """
+    lexer = PythonLexer()
+    tokens = list(lexer.get_tokens(signature_text))
+
+    result = []
+    for token_type, value in tokens:
+        if not value or value == "\n":
+            continue
+
+        quarto_class = get_quarto_class(token_type)
+
+        # HTML-escape the value
+        escaped_value = (
+            value.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace('"', "&quot;")
+        )
+
+        if quarto_class:
+            result.append(f'<span class="{quarto_class}">{escaped_value}</span>')
+        else:
+            result.append(escaped_value)
+
+    return "".join(result)
 
 
 def get_source_link_html(item_name):
@@ -150,6 +224,49 @@ def format_signature_multiline(html_content):
     return signature_pattern.sub(reformat_signature, html_content)
 
 
+def apply_pygments_highlighting(html_content):
+    """
+    Apply Pygments-based syntax highlighting to Python signatures in HTML.
+
+    This function finds signature code blocks and replaces quartodoc's highlighting
+    with Pygments-generated highlighting for consistent, accurate syntax coloring.
+    """
+    # Pattern to match the main signature code block (cb1)
+    # This matches the entire sourceCode div containing the signature
+    cb1_pattern = re.compile(
+        r'(<div class="sourceCode" id="cb1">.*?<code[^>]*>)'
+        r"(.*?)"
+        r"(</code></pre></div>)",
+        re.DOTALL,
+    )
+
+    def replace_with_pygments(match):
+        pre_code = match.group(1)
+        code_content = match.group(2)
+        post_code = match.group(3)
+
+        # Extract plain text from the HTML (strip existing span tags)
+        plain_text = re.sub(r"<[^>]+>", "", code_content)
+        # Decode HTML entities
+        plain_text = (
+            plain_text.replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&amp;", "&")
+            .replace("&quot;", '"')
+        )
+
+        # Apply Pygments highlighting
+        highlighted = highlight_signature_with_pygments(plain_text)
+
+        # Wrap in a single span with the same ID structure as original
+        # The signature code typically starts with <span id="cb1-1">
+        highlighted_wrapped = f'<span id="cb1-1">{highlighted}</span>'
+
+        return f"{pre_code}{highlighted_wrapped}{post_code}"
+
+    return cb1_pattern.sub(replace_with_pygments, html_content)
+
+
 def strip_directives_from_html(html_content):
     """
     Remove Great Docs %directive lines from rendered HTML.
@@ -269,6 +386,9 @@ for html_file in html_files:
 
     # Format signatures with multiple arguments onto separate lines
     content = format_signature_multiline(content)
+
+    # Apply Pygments-based syntax highlighting to signatures
+    content = apply_pygments_highlighting(content)
 
     # Convert back to lines for line-by-line processing
     content = content.splitlines(keepends=True)

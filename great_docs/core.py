@@ -2963,7 +2963,19 @@ toc: false
                 shutil.copy2(gh_widget_src, gh_widget_dst)
 
             # Update navbar to use GitHub widget (if configured)
-            self._update_navbar_github_link()
+            quarto_yml = self.project_path / "_quarto.yml"
+            if quarto_yml.exists():
+                with open(quarto_yml) as f:
+                    config = yaml.safe_load(f)
+                
+                owner, repo, repo_url = self._get_github_repo_info()
+                metadata = self._get_package_metadata()
+                github_style = metadata.get("github_style", "widget")
+                
+                if config and "website" in config and "navbar" in config["website"]:
+                    self._update_navbar_github_link(config, owner, repo, repo_url, github_style)
+                    with open(quarto_yml, "w") as f:
+                        yaml.dump(config, f, default_flow_style=False, sort_keys=False)
 
             # Step 0: Rebuild index.qmd from source file (README.md, index.md, or index.qmd)
             print("\n📄 Step 0: Syncing landing page with source file...")

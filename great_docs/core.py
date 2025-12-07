@@ -2831,6 +2831,19 @@ toc: false
         try:
             os.chdir(self.project_path)
 
+            # Ensure latest CSS and post-render script from package assets are in place
+            css_src = self.assets_path / "styles.css"
+            css_dst = self.project_path / "great-docs.css"
+            if css_src.exists():
+                shutil.copy2(css_src, css_dst)
+
+            scripts_dir = self.project_path / "scripts"
+            scripts_dir.mkdir(exist_ok=True)
+            post_render_src = self.assets_path / "post-render.py"
+            post_render_dst = scripts_dir / "post-render.py"
+            if post_render_src.exists():
+                shutil.copy2(post_render_src, post_render_dst)
+
             # Step 0: Rebuild index.qmd from source file (README.md, index.md, or index.qmd)
             print("\n📄 Step 0: Syncing landing page with source file...")
             self._create_index_from_readme(force_rebuild=True)

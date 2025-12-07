@@ -2962,6 +2962,9 @@ toc: false
             if gh_widget_src.exists():
                 shutil.copy2(gh_widget_src, gh_widget_dst)
 
+            # Update navbar to use GitHub widget (if configured)
+            self._update_navbar_github_link()
+
             # Step 0: Rebuild index.qmd from source file (README.md, index.md, or index.qmd)
             print("\n📄 Step 0: Syncing landing page with source file...")
             self._create_index_from_readme(force_rebuild=True)

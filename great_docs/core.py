@@ -2974,6 +2974,28 @@ toc: false
                 
                 if config and "website" in config and "navbar" in config["website"]:
                     self._update_navbar_github_link(config, owner, repo, repo_url, github_style)
+                    
+                    # Also ensure the GitHub widget script is included
+                    if owner and repo and github_style == "widget":
+                        if "format" not in config:
+                            config["format"] = {"html": {}}
+                        if "html" not in config["format"]:
+                            config["format"]["html"] = {}
+                        if "include-after-body" not in config["format"]["html"]:
+                            config["format"]["html"]["include-after-body"] = []
+                        elif isinstance(config["format"]["html"]["include-after-body"], str):
+                            config["format"]["html"]["include-after-body"] = [
+                                config["format"]["html"]["include-after-body"]
+                            ]
+                        
+                        gh_script_entry = {"text": '<script src="github-widget.js"></script>'}
+                        has_gh_widget = any(
+                            "github-widget" in str(item)
+                            for item in config["format"]["html"]["include-after-body"]
+                        )
+                        if not has_gh_widget:
+                            config["format"]["html"]["include-after-body"].append(gh_script_entry)
+                    
                     with open(quarto_yml, "w") as f:
                         yaml.dump(config, f, default_flow_style=False, sort_keys=False)
 

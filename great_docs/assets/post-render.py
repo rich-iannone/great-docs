@@ -733,3 +733,54 @@ for html_file in all_html_files:
             file.write(content)
 
 print("Finished processing all files")
+
+
+# ============================================================================
+# GitHub Widget Injection
+# ============================================================================
+# Replace escaped GitHub widget placeholder with actual HTML
+# This handles cases where Quarto escapes the HTML in navbar text items
+
+
+def inject_github_widget():
+    """
+    Find and replace escaped GitHub widget placeholders with actual widget HTML.
+
+    Quarto escapes HTML in navbar text items, so we need to post-process
+    to inject the actual widget div.
+    """
+    print("Checking for GitHub widget placeholders...")
+
+    widget_escaped_pattern = re.compile(
+        r'<span class="menu-text">&lt;div id="github-widget" '
+        r'data-owner="([^"]*)" data-repo="([^"]*)"&gt;&lt;/div&gt;</span>'
+    )
+
+    widget_count = 0
+
+    for html_file in all_html_files:
+        with open(html_file, "r") as file:
+            content = file.read()
+
+        # Check if this file has an escaped widget placeholder
+        match = widget_escaped_pattern.search(content)
+        if match:
+            owner = match.group(1)
+            repo = match.group(2)
+
+            # Replace with actual widget HTML
+            replacement = f'<div id="github-widget" data-owner="{owner}" data-repo="{repo}"></div>'
+            content = widget_escaped_pattern.sub(replacement, content)
+
+            with open(html_file, "w") as file:
+                file.write(content)
+
+            widget_count += 1
+
+    if widget_count > 0:
+        print(f"Injected GitHub widget into {widget_count} HTML files")
+    else:
+        print("No GitHub widget placeholders found")
+
+
+inject_github_widget()

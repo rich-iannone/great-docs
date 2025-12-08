@@ -2763,7 +2763,7 @@ toc: false
         quartodoc_config = {
             "package": importable_name,
             "dir": "reference",
-            "title": "API Reference",
+            "title": "Reference",
             "style": "pkgdown",
             "dynamic": True,
             "renderer": {"style": "markdown", "table_style": "description-list"},
@@ -2954,7 +2954,7 @@ toc: false
             navbar_config = {
                 "left": [
                     {"text": "Home", "href": "index.qmd"},
-                    {"text": "API Reference", "href": "reference/index.qmd"},
+                    {"text": "Reference", "href": "reference/index.qmd"},
                 ]
             }
 

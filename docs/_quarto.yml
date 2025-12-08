@@ -28,7 +28,7 @@ website:
     left:
     - text: Home
       href: index.qmd
-    - text: API Reference
+    - text: Reference
       href: reference/index.qmd
     right:
     - text: <div id="github-widget" data-owner="rich-iannone" data-repo="great-docs"></div>
@@ -55,7 +55,7 @@ website:
 quartodoc:
   package: great_docs
   dir: reference
-  title: API Reference
+  title: Reference
   style: pkgdown
   dynamic: true
   renderer:

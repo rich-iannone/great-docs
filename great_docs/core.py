@@ -3921,6 +3921,7 @@ toc: false
                 except Exception as e:
                     print(f"   ⚠️  Error generating CLI documentation: {e}")
                     import traceback
+
                     traceback.print_exc()
 
             # Step 1: Run quartodoc build using Python module execution

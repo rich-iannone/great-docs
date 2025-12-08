@@ -2967,14 +2967,14 @@ toc: false
             if quarto_yml.exists():
                 with open(quarto_yml) as f:
                     config = yaml.safe_load(f)
-                
+
                 owner, repo, repo_url = self._get_github_repo_info()
                 metadata = self._get_package_metadata()
                 github_style = metadata.get("github_style", "widget")
-                
+
                 if config and "website" in config and "navbar" in config["website"]:
                     self._update_navbar_github_link(config, owner, repo, repo_url, github_style)
-                    
+
                     # Also ensure the GitHub widget script is included
                     if owner and repo and github_style == "widget":
                         if "format" not in config:
@@ -2987,7 +2987,7 @@ toc: false
                             config["format"]["html"]["include-after-body"] = [
                                 config["format"]["html"]["include-after-body"]
                             ]
-                        
+
                         gh_script_entry = {"text": '<script src="github-widget.js"></script>'}
                         has_gh_widget = any(
                             "github-widget" in str(item)
@@ -2995,7 +2995,7 @@ toc: false
                         )
                         if not has_gh_widget:
                             config["format"]["html"]["include-after-body"].append(gh_script_entry)
-                    
+
                     with open(quarto_yml, "w") as f:
                         yaml.dump(config, f, default_flow_style=False, sort_keys=False)
 

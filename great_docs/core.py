@@ -732,27 +732,20 @@ class GreatDocs:
 
         full_path = f"{parent_path} {name}".strip() if parent_path else name
 
+        # Get the actual --help output from Click
+        help_text = self._get_click_help_text(cmd, full_path)
+
         info = {
             "name": name,
             "full_path": full_path,
             "help": cmd.help or "",
             "short_help": getattr(cmd, "short_help", "") or "",
-            "epilog": getattr(cmd, "epilog", "") or "",
+            "help_text": help_text,  # The actual --help output
             "deprecated": getattr(cmd, "deprecated", False),
             "hidden": getattr(cmd, "hidden", False),
-            "options": [],
-            "arguments": [],
             "commands": [],
             "is_group": isinstance(cmd, click.Group),
         }
-
-        # Extract parameters (options and arguments)
-        for param in cmd.params:
-            param_info = self._extract_click_param(param)
-            if isinstance(param, click.Option):
-                info["options"].append(param_info)
-            elif isinstance(param, click.Argument):
-                info["arguments"].append(param_info)
 
         # Extract subcommands if this is a group
         if isinstance(cmd, click.Group):
@@ -763,121 +756,27 @@ class GreatDocs:
 
         return info
 
-    def _extract_click_param(self, param: "click.Parameter") -> dict:
+    def _get_click_help_text(self, cmd: "click.Command", full_path: str) -> str:
         """
-        Extract information from a Click parameter (option or argument).
+        Get the formatted --help output from a Click command.
 
         Parameters
         ----------
-        param
-            The Click Parameter object.
-
-        Returns
-        -------
-        dict
-            Dictionary containing parameter information.
-        """
-        import click
-
-        info = {
-            "name": param.name,
-            "type": self._format_click_type(param.type),
-            "required": param.required,
-            "default": self._format_click_default(param.default),
-            "help": "",
-            "multiple": param.multiple if hasattr(param, "multiple") else False,
-            "nargs": param.nargs,
-        }
-
-        if isinstance(param, click.Option):
-            info["opts"] = param.opts  # e.g., ["-v", "--verbose"]
-            info["secondary_opts"] = param.secondary_opts  # e.g., ["--no-verbose"]
-            info["is_flag"] = param.is_flag
-            info["flag_value"] = param.flag_value if param.is_flag else None
-            info["count"] = param.count if hasattr(param, "count") else False
-            info["help"] = param.help or ""
-            info["show_default"] = param.show_default
-            info["show_envvar"] = param.show_envvar
-            info["envvar"] = param.envvar
-            info["hidden"] = param.hidden
-        elif isinstance(param, click.Argument):
-            info["metavar"] = param.make_metavar()
-
-        return info
-
-    def _format_click_type(self, param_type) -> str:
-        """
-        Format a Click parameter type as a string.
-
-        Parameters
-        ----------
-        param_type
-            The Click parameter type.
+        cmd
+            The Click Command object.
+        full_path
+            The full command path (e.g., "great-docs build").
 
         Returns
         -------
         str
-            Human-readable type string.
+            The formatted help text as it would appear from --help.
         """
         import click
 
-        if isinstance(param_type, click.Choice):
-            choices = ", ".join(f"'{c}'" for c in param_type.choices)
-            return f"Choice([{choices}])"
-        elif isinstance(param_type, click.IntRange):
-            min_val = param_type.min if param_type.min is not None else ""
-            max_val = param_type.max if param_type.max is not None else ""
-            return f"IntRange({min_val}..{max_val})"
-        elif isinstance(param_type, click.FloatRange):
-            min_val = param_type.min if param_type.min is not None else ""
-            max_val = param_type.max if param_type.max is not None else ""
-            return f"FloatRange({min_val}..{max_val})"
-        elif isinstance(param_type, click.DateTime):
-            return "DateTime"
-        elif isinstance(param_type, click.Path):
-            parts = []
-            if param_type.exists:
-                parts.append("exists")
-            if param_type.file_okay and not param_type.dir_okay:
-                parts.append("file")
-            elif param_type.dir_okay and not param_type.file_okay:
-                parts.append("directory")
-            return f"Path({', '.join(parts)})" if parts else "Path"
-        elif isinstance(param_type, click.File):
-            return f"File({param_type.mode})"
-        elif hasattr(param_type, "name"):
-            return param_type.name.upper()
-        else:
-            return str(param_type)
-
-    def _format_click_default(self, default) -> str | None:
-        """
-        Format a Click parameter default value for display.
-
-        Parameters
-        ----------
-        default
-            The default value from Click.
-
-        Returns
-        -------
-        str | None
-            Formatted default value string, or None if no meaningful default.
-        """
-        # Handle Click's sentinel values
-        if default is None or default == ():
-            return None
-
-        # Check for Click's internal sentinel types
-        default_str = str(default)
-        if "Sentinel" in default_str or "UNSET" in default_str:
-            return None
-
-        # Handle callable defaults
-        if callable(default):
-            return "<dynamic>"
-
-        return default
+        # Create a context to get the help text
+        ctx = click.Context(cmd, info_name=full_path)
+        return cmd.get_help(ctx)
 
     def _generate_cli_reference_pages(self, cli_info: dict) -> list[str]:
         """
@@ -955,7 +854,7 @@ class GreatDocs:
 
     def _generate_cli_command_page(self, cmd_info: dict, is_main: bool = False) -> str:
         """
-        Generate Quarto page content for a CLI command.
+        Generate Quarto page content for a CLI command showing --help output.
 
         Parameters
         ----------
@@ -967,7 +866,7 @@ class GreatDocs:
         Returns
         -------
         str
-            Quarto markdown content.
+            Quarto markdown content with the CLI help output.
         """
         lines = []
 
@@ -975,205 +874,20 @@ class GreatDocs:
         title = cmd_info["full_path"] if not is_main else f"{cmd_info['name']} CLI"
         lines.append("---")
         lines.append(f'title: "{title}"')
-        if is_main:
-            lines.append("listing:")
-            lines.append("  - id: commands")
-            lines.append("    type: table")
-            lines.append("    contents: '*.qmd'")
-            lines.append("    fields: [title, description]")
         lines.append("---")
         lines.append("")
 
-        # Command signature/usage
-        usage = self._format_cli_usage(cmd_info)
-        lines.append("## Usage")
+        # Output the help text in a styled div
+        lines.append("::: {.cli-manpage}")
         lines.append("")
-        lines.append("```bash")
-        lines.append(usage)
+        lines.append("```")
+        lines.append(cmd_info.get("help_text", "").rstrip())
         lines.append("```")
         lines.append("")
-
-        # Description
-        if cmd_info["help"]:
-            lines.append("## Description")
-            lines.append("")
-            lines.append(cmd_info["help"])
-            lines.append("")
-
-        # Arguments
-        if cmd_info["arguments"]:
-            lines.append("## Arguments")
-            lines.append("")
-            for arg in cmd_info["arguments"]:
-                lines.extend(self._format_cli_argument(arg))
-            lines.append("")
-
-        # Options
-        if cmd_info["options"]:
-            lines.append("## Options")
-            lines.append("")
-            for opt in cmd_info["options"]:
-                if not opt.get("hidden", False):
-                    lines.extend(self._format_cli_option(opt))
-            lines.append("")
-
-        # Subcommands
-        if cmd_info["commands"]:
-            lines.append("## Commands")
-            lines.append("")
-            for subcmd in cmd_info["commands"]:
-                if not subcmd.get("hidden", False):
-                    safe_name = subcmd["name"].replace("-", "_")
-                    short_help = subcmd.get("short_help") or subcmd.get("help", "").split("\n")[0]
-                    lines.append(f"- [`{subcmd['name']}`]({safe_name}.qmd): {short_help}")
-            lines.append("")
-
-        # Epilog
-        if cmd_info.get("epilog"):
-            lines.append("---")
-            lines.append("")
-            lines.append(cmd_info["epilog"])
-            lines.append("")
+        lines.append(":::")
+        lines.append("")
 
         return "\n".join(lines)
-
-    def _format_cli_usage(self, cmd_info: dict) -> str:
-        """
-        Format the usage line for a CLI command.
-
-        Parameters
-        ----------
-        cmd_info
-            Command information dictionary.
-
-        Returns
-        -------
-        str
-            Formatted usage string.
-        """
-        parts = [cmd_info["full_path"]]
-
-        # Add options placeholder if there are options
-        if cmd_info["options"]:
-            parts.append("[OPTIONS]")
-
-        # Add arguments
-        for arg in cmd_info["arguments"]:
-            metavar = arg.get("metavar", arg["name"].upper())
-            if arg["required"]:
-                if arg["nargs"] == -1:
-                    parts.append(f"{metavar}...")
-                elif arg["nargs"] > 1:
-                    parts.append(f"{metavar}..." if arg["nargs"] == -1 else metavar)
-                else:
-                    parts.append(metavar)
-            else:
-                parts.append(f"[{metavar}]")
-
-        # Add subcommand placeholder if this is a group
-        if cmd_info["is_group"]:
-            parts.append("COMMAND [ARGS]...")
-
-        return " ".join(parts)
-
-    def _format_cli_argument(self, arg: dict) -> list[str]:
-        """
-        Format a CLI argument for documentation.
-
-        Parameters
-        ----------
-        arg
-            Argument information dictionary.
-
-        Returns
-        -------
-        list[str]
-            Lines of formatted documentation.
-        """
-        lines = []
-        metavar = arg.get("metavar", arg["name"].upper())
-
-        lines.append(f"### `{metavar}`")
-        lines.append("")
-
-        # Type info
-        if arg["type"] and arg["type"] != "STRING":
-            lines.append(f"**Type:** `{arg['type']}`")
-            lines.append("")
-
-        # Required
-        if arg["required"]:
-            lines.append("**Required**")
-            lines.append("")
-
-        # Default
-        if arg["default"] is not None:
-            lines.append(f"**Default:** `{arg['default']}`")
-            lines.append("")
-
-        return lines
-
-    def _format_cli_option(self, opt: dict) -> list[str]:
-        """
-        Format a CLI option for documentation.
-
-        Parameters
-        ----------
-        opt
-            Option information dictionary.
-
-        Returns
-        -------
-        list[str]
-            Lines of formatted documentation.
-        """
-        lines = []
-
-        # Option names
-        opt_names = ", ".join(f"`{o}`" for o in opt["opts"])
-        if opt.get("secondary_opts"):
-            opt_names += " / " + ", ".join(f"`{o}`" for o in opt["secondary_opts"])
-
-        lines.append(f"### {opt_names}")
-        lines.append("")
-
-        # Help text
-        if opt["help"]:
-            lines.append(opt["help"])
-            lines.append("")
-
-        # Details table
-        details = []
-
-        if opt["type"] and opt["type"] != "STRING" and not opt.get("is_flag"):
-            details.append(f"**Type:** `{opt['type']}`")
-
-        if opt.get("is_flag"):
-            details.append("**Flag**")
-
-        if opt["required"]:
-            details.append("**Required**")
-
-        if opt["default"] is not None and not opt.get("is_flag"):
-            default_val = opt["default"]
-            if callable(default_val):
-                default_val = "<dynamic>"
-            details.append(f"**Default:** `{default_val}`")
-
-        if opt.get("envvar"):
-            envvar = opt["envvar"]
-            if isinstance(envvar, (list, tuple)):
-                envvar = ", ".join(envvar)
-            details.append(f"**Environment:** `{envvar}`")
-
-        if opt.get("multiple"):
-            details.append("**Multiple:** Can be specified multiple times")
-
-        if details:
-            lines.append(" | ".join(details))
-            lines.append("")
-
-        return lines
 
     def _update_sidebar_with_cli(self, cli_files: list[str]) -> None:
         """

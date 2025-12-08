@@ -761,3 +761,43 @@ body.quarto-dark .sidebar-filter-count .filter-count-num {
 body.quarto-dark .sidebar-item.sidebar-filter-match .sidebar-link {
     background-color: rgba(255, 193, 7, 0.2);
 }
+
+/* =====================================================
+   CLI Man-Page Styling
+   Terminal-like appearance for CLI documentation
+   ===================================================== */
+
+.cli-manpage {
+    max-width: 90ch;
+    margin: 0 auto;
+}
+
+/* Main man-page code block */
+.cli-manpage pre {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    border: none;
+    border-radius: 6px;
+    padding: 1.25rem 1.5rem;
+    overflow-x: auto;
+    white-space: pre;
+    margin-bottom: 1rem;
+}
+
+.cli-manpage pre code {
+    font-family: inherit;
+    font-size: inherit;
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    white-space: pre;
+}
+
+/* Light mode - keep the dark terminal look */
+[data-bs-theme="light"] .cli-manpage pre {
+    background: #1e1e1e;
+    color: #d4d4d4;
+}

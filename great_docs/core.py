@@ -162,7 +162,7 @@ class GreatDocs:
             print(f"Copied {post_render_dst}")
 
         # Copy CSS file
-        css_src = self.assets_path / "styles.css"
+        css_src = self.assets_path / "great-docs.css"
         css_dst = self.project_path / "great-docs.css"
 
         if css_dst.exists() and not force:
@@ -2944,7 +2944,7 @@ toc: false
             os.chdir(self.project_path)
 
             # Ensure latest CSS and post-render script from package assets are in place
-            css_src = self.assets_path / "styles.css"
+            css_src = self.assets_path / "great-docs.css"
             css_dst = self.project_path / "great-docs.css"
             if css_src.exists():
                 shutil.copy2(css_src, css_dst)

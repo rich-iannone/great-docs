@@ -16,7 +16,14 @@ class OrderedGroup(click.Group):
 @click.group(cls=OrderedGroup)
 @click.version_option(version=__version__, prog_name="great-docs")
 def cli():
-    """Great Docs - A great way to quickly initialize your Python docs site."""
+    """Great Docs - Beautiful documentation for Python packages.
+
+    Great Docs generates professional documentation sites with auto-generated
+    API references, CLI documentation, smart navigation, and modern styling.
+
+    Get started with 'great-docs init' to set up your docs, then use
+    'great-docs build' to generate your site.
+    """
     pass
 
 
@@ -37,7 +44,20 @@ def cli():
     help="Overwrite existing files without prompting",
 )
 def init(project_path, docs_dir, force):
-    """Initialize great-docs in your quartodoc project."""
+    """Initialize great-docs in your project.
+
+    This command sets up everything needed for your documentation site:
+
+    \b
+    • Installs CSS, JavaScript, and configuration files
+    • Auto-detects your package name and public API
+    • Creates index.qmd from your README.md
+    • Configures navigation and sidebar
+    • Sets up quartodoc for API reference generation
+
+    Run this once to get started, then use 'great-docs build' to generate
+    your documentation.
+    """
     try:
         docs = GreatDocs(project_path=project_path, docs_dir=docs_dir)
         docs.install(force=force)
@@ -68,7 +88,21 @@ def init(project_path, docs_dir, force):
     help="Skip re-discovering package exports (faster rebuild when API unchanged)",
 )
 def build(project_path, docs_dir, watch, no_refresh):
-    """Build documentation (runs quartodoc build + quarto render)."""
+    """Build your documentation site.
+
+    This command runs the complete build process:
+
+    \b
+    1. Refreshes quartodoc configuration (discovers API changes)
+    2. Generates llms.txt for AI/LLM documentation indexing
+    3. Creates source links to GitHub
+    4. Generates CLI reference pages (if enabled)
+    5. Runs quartodoc to generate API reference
+    6. Runs Quarto to render the final HTML site
+
+    Use --no-refresh to skip API discovery for faster rebuilds when your
+    package's public API hasn't changed.
+    """
     try:
         docs = GreatDocs(project_path=project_path, docs_dir=docs_dir)
         docs.build(watch=watch, refresh=not no_refresh)
@@ -91,7 +125,18 @@ def build(project_path, docs_dir, watch, no_refresh):
     help="Path to documentation directory relative to project root (e.g., 'docs', 'site')",
 )
 def uninstall(project_path, docs_dir):
-    """Remove great-docs from your quartodoc project."""
+    """Remove great-docs from your project.
+
+    This command removes all great-docs assets and configuration:
+
+    \b
+    • Deletes CSS, JavaScript, and asset files
+    • Removes great-docs entries from _quarto.yml
+    • Preserves your content files (*.qmd, reference/, etc.)
+
+    Use this if you want to stop using great-docs or switch to a different
+    documentation system.
+    """
     try:
         docs = GreatDocs(project_path=project_path, docs_dir=docs_dir)
         docs.uninstall()
@@ -112,7 +157,13 @@ def uninstall(project_path, docs_dir):
     help="Path to documentation directory relative to project root (e.g., 'docs', 'site')",
 )
 def preview(project_path, docs_dir):
-    """Build and serve documentation locally."""
+    """Build and preview your documentation locally.
+
+    This command builds your docs and starts a local server with live reload.
+    Open the displayed URL in your browser to preview your site.
+
+    Press Ctrl+C to stop the server.
+    """
     try:
         docs = GreatDocs(project_path=project_path, docs_dir=docs_dir)
         docs.preview()
@@ -281,7 +332,20 @@ cli.add_command(scan)
     help="Overwrite existing workflow file without prompting",
 )
 def setup_github_pages(project_path, docs_dir, main_branch, python_version, force):
-    """Generate GitHub Actions workflow for deploying docs to GitHub Pages."""
+    """Set up automatic deployment to GitHub Pages.
+
+    This command creates a GitHub Actions workflow that automatically builds
+    and deploys your documentation when you push to the main branch.
+
+    \b
+    The workflow will:
+    • Build docs on every push and pull request
+    • Deploy to GitHub Pages on main branch pushes
+    • Use Quarto's official GitHub Action for reliable builds
+
+    After running this command, commit the workflow file and enable GitHub
+    Pages in your repository settings (Settings → Pages → Source: GitHub Actions).
+    """
     from pathlib import Path
 
     try:

@@ -1,6 +1,9 @@
 project:
   type: website
   post-render: scripts/post-render.py
+  resources:
+  - github-widget.js
+  - sidebar-filter.js
 format:
   html:
     theme: flatly
@@ -14,6 +17,8 @@ format:
     - text: <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     include-after-body:
     - text: <script src="github-widget.js"></script>
+    - text: <script>document.body.dataset.sidebarFilterMinItems = "1";</script>
+    - text: <script src="sidebar-filter.js"></script>
 website:
   page-navigation: true
   title: Great-Docs

@@ -784,3 +784,51 @@ def inject_github_widget():
 
 
 inject_github_widget()
+
+
+def fix_script_paths():
+    """
+    Fix relative script paths for HTML files in subdirectories.
+
+    Quarto's include-after-body with text doesn't resolve paths relative to the
+    output file's location. This function finds script tags with relative paths
+    and adjusts them based on the file's depth in the directory structure.
+    """
+    print("Fixing script paths for subdirectory pages...")
+
+    fixed_count = 0
+
+    for html_file in all_html_files:
+        # Calculate depth relative to _site directory
+        rel_path = os.path.relpath(html_file, "_site")
+        depth = rel_path.count(os.sep)
+
+        # Skip files at root level (depth 0)
+        if depth == 0:
+            continue
+
+        with open(html_file, "r") as file:
+            content = file.read()
+
+        # Build the relative path prefix (e.g., "../" for depth 1, "../../" for depth 2)
+        prefix = "../" * depth
+
+        # Fix github-widget.js path
+        old_script = '<script src="github-widget.js"></script>'
+        new_script = f'<script src="{prefix}github-widget.js"></script>'
+
+        if old_script in content:
+            content = content.replace(old_script, new_script)
+
+            with open(html_file, "w") as file:
+                file.write(content)
+
+            fixed_count += 1
+
+    if fixed_count > 0:
+        print(f"Fixed script paths in {fixed_count} HTML files in subdirectories")
+    else:
+        print("No script path fixes needed")
+
+
+fix_script_paths()

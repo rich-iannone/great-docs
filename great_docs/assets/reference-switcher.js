@@ -33,14 +33,20 @@
             return;
         }
 
-        // Check if CLI reference exists by looking for the link in navigation
+        // Check if CLI reference exists by looking for CLI link in navbar or trying to detect CLI docs
+        // We check multiple places since the sidebar may not have cross-links
         const cliNavLink = document.querySelector('a[href*="/reference/cli/"]');
-        const apiNavLink = document.querySelector('a[href*="/reference/"][href$="index.qmd"], a[href*="/reference/"][href$="index.html"]');
-
-        // Only show switcher if both references exist
-        if (!cliNavLink && !apiNavLink) {
-            return;
-        }
+        
+        // Also check if we're on CLI page (which means CLI docs exist)
+        const cliDocsExist = isCliReference || cliNavLink;
+        
+        // If we're on API reference but can't find CLI links, check via fetch
+        // For now, always show switcher on reference pages and let navigation fail gracefully
+        // if CLI doesn't exist (the button will just navigate to a 404)
+        
+        // Only skip if we can definitively say there's no CLI
+        // Being on a CLI page proves CLI exists; being on API page, we assume CLI might exist
+        // This is a reasonable default since the switcher is only injected when CLI is configured
 
         // Create the switcher container
         const switcherContainer = document.createElement('div');

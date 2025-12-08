@@ -3909,14 +3909,19 @@ toc: false
             metadata = self._get_package_metadata()
             if metadata.get("cli_enabled", False):
                 print("\n🖥️  Generating CLI reference...")
-                cli_info = self._discover_click_cli(package_name)
-                if cli_info:
-                    cli_files = self._generate_cli_reference_pages(cli_info)
-                    if cli_files:
-                        self._update_sidebar_with_cli(cli_files)
-                        print(f"✅ Generated {len(cli_files)} CLI reference page(s)")
-                else:
-                    print("   No Click CLI found or CLI documentation disabled")
+                try:
+                    cli_info = self._discover_click_cli(package_name)
+                    if cli_info:
+                        cli_files = self._generate_cli_reference_pages(cli_info)
+                        if cli_files:
+                            self._update_sidebar_with_cli(cli_files)
+                            print(f"✅ Generated {len(cli_files)} CLI reference page(s)")
+                    else:
+                        print("   No Click CLI found or CLI documentation disabled")
+                except Exception as e:
+                    print(f"   ⚠️  Error generating CLI documentation: {e}")
+                    import traceback
+                    traceback.print_exc()
 
             # Step 1: Run quartodoc build using Python module execution
             # This ensures it uses the same Python environment as great-docs

@@ -820,10 +820,7 @@ def process_cli_reference_pages():
 
         # Add 'cli-title' class to h1.title elements
         # This matches the pattern: <h1 class="title">
-        content = content.replace(
-            '<h1 class="title">',
-            '<h1 class="title cli-title">'
-        )
+        content = content.replace('<h1 class="title">', '<h1 class="title cli-title">')
 
         with open(html_file, "w") as file:
             file.write(content)

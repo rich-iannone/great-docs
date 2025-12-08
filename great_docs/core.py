@@ -212,6 +212,22 @@ class GreatDocs:
             shutil.copy2(gh_widget_src, gh_widget_dst)
             print(f"Copied {gh_widget_dst}")
 
+        # Copy sidebar filter JavaScript file
+        sidebar_filter_src = self.assets_path / "sidebar-filter.js"
+        sidebar_filter_dst = self.project_path / "sidebar-filter.js"
+
+        if sidebar_filter_src.exists():
+            if sidebar_filter_dst.exists() and not force:
+                response = input(f"{sidebar_filter_dst} already exists. Overwrite? [y/N]: ")
+                if response.lower() != "y":
+                    print("Skipping sidebar-filter.js")
+                else:
+                    shutil.copy2(sidebar_filter_src, sidebar_filter_dst)
+                    print(f"Copied {sidebar_filter_dst}")
+            else:
+                shutil.copy2(sidebar_filter_src, sidebar_filter_dst)
+                print(f"Copied {sidebar_filter_dst}")
+
         # Update _quarto.yml configuration
         self._update_quarto_config()
 
@@ -385,6 +401,13 @@ class GreatDocs:
 
                 # GitHub link style: "widget" (default) or "icon"
                 metadata["github_style"] = tool_config.get("github_style", "widget")
+
+                # Sidebar filter configuration
+                # - enabled: True (default) or False to disable
+                # - min_items: minimum number of items to show filter (default: 20)
+                sidebar_filter_config = tool_config.get("sidebar_filter", {})
+                metadata["sidebar_filter_enabled"] = sidebar_filter_config.get("enabled", True)
+                metadata["sidebar_filter_min_items"] = sidebar_filter_config.get("min_items", 20)
 
         except Exception:
             pass
@@ -2516,6 +2539,49 @@ toc: false
                 if not has_gh_widget:
                     config["format"]["html"]["include-after-body"].append(gh_script_entry)
 
+        # Add sidebar filter script if enabled
+        if metadata.get("sidebar_filter_enabled", True):
+            if "include-after-body" not in config["format"]["html"]:
+                config["format"]["html"]["include-after-body"] = []
+            elif isinstance(config["format"]["html"]["include-after-body"], str):
+                config["format"]["html"]["include-after-body"] = [
+                    config["format"]["html"]["include-after-body"]
+                ]
+
+            # Add the sidebar filter script
+            filter_script_entry = {"text": '<script src="sidebar-filter.js"></script>'}
+            has_filter = any(
+                "sidebar-filter" in str(item)
+                for item in config["format"]["html"]["include-after-body"]
+            )
+            if not has_filter:
+                config["format"]["html"]["include-after-body"].append(filter_script_entry)
+
+            # Add data attributes for configuration (must be before sidebar-filter.js)
+            min_items = metadata.get("sidebar_filter_min_items", 20)
+            if min_items != 20:
+                # Add custom min_items via body data attribute - insert BEFORE the filter script
+                min_items_script = {
+                    "text": f'<script>document.body.dataset.sidebarFilterMinItems = "{min_items}";</script>'
+                }
+                has_min_items = any(
+                    "sidebarFilterMinItems" in str(item)
+                    for item in config["format"]["html"]["include-after-body"]
+                )
+                if not has_min_items:
+                    # Insert before the sidebar-filter.js script
+                    filter_index = next(
+                        (
+                            i
+                            for i, item in enumerate(config["format"]["html"]["include-after-body"])
+                            if "sidebar-filter" in str(item)
+                        ),
+                        len(config["format"]["html"]["include-after-body"]),
+                    )
+                    config["format"]["html"]["include-after-body"].insert(
+                        filter_index, min_items_script
+                    )
+
         # Add sidebar navigation for reference pages
         if "sidebar" not in config["website"]:
             config["website"]["sidebar"] = [
@@ -2960,6 +3026,12 @@ toc: false
             if gh_widget_src.exists():
                 shutil.copy2(gh_widget_src, gh_widget_dst)
 
+            # Ensure sidebar filter JS is in place
+            sidebar_filter_src = self.assets_path / "sidebar-filter.js"
+            sidebar_filter_dst = self.project_path / "sidebar-filter.js"
+            if sidebar_filter_src.exists():
+                shutil.copy2(sidebar_filter_src, sidebar_filter_dst)
+
             # Update navbar to use GitHub widget (if configured)
             quarto_yml = self.project_path / "_quarto.yml"
             if quarto_yml.exists():
@@ -2994,8 +3066,55 @@ toc: false
                         if not has_gh_widget:
                             config["format"]["html"]["include-after-body"].append(gh_script_entry)
 
-                    with open(quarto_yml, "w") as f:
-                        yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+                # Add sidebar filter script if enabled
+                if metadata.get("sidebar_filter_enabled", True):
+                    if "format" not in config:
+                        config["format"] = {"html": {}}
+                    if "html" not in config["format"]:
+                        config["format"]["html"] = {}
+                    if "include-after-body" not in config["format"]["html"]:
+                        config["format"]["html"]["include-after-body"] = []
+                    elif isinstance(config["format"]["html"]["include-after-body"], str):
+                        config["format"]["html"]["include-after-body"] = [
+                            config["format"]["html"]["include-after-body"]
+                        ]
+
+                    filter_script_entry = {"text": '<script src="sidebar-filter.js"></script>'}
+                    has_filter = any(
+                        "sidebar-filter" in str(item)
+                        for item in config["format"]["html"]["include-after-body"]
+                    )
+                    if not has_filter:
+                        config["format"]["html"]["include-after-body"].append(filter_script_entry)
+
+                    # Add min_items configuration if different from default
+                    min_items = metadata.get("sidebar_filter_min_items", 20)
+                    if min_items != 20:
+                        min_items_script = {
+                            "text": f'<script>document.body.dataset.sidebarFilterMinItems = "{min_items}";</script>'
+                        }
+                        has_min_items = any(
+                            "sidebarFilterMinItems" in str(item)
+                            for item in config["format"]["html"]["include-after-body"]
+                        )
+                        if not has_min_items:
+                            # Insert before the sidebar-filter.js script
+                            filter_index = next(
+                                (
+                                    i
+                                    for i, item in enumerate(
+                                        config["format"]["html"]["include-after-body"]
+                                    )
+                                    if "sidebar-filter" in str(item)
+                                ),
+                                len(config["format"]["html"]["include-after-body"]),
+                            )
+                            config["format"]["html"]["include-after-body"].insert(
+                                filter_index, min_items_script
+                            )
+
+                with open(quarto_yml, "w") as f:
+                    yaml.dump(config, f, default_flow_style=False, sort_keys=False)
 
             # Step 0: Rebuild index.qmd from source file (README.md, index.md, or index.qmd)
             print("\n📄 Step 0: Syncing landing page with source file...")

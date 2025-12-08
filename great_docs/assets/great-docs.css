@@ -530,3 +530,164 @@ a.sidebar-item-text.sidebar-link.text-start > span {
         display: none;
     }
 }
+
+/* ============================================
+   Sidebar Filter Styles
+   ============================================ */
+
+.sidebar-filter-container {
+    padding: 0.35rem 0.65rem 0.3rem 0.65rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    background: transparent;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.sidebar-filter-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar-filter-input {
+    width: 100%;
+    padding: 0.3rem 1.75rem 0.3rem 1.85rem;
+    font-size: 0.8rem;
+    border: 1px solid #e9e9e9;
+    border-radius: 4px;
+    background-color: #fff;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, background-color 0.15s ease-in-out;
+}
+
+.sidebar-filter-input:focus {
+    outline: none;
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.12);
+    background-color: #fff;
+}
+
+.sidebar-filter-input::placeholder {
+    color: #999;
+    opacity: 1;
+}
+
+.sidebar-filter-icon {
+    position: absolute;
+    left: 0.55rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+    pointer-events: none;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar-filter-clear {
+    position: absolute;
+    right: 0.35rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 0.15rem;
+    line-height: 1;
+    border-radius: 3px;
+    transition: color 0.15s ease, background-color 0.15s ease;
+    font-size: 0.7rem;
+}
+
+.sidebar-filter-clear:hover {
+    color: #666;
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+.sidebar-filter-count {
+    font-size: 0.7rem;
+    color: #888;
+    text-align: center;
+    margin-top: 0.25rem;
+    padding: 0.1rem 0.4rem;
+    background: transparent;
+    border-radius: 3px;
+}
+
+.sidebar-filter-count .filter-count-num {
+    font-weight: 600;
+    color: #666;
+}
+
+/* Highlight matched items */
+.sidebar-item.sidebar-filter-match .sidebar-link {
+    background-color: rgba(255, 243, 205, 0.5);
+}
+
+/* Smooth transitions for showing/hiding items */
+.sidebar-item {
+    transition: opacity 0.15s ease;
+}
+
+/* Keyboard shortcut hint */
+.sidebar-filter-input:not(:focus)::placeholder {
+    /* Could show "/" hint here */
+}
+
+/* Mobile adjustments */
+@media (max-width: 991.98px) {
+    .sidebar-filter-container {
+        padding: 0.4rem 0.65rem;
+    }
+
+    .sidebar-filter-input {
+        font-size: 0.85rem;
+        padding: 0.35rem 1.75rem 0.35rem 1.85rem;
+    }
+}
+
+/* Dark mode support - uses Quarto's dark mode class */
+body.quarto-dark .sidebar-filter-container {
+    background: transparent;
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+body.quarto-dark .sidebar-filter-input {
+    background-color: #2a2a2a;
+    border-color: #3d3d3d;
+    color: #e0e0e0;
+}
+
+body.quarto-dark .sidebar-filter-input:focus {
+    border-color: #6ea8fe;
+    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.25);
+    background-color: #333;
+}
+
+body.quarto-dark .sidebar-filter-input::placeholder {
+    color: #9e9e9e;
+}
+
+body.quarto-dark .sidebar-filter-icon,
+body.quarto-dark .sidebar-filter-clear {
+    color: #9e9e9e;
+}
+
+body.quarto-dark .sidebar-filter-clear:hover {
+    color: #e0e0e0;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+body.quarto-dark .sidebar-filter-count {
+    color: #9e9e9e;
+}
+
+body.quarto-dark .sidebar-filter-count .filter-count-num {
+    color: #e0e0e0;
+}
+
+body.quarto-dark .sidebar-item.sidebar-filter-match .sidebar-link {
+    background-color: rgba(255, 193, 7, 0.2);
+}

@@ -193,6 +193,11 @@ ignore_missing_imports = true
 # Exclude additional items from auto-documentation
 # exclude = ["item_1", "item_2"]
 
+# Sidebar filter configuration (for filtering API items in large APIs)
+[tool.great-docs.sidebar_filter]
+enabled = true
+min_items = 1  # Set low for testing (default: 20)
+
 # Source link configuration (for "View source" links on reference pages)
 # [tool.great-docs.source]
 # enabled = true              # Enable/disable source links (default: true)

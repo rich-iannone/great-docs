@@ -813,16 +813,25 @@ def fix_script_paths():
         # Build the relative path prefix (e.g., "../" for depth 1, "../../" for depth 2)
         prefix = "../" * depth
 
+        modified = False
+
         # Fix github-widget.js path
-        old_script = '<script src="github-widget.js"></script>'
-        new_script = f'<script src="{prefix}github-widget.js"></script>'
+        old_gh_script = '<script src="github-widget.js"></script>'
+        new_gh_script = f'<script src="{prefix}github-widget.js"></script>'
+        if old_gh_script in content:
+            content = content.replace(old_gh_script, new_gh_script)
+            modified = True
 
-        if old_script in content:
-            content = content.replace(old_script, new_script)
+        # Fix sidebar-filter.js path
+        old_filter_script = '<script src="sidebar-filter.js"></script>'
+        new_filter_script = f'<script src="{prefix}sidebar-filter.js"></script>'
+        if old_filter_script in content:
+            content = content.replace(old_filter_script, new_filter_script)
+            modified = True
 
+        if modified:
             with open(html_file, "w") as file:
                 file.write(content)
-
             fixed_count += 1
 
     if fixed_count > 0:

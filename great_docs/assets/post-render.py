@@ -669,7 +669,7 @@ if os.path.exists(index_file):
                 description = tds[1].strip()
 
                 dt = f"<dt>{link_content}</dt>"
-                dd = f'<dd style="text-indent: 20px; margin-top: -3px;">{description}</dd>'
+                dd = f'<dd style="margin-top: -3px;">{description}</dd>'
                 dl_items.append(f"{dt}\n{dd}")
 
         dl_content = "\n\n".join(dl_items)

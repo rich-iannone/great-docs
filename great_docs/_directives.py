@@ -12,13 +12,13 @@ class DocDirectives:
     Attributes
     ----------
     family
-        The family/group this item belongs to (e.g., "Family Name").
+        The family/group this item belongs to (e.g., `"Family Name"`).
     order
         Ordering within the family (lower numbers appear first).
     seealso
         List of related items to cross-reference.
     nodoc
-        If True, exclude this item from documentation.
+        If `True`, exclude this item from documentation.
     """
 
     family: str | None = None

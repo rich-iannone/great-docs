@@ -6,6 +6,7 @@ A comprehensive documentation site generator for Python packages. Great Docs aut
 
 - one-command setup: single `great-docs init` creates your entire docs site
 - auto-generated API docs: automatically discovers and documents your package's API
+- CLI documentation: automatically generates reference pages for Click-based CLIs
 - smart organization: intelligent class/method/function categorization
 - enhanced typography: monospace fonts for code elements and improved readability
 - modern styling: clean, professional appearance
@@ -333,6 +334,38 @@ quartodoc:
 ```
 
 This prevents overwhelming single-page documentation and improves navigation for large classes.
+
+### CLI Documentation
+
+Great Docs can automatically generate reference documentation for Click-based command-line interfaces. When enabled, it extracts the `--help` output from each command and subcommand, presenting them in a terminal-style format.
+
+**Enabling CLI documentation**:
+
+Add the following to your `pyproject.toml`:
+
+```toml
+[tool.great-docs.cli]
+enabled = true
+```
+
+Great Docs will automatically:
+
+1. discover your Click CLI from common module locations (`your_package.cli`, `your_package.__main__`, etc.)
+2. find the entry point name from `[project.scripts]` in your `pyproject.toml`
+3. generate a reference page for each command and subcommand
+4. add a CLI section to the sidebar navigation
+5. include an API/CLI switcher on reference pages
+
+**Optional configuration**:
+
+```toml
+[tool.great-docs.cli]
+enabled = true
+module = "your_package.cli"  # Explicit module path (auto-detected if omitted)
+name = "cli"                  # Click command object name (auto-detected if omitted)
+```
+
+The generated CLI documentation displays the actual `--help` output in a monospaced, terminal-style format, making it familiar and easy to read for command-line users.
 
 ## Building Your Documentation
 

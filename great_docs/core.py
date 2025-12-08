@@ -113,10 +113,10 @@ class GreatDocs:
         Parameters
         ----------
         force
-            If `True`, overwrite existing files without prompting. Default is False.
+            If `True`, overwrite existing files without prompting. Default is `False`.
         skip_quartodoc
-            If `True`, skip adding quartodoc configuration. Useful for testing or when
-            quartodoc is not needed. Default is False.
+            If `True`, skip adding quartodoc configuration. Useful for testing or when quartodoc is
+            not needed. Default is `False`.
 
         Examples
         --------
@@ -136,7 +136,7 @@ class GreatDocs:
         docs.install(force=True)
         ```
         """
-        print("Installing great-docs to your quartodoc project...")
+        print("Installing great-docs...")
 
         # Create docs directory if it doesn't exist
         self.project_path.mkdir(parents=True, exist_ok=True)
@@ -243,7 +243,7 @@ class GreatDocs:
         print("\nGreat Docs installation complete!")
         if not skip_quartodoc:
             print("\nNext steps:")
-            print("1. Review the generated quartodoc configuration in _quarto.yml")
+            print("1. Review the generated configuration in _quarto.yml")
             print("2. Run `great-docs build` to generate docs and build your site")
             print("   (This runs `quartodoc build` followed by `quarto render`)")
             print(f"3. Open {self.project_path / '_site' / 'index.html'} to preview your site")
@@ -1036,14 +1036,14 @@ class GreatDocs:
             safe_exports = []
             failed_exports = {}  # name -> error type for reporting
 
-            # Try to use quartodoc's get_object for validation
+            # Try to use quartodoc's `get_object()` for validation
             quartodoc_get_object = None
             try:
                 from functools import partial
 
                 from quartodoc import get_object as qd_get_object
 
-                # quartodoc uses parser="numpy" by default which affects alias resolution
+                # quartodoc uses `parser="numpy"` by default which affects alias resolution
                 quartodoc_get_object = partial(qd_get_object, dynamic=True, parser="numpy")
             except ImportError:
                 pass
@@ -1180,7 +1180,7 @@ class GreatDocs:
             # Load the package using griffe
             normalized_name = package_name.replace("-", "_")
 
-            # Try to use quartodoc's get_object for validation
+            # Try to use quartodoc's `get_object()` for validation
             quartodoc_get_object = None
             try:
                 from functools import partial
@@ -1349,9 +1349,10 @@ class GreatDocs:
 
         Uses the configured discovery method (dir() by default, or __all__ if specified).
 
-        Uses smart heuristics:
-        - Classes with ≤5 methods: documented inline
-        - Classes with >5 methods: separate pages for each method
+        Uses this heuristic:
+
+        - classes with ≤5 methods: documented inline
+        - classes with >5 methods: separate pages for each method
 
         Parameters
         ----------
@@ -1562,9 +1563,9 @@ class GreatDocs:
         """
         Create quartodoc sections based on @family directives in docstrings.
 
-        This method scans all docstrings for @family, @order, and @nodoc directives
-        and generates organized sections. Items without @family directives are
-        placed in auto-generated categories (Classes, Functions, Other).
+        This method scans all docstrings for @family, @order, and @nodoc directives and generates
+        organized sections. Items without @family directives are placed in auto-generated
+        categories (Classes, Functions, Other).
 
         Parameters
         ----------
@@ -2350,13 +2351,14 @@ toc: false
         """
         Refresh the quartodoc sections in _quarto.yml based on current package exports.
 
-        This method re-discovers the package API and updates the quartodoc sections
-        without touching other configuration. Use this when your package API has changed
-        (new classes, methods, or functions added/removed).
+        This method re-discovers the package API and updates the quartodoc sections without touching
+        other configuration. Use this when your package API has changed (new classes, methods, or
+        functions added/removed).
 
         The method preserves:
-        - Package name and other quartodoc settings
-        - All non-quartodoc configuration in _quarto.yml
+
+        - package name and other quartodoc settings
+        - all non-quartodoc configuration in _quarto.yml
 
         Only the 'sections' key in quartodoc config is regenerated.
         """
@@ -2620,8 +2622,8 @@ toc: false
         """
         Update sidebar navigation based on quartodoc sections.
 
-        Builds a structured sidebar with sections and their contents,
-        and excludes the index page from showing the sidebar.
+        Builds a structured sidebar with sections and their contents, and excludes the index page
+        from showing the sidebar.
         """
         quarto_yml = self.project_path / "_quarto.yml"
 
@@ -2698,12 +2700,13 @@ toc: false
         """
         Generate an llms.txt file for LLM documentation indexing.
 
-        Creates a structured markdown file that indexes the API reference pages,
-        following the llms.txt standard format for LLM-readable documentation.
-        The file is saved to the docs directory and will be included in the built site.
+        Creates a structured markdown file that indexes the API reference pages, following the
+        llms.txt standard format for LLM-readable documentation. The file is saved to the docs
+        directory and will be included in the built site.
 
         The format follows the structure:
-        - Package title with description
+
+        - package title with description
         - API Reference section with links to each documented item
         """
         quarto_yml = self.project_path / "_quarto.yml"
@@ -2878,10 +2881,6 @@ toc: false
         docs = GreatDocs("/path/to/my/project")
         docs.uninstall()
         ```
-
-        See Also
-        --------
-        install : Install great-docs assets and configuration
         """
         print("Uninstalling great-docs from your quartodoc project...")
         print(f"Removing from: {self.project_path.relative_to(self.project_root)}")
@@ -2918,9 +2917,9 @@ toc: false
         """
         Remove great-docs configuration from _quarto.yml.
 
-        This private method removes the post-render script reference and CSS file
-        entry from the Quarto configuration file, reverting it to its pre-installation
-        state while preserving other user settings.
+        This private method removes the post-render script reference and CSS file entry from the
+        Quarto configuration file, reverting it to its pre-installation state while preserving other
+        user settings.
         """
         quarto_yml = self.project_path / "_quarto.yml"
 

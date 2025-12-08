@@ -68,8 +68,8 @@ def highlight_signature_with_pygments(html_content):
     """
     Re-highlight the main signature block (cb1) with Pygments for better syntax coloring.
 
-    This extracts the signature code, highlights it with Pygments, then maps
-    the Pygments CSS classes to Quarto's highlighting classes for consistency.
+    This extracts the signature code, highlights it with Pygments, then maps the Pygments CSS
+    classes to Quarto's highlighting classes for consistency.
     """
     # Find the main signature code block (id="cb1")
     cb1_pattern = re.compile(
@@ -179,7 +179,7 @@ def format_signature_multiline(html_content):
             arg2=default2,
         )
 
-    Signatures that are already multiline (from quartodoc) are skipped.
+    Signatures that are already multiline are skipped.
     """
     # Pattern to match the content inside signature spans
     # The signature is inside <span id="cbN-1">...(args)</span>
@@ -192,8 +192,8 @@ def format_signature_multiline(html_content):
         content = match.group(3)
         span_end = match.group(4)
 
-        # Skip if signature is already multiline (quartodoc formatted it)
-        # This is detected by checking if content ends with just "(" or has a newline
+        # Skip if signature is already multiline; this is detected by checking if content ends with
+        # just "(" or has a newline
         if content.strip().endswith("(") or "\n" in content:
             return full_match
 
@@ -290,9 +290,8 @@ def strip_directives_from_html(html_content):
     """
     Remove Great Docs %directive lines from rendered HTML.
 
-    Directives like %family, %order, %seealso, and %nodoc are used for
-    organizing documentation but should not appear in the final rendered output.
-    This function removes them as a safety net after quartodoc rendering.
+    Directives like %family, %order, %seealso, and %nodoc are used for organizing documentation but
+    they should not appear in the final rendered output. This function removes them after rendering.
     """
     # Match directives wrapped in <p> tags
     # e.g., <p>%family Something</p>
@@ -423,6 +422,7 @@ for html_file in html_files:
 
         if h1_match:
             original_h1_content = h1_match.group(1).strip()
+
             # Store classification based on original content
             if original_h1_content and original_h1_content[0].isupper():
                 if "." in original_h1_content:
@@ -449,6 +449,7 @@ for html_file in html_files:
     for i, line in enumerate(content):
         # Use regex to find h1 tags (both class="title" and styled versions)
         h1_match = re.search(r'<h1\s+class="title">', line)
+
         if not h1_match:
             h1_match = re.search(r'<h1\s+style="[^"]*">', line)
 
@@ -746,8 +747,8 @@ def inject_github_widget():
     """
     Find and replace escaped GitHub widget placeholders with actual widget HTML.
 
-    Quarto escapes HTML in navbar text items, so we need to post-process
-    to inject the actual widget div.
+    Quarto escapes HTML in navbar text items, so we need to post-process to inject the actual widget
+    div.
     """
     print("Checking for GitHub widget placeholders...")
 
@@ -790,9 +791,9 @@ def fix_script_paths():
     """
     Fix relative script paths for HTML files in subdirectories.
 
-    Quarto's include-after-body with text doesn't resolve paths relative to the
-    output file's location. This function finds script tags with relative paths
-    and adjusts them based on the file's depth in the directory structure.
+    Quarto's include-after-body with text doesn't resolve paths relative to the output file's
+    location. This function finds script tags with relative paths and adjusts them based on the
+    file's depth in the directory structure.
     """
     print("Fixing script paths for subdirectory pages...")
 
@@ -818,6 +819,7 @@ def fix_script_paths():
         # Fix github-widget.js path
         old_gh_script = '<script src="github-widget.js"></script>'
         new_gh_script = f'<script src="{prefix}github-widget.js"></script>'
+
         if old_gh_script in content:
             content = content.replace(old_gh_script, new_gh_script)
             modified = True
@@ -825,6 +827,7 @@ def fix_script_paths():
         # Fix sidebar-filter.js path
         old_filter_script = '<script src="sidebar-filter.js"></script>'
         new_filter_script = f'<script src="{prefix}sidebar-filter.js"></script>'
+
         if old_filter_script in content:
             content = content.replace(old_filter_script, new_filter_script)
             modified = True

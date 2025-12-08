@@ -12,6 +12,8 @@ format:
     shift-heading-level-by: -1
     include-in-header:
     - text: <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    include-after-body:
+    - text: <script src="github-widget.js"></script>
 website:
   page-navigation: true
   title: Great-Docs
@@ -22,8 +24,7 @@ website:
     - text: API Reference
       href: reference/index.qmd
     right:
-    - icon: github
-      href: https://github.com/rich-iannone/great-docs
+    - text: <div id="github-widget" data-owner="rich-iannone" data-repo="great-docs"></div>
   sidebar:
   - id: reference
     contents:

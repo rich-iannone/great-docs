@@ -2436,6 +2436,17 @@ toc: false
         # Add post-render script
         config["project"]["post-render"] = "scripts/post-render.py"
 
+        # Add resources to copy static JS files to _site
+        if "resources" not in config["project"]:
+            config["project"]["resources"] = []
+        elif isinstance(config["project"]["resources"], str):
+            config["project"]["resources"] = [config["project"]["resources"]]
+
+        # Ensure JS files are included as resources
+        for js_file in ["github-widget.js", "sidebar-filter.js"]:
+            if js_file not in config["project"]["resources"]:
+                config["project"]["resources"].append(js_file)
+
         # Add CSS file
         if "css" not in config["format"]["html"]:
             config["format"]["html"]["css"] = []
@@ -3111,6 +3122,18 @@ toc: false
                             config["format"]["html"]["include-after-body"].insert(
                                 filter_index, min_items_script
                             )
+
+                # Add resources to copy static JS files to _site
+                if "project" not in config:
+                    config["project"] = {}
+                if "resources" not in config["project"]:
+                    config["project"]["resources"] = []
+                elif isinstance(config["project"]["resources"], str):
+                    config["project"]["resources"] = [config["project"]["resources"]]
+
+                for js_file in ["github-widget.js", "sidebar-filter.js"]:
+                    if js_file not in config["project"]["resources"]:
+                        config["project"]["resources"].append(js_file)
 
                 with open(quarto_yml, "w") as f:
                     yaml.dump(config, f, default_flow_style=False, sort_keys=False)

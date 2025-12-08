@@ -609,8 +609,17 @@ for html_file in html_files:
     return_value_replacement = r'<span class="parameter-name"></span> <span class="parameter-annotation-sep" style="margin-left: -8px;"></span>'
     content_str = re.sub(return_value_pattern, return_value_replacement, content_str)
 
-    # Fix double asterisks in kwargs parameters
-    content_str = content_str.replace("****kwargs**", "**<strong>kwargs</strong>")
+    # Fix double asterisks in **kwargs and **attributes style parameters
+    # Pattern: ****name** -> **name (with proper styling)
+    content_str = re.sub(r"\*\*\*\*(\w+)\*\*", r"**<strong>\1</strong>", content_str)
+
+    # Fix leading colon in Raises/Returns sections (e.g., ": ValueError" -> "ValueError")
+    # This handles cases like: <dt><code><span class="parameter-annotation-sep">:</span> <span class="parameter-annotation">ValueError</span></code></dt>
+    content_str = re.sub(
+        r'<dt><code><span class="parameter-annotation-sep">:</span>\s*<span class="parameter-annotation">([^<]+)</span></code></dt>',
+        r'<dt><code><span class="parameter-annotation">\1</span></code></dt>',
+        content_str,
+    )
 
     content = content_str.splitlines(keepends=True)
 

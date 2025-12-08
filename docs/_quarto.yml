@@ -4,6 +4,7 @@ project:
   resources:
   - github-widget.js
   - sidebar-filter.js
+  - reference-switcher.js
 format:
   html:
     theme: flatly
@@ -19,6 +20,7 @@ format:
     - text: <script src="github-widget.js"></script>
     - text: <script>document.body.dataset.sidebarFilterMinItems = "1";</script>
     - text: <script src="sidebar-filter.js"></script>
+    - text: <script src="reference-switcher.js"></script>
 website:
   page-navigation: true
   title: Great-Docs
@@ -33,9 +35,21 @@ website:
   sidebar:
   - id: reference
     contents:
+    - text: API
+      href: reference/index.qmd
     - section: Classes
       contents:
       - reference/GreatDocs.qmd
+  - id: cli-reference
+    title: CLI Reference
+    contents:
+    - reference/cli/index.qmd
+    - reference/cli/init.qmd
+    - reference/cli/build.qmd
+    - reference/cli/preview.qmd
+    - reference/cli/uninstall.qmd
+    - reference/cli/scan.qmd
+    - reference/cli/setup_github_pages.qmd
   page-footer:
     left: '&copy; 2025 Rich Iannone'
 quartodoc:

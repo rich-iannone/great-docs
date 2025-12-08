@@ -228,6 +228,22 @@ class GreatDocs:
                 shutil.copy2(sidebar_filter_src, sidebar_filter_dst)
                 print(f"Copied {sidebar_filter_dst}")
 
+        # Copy reference switcher JavaScript file (for CLI docs)
+        ref_switcher_src = self.assets_path / "reference-switcher.js"
+        ref_switcher_dst = self.project_path / "reference-switcher.js"
+
+        if ref_switcher_src.exists():
+            if ref_switcher_dst.exists() and not force:
+                response = input(f"{ref_switcher_dst} already exists. Overwrite? [y/N]: ")
+                if response.lower() != "y":
+                    print("Skipping reference-switcher.js")
+                else:
+                    shutil.copy2(ref_switcher_src, ref_switcher_dst)
+                    print(f"Copied {ref_switcher_dst}")
+            else:
+                shutil.copy2(ref_switcher_src, ref_switcher_dst)
+                print(f"Copied {ref_switcher_dst}")
+
         # Update _quarto.yml configuration
         self._update_quarto_config()
 

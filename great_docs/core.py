@@ -113,9 +113,9 @@ class GreatDocs:
         Parameters
         ----------
         force
-            If True, overwrite existing files without prompting. Default is False.
+            If `True`, overwrite existing files without prompting. Default is False.
         skip_quartodoc
-            If True, skip adding quartodoc configuration. Useful for testing or when
+            If `True`, skip adding quartodoc configuration. Useful for testing or when
             quartodoc is not needed. Default is False.
 
         Examples
@@ -1818,8 +1818,8 @@ class GreatDocs:
         Parameters
         ----------
         force_rebuild
-            If True, always rebuild index.qmd even if it exists.
-            Used by the build command to sync with source file changes.
+            If `True`, always rebuild `index.qmd` even if it exists. Used by the build command to
+            sync with source file changes.
         """
         package_root = self._find_package_root()
 
@@ -2792,9 +2792,8 @@ toc: false
         """
         Remove great-docs assets and configuration from the project.
 
-        This method deletes the great-docs CSS file and post-render script,
-        and cleans up the `_quarto.yml` configuration file by removing
-        great-docs-specific settings.
+        This method deletes the great-docs CSS file and post-render script, and cleans up the
+        `_quarto.yml` configuration file by removing great-docs-specific settings.
 
         Examples
         --------
@@ -2886,17 +2885,16 @@ toc: false
         """
         Build the documentation site.
 
-        Runs quartodoc build followed by quarto render. By default, re-discovers
-        package exports and updates the quartodoc configuration before building.
+        Runs `quartodoc build` followed by `quarto render`. By default, re-discovers package exports
+        and updates the quartodoc configuration before building.
 
         Parameters
         ----------
         watch
-            If True, watch for changes and rebuild automatically.
+            If `True`, watch for changes and rebuild automatically.
         refresh
-            If True (default), re-discover package exports and update quartodoc
-            config before building. Set to False for faster rebuilds when your
-            package API hasn't changed.
+            If `True` (default), re-discover package exports and update quartodoc config before
+            building. Set to False for faster rebuilds when your package API hasn't changed.
 
         Examples
         --------

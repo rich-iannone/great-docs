@@ -767,6 +767,14 @@ body.quarto-dark .sidebar-item.sidebar-filter-match .sidebar-link {
    Terminal-like appearance for CLI documentation
    ===================================================== */
 
+/* Style CLI page titles like API reference pages */
+/* Applied via post-render.py to CLI reference pages */
+h1.title.cli-title {
+    font-family: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
 .cli-manpage {
     max-width: 90ch;
     margin: 0 auto;

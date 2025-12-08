@@ -870,8 +870,8 @@ class GreatDocs:
         """
         lines = []
 
-        # Front matter
-        title = cmd_info["full_path"] if not is_main else f"{cmd_info['name']} CLI"
+        # Front matter - use just the command name/path as title
+        title = cmd_info["full_path"] if not is_main else cmd_info["name"]
         lines.append("---")
         lines.append(f'title: "{title}"')
         lines.append("---")

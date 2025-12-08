@@ -796,6 +796,44 @@ def inject_github_widget():
 inject_github_widget()
 
 
+# ============================================================================
+# Process CLI reference pages to style titles like API reference pages
+
+
+def process_cli_reference_pages():
+    """
+    Process CLI reference pages to add consistent styling.
+
+    This adds the 'cli-title' class to h1 elements in CLI reference pages
+    so they match the monospaced font style of API reference pages.
+    """
+    cli_html_files = glob.glob("_site/reference/cli/*.html")
+
+    if not cli_html_files:
+        return
+
+    print(f"Processing {len(cli_html_files)} CLI reference pages...")
+
+    for html_file in cli_html_files:
+        with open(html_file, "r") as file:
+            content = file.read()
+
+        # Add 'cli-title' class to h1.title elements
+        # This matches the pattern: <h1 class="title">
+        content = content.replace(
+            '<h1 class="title">',
+            '<h1 class="title cli-title">'
+        )
+
+        with open(html_file, "w") as file:
+            file.write(content)
+
+    print(f"Styled {len(cli_html_files)} CLI reference page titles")
+
+
+process_cli_reference_pages()
+
+
 def fix_script_paths():
     """
     Fix relative script paths for HTML files in subdirectories.

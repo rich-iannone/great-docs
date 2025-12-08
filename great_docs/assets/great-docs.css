@@ -536,7 +536,7 @@ a.sidebar-item-text.sidebar-link.text-start > span {
    ============================================ */
 
 .sidebar-filter-container {
-    padding: 0.35rem 0.65rem 0.65rem 0.65rem;
+    padding: 0.35rem 0.65rem 0.65rem 0rem;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     background: transparent;
     position: sticky;

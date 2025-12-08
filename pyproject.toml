@@ -198,6 +198,12 @@ ignore_missing_imports = true
 enabled = true
 min_items = 1  # Set low for testing (default: 20)
 
+# CLI documentation configuration
+[tool.great-docs.cli]
+enabled = true
+module = "great_docs.cli"
+name = "cli"
+
 # Source link configuration (for "View source" links on reference pages)
 # [tool.great-docs.source]
 # enabled = true              # Enable/disable source links (default: true)

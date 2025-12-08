@@ -841,6 +841,14 @@ def fix_script_paths():
             content = content.replace(old_filter_script, new_filter_script)
             modified = True
 
+        # Fix reference-switcher.js path
+        old_ref_switcher = '<script src="reference-switcher.js"></script>'
+        new_ref_switcher = f'<script src="{prefix}reference-switcher.js"></script>'
+
+        if old_ref_switcher in content:
+            content = content.replace(old_ref_switcher, new_ref_switcher)
+            modified = True
+
         if modified:
             with open(html_file, "w") as file:
                 file.write(content)

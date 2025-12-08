@@ -409,6 +409,15 @@ class GreatDocs:
                 metadata["sidebar_filter_enabled"] = sidebar_filter_config.get("enabled", True)
                 metadata["sidebar_filter_min_items"] = sidebar_filter_config.get("min_items", 20)
 
+                # CLI documentation configuration
+                # - enabled: True to auto-discover and document Click CLIs
+                # - module: optional module path to CLI (e.g., "mypackage.cli")
+                # - name: optional CLI name override (defaults to package name)
+                cli_config = tool_config.get("cli", {})
+                metadata["cli_enabled"] = cli_config.get("enabled", False)
+                metadata["cli_module"] = cli_config.get("module", None)
+                metadata["cli_name"] = cli_config.get("name", None)
+
         except Exception:
             pass
 
@@ -517,6 +526,707 @@ class GreatDocs:
             return owner, repo, base_url
 
         return None, None, None
+
+    # =========================================================================
+    # CLI Documentation Methods
+    # =========================================================================
+
+    def _discover_click_cli(self, package_name: str) -> dict | None:
+        """
+        Discover Click CLI commands and groups from a package.
+
+        Attempts to find and import the Click CLI from the package, then extracts
+        command structure, help text, options, and arguments.
+
+        Parameters
+        ----------
+        package_name
+            The name of the package to search for CLI.
+
+        Returns
+        -------
+        dict | None
+            Dictionary containing CLI structure, or None if no Click CLI found.
+            Structure: {
+                "name": "cli-name",
+                "help": "CLI help text",
+                "commands": [...],  # List of command dicts
+                "options": [...],   # Global options
+            }
+        """
+        metadata = self._get_package_metadata()
+
+        # Check if CLI documentation is enabled
+        if not metadata.get("cli_enabled", False):
+            return None
+
+        try:
+            import click
+        except ImportError:
+            print("Click not installed, skipping CLI documentation")
+            return None
+
+        # Determine the CLI module to import
+        cli_module_path = metadata.get("cli_module")
+        if not cli_module_path:
+            # Try common CLI module locations
+            common_cli_modules = [
+                f"{package_name}.cli",
+                f"{package_name}.__main__",
+                f"{package_name}.main",
+                f"{package_name}.console",
+                f"{package_name}.commands",
+            ]
+            cli_module_path = None
+            for module_path in common_cli_modules:
+                try:
+                    import importlib
+
+                    module = importlib.import_module(module_path)
+                    # Look for Click command/group in module
+                    for attr_name in dir(module):
+                        attr = getattr(module, attr_name)
+                        if isinstance(attr, (click.Command, click.Group)):
+                            cli_module_path = module_path
+                            break
+                    if cli_module_path:
+                        break
+                except ImportError:
+                    continue
+
+        if not cli_module_path:
+            print(f"No Click CLI found in {package_name}")
+            return None
+
+        try:
+            import importlib
+
+            module = importlib.import_module(cli_module_path)
+        except ImportError as e:
+            print(f"Could not import CLI module {cli_module_path}: {e}")
+            return None
+
+        # Find the main Click command/group
+        cli_obj = None
+        cli_name = metadata.get("cli_name")
+
+        # First, look for explicitly named CLI
+        if cli_name:
+            cli_obj = getattr(module, cli_name, None)
+
+        # Otherwise, search for Click commands/groups
+        if not cli_obj:
+            for attr_name in ["cli", "main", "app", "command", package_name.replace("-", "_")]:
+                attr = getattr(module, attr_name, None)
+                if isinstance(attr, (click.Command, click.Group)):
+                    cli_obj = attr
+                    cli_name = attr_name
+                    break
+
+        # If still not found, look for any Click command/group
+        if not cli_obj:
+            for attr_name in dir(module):
+                if attr_name.startswith("_"):
+                    continue
+                attr = getattr(module, attr_name)
+                if isinstance(attr, (click.Command, click.Group)):
+                    cli_obj = attr
+                    cli_name = attr_name
+                    break
+
+        if not cli_obj:
+            print(f"No Click command/group found in {cli_module_path}")
+            return None
+
+        print(f"Found Click CLI: {cli_name} in {cli_module_path}")
+
+        # Get the entry point name from pyproject.toml
+        entry_point_name = self._get_cli_entry_point_name(package_name)
+        display_name = entry_point_name or package_name.replace("_", "-")
+
+        # Extract CLI structure
+        cli_info = self._extract_click_command(cli_obj, display_name)
+        cli_info["entry_point_name"] = display_name
+        return cli_info
+
+    def _get_cli_entry_point_name(self, package_name: str) -> str | None:
+        """
+        Get the CLI entry point name from pyproject.toml.
+
+        Parameters
+        ----------
+        package_name
+            The name of the package.
+
+        Returns
+        -------
+        str | None
+            The entry point name (e.g., "great-docs" from "[project.scripts]"),
+            or None if not found.
+        """
+        package_root = self._find_package_root()
+        pyproject_path = package_root / "pyproject.toml"
+
+        if not pyproject_path.exists():
+            return None
+
+        import tomllib
+
+        try:
+            with open(pyproject_path, "rb") as f:
+                data = tomllib.load(f)
+
+            # Look for [project.scripts]
+            scripts = data.get("project", {}).get("scripts", {})
+            if scripts:
+                # Return the first entry point name
+                return list(scripts.keys())[0]
+
+            # Also check [project.gui-scripts] for GUI apps
+            gui_scripts = data.get("project", {}).get("gui-scripts", {})
+            if gui_scripts:
+                return list(gui_scripts.keys())[0]
+
+        except Exception:
+            pass
+
+        return None
+
+    def _extract_click_command(
+        self, cmd: "click.Command", name: str, parent_path: str = ""
+    ) -> dict:
+        """
+        Extract information from a Click command or group.
+
+        Parameters
+        ----------
+        cmd
+            The Click Command or Group object.
+        name
+            The command name.
+        parent_path
+            The parent command path for nested commands.
+
+        Returns
+        -------
+        dict
+            Dictionary containing command information.
+        """
+        import click
+
+        full_path = f"{parent_path} {name}".strip() if parent_path else name
+
+        info = {
+            "name": name,
+            "full_path": full_path,
+            "help": cmd.help or "",
+            "short_help": getattr(cmd, "short_help", "") or "",
+            "epilog": getattr(cmd, "epilog", "") or "",
+            "deprecated": getattr(cmd, "deprecated", False),
+            "hidden": getattr(cmd, "hidden", False),
+            "options": [],
+            "arguments": [],
+            "commands": [],
+            "is_group": isinstance(cmd, click.Group),
+        }
+
+        # Extract parameters (options and arguments)
+        for param in cmd.params:
+            param_info = self._extract_click_param(param)
+            if isinstance(param, click.Option):
+                info["options"].append(param_info)
+            elif isinstance(param, click.Argument):
+                info["arguments"].append(param_info)
+
+        # Extract subcommands if this is a group
+        if isinstance(cmd, click.Group):
+            for subcmd_name, subcmd in cmd.commands.items():
+                if not getattr(subcmd, "hidden", False):
+                    subcmd_info = self._extract_click_command(subcmd, subcmd_name, full_path)
+                    info["commands"].append(subcmd_info)
+
+        return info
+
+    def _extract_click_param(self, param: "click.Parameter") -> dict:
+        """
+        Extract information from a Click parameter (option or argument).
+
+        Parameters
+        ----------
+        param
+            The Click Parameter object.
+
+        Returns
+        -------
+        dict
+            Dictionary containing parameter information.
+        """
+        import click
+
+        info = {
+            "name": param.name,
+            "type": self._format_click_type(param.type),
+            "required": param.required,
+            "default": self._format_click_default(param.default),
+            "help": "",
+            "multiple": param.multiple if hasattr(param, "multiple") else False,
+            "nargs": param.nargs,
+        }
+
+        if isinstance(param, click.Option):
+            info["opts"] = param.opts  # e.g., ["-v", "--verbose"]
+            info["secondary_opts"] = param.secondary_opts  # e.g., ["--no-verbose"]
+            info["is_flag"] = param.is_flag
+            info["flag_value"] = param.flag_value if param.is_flag else None
+            info["count"] = param.count if hasattr(param, "count") else False
+            info["help"] = param.help or ""
+            info["show_default"] = param.show_default
+            info["show_envvar"] = param.show_envvar
+            info["envvar"] = param.envvar
+            info["hidden"] = param.hidden
+        elif isinstance(param, click.Argument):
+            info["metavar"] = param.make_metavar()
+
+        return info
+
+    def _format_click_type(self, param_type) -> str:
+        """
+        Format a Click parameter type as a string.
+
+        Parameters
+        ----------
+        param_type
+            The Click parameter type.
+
+        Returns
+        -------
+        str
+            Human-readable type string.
+        """
+        import click
+
+        if isinstance(param_type, click.Choice):
+            choices = ", ".join(f"'{c}'" for c in param_type.choices)
+            return f"Choice([{choices}])"
+        elif isinstance(param_type, click.IntRange):
+            min_val = param_type.min if param_type.min is not None else ""
+            max_val = param_type.max if param_type.max is not None else ""
+            return f"IntRange({min_val}..{max_val})"
+        elif isinstance(param_type, click.FloatRange):
+            min_val = param_type.min if param_type.min is not None else ""
+            max_val = param_type.max if param_type.max is not None else ""
+            return f"FloatRange({min_val}..{max_val})"
+        elif isinstance(param_type, click.DateTime):
+            return "DateTime"
+        elif isinstance(param_type, click.Path):
+            parts = []
+            if param_type.exists:
+                parts.append("exists")
+            if param_type.file_okay and not param_type.dir_okay:
+                parts.append("file")
+            elif param_type.dir_okay and not param_type.file_okay:
+                parts.append("directory")
+            return f"Path({', '.join(parts)})" if parts else "Path"
+        elif isinstance(param_type, click.File):
+            return f"File({param_type.mode})"
+        elif hasattr(param_type, "name"):
+            return param_type.name.upper()
+        else:
+            return str(param_type)
+
+    def _format_click_default(self, default) -> str | None:
+        """
+        Format a Click parameter default value for display.
+
+        Parameters
+        ----------
+        default
+            The default value from Click.
+
+        Returns
+        -------
+        str | None
+            Formatted default value string, or None if no meaningful default.
+        """
+        # Handle Click's sentinel values
+        if default is None or default == ():
+            return None
+
+        # Check for Click's internal sentinel types
+        default_str = str(default)
+        if "Sentinel" in default_str or "UNSET" in default_str:
+            return None
+
+        # Handle callable defaults
+        if callable(default):
+            return "<dynamic>"
+
+        return default
+
+    def _generate_cli_reference_pages(self, cli_info: dict) -> list[str]:
+        """
+        Generate Quarto reference pages for CLI commands.
+
+        Parameters
+        ----------
+        cli_info
+            Dictionary containing CLI structure from _discover_click_cli.
+
+        Returns
+        -------
+        list[str]
+            List of generated .qmd file paths (relative to docs dir).
+        """
+        if not cli_info:
+            return []
+
+        cli_ref_dir = self.project_path / "reference" / "cli"
+        cli_ref_dir.mkdir(parents=True, exist_ok=True)
+
+        generated_files = []
+
+        # Generate main CLI page
+        main_page = self._generate_cli_command_page(cli_info, is_main=True)
+        main_path = cli_ref_dir / "index.qmd"
+        with open(main_path, "w") as f:
+            f.write(main_page)
+        generated_files.append("reference/cli/index.qmd")
+        print(f"Generated CLI reference: {main_path.relative_to(self.project_path)}")
+
+        # Generate pages for subcommands
+        generated_files.extend(self._generate_subcommand_pages(cli_info, cli_ref_dir))
+
+        return generated_files
+
+    def _generate_subcommand_pages(self, cmd_info: dict, output_dir: Path) -> list[str]:
+        """
+        Recursively generate pages for subcommands.
+
+        Parameters
+        ----------
+        cmd_info
+            Command information dictionary.
+        output_dir
+            Directory to write pages to.
+
+        Returns
+        -------
+        list[str]
+            List of generated file paths.
+        """
+        generated = []
+
+        for subcmd in cmd_info.get("commands", []):
+            # Generate page for this subcommand
+            page_content = self._generate_cli_command_page(subcmd, is_main=False)
+            safe_name = subcmd["name"].replace("-", "_")
+            page_path = output_dir / f"{safe_name}.qmd"
+
+            with open(page_path, "w") as f:
+                f.write(page_content)
+
+            rel_path = f"reference/cli/{safe_name}.qmd"
+            generated.append(rel_path)
+            print(f"Generated CLI reference: {page_path.relative_to(self.project_path)}")
+
+            # Recursively generate for nested subcommands
+            if subcmd.get("commands"):
+                subcmd_dir = output_dir / safe_name
+                subcmd_dir.mkdir(exist_ok=True)
+                generated.extend(self._generate_subcommand_pages(subcmd, subcmd_dir))
+
+        return generated
+
+    def _generate_cli_command_page(self, cmd_info: dict, is_main: bool = False) -> str:
+        """
+        Generate Quarto page content for a CLI command.
+
+        Parameters
+        ----------
+        cmd_info
+            Command information dictionary.
+        is_main
+            Whether this is the main CLI entry point.
+
+        Returns
+        -------
+        str
+            Quarto markdown content.
+        """
+        lines = []
+
+        # Front matter
+        title = cmd_info["full_path"] if not is_main else f"{cmd_info['name']} CLI"
+        lines.append("---")
+        lines.append(f'title: "{title}"')
+        if is_main:
+            lines.append("listing:")
+            lines.append("  - id: commands")
+            lines.append("    type: table")
+            lines.append("    contents: '*.qmd'")
+            lines.append("    fields: [title, description]")
+        lines.append("---")
+        lines.append("")
+
+        # Command signature/usage
+        usage = self._format_cli_usage(cmd_info)
+        lines.append("## Usage")
+        lines.append("")
+        lines.append("```bash")
+        lines.append(usage)
+        lines.append("```")
+        lines.append("")
+
+        # Description
+        if cmd_info["help"]:
+            lines.append("## Description")
+            lines.append("")
+            lines.append(cmd_info["help"])
+            lines.append("")
+
+        # Arguments
+        if cmd_info["arguments"]:
+            lines.append("## Arguments")
+            lines.append("")
+            for arg in cmd_info["arguments"]:
+                lines.extend(self._format_cli_argument(arg))
+            lines.append("")
+
+        # Options
+        if cmd_info["options"]:
+            lines.append("## Options")
+            lines.append("")
+            for opt in cmd_info["options"]:
+                if not opt.get("hidden", False):
+                    lines.extend(self._format_cli_option(opt))
+            lines.append("")
+
+        # Subcommands
+        if cmd_info["commands"]:
+            lines.append("## Commands")
+            lines.append("")
+            for subcmd in cmd_info["commands"]:
+                if not subcmd.get("hidden", False):
+                    safe_name = subcmd["name"].replace("-", "_")
+                    short_help = subcmd.get("short_help") or subcmd.get("help", "").split("\n")[0]
+                    lines.append(f"- [`{subcmd['name']}`]({safe_name}.qmd): {short_help}")
+            lines.append("")
+
+        # Epilog
+        if cmd_info.get("epilog"):
+            lines.append("---")
+            lines.append("")
+            lines.append(cmd_info["epilog"])
+            lines.append("")
+
+        return "\n".join(lines)
+
+    def _format_cli_usage(self, cmd_info: dict) -> str:
+        """
+        Format the usage line for a CLI command.
+
+        Parameters
+        ----------
+        cmd_info
+            Command information dictionary.
+
+        Returns
+        -------
+        str
+            Formatted usage string.
+        """
+        parts = [cmd_info["full_path"]]
+
+        # Add options placeholder if there are options
+        if cmd_info["options"]:
+            parts.append("[OPTIONS]")
+
+        # Add arguments
+        for arg in cmd_info["arguments"]:
+            metavar = arg.get("metavar", arg["name"].upper())
+            if arg["required"]:
+                if arg["nargs"] == -1:
+                    parts.append(f"{metavar}...")
+                elif arg["nargs"] > 1:
+                    parts.append(f"{metavar}..." if arg["nargs"] == -1 else metavar)
+                else:
+                    parts.append(metavar)
+            else:
+                parts.append(f"[{metavar}]")
+
+        # Add subcommand placeholder if this is a group
+        if cmd_info["is_group"]:
+            parts.append("COMMAND [ARGS]...")
+
+        return " ".join(parts)
+
+    def _format_cli_argument(self, arg: dict) -> list[str]:
+        """
+        Format a CLI argument for documentation.
+
+        Parameters
+        ----------
+        arg
+            Argument information dictionary.
+
+        Returns
+        -------
+        list[str]
+            Lines of formatted documentation.
+        """
+        lines = []
+        metavar = arg.get("metavar", arg["name"].upper())
+
+        lines.append(f"### `{metavar}`")
+        lines.append("")
+
+        # Type info
+        if arg["type"] and arg["type"] != "STRING":
+            lines.append(f"**Type:** `{arg['type']}`")
+            lines.append("")
+
+        # Required
+        if arg["required"]:
+            lines.append("**Required**")
+            lines.append("")
+
+        # Default
+        if arg["default"] is not None:
+            lines.append(f"**Default:** `{arg['default']}`")
+            lines.append("")
+
+        return lines
+
+    def _format_cli_option(self, opt: dict) -> list[str]:
+        """
+        Format a CLI option for documentation.
+
+        Parameters
+        ----------
+        opt
+            Option information dictionary.
+
+        Returns
+        -------
+        list[str]
+            Lines of formatted documentation.
+        """
+        lines = []
+
+        # Option names
+        opt_names = ", ".join(f"`{o}`" for o in opt["opts"])
+        if opt.get("secondary_opts"):
+            opt_names += " / " + ", ".join(f"`{o}`" for o in opt["secondary_opts"])
+
+        lines.append(f"### {opt_names}")
+        lines.append("")
+
+        # Help text
+        if opt["help"]:
+            lines.append(opt["help"])
+            lines.append("")
+
+        # Details table
+        details = []
+
+        if opt["type"] and opt["type"] != "STRING" and not opt.get("is_flag"):
+            details.append(f"**Type:** `{opt['type']}`")
+
+        if opt.get("is_flag"):
+            details.append("**Flag**")
+
+        if opt["required"]:
+            details.append("**Required**")
+
+        if opt["default"] is not None and not opt.get("is_flag"):
+            default_val = opt["default"]
+            if callable(default_val):
+                default_val = "<dynamic>"
+            details.append(f"**Default:** `{default_val}`")
+
+        if opt.get("envvar"):
+            envvar = opt["envvar"]
+            if isinstance(envvar, (list, tuple)):
+                envvar = ", ".join(envvar)
+            details.append(f"**Environment:** `{envvar}`")
+
+        if opt.get("multiple"):
+            details.append("**Multiple:** Can be specified multiple times")
+
+        if details:
+            lines.append(" | ".join(details))
+            lines.append("")
+
+        return lines
+
+    def _update_sidebar_with_cli(self, cli_files: list[str]) -> None:
+        """
+        Update the sidebar configuration to include CLI reference.
+
+        Parameters
+        ----------
+        cli_files
+            List of generated CLI reference file paths.
+        """
+        if not cli_files:
+            return
+
+        quarto_yml = self.project_path / "_quarto.yml"
+        if not quarto_yml.exists():
+            return
+
+        with open(quarto_yml, "r") as f:
+            config = yaml.safe_load(f) or {}
+
+        if "website" not in config:
+            config["website"] = {}
+
+        # Ensure sidebar exists
+        if "sidebar" not in config["website"]:
+            config["website"]["sidebar"] = []
+
+        # Check if CLI section already exists
+        sidebar = config["website"]["sidebar"]
+        cli_section_exists = False
+
+        for section in sidebar:
+            if isinstance(section, dict) and section.get("id") == "cli-reference":
+                cli_section_exists = True
+                # Update contents
+                section["contents"] = cli_files
+                break
+
+        if not cli_section_exists:
+            # Add CLI section
+            cli_section = {
+                "id": "cli-reference",
+                "title": "CLI Reference",
+                "contents": cli_files,
+            }
+            sidebar.append(cli_section)
+
+        # Ensure the reference sidebar has an API link at the top
+        for section in sidebar:
+            if isinstance(section, dict) and section.get("id") == "reference":
+                contents = section.get("contents", [])
+                # Check if API link already exists at the top
+                has_api_link = False
+                if contents and isinstance(contents[0], dict):
+                    if contents[0].get("text") == "API" or contents[0].get("href", "").endswith(
+                        "reference/index.qmd"
+                    ):
+                        has_api_link = True
+                if not has_api_link:
+                    # Add API link at the top
+                    section["contents"] = [
+                        {"text": "API", "href": "reference/index.qmd"},
+                    ] + contents
+                break
+
+        with open(quarto_yml, "w") as f:
+            yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+
+        print(f"Updated sidebar with {len(cli_files)} CLI reference page(s)")
 
     def _get_source_location(self, package_name: str, item_name: str) -> dict | None:
         """
@@ -2674,10 +3384,16 @@ toc: false
         if "website" not in config:
             config["website"] = {}
 
+        # Build sidebar with API link at top (not subject to filtering)
+        # followed by the sectioned contents
+        full_contents = [
+            {"text": "API", "href": "reference/index.qmd"},
+        ] + sidebar_contents
+
         config["website"]["sidebar"] = [
             {
                 "id": "reference",
-                "contents": sidebar_contents,
+                "contents": full_contents,
             }
         ]
 
@@ -3042,6 +3758,12 @@ toc: false
             if sidebar_filter_src.exists():
                 shutil.copy2(sidebar_filter_src, sidebar_filter_dst)
 
+            # Ensure reference switcher JS is in place (for CLI docs)
+            ref_switcher_src = self.assets_path / "reference-switcher.js"
+            ref_switcher_dst = self.project_path / "reference-switcher.js"
+            if ref_switcher_src.exists():
+                shutil.copy2(ref_switcher_src, ref_switcher_dst)
+
             # Update navbar to use GitHub widget (if configured)
             quarto_yml = self.project_path / "_quarto.yml"
             if quarto_yml.exists():
@@ -3131,9 +3853,19 @@ toc: false
                 elif isinstance(config["project"]["resources"], str):
                     config["project"]["resources"] = [config["project"]["resources"]]
 
-                for js_file in ["github-widget.js", "sidebar-filter.js"]:
+                for js_file in ["github-widget.js", "sidebar-filter.js", "reference-switcher.js"]:
                     if js_file not in config["project"]["resources"]:
                         config["project"]["resources"].append(js_file)
+
+                # Add reference switcher script if CLI documentation is enabled
+                if metadata.get("cli_enabled", False):
+                    ref_switcher_entry = {"text": '<script src="reference-switcher.js"></script>'}
+                    has_ref_switcher = any(
+                        "reference-switcher" in str(item)
+                        for item in config["format"]["html"]["include-after-body"]
+                    )
+                    if not has_ref_switcher:
+                        config["format"]["html"]["include-after-body"].append(ref_switcher_entry)
 
                 with open(quarto_yml, "w") as f:
                     yaml.dump(config, f, default_flow_style=False, sort_keys=False)
@@ -3156,6 +3888,19 @@ toc: false
             package_name = self._detect_package_name()
             if package_name:
                 self._generate_source_links_json(package_name)
+
+            # Step 0.8: Generate CLI documentation if enabled
+            metadata = self._get_package_metadata()
+            if metadata.get("cli_enabled", False):
+                print("\n🖥️  Generating CLI reference...")
+                cli_info = self._discover_click_cli(package_name)
+                if cli_info:
+                    cli_files = self._generate_cli_reference_pages(cli_info)
+                    if cli_files:
+                        self._update_sidebar_with_cli(cli_files)
+                        print(f"✅ Generated {len(cli_files)} CLI reference page(s)")
+                else:
+                    print("   No Click CLI found or CLI documentation disabled")
 
             # Step 1: Run quartodoc build using Python module execution
             # This ensures it uses the same Python environment as great-docs

@@ -70,6 +70,27 @@
     }
 
     /**
+     * Check if a sidebar item is a top-level navigation link (not inside a section)
+     * These should not be filtered (e.g., "API" link)
+     */
+    function isTopLevelNavItem(item) {
+        // Check if the item's parent is the main sidebar list (not inside a section)
+        const parent = item.parentElement;
+        if (!parent) return false;
+
+        // If the parent is the main sidebar list (direct child of sidebar-menu-container),
+        // and this item comes before any section, it's a top-level nav item
+        const siblings = Array.from(parent.children);
+        const itemIndex = siblings.indexOf(item);
+
+        // Check if this item appears before the first section
+        const firstSectionIndex = siblings.findIndex(el => el.classList.contains('sidebar-item-section'));
+
+        // If there's no section, or this item is before the first section, it's top-level nav
+        return firstSectionIndex === -1 || itemIndex < firstSectionIndex;
+    }
+
+    /**
      * Filter sidebar items based on search query
      */
     function filterSidebar(query, sidebar, countDisplay) {
@@ -77,12 +98,24 @@
         const sections = sidebar.querySelectorAll('.sidebar-item-section');
         const allItems = sidebar.querySelectorAll('.sidebar-item:not(.sidebar-item-section)');
 
+        // Separate top-level nav items from filterable items
+        const topLevelNavItems = [];
+        const filterableItems = [];
+
+        allItems.forEach(item => {
+            if (isTopLevelNavItem(item)) {
+                topLevelNavItems.push(item);
+            } else {
+                filterableItems.push(item);
+            }
+        });
+
         let visibleCount = 0;
-        const totalCount = allItems.length;
+        const totalCount = filterableItems.length;
 
         // If query is empty, show everything
         if (!normalizedQuery) {
-            allItems.forEach(item => {
+            filterableItems.forEach(item => {
                 item.style.display = '';
                 item.classList.remove('sidebar-filter-match');
             });
@@ -94,12 +127,16 @@
                     // Keep collapsed sections collapsed
                 }
             });
+            // Top-level nav items are always visible
+            topLevelNavItems.forEach(item => {
+                item.style.display = '';
+            });
             countDisplay.style.display = 'none';
             return;
         }
 
-        // Filter items
-        allItems.forEach(item => {
+        // Filter items (excluding top-level nav items which are always visible)
+        filterableItems.forEach(item => {
             const link = item.querySelector('.sidebar-link');
             const text = link ? link.textContent.toLowerCase() : '';
             const matches = text.includes(normalizedQuery);

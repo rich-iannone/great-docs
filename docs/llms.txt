@@ -1,9 +1,0 @@
-# great_docs
-
-> An easy-to-use documentation site generator for Python packages
-
-## Docs
-
-### API Reference
-
-- [GreatDocs](https://rich-iannone.github.io/great-docs/reference/GreatDocs.html): GreatDocs class for creating beautiful API documentation sites

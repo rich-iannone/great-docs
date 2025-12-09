@@ -778,6 +778,7 @@ h1.title.cli-title {
 .cli-manpage {
     max-width: 90ch;
     margin: 0 auto;
+    width: 100%;
 }
 
 /* Main man-page code block */
@@ -785,7 +786,7 @@ h1.title.cli-title {
     font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
     font-size: 13px;
     line-height: 1.6;
-    background: #1e1e1e;
+    background: #012b15;
     color: #d4d4d4;
     border: none;
     border-radius: 6px;
@@ -793,6 +794,7 @@ h1.title.cli-title {
     overflow-x: auto;
     white-space: pre;
     margin-bottom: 1rem;
+    max-width: 100%;
 }
 
 .cli-manpage pre code {
@@ -808,4 +810,84 @@ h1.title.cli-title {
 [data-bs-theme="light"] .cli-manpage pre {
     background: #1e1e1e;
     color: #d4d4d4;
+}
+
+/* On large screens, expand CLI content area into the unused right margin space */
+/* The right sidebar ("On this page") is ~250px; we use half of that */
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    /* Expand the main content area on pages with CLI help */
+    main.content:has(.cli-manpage) {
+        width: calc(90ch + 30px);
+        max-width: none;
+    }
+
+    .cli-manpage {
+        width: calc(90ch + 30px);
+        max-width: none;
+        margin-top: 1.5rem;
+    }
+}
+
+/* On extra large screens, we can use a bit more of that space */
+@media (min-width: 1200px) {
+    main.content:has(.cli-manpage) {
+        width: calc(90ch + 50px);
+        max-width: none;
+    }
+
+    .cli-manpage {
+        width: calc(90ch + 50px);
+        max-width: none;
+    }
+}
+
+/* Responsive adjustments for CLI docs */
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .cli-manpage {
+        width: calc(100% + 150px);
+        max-width: none;
+        margin-top: 1.5rem;
+    }
+
+    .cli-manpage pre {
+        font-size: 12px;
+        padding: 1rem 1.25rem;
+        border-radius: 4px;
+    }
+
+    h1.title.cli-title {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .cli-manpage {
+        margin-top: 1.5rem;
+    }
+
+    .cli-manpage pre {
+        font-size: 11px;
+        padding: 0.875rem 1rem;
+        line-height: 1.5;
+    }
+
+    h1.title.cli-title {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .cli-manpage {
+        margin-top: 1.5rem;
+    }
+
+    .cli-manpage pre {
+        font-size: 10px;
+        padding: 0.75rem 0.875rem;
+        border-radius: 3px;
+    }
+
+    h1.title.cli-title {
+        font-size: 0.95rem;
+    }
 }

@@ -99,6 +99,13 @@
     }
 
     /**
+     * Check if we're on a User Guide page (should not show filter)
+     */
+    function isUserGuidePage() {
+        return window.location.pathname.includes('/user-guide/');
+    }
+
+    /**
      * Filter sidebar items based on search query
      */
     function filterSidebar(query, sidebar, countDisplay) {
@@ -187,8 +194,8 @@
      * Initialize the sidebar filter
      */
     function initSidebarFilter() {
-        // Don't show filter on CLI reference pages
-        if (isCliReferencePage()) {
+        // Don't show filter on CLI reference pages or User Guide pages
+        if (isCliReferencePage() || isUserGuidePage()) {
             return;
         }
 

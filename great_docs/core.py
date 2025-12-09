@@ -958,6 +958,431 @@ class GreatDocs:
 
         print(f"Updated sidebar with {len(cli_files)} CLI reference page(s)")
 
+    # =========================================================================
+    # User Guide Methods
+    # =========================================================================
+
+    def _discover_user_guide(self) -> dict | None:
+        """
+        Discover user guide content from the user_guide directory.
+
+        Looks for a `user_guide/` directory in the project root and discovers
+        all .qmd files within it. Files are sorted by filename to support
+        ordering via prefixes like `00-intro.qmd`, `01-installation.qmd`.
+
+        Returns
+        -------
+        dict | None
+            Dictionary containing user guide structure, or None if no user guide found.
+            Structure: {
+                "files": [{"path": Path, "section": str | None, "title": str}, ...],
+                "sections": {"Section Name": [file_info, ...], ...},
+                "has_index": bool
+            }
+        """
+        # Look for user_guide directory in project root (not docs dir)
+        user_guide_dir = self._find_package_root() / "user_guide"
+
+        if not user_guide_dir.exists() or not user_guide_dir.is_dir():
+            return None
+
+        # Find all .qmd files (not in subdirectories that are likely asset folders)
+        qmd_files = []
+        for item in user_guide_dir.iterdir():
+            if item.is_file() and item.suffix == ".qmd":
+                qmd_files.append(item)
+            elif item.is_dir():
+                # Check subdirectories for .qmd files (but not nested deeper)
+                for subitem in item.iterdir():
+                    if subitem.is_file() and subitem.suffix == ".qmd":
+                        qmd_files.append(subitem)
+
+        if not qmd_files:
+            return None
+
+        # Sort files by name to respect ordering prefixes
+        qmd_files.sort(key=lambda p: p.name)
+
+        # Parse each file to extract section and title from frontmatter
+        files_info = []
+        sections: dict[str, list] = {}
+        has_index = False
+
+        for qmd_path in qmd_files:
+            file_info = self._parse_user_guide_file(qmd_path)
+            if file_info:
+                files_info.append(file_info)
+
+                # Track if there's an index.qmd
+                if qmd_path.name == "index.qmd":
+                    has_index = True
+
+                # Group by section
+                section_name = file_info.get("section")
+                if section_name:
+                    if section_name not in sections:
+                        sections[section_name] = []
+                    sections[section_name].append(file_info)
+
+        if not files_info:
+            return None
+
+        return {
+            "files": files_info,
+            "sections": sections,
+            "has_index": has_index,
+            "source_dir": user_guide_dir,
+        }
+
+    def _parse_user_guide_file(self, qmd_path: Path) -> dict | None:
+        """
+        Parse a user guide .qmd file to extract metadata from frontmatter.
+
+        Parameters
+        ----------
+        qmd_path
+            Path to the .qmd file.
+
+        Returns
+        -------
+        dict | None
+            Dictionary with file info: {"path": Path, "section": str | None, "title": str}
+        """
+        try:
+            with open(qmd_path, "r", encoding="utf-8") as f:
+                content = f.read()
+        except Exception:
+            return None
+
+        # Extract YAML frontmatter
+        frontmatter = {}
+        if content.startswith("---"):
+            parts = content.split("---", 2)
+            if len(parts) >= 3:
+                try:
+                    frontmatter = yaml.safe_load(parts[1]) or {}
+                except yaml.YAMLError:
+                    pass
+
+        # Get title from frontmatter or derive from filename
+        title = frontmatter.get("title")
+        if not title:
+            # Derive title from filename: "01-getting-started.qmd" -> "Getting Started"
+            name = qmd_path.stem
+            # Remove leading number prefix like "01-" or "00_"
+            name = re.sub(r"^\d+[-_]", "", name)
+            # Convert to title case
+            title = name.replace("-", " ").replace("_", " ").title()
+
+        # Get section from frontmatter (use 'guide-section' to avoid conflict with Quarto's 'section')
+        section = frontmatter.get("guide-section")
+
+        return {
+            "path": qmd_path,
+            "section": section,
+            "title": title,
+            "frontmatter": frontmatter,
+        }
+
+    def _copy_user_guide_to_docs(self, user_guide_info: dict) -> list[str]:
+        """
+        Copy user guide files from project root to docs directory.
+
+        Adds `bread-crumbs: false` to the frontmatter of each file to disable
+        breadcrumb navigation on user guide pages.
+
+        Parameters
+        ----------
+        user_guide_info
+            User guide structure from _discover_user_guide.
+
+        Returns
+        -------
+        list[str]
+            List of copied file paths relative to docs dir.
+        """
+        if not user_guide_info:
+            return []
+
+        source_dir = user_guide_info["source_dir"]
+        target_dir = self.project_path / "user-guide"
+        target_dir.mkdir(parents=True, exist_ok=True)
+
+        copied_files = []
+
+        # Copy all .qmd files, adding bread-crumbs: false to frontmatter
+        for file_info in user_guide_info["files"]:
+            src_path = file_info["path"]
+
+            # Determine relative path from source_dir
+            try:
+                rel_path = src_path.relative_to(source_dir)
+            except ValueError:
+                rel_path = Path(src_path.name)
+
+            dst_path = target_dir / rel_path
+            dst_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Read the source file and modify frontmatter
+            with open(src_path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            # Add bread-crumbs: false to frontmatter
+            content = self._add_frontmatter_option(content, "bread-crumbs", False)
+
+            # Write to destination
+            with open(dst_path, "w", encoding="utf-8") as f:
+                f.write(content)
+
+            copied_files.append(f"user-guide/{rel_path}")
+
+        # Also copy any asset directories (directories without .qmd files)
+        for item in source_dir.iterdir():
+            if item.is_dir():
+                # Check if this directory has any .qmd files
+                has_qmd = any(f.suffix == ".qmd" for f in item.rglob("*"))
+                if not has_qmd:
+                    # This is likely an asset directory, copy it
+                    dst_dir = target_dir / item.name
+                    if dst_dir.exists():
+                        shutil.rmtree(dst_dir)
+                    shutil.copytree(item, dst_dir)
+
+        return copied_files
+
+    def _add_frontmatter_option(self, content: str, key: str, value) -> str:
+        """
+        Add or update an option in the YAML frontmatter of a .qmd file.
+
+        Parameters
+        ----------
+        content
+            The file content.
+        key
+            The frontmatter key to add/update.
+        value
+            The value to set.
+
+        Returns
+        -------
+        str
+            The modified content with the frontmatter option added.
+        """
+        # Convert value to YAML string representation
+        if isinstance(value, bool):
+            yaml_value = "true" if value else "false"
+        elif isinstance(value, str):
+            yaml_value = f'"{value}"'
+        else:
+            yaml_value = str(value)
+
+        if content.startswith("---"):
+            parts = content.split("---", 2)
+            if len(parts) >= 3:
+                frontmatter = parts[1]
+                rest = parts[2]
+
+                # Check if the key already exists
+                key_pattern = rf"^{re.escape(key)}:\s*.*$"
+                if re.search(key_pattern, frontmatter, re.MULTILINE):
+                    # Update existing key
+                    frontmatter = re.sub(
+                        key_pattern, f"{key}: {yaml_value}", frontmatter, flags=re.MULTILINE
+                    )
+                else:
+                    # Add new key at the end of frontmatter
+                    frontmatter = frontmatter.rstrip() + f"\n{key}: {yaml_value}\n"
+
+                return f"---{frontmatter}---{rest}"
+
+        # No frontmatter, create one
+        return f"---\n{key}: {yaml_value}\n---\n\n{content}"
+
+    def _generate_user_guide_sidebar(self, user_guide_info: dict) -> dict:
+        """
+        Generate sidebar configuration for the user guide.
+
+        Parameters
+        ----------
+        user_guide_info
+            User guide structure from _discover_user_guide.
+
+        Returns
+        -------
+        dict
+            Sidebar configuration dict for Quarto.
+        """
+        source_dir = user_guide_info["source_dir"]
+        files_info = user_guide_info["files"]
+        sections = user_guide_info["sections"]
+
+        contents = []
+
+        # If we have sections, organize by section
+        if sections:
+            # Track which files have been assigned to sections
+            assigned_files = set()
+
+            # First, preserve section order based on first file appearance
+            section_order = []
+            for file_info in files_info:
+                section = file_info.get("section")
+                if section and section not in section_order:
+                    section_order.append(section)
+
+            # Build section entries
+            for section_name in section_order:
+                section_files = sections[section_name]
+                section_contents = []
+
+                for file_info in section_files:
+                    rel_path = file_info["path"].relative_to(source_dir)
+                    href = f"user-guide/{rel_path}"
+                    assigned_files.add(file_info["path"])
+
+                    # Use custom text for index.qmd if it has a title
+                    if file_info["path"].name == "index.qmd":
+                        section_contents.append(
+                            {
+                                "text": file_info["title"],
+                                "href": href,
+                            }
+                        )
+                    else:
+                        section_contents.append(href)
+
+                contents.append(
+                    {
+                        "section": section_name,
+                        "contents": section_contents,
+                    }
+                )
+
+            # Add any files without sections at the end
+            unsectioned = []
+            for file_info in files_info:
+                if file_info["path"] not in assigned_files:
+                    rel_path = file_info["path"].relative_to(source_dir)
+                    unsectioned.append(f"user-guide/{rel_path}")
+
+            if unsectioned:
+                contents.extend(unsectioned)
+
+        else:
+            # No sections, just list files in order
+            for file_info in files_info:
+                rel_path = file_info["path"].relative_to(source_dir)
+                contents.append(f"user-guide/{rel_path}")
+
+        return {
+            "id": "user-guide",
+            "title": "User Guide",
+            "contents": contents,
+        }
+
+    def _update_config_with_user_guide(self, user_guide_info: dict) -> None:
+        """
+        Update _quarto.yml with user guide sidebar and navbar.
+
+        Parameters
+        ----------
+        user_guide_info
+            User guide structure from _discover_user_guide.
+        """
+        quarto_yml = self.project_path / "_quarto.yml"
+        if not quarto_yml.exists():
+            return
+
+        with open(quarto_yml, "r") as f:
+            config = yaml.safe_load(f) or {}
+
+        if "website" not in config:
+            config["website"] = {}
+
+        # Generate and add/update user guide sidebar
+        sidebar_config = self._generate_user_guide_sidebar(user_guide_info)
+
+        if "sidebar" not in config["website"]:
+            config["website"]["sidebar"] = []
+
+        sidebar = config["website"]["sidebar"]
+
+        # Remove existing user-guide sidebar if present
+        sidebar = [s for s in sidebar if not (isinstance(s, dict) and s.get("id") == "user-guide")]
+
+        # Add the new user guide sidebar
+        sidebar.append(sidebar_config)
+        config["website"]["sidebar"] = sidebar
+
+        # Update navbar to include User Guide link
+        if "navbar" in config["website"]:
+            navbar = config["website"]["navbar"]
+            if "left" in navbar:
+                # Check if User Guide link already exists
+                has_user_guide = any(
+                    isinstance(item, dict) and item.get("text") == "User Guide"
+                    for item in navbar["left"]
+                )
+                if not has_user_guide:
+                    # Find the position after "Home" and before "Reference"
+                    insert_idx = 1  # Default: after Home
+                    for i, item in enumerate(navbar["left"]):
+                        if isinstance(item, dict) and item.get("text") == "Reference":
+                            insert_idx = i
+                            break
+
+                    # Determine the href for User Guide
+                    if user_guide_info.get("has_index"):
+                        user_guide_href = "user-guide/index.qmd"
+                    else:
+                        # Use the first file
+                        first_file = user_guide_info["files"][0]
+                        rel_path = first_file["path"].relative_to(user_guide_info["source_dir"])
+                        user_guide_href = f"user-guide/{rel_path}"
+
+                    navbar["left"].insert(
+                        insert_idx,
+                        {
+                            "text": "User Guide",
+                            "href": user_guide_href,
+                        },
+                    )
+
+        with open(quarto_yml, "w") as f:
+            yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+
+    def _process_user_guide(self) -> bool:
+        """
+        Process user guide content: discover, copy, and update configuration.
+
+        Returns
+        -------
+        bool
+            True if user guide was processed, False otherwise.
+        """
+        # Discover user guide
+        user_guide_info = self._discover_user_guide()
+        if not user_guide_info:
+            return False
+
+        print("\n📖 Processing User Guide...")
+        print(f"   Found {len(user_guide_info['files'])} page(s)")
+
+        # Copy files to docs directory
+        copied_files = self._copy_user_guide_to_docs(user_guide_info)
+        print(f"   Copied {len(copied_files)} file(s) to docs/user-guide/")
+
+        # Update configuration
+        self._update_config_with_user_guide(user_guide_info)
+
+        # Report sections
+        if user_guide_info["sections"]:
+            section_names = list(user_guide_info["sections"].keys())
+            print(f"   Sections: {', '.join(section_names)}")
+
+        print("✅ User Guide configured")
+        return True
+
     def _get_source_location(self, package_name: str, item_name: str) -> dict | None:
         """
         Get source file and line numbers for a class, method, or function.
@@ -3637,6 +4062,15 @@ toc: false
                     import traceback
 
                     traceback.print_exc()
+
+            # Step 0.9: Process User Guide if present
+            try:
+                self._process_user_guide()
+            except Exception as e:
+                print(f"   ⚠️  Error processing User Guide: {e}")
+                import traceback
+
+                traceback.print_exc()
 
             # Step 1: Run quartodoc build using Python module execution
             # This ensures it uses the same Python environment as great-docs

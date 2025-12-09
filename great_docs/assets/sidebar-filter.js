@@ -74,20 +74,28 @@
      * These should not be filtered (e.g., "API" link)
      */
     function isTopLevelNavItem(item) {
-        // Check if the item's parent is the main sidebar list (not inside a section)
-        const parent = item.parentElement;
-        if (!parent) return false;
+        // Items inside a section (sidebar-item-section) are NOT top-level
+        // Check if any ancestor is a sidebar-item-section
+        let parent = item.parentElement;
+        while (parent) {
+            if (parent.classList && parent.classList.contains('sidebar-item-section')) {
+                return false; // Inside a section, so not top-level
+            }
+            if (parent.classList && parent.classList.contains('sidebar-menu-container')) {
+                break; // Reached the top of the sidebar
+            }
+            parent = parent.parentElement;
+        }
 
-        // If the parent is the main sidebar list (direct child of sidebar-menu-container),
-        // and this item comes before any section, it's a top-level nav item
-        const siblings = Array.from(parent.children);
-        const itemIndex = siblings.indexOf(item);
+        // This item is directly in the main sidebar list (not inside any section)
+        return true;
+    }
 
-        // Check if this item appears before the first section
-        const firstSectionIndex = siblings.findIndex(el => el.classList.contains('sidebar-item-section'));
-
-        // If there's no section, or this item is before the first section, it's top-level nav
-        return firstSectionIndex === -1 || itemIndex < firstSectionIndex;
+    /**
+     * Check if we're on a CLI reference page (should not show filter)
+     */
+    function isCliReferencePage() {
+        return window.location.pathname.includes('/reference/cli/');
     }
 
     /**
@@ -179,6 +187,11 @@
      * Initialize the sidebar filter
      */
     function initSidebarFilter() {
+        // Don't show filter on CLI reference pages
+        if (isCliReferencePage()) {
+            return;
+        }
+
         // Find the sidebar
         const sidebar = document.getElementById('quarto-sidebar');
         if (!sidebar) {

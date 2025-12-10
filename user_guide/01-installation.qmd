@@ -1,0 +1,125 @@
+---
+title: "Installation"
+guide-section: "Getting Started"
+---
+
+# Installation
+
+This guide covers how to install Great Docs and its prerequisites.
+
+## Prerequisites
+
+Before installing Great Docs, ensure you have:
+
+- **Python 3.9 or later**
+- **Quarto** – The publishing system that renders your documentation
+
+### Installing Quarto
+
+Great Docs uses Quarto to render documentation. Install it from [quarto.org](https://quarto.org/docs/get-started/):
+
+::: {.panel-tabset}
+
+## macOS
+
+```{.bash filename="Terminal"}
+# Using Homebrew
+brew install quarto
+
+# Or download the installer from quarto.org
+```
+
+## Linux
+
+```{.bash filename="Terminal"}
+# Download and install the .deb package (Ubuntu/Debian)
+wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.4.553/quarto-1.4.553-linux-amd64.deb
+sudo dpkg -i quarto-1.4.553-linux-amd64.deb
+
+# Or use your package manager
+```
+
+## Windows
+
+Download and run the installer from [quarto.org](https://quarto.org/docs/get-started/).
+
+:::
+
+Verify the installation:
+
+```{.bash filename="Terminal"}
+quarto --version
+```
+
+## Installing Great Docs
+
+### From PyPI
+
+The simplest way to install Great Docs:
+
+```{.bash filename="Terminal"}
+pip install great-docs
+```
+
+### From GitHub
+
+Install the latest development version directly from GitHub:
+
+```{.bash filename="Terminal"}
+pip install git+https://github.com/rich-iannone/great-docs.git
+```
+
+Or install a specific version:
+
+```{.bash filename="Terminal"}
+# Install from a specific branch
+pip install git+https://github.com/rich-iannone/great-docs.git@main
+
+# Install from a specific tag
+pip install git+https://github.com/rich-iannone/great-docs.git@v0.1.0
+```
+
+### Development Installation
+
+For contributing to Great Docs or testing the latest features:
+
+```{.bash filename="Terminal"}
+# Clone the repository
+git clone https://github.com/rich-iannone/great-docs.git
+cd great-docs
+
+# Install in editable mode
+pip install -e .
+
+# Or with development dependencies
+pip install -e ".[dev]"
+```
+
+## Verify Installation
+
+After installation, verify everything is working:
+
+```{.bash filename="Terminal"}
+# Check Great Docs version
+great-docs --help
+
+# Check Quarto version
+quarto --version
+```
+
+You should see the Great Docs help message and the Quarto version number.
+
+## Dependencies
+
+Great Docs automatically installs these dependencies:
+
+| Package | Purpose |
+|---------|---------|
+| `quartodoc` | Generates API documentation from docstrings |
+| `griffe` | Static analysis for API discovery |
+| `click` | Command-line interface |
+| `pyyaml` | YAML configuration handling |
+
+## Next Steps
+
+Now that Great Docs is installed, let's create your first documentation site in the [Quick Start](01-quickstart.qmd) guide.

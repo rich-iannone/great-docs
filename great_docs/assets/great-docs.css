@@ -1287,6 +1287,53 @@ body.quarto-dark .sourceCode span.in {      /* Information */
 }
 
 /* ==========================================================================
+   Dark Mode - Parameter Documentation
+   ========================================================================== */
+
+/* Parameter definitions in dt elements */
+body.quarto-dark dt code {
+    color: var(--gd-text-primary);
+    background-color: var(--gd-code-bg);
+}
+
+body.quarto-dark .parameter-name {
+    color: #82aaff;
+}
+
+body.quarto-dark .parameter-name strong {
+    color: #82aaff;
+}
+
+body.quarto-dark .parameter-annotation {
+    color: #c792ea;
+}
+
+body.quarto-dark .parameter-annotation-sep {
+    color: var(--gd-text-muted);
+}
+
+body.quarto-dark .parameter-default {
+    color: #c3e88d;
+}
+
+body.quarto-dark .parameter-default-sep {
+    color: var(--gd-text-muted);
+}
+
+/* Doc section styling */
+body.quarto-dark .doc-section dt {
+    color: var(--gd-text-primary);
+}
+
+body.quarto-dark .doc-section dd {
+    color: var(--gd-text-primary);
+}
+
+body.quarto-dark .doc-section-parameters dt code {
+    color: var(--gd-text-primary);
+}
+
+/* ==========================================================================
    Dark Mode - Cell Output
    ========================================================================== */
 

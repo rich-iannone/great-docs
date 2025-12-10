@@ -57,6 +57,13 @@ def init(project_path, docs_dir, force):
 
     Run this once to get started, then use 'great-docs build' to generate
     your documentation.
+
+    \b
+    Examples:
+      great-docs init                       # Initialize in current directory
+      great-docs init --docs-dir site       # Use 'site/' instead of 'docs/'
+      great-docs init --force               # Overwrite existing files
+      great-docs init --project-path ../pkg # Initialize in another project
     """
     try:
         docs = GreatDocs(project_path=project_path, docs_dir=docs_dir)
@@ -102,6 +109,13 @@ def build(project_path, docs_dir, watch, no_refresh):
 
     Use --no-refresh to skip API discovery for faster rebuilds when your
     package's public API hasn't changed.
+
+    \b
+    Examples:
+      great-docs build                      # Full build with API refresh
+      great-docs build --no-refresh         # Fast rebuild (skip API discovery)
+      great-docs build --watch              # Rebuild on file changes
+      great-docs build --project-path ../pkg
     """
     try:
         docs = GreatDocs(project_path=project_path, docs_dir=docs_dir)
@@ -136,6 +150,11 @@ def uninstall(project_path, docs_dir):
 
     Use this if you want to stop using great-docs or switch to a different
     documentation system.
+
+    \b
+    Examples:
+      great-docs uninstall                  # Remove from current project
+      great-docs uninstall --docs-dir site  # Remove from 'site/' directory
     """
     try:
         docs = GreatDocs(project_path=project_path, docs_dir=docs_dir)
@@ -163,6 +182,11 @@ def preview(project_path, docs_dir):
     Open the displayed URL in your browser to preview your site.
 
     Press Ctrl+C to stop the server.
+
+    \b
+    Examples:
+      great-docs preview                    # Build and start preview server
+      great-docs preview --docs-dir site    # Preview from 'site/' directory
     """
     try:
         docs = GreatDocs(project_path=project_path, docs_dir=docs_dir)
@@ -206,6 +230,12 @@ def scan(project_path, docs_dir, verbose):
     be organized.
 
     Use this to preview your documentation structure before building.
+
+    \b
+    Examples:
+      great-docs scan                       # Preview API organization
+      great-docs scan --verbose             # Include @seealso and @order details
+      great-docs scan -v                    # Short form of --verbose
     """
 
     try:
@@ -345,6 +375,13 @@ def setup_github_pages(project_path, docs_dir, main_branch, python_version, forc
 
     After running this command, commit the workflow file and enable GitHub
     Pages in your repository settings (Settings → Pages → Source: GitHub Actions).
+
+    \b
+    Examples:
+      great-docs setup-github-pages                     # Use defaults
+      great-docs setup-github-pages --main-branch dev   # Deploy from 'dev' branch
+      great-docs setup-github-pages --python-version 3.12
+      great-docs setup-github-pages --force             # Overwrite existing workflow
     """
     from pathlib import Path
 

@@ -15,6 +15,9 @@ reference-switcher.js
 llms.txt
 scripts/
 
+# Generated user guide files (copied from user_guide/ in project root)
+user-guide/
+
 # Generated .qmd files (from README.md, LICENSE, CITATION.cff, etc.)
 index.qmd
 license.qmd

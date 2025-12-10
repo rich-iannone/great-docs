@@ -82,7 +82,7 @@ class GreatDocs:
                 if response.lower() != "n":
                     return Path(dir_name)
 
-        # No existing docs directory found - ask user
+        # No existing docs directory found so ask user
         print("\nNo documentation directory detected.")
         print("Where would you like to install great-docs?")
         print("  1. docs/ (recommended for most projects)")
@@ -913,7 +913,7 @@ class GreatDocs:
         """
         lines = []
 
-        # Front matter - use just the command name/path as title
+        # Front matter: use just the command name/path as title
         title = cmd_info["full_path"] if not is_main else cmd_info["name"]
         lines.append("---")
         lines.append(f'title: "{title}"')
@@ -1935,7 +1935,7 @@ class GreatDocs:
                     )
 
             # Super-safe filtering: try each object with quartodoc's get_object
-            # If it fails for ANY reason, exclude it - this catches:
+            # If it fails for ANY reason, exclude it; this catches:
             # - Cyclic aliases
             # - Unresolvable aliases
             # - Rust/PyO3 objects (KeyError)
@@ -1966,7 +1966,7 @@ class GreatDocs:
                 pass
 
             for name in filtered:
-                # First check if this is a submodule - these should be excluded
+                # First check if this is a submodule; these should be excluded
                 # because documenting them recursively documents all their members
                 if actual_package is not None:
                     runtime_obj = getattr(actual_package, name, None)
@@ -2388,16 +2388,44 @@ class GreatDocs:
 
             directive_map = {}
 
-            for name, obj in pkg.members.items():
+            # Use list() to materialize the iterator and catch any alias resolution errors
+            try:
+                members_list = list(pkg.members.items())
+            except (griffe.CyclicAliasError, griffe.AliasResolutionError):
+                # Some members have unresolvable aliases so try to iterate more carefully
+                members_list = []
+                for name in list(pkg.members.keys()):
+                    try:
+                        members_list.append((name, pkg.members[name]))
+                    except Exception:
+                        # Skip members that can't be accessed
+                        continue
+            except Exception:
+                # Fall back to empty if we can't enumerate members at all
+                return {}
+
+            for name, obj in members_list:
                 # Skip private members
                 if name.startswith("_"):
                     continue
 
+                # Skip aliases that can't be resolved (e.g., re-exports from external packages)
+                try:
+                    # Access kind to trigger alias resolution
+                    _ = obj.kind
+                except Exception:
+                    # Silently skip unresolvable aliases since they're usually re-exports
+                    # from external packages that wouldn't be documented anyway
+                    continue
+
                 # Extract directives from the object's docstring
-                if obj.docstring:
-                    directives = extract_directives(obj.docstring.value)
-                    if directives:
-                        directive_map[name] = directives
+                try:
+                    if obj.docstring:
+                        directives = extract_directives(obj.docstring.value)
+                        if directives:
+                            directive_map[name] = directives
+                except Exception:
+                    continue
 
                 # For classes, also process methods
                 try:
@@ -2405,10 +2433,13 @@ class GreatDocs:
                         for method_name, method in obj.members.items():
                             if method_name.startswith("_"):
                                 continue
-                            if method.docstring:
-                                method_directives = extract_directives(method.docstring.value)
-                                if method_directives:
-                                    directive_map[f"{name}.{method_name}"] = method_directives
+                            try:
+                                if method.docstring:
+                                    method_directives = extract_directives(method.docstring.value)
+                                    if method_directives:
+                                        directive_map[f"{name}.{method_name}"] = method_directives
+                            except Exception:
+                                continue
                 except Exception:
                     # Skip if we can't introspect the class
                     pass
@@ -2417,9 +2448,6 @@ class GreatDocs:
 
         except ImportError:
             print("Warning: griffe not available for directive extraction")
-            return {}
-        except Exception as e:
-            print(f"Error extracting directives: {type(e).__name__}: {e}")
             return {}
 
     def _get_family_config(self) -> dict:
@@ -2974,7 +3002,7 @@ title: "Authors and Citation"
             margin_sections.append("\n#### License\n")
             margin_sections.append(f"{metadata['license']}")
 
-        # Community section - check for CONTRIBUTING.md and CODE_OF_CONDUCT.md
+        # Community section: check for CONTRIBUTING.md and CODE_OF_CONDUCT.md
         community_items = []
 
         # Check for CONTRIBUTING.md in root or .github directory
@@ -3490,7 +3518,7 @@ toc: false
             # Add data attributes for configuration (must be before sidebar-filter.js)
             min_items = metadata.get("sidebar_filter_min_items", 20)
             if min_items != 20:
-                # Add custom min_items via body data attribute - insert BEFORE the filter script
+                # Add custom min_items via body data attribute and insert BEFORE the filter script
                 min_items_script = {
                     "text": f'<script>document.body.dataset.sidebarFilterMinItems = "{min_items}";</script>'
                 }
@@ -3653,7 +3681,7 @@ toc: false
         with open(index_path, "r") as f:
             content = f.read()
 
-        # Check if frontmatter already exists - if so, leave it as is
+        # Check if frontmatter already exists; if so, leave it as is
         if content.startswith("---"):
             return
 
@@ -3700,12 +3728,12 @@ toc: false
         metadata = self._get_package_metadata()
         description = metadata.get("description", "")
 
-        # Get the site URL - prefer Documentation URL from pyproject.toml,
+        # Get the site URL and prefer the Documentation URL from pyproject.toml,
         # fall back to site-url from _quarto.yml
         urls = metadata.get("urls", {})
         site_url = urls.get("Documentation", "") or config.get("website", {}).get("site-url", "")
 
-        # Clean up site URL - remove any trailing anchors or paths that aren't the base
+        # Clean up site URL and remove any trailing anchors or paths that aren't the base
         if site_url:
             # Remove trailing #readme or similar anchors
             if "#" in site_url:

@@ -884,6 +884,14 @@ def fix_script_paths():
             content = content.replace(old_ref_switcher, new_ref_switcher)
             modified = True
 
+        # Fix dark-mode-toggle.js path
+        old_dark_mode = '<script src="dark-mode-toggle.js"></script>'
+        new_dark_mode = f'<script src="{prefix}dark-mode-toggle.js"></script>'
+
+        if old_dark_mode in content:
+            content = content.replace(old_dark_mode, new_dark_mode)
+            modified = True
+
         if modified:
             with open(html_file, "w") as file:
                 file.write(content)

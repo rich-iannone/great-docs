@@ -55,7 +55,7 @@ code span.cn-bool {
 }
 
 body {
-    background-color: #FCFEFF;
+    background-color: var(--gd-bg-primary, #FCFEFF);
 }
 
 p a {
@@ -1030,6 +1030,48 @@ body.quarto-dark {
 }
 
 body.quarto-dark .quarto-body-content {
+    background-color: var(--gd-bg-primary);
+}
+
+/* Main page structure elements */
+body.quarto-dark #quarto-content {
+    background-color: var(--gd-bg-primary);
+}
+
+body.quarto-dark #quarto-document-content {
+    background-color: var(--gd-bg-primary);
+}
+
+body.quarto-dark main.content {
+    background-color: var(--gd-bg-primary);
+}
+
+body.quarto-dark .page-columns {
+    background-color: var(--gd-bg-primary);
+}
+
+body.quarto-dark .page-rows-contents {
+    background-color: var(--gd-bg-primary);
+}
+
+body.quarto-dark .column-body {
+    background-color: var(--gd-bg-primary);
+}
+
+body.quarto-dark .column-page {
+    background-color: var(--gd-bg-primary);
+}
+
+body.quarto-dark article {
+    background-color: var(--gd-bg-primary);
+}
+
+body.quarto-dark section {
+    background-color: var(--gd-bg-primary);
+}
+
+/* Ensure the html element also has dark background */
+html.quarto-dark {
     background-color: var(--gd-bg-primary);
 }
 

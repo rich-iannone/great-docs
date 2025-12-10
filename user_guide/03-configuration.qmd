@@ -87,6 +87,28 @@ sidebar_filter_enabled = true   # Enable/disable (default: true)
 sidebar_filter_min_items = 20   # Minimum items before showing filter
 ```
 
+## Dark Mode Toggle
+
+Great Docs includes a light/dark mode toggle in the navbar that respects system preferences and remembers user choice. It's enabled by default:
+
+```{.toml filename="pyproject.toml"}
+[tool.great-docs]
+dark_mode_toggle = true   # Enable/disable (default: true)
+```
+
+To disable the dark mode toggle:
+
+```{.toml filename="pyproject.toml"}
+[tool.great-docs]
+dark_mode_toggle = false
+```
+
+When enabled, the toggle appears in the navbar and:
+
+- Detects the user's system color scheme preference on first visit
+- Persists the user's choice in local storage
+- Provides instant switching without page reload
+
 ## Large Class Method Threshold
 
 Classes with many methods get their methods documented on separate pages for better navigation. By default, classes with more than 5 methods trigger this behavior. Adjust the threshold:
@@ -176,6 +198,9 @@ source_link_branch = "main"
 # Sidebar
 sidebar_filter_enabled = true
 sidebar_filter_min_items = 15
+
+# Dark mode
+dark_mode_toggle = true
 
 # Large class handling
 large_class_method_threshold = 8

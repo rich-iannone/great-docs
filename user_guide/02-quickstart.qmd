@@ -1,0 +1,161 @@
+---
+title: "Quick Start"
+guide-section: "Getting Started"
+---
+
+# Quick Start
+
+This guide walks you through creating your first documentation site with Great Docs in just a few minutes.
+
+## Initialize Your Documentation
+
+Navigate to your Python project's root directory and run:
+
+```{.bash filename="Terminal"}
+great-docs init
+```
+
+Great Docs will automatically:
+
+1. **Detect your docs directory** – Looks for existing `docs/`, `site/`, or `documentation/` folders
+2. **Find your package** – Auto-detects your package name from `pyproject.toml` or directory structure
+3. **Discover your API** – Finds all public classes, functions, and methods
+4. **Create configuration** – Generates `_quarto.yml` with API sections
+5. **Create landing page** – Converts your `README.md` to `index.qmd`
+6. **Install assets** – Copies CSS, JavaScript, and post-processing scripts
+
+You'll see output like this:
+
+```{.default filename="Terminal output"}
+Installing great-docs...
+Using directory: docs
+Copied docs/scripts/post-render.py
+Copied docs/great-docs.css
+Copied docs/github-widget.js
+Detected package: my_package
+Discovered 15 public names
+  MyClass: class with 8 methods
+  helper_function: function
+  ...
+Created docs/_quarto.yml
+Created docs/index.qmd
+
+Great Docs installation complete!
+```
+
+## Build Your Documentation
+
+Once initialized, build your documentation with:
+
+```{.bash filename="Terminal"}
+great-docs build
+```
+
+This single command:
+
+1. Syncs your landing page with `README.md`
+2. Refreshes the API configuration (discovers new exports)
+3. Generates `llms.txt` for AI documentation indexing
+4. Creates source links JSON for GitHub integration
+5. Runs `quartodoc build` to generate API reference pages
+6. Runs `quarto render` to build the HTML site
+
+The built site is in `docs/_site/`.
+
+## Preview Locally
+
+To preview your documentation with live reload:
+
+```{.bash filename="Terminal"}
+great-docs preview
+```
+
+This starts a local server and opens your browser. Changes to your documentation files trigger automatic rebuilds.
+
+## Project Structure
+
+After initialization, your project will have:
+
+```{.default filename="Project structure"}
+your-project/
+├── docs/
+│   ├── _quarto.yml          # Quarto configuration
+│   ├── index.qmd            # Landing page (from README.md)
+│   ├── great-docs.css       # Styling
+│   ├── github-widget.js     # GitHub stars widget
+│   ├── sidebar-filter.js    # API search filter
+│   ├── llms.txt             # LLM-friendly docs index
+│   ├── _source_links.json   # Source code links
+│   ├── reference/           # API reference pages (generated)
+│   │   ├── index.qmd
+│   │   ├── MyClass.qmd
+│   │   └── ...
+│   └── scripts/
+│       └── post-render.py   # HTML post-processing
+├── pyproject.toml
+├── README.md
+└── your_package/
+    └── ...
+```
+
+## Command Options
+
+### Specifying Directories
+
+```{.bash filename="Terminal"}
+# Initialize in a specific docs directory
+great-docs init --docs-dir site
+
+# Initialize a different project
+great-docs init --project-path /path/to/project
+
+# Combine both
+great-docs init --project-path /path/to/project --docs-dir docs
+```
+
+### Force Overwrite
+
+```{.bash filename="Terminal"}
+# Overwrite existing files without prompting
+great-docs init --force
+```
+
+### Build Options
+
+```{.bash filename="Terminal"}
+# Build without refreshing API config (faster when API unchanged)
+great-docs build --no-refresh
+
+# Build with file watching (auto-rebuild on changes)
+great-docs build --watch
+```
+
+## Using the Python API
+
+You can also use Great Docs programmatically:
+
+```{.python filename="Python"}
+from great_docs import GreatDocs
+
+# Initialize for current directory
+docs = GreatDocs()
+docs.install()
+
+# Build documentation
+docs.build()
+
+# Or with specific paths
+docs = GreatDocs(project_path="/path/to/project", docs_dir="docs")
+docs.install()
+docs.build()
+```
+
+## What's Next?
+
+Your documentation site is ready! Here's what to explore next:
+
+- **[Configuration](02-configuration.qmd)** – Customize Great Docs behavior
+- **[API Documentation](03-api-documentation.qmd)** – Understand how API discovery works
+- **[CLI Documentation](04-cli-documentation.qmd)** – Document your Click CLI
+- **[User Guides](05-user-guides.qmd)** – Add narrative documentation
+- **[Deployment](06-deployment.qmd)** – Publish to GitHub Pages

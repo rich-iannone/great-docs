@@ -1656,7 +1656,7 @@ body.quarto-dark .search-result-link:hover {
 
 /* Algolia/Autocomplete specific dark mode */
 body.quarto-dark .aa-Autocomplete {
-    background-color: var(--gd-bg-secondary);
+    background-color: transparent;
 }
 
 body.quarto-dark .aa-Form {

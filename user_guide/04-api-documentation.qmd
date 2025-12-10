@@ -1,0 +1,279 @@
+---
+title: "API Documentation"
+guide-section: "Core Concepts"
+---
+
+# API Documentation
+
+Great Docs automatically discovers and documents your package's public API. This guide explains how discovery works and how to customize the output.
+
+## How Discovery Works
+
+When you run `great-docs init` or `great-docs build`, Great Docs:
+
+1. **Finds your package** – Looks in standard locations (`src/`, `python/`, project root)
+2. **Uses static analysis** – Analyzes your code with `griffe` without importing it
+3. **Discovers public names** – Finds all non-private names (not starting with `_`)
+4. **Categorizes items** – Separates classes, functions, and other exports
+5. **Generates configuration** – Creates quartodoc sections in `_quarto.yml`
+
+### Static Analysis Benefits
+
+Great Docs uses static analysis rather than importing your package. This means:
+
+- **No side effects** – Your code isn't executed during discovery
+- **No import errors** – Missing dependencies won't break documentation
+- **Faster discovery** – No need to set up a complete environment
+- **Safer** – Works even if your package has complex initialization
+
+## What Gets Documented
+
+By default, Great Docs documents:
+
+- **Classes** – All public classes with their methods
+- **Functions** – All public functions
+- **Module-level constants** – Public constants and type aliases
+
+### Exclusion Rules
+
+Some names are automatically excluded:
+
+```python
+# These are auto-excluded:
+main        # CLI entry points
+cli
+version     # Version metadata
+VERSION
+core        # Internal modules
+utils
+helpers
+logger      # Logging
+log
+```
+
+To include any auto-excluded names:
+
+```{.toml filename="pyproject.toml"}
+[tool.great-docs]
+include = ["main", "cli"]
+```
+
+To exclude additional names:
+
+```{.toml filename="pyproject.toml"}
+[tool.great-docs]
+exclude = ["InternalHelper", "deprecated_function"]
+```
+
+## Smart Method Handling
+
+Large classes with many methods can create overwhelming documentation. Great Docs handles this intelligently by separating methods into their own pages when a class exceeds a threshold.
+
+### Small Classes (≤5 methods)
+
+Methods are documented inline on the class page:
+
+```{.yaml filename="_quarto.yml"}
+sections:
+  - title: Classes
+    contents:
+      - MySmallClass  # Methods shown inline
+```
+
+### Large Classes (>5 methods)
+
+Methods get their own section with individual pages:
+
+```{.yaml filename="_quarto.yml"}
+sections:
+  - title: Classes
+    contents:
+      - name: MyLargeClass
+        members: []  # Suppresses inline methods
+
+  - title: MyLargeClass Methods
+    desc: Methods for the MyLargeClass class
+    contents:
+      - MyLargeClass.method_one
+      - MyLargeClass.method_two
+      # ... all methods listed individually
+```
+
+This creates better navigation for classes with many methods.
+
+### Customizing the Threshold
+
+The default threshold of 5 methods works well for most projects, but you can adjust it in your `pyproject.toml`:
+
+```{.toml filename="pyproject.toml"}
+[tool.great-docs]
+large_class_method_threshold = 10  # Classes with >10 methods get separate pages
+```
+
+Set this to a higher value if you prefer more methods documented inline, or lower if you want methods separated out sooner. Setting it to `0` will give every class its own method section regardless of size.
+
+## API Organization
+
+### Default Sections
+
+Great Docs creates these sections by default:
+
+1. **Classes** – All public classes
+2. **Functions** – All public functions
+3. **[ClassName] Methods** – For large classes with >5 methods
+
+These default section names are serviceable for most projects, giving users a clear starting point for navigating your API. However, you're encouraged to customize the organization using docstring directives like `@family` to create sections that better reflect your package's domain. For example, you might group functions by feature area or use case rather than just by type.
+
+### Custom Organization with `@family`
+
+You can group related items using the `@family` directive in docstrings. As a matter of style, place directives at the very bottom of your docstring, after all other documentation content:
+
+```{.python filename="Source code"}
+def create_user(name: str) -> User:
+    """
+    Create a new user.
+
+    @family User Management
+    """
+    ...
+
+def delete_user(user_id: int) -> None:
+    """
+    Delete a user.
+
+    @family User Management
+    """
+    ...
+```
+
+Items with the same `@family` value are grouped together in the sidebar.
+
+### Ordering with `@order`
+
+By default, items within a section appear in the order they're defined in your source code. Great Docs preserves this natural ordering so that your documentation reflects the logical structure you've already established. However, when you need finer control (perhaps to highlight a key entry point or ensure related functions appear together regardless of where they're defined) you can use the `@order` directive.
+
+```{.python filename="Source code"}
+def important_function():
+    """
+    This appears first.
+
+    @order 1
+    """
+    ...
+
+def secondary_function():
+    """
+    This appears second.
+
+    @order 2
+    """
+    ...
+```
+
+Lower numbers appear first. Items without an `@order` directive appear after all ordered items, in their default order. This is particularly useful for ensuring that introductory or commonly-used functions appear at the top of their section.
+
+### Excluding Items with `@nodoc`
+
+Sometimes you have public functions or classes that shouldn't appear in the documentation: internal helpers that are technically public for testing purposes, or deprecated items you're phasing out. The `@nodoc` directive tells Great Docs to skip these items entirely.
+
+```{.python filename="Source code"}
+def internal_helper():
+    """
+    This won't be documented.
+
+    @nodoc
+    """
+    ...
+```
+
+Unlike adding items to the `exclude` list in `pyproject.toml`, the `@nodoc` directive keeps the exclusion decision right next to the code it affects. This makes it easier to remember why something was excluded and to reverse the decision later if needed.
+
+### Cross-References with `@seealso`
+
+Good documentation helps users discover related functionality. The `@seealso` directive adds a "See Also" section to an item's documentation page, linking to other classes or functions that users might find relevant.
+
+```{.python filename="Source code"}
+def parse_data(raw: str) -> Data:
+    """
+    Parse raw data.
+
+    @seealso validate_data, transform_data
+    """
+    ...
+```
+
+List multiple items separated by commas. Great Docs automatically creates links to each referenced item, making it easy for readers to navigate between related parts of your API. This is especially valuable in larger packages where functionality is spread across many modules.
+
+## Source Code Links
+
+Great Docs automatically adds "source" links to each documented item, pointing to the exact line numbers on GitHub.
+
+### How It Works
+
+1. Great Docs detects your GitHub repository from `pyproject.toml` or `.git`
+2. For each documented item, it finds the source file and line numbers
+3. Links are generated pointing to `github.com/owner/repo/blob/branch/file#L1-L10`
+
+### Configuration
+
+```{.toml filename="pyproject.toml"}
+[tool.great-docs]
+# Use a specific branch (default: auto-detected)
+source_link_branch = "main"
+
+# Disable source links
+source_links_enabled = false
+```
+
+## Visual Enhancements
+
+Great Docs applies consistent styling to your API documentation, making it easier to scan and understand at a glance.
+
+### Type Labels
+
+Each documented item displays a colored label indicating its type. Classes appear with a green label, making them easy to spot as primary building blocks. Methods show a blue label with their full qualified name (like `Class.method()`), clearly indicating they belong to a class. Functions display an orange label (like `function()`), distinguishing them from methods. These visual cues help readers quickly identify what kind of object they're looking at.
+
+### Code Styling
+
+The documentation applies careful typography to code elements throughout. Function signatures use monospace fonts for clarity, and type annotations are formatted to be easily readable. Parameter lists have improved spacing that makes long signatures scannable. Code blocks benefit from enhanced syntax highlighting that matches the overall site theme. Together, these refinements make technical content more approachable.
+
+### Responsive Design
+
+API documentation needs to work on devices of all sizes, from large desktop monitors to phones. Great Docs optimizes the layout for each screen size with mobile-friendly navigation that adapts to touch interactions. The sidebar becomes collapsible on smaller screens, and typography scales appropriately to remain readable. Whether you're at your desk or reviewing docs on your phone during a commute, the experience remains consistent.
+
+## Sidebar Filter
+
+For packages with many exports, navigating the sidebar can become cumbersome. Great Docs addresses this with a built-in search filter that appears automatically when your API has 20 or more items.
+
+The filter provides instant results as you type, narrowing down the sidebar to show only matching items. A count indicator shows how many items match your search out of the total. The section structure is preserved during filtering, so you maintain context about where items live in your API hierarchy.
+
+You can customize when the filter appears in your `pyproject.toml`:
+
+```{.toml filename="pyproject.toml"}
+[tool.great-docs]
+sidebar_filter_enabled = true
+sidebar_filter_min_items = 15  # Show filter with 15+ items
+```
+
+Set `sidebar_filter_enabled = false` to disable it entirely, or adjust `sidebar_filter_min_items` to change the threshold.
+
+## Refreshing API Documentation
+
+When your package's API changes, rebuild with:
+
+```{.bash filename="Terminal"}
+great-docs build
+```
+
+This automatically re-discovers exports and updates the configuration.
+
+For faster builds when only documentation content changed (not API):
+
+```{.bash filename="Terminal"}
+great-docs build --no-refresh
+```
+
+## Next Steps
+
+- **[CLI Documentation](04-cli-documentation.qmd)** – Document your Click CLI
+- **[User Guides](05-user-guides.qmd)** – Add narrative documentation

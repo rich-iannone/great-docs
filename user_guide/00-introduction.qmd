@@ -1,0 +1,66 @@
+---
+title: "Welcome to Great Docs"
+guide-section: "Getting Started"
+---
+
+# Welcome to Great Docs
+
+Great Docs is a comprehensive documentation site generator for Python packages. It creates beautiful, professional documentation sites with auto-generated API references, smart navigation, and modern styling. Best of all, it requires minimal configuration.
+
+## Why Great Docs?
+
+Creating documentation for Python packages often involves:
+
+- Writing configuration files by hand
+- Manually listing every class, function, and method
+- Keeping documentation in sync as your API evolves
+- Wrestling with styling and navigation
+
+Great Docs eliminates these pain points by:
+
+- **Auto-discovering your API**: Automatically finds and documents your public classes, functions, and methods
+- **Intelligent organization**: Groups related items together and handles large classes gracefully
+- **Zero configuration**: Works out of the box with sensible defaults
+- **Modern styling**: Professional appearance with responsive design for all devices
+
+## Key Features
+
+### One-Command Setup
+
+A single `great-docs init` creates your entire documentation site, including:
+
+- Auto-generated `index.qmd` from your `README.md`
+- Complete API reference configuration
+- Navigation and sidebar setup
+- Styling and post-processing scripts
+
+### Auto-Generated API Documentation
+
+Great Docs automatically discovers and documents your package's public API:
+
+- Classes with their methods and attributes
+- Functions with parameters and return types
+- Smart categorization and organization
+- Source code links to GitHub
+
+### CLI Documentation
+
+If your package has a Click-based command-line interface, Great Docs can automatically generate reference pages showing the `--help` output for each command.
+
+### User Guide Support
+
+Create narrative documentation alongside your API reference. Just add `.qmd` files to a `user_guide/` directory and Great Docs handles the rest.
+
+## What You'll Learn
+
+This User Guide covers everything you need to know:
+
+1. **Installation** – Getting Great Docs set up
+2. **Quick Start** – Creating your first documentation site
+3. **Configuration** – Customizing behavior via `pyproject.toml`
+4. **API Documentation** – How auto-discovery works and how to customize it
+5. **CLI Documentation** – Documenting Click-based CLIs
+6. **User Guides** – Writing narrative documentation
+7. **Deployment** – Publishing to GitHub Pages
+
+Let's get started!

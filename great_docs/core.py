@@ -260,6 +260,22 @@ class GreatDocs:
                 shutil.copy2(dark_mode_src, dark_mode_dst)
                 print(f"Copied {dark_mode_dst}")
 
+        # Copy theme initialization JavaScript file (for early theme detection)
+        theme_init_src = self.assets_path / "theme-init.js"
+        theme_init_dst = self.project_path / "theme-init.js"
+
+        if theme_init_src.exists():
+            if theme_init_dst.exists() and not force:
+                response = input(f"{theme_init_dst} already exists. Overwrite? [y/N]: ")
+                if response.lower() != "y":
+                    print("Skipping theme-init.js")
+                else:
+                    shutil.copy2(theme_init_src, theme_init_dst)
+                    print(f"Copied {theme_init_dst}")
+            else:
+                shutil.copy2(theme_init_src, theme_init_dst)
+                print(f"Copied {theme_init_dst}")
+
         # Update _quarto.yml configuration
         self._update_quarto_config()
 
@@ -3335,7 +3351,12 @@ toc: false
             config["project"]["resources"] = [config["project"]["resources"]]
 
         # Ensure JS files are included as resources
-        for js_file in ["github-widget.js", "sidebar-filter.js"]:
+        for js_file in [
+            "github-widget.js",
+            "sidebar-filter.js",
+            "dark-mode-toggle.js",
+            "theme-init.js",
+        ]:
             if js_file not in config["project"]["resources"]:
                 config["project"]["resources"].append(js_file)
 
@@ -3511,26 +3532,10 @@ toc: false
                 config["format"]["html"]["include-in-header"]
             ]
 
-        # Inline script to apply theme before page renders
-        early_theme_script = {
-            "text": """<script>
-(function() {
-    var stored = localStorage.getItem('great-docs-theme');
-    var theme = stored || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    var html = document.documentElement;
-    if (theme === 'dark') {
-        html.classList.add('quarto-dark');
-        html.setAttribute('data-bs-theme', 'dark');
-    } else {
-        html.classList.add('quarto-light');
-        html.setAttribute('data-bs-theme', 'light');
-    }
-})();
-</script>"""
-        }
+        # Reference external script file for early theme detection (cleaner YAML)
+        early_theme_script = {"text": '<script src="theme-init.js"></script>'}
         has_early_theme = any(
-            "great-docs-theme" in str(item)
-            for item in config["format"]["html"]["include-in-header"]
+            "theme-init" in str(item) for item in config["format"]["html"]["include-in-header"]
         )
         if not has_early_theme:
             config["format"]["html"]["include-in-header"].append(early_theme_script)
@@ -4083,7 +4088,13 @@ toc: false
                 elif isinstance(config["project"]["resources"], str):
                     config["project"]["resources"] = [config["project"]["resources"]]
 
-                for js_file in ["github-widget.js", "sidebar-filter.js", "reference-switcher.js"]:
+                for js_file in [
+                    "github-widget.js",
+                    "sidebar-filter.js",
+                    "reference-switcher.js",
+                    "dark-mode-toggle.js",
+                    "theme-init.js",
+                ]:
                     if js_file not in config["project"]["resources"]:
                         config["project"]["resources"].append(js_file)
 

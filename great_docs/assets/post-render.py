@@ -892,6 +892,14 @@ def fix_script_paths():
             content = content.replace(old_dark_mode, new_dark_mode)
             modified = True
 
+        # Fix theme-init.js path
+        old_theme_init = '<script src="theme-init.js"></script>'
+        new_theme_init = f'<script src="{prefix}theme-init.js"></script>'
+
+        if old_theme_init in content:
+            content = content.replace(old_theme_init, new_theme_init)
+            modified = True
+
         if modified:
             with open(html_file, "w") as file:
                 file.write(content)

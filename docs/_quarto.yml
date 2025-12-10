@@ -28,6 +28,8 @@ website:
     left:
     - text: Home
       href: index.qmd
+    - text: User Guide
+      href: user-guide/00-introduction.qmd
     - text: Reference
       href: reference/index.qmd
     right:
@@ -50,6 +52,23 @@ website:
     - reference/cli/uninstall.qmd
     - reference/cli/scan.qmd
     - reference/cli/setup_github_pages.qmd
+  - id: user-guide
+    title: User Guide
+    contents:
+    - section: Getting Started
+      contents:
+      - user-guide/00-introduction.qmd
+      - user-guide/01-installation.qmd
+      - user-guide/02-quickstart.qmd
+    - section: Core Concepts
+      contents:
+      - user-guide/03-configuration.qmd
+      - user-guide/04-api-documentation.qmd
+      - user-guide/05-cli-documentation.qmd
+      - user-guide/06-user-guides.qmd
+    - section: Deployment
+      contents:
+      - user-guide/07-deployment.qmd
   page-footer:
     left: '&copy; 2025 Rich Iannone'
 quartodoc:

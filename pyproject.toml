@@ -48,6 +48,7 @@ dev = [
 ]
 docs = [
     "quartodoc>=0.7.0",
+    "jupyter>=1.0.0",
 ]
 
 [project.urls]

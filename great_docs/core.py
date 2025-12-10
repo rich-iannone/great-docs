@@ -473,6 +473,10 @@ class GreatDocs:
                     "large_class_method_threshold", 5
                 )
 
+                # Dark mode toggle configuration
+                # - enabled: True (default) or False to disable the toggle
+                metadata["dark_mode_toggle_enabled"] = tool_config.get("dark_mode_toggle", True)
+
         except Exception:
             pass
 
@@ -3508,37 +3512,39 @@ toc: false
                         filter_index, min_items_script
                     )
 
-        # Add dark mode toggle script
-        if "include-after-body" not in config["format"]["html"]:
-            config["format"]["html"]["include-after-body"] = []
-        elif isinstance(config["format"]["html"]["include-after-body"], str):
-            config["format"]["html"]["include-after-body"] = [
-                config["format"]["html"]["include-after-body"]
-            ]
+        # Add dark mode toggle script (if enabled)
+        dark_mode_enabled = metadata.get("dark_mode_toggle_enabled", True)
+        if dark_mode_enabled:
+            if "include-after-body" not in config["format"]["html"]:
+                config["format"]["html"]["include-after-body"] = []
+            elif isinstance(config["format"]["html"]["include-after-body"], str):
+                config["format"]["html"]["include-after-body"] = [
+                    config["format"]["html"]["include-after-body"]
+                ]
 
-        dark_mode_script_entry = {"text": '<script src="dark-mode-toggle.js"></script>'}
-        has_dark_mode = any(
-            "dark-mode-toggle" in str(item)
-            for item in config["format"]["html"]["include-after-body"]
-        )
-        if not has_dark_mode:
-            config["format"]["html"]["include-after-body"].append(dark_mode_script_entry)
+            dark_mode_script_entry = {"text": '<script src="dark-mode-toggle.js"></script>'}
+            has_dark_mode = any(
+                "dark-mode-toggle" in str(item)
+                for item in config["format"]["html"]["include-after-body"]
+            )
+            if not has_dark_mode:
+                config["format"]["html"]["include-after-body"].append(dark_mode_script_entry)
 
-        # Add early theme detection script in header to prevent flash of wrong theme
-        if "include-in-header" not in config["format"]["html"]:
-            config["format"]["html"]["include-in-header"] = []
-        elif isinstance(config["format"]["html"]["include-in-header"], str):
-            config["format"]["html"]["include-in-header"] = [
-                config["format"]["html"]["include-in-header"]
-            ]
+            # Add early theme detection script in header to prevent flash of wrong theme
+            if "include-in-header" not in config["format"]["html"]:
+                config["format"]["html"]["include-in-header"] = []
+            elif isinstance(config["format"]["html"]["include-in-header"], str):
+                config["format"]["html"]["include-in-header"] = [
+                    config["format"]["html"]["include-in-header"]
+                ]
 
-        # Reference external script file for early theme detection (cleaner YAML)
-        early_theme_script = {"text": '<script src="theme-init.js"></script>'}
-        has_early_theme = any(
-            "theme-init" in str(item) for item in config["format"]["html"]["include-in-header"]
-        )
-        if not has_early_theme:
-            config["format"]["html"]["include-in-header"].append(early_theme_script)
+            # Reference external script file for early theme detection (cleaner YAML)
+            early_theme_script = {"text": '<script src="theme-init.js"></script>'}
+            has_early_theme = any(
+                "theme-init" in str(item) for item in config["format"]["html"]["include-in-header"]
+            )
+            if not has_early_theme:
+                config["format"]["html"]["include-in-header"].append(early_theme_script)
 
         # Add sidebar navigation for reference pages
         if "sidebar" not in config["website"]:

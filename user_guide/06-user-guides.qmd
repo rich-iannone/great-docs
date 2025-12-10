@@ -1,0 +1,291 @@
+---
+title: "User Guides"
+guide-section: "Core Concepts"
+---
+
+# User Guides
+
+Beyond API reference documentation, you often need narrative documentation: tutorials, guides, and explanations. Great Docs makes this easy with automatic User Guide support.
+
+## Creating a User Guide
+
+To add a User Guide to your documentation:
+
+1. Create a `user_guide/` directory in your project root (not in `docs/`)
+2. Add `.qmd` files for each page
+3. Run `great-docs build`
+
+That's it! Great Docs automatically:
+
+- Copies files to `docs/user-guide/`
+- Generates sidebar navigation
+- Adds a "User Guide" link to the navbar
+- Organizes pages into sections
+
+## Directory Structure
+
+```{.default filename="Project structure"}
+your-project/
+├── docs/                    # Generated docs (don't edit directly)
+├── user_guide/              # Your source files
+│   ├── 00-introduction.qmd
+│   ├── 01-installation.qmd
+│   ├── 02-quickstart.qmd
+│   ├── 03-configuration.qmd
+│   └── images/              # Asset directories are copied too
+│       └── screenshot.png
+├── pyproject.toml
+└── your_package/
+```
+
+## Page Ordering
+
+Files are sorted alphabetically by filename. Use numeric prefixes to control order:
+
+```{.default filename="user_guide/"}
+user_guide/
+├── 00-introduction.qmd    # First
+├── 01-installation.qmd    # Second
+├── 02-getting-started.qmd # Third
+└── 03-advanced.qmd        # Fourth
+```
+
+The prefix is stripped from the title, so `01-installation.qmd` becomes "Installation" in the navigation.
+
+## Organizing into Sections
+
+Group related pages into sections using the `guide-section` frontmatter key:
+
+```{.yaml filename="01-installation.qmd"}
+---
+title: "Installation"
+guide-section: "Getting Started"
+---
+```
+
+Pages with the same `guide-section` value are grouped together in the sidebar:
+
+```{.default filename="Sidebar navigation"}
+User Guide
+├── Getting Started
+│   ├── Introduction
+│   └── Installation
+├── Core Concepts
+│   ├── Configuration
+│   └── API Documentation
+└── Advanced
+    └── Customization
+```
+
+### Section Order
+
+Sections appear in the order they're first encountered (based on file sort order). To control section order, ensure the first file in each section has the appropriate prefix:
+
+```{.default filename="user_guide/"}
+user_guide/
+├── 00-introduction.qmd      # guide-section: "Getting Started"
+├── 01-installation.qmd      # guide-section: "Getting Started"
+├── 10-configuration.qmd     # guide-section: "Core Concepts"
+├── 11-api-docs.qmd          # guide-section: "Core Concepts"
+├── 20-customization.qmd     # guide-section: "Advanced"
+```
+
+## Writing Pages
+
+User Guide pages are standard Quarto Markdown files, which means you have access to all of Quarto's powerful features for creating rich, interactive documentation. Here are some of the most useful features for writing guides.
+
+### Basic Frontmatter
+
+Every User Guide page needs frontmatter at the top to define its title and section. The `title` appears in the sidebar navigation and as the page heading, while `guide-section` determines which group the page belongs to:
+
+```{.yaml filename="your-page.qmd"}
+---
+title: "Your Page Title"
+guide-section: "Section Name"
+---
+```
+
+### Code Blocks
+
+Code blocks with syntax highlighting are essential for technical documentation. Specify the language after the opening backticks to enable highlighting:
+
+````markdown
+```python
+from great_docs import GreatDocs
+
+docs = GreatDocs()
+docs.build()
+```
+````
+
+Quarto supports syntax highlighting for dozens of languages including Python, JavaScript, TypeScript, R, Bash, YAML, TOML, and many more.
+
+For Python code that you want to actually execute and show the output, use `{python}` instead of just `python`:
+
+~~~markdown
+```{python}
+numbers = [1, 2, 3, 4, 5]
+squared = [x**2 for x in numbers]
+print(squared)
+```
+~~~
+
+::: {.callout-note}
+Executable code blocks require Jupyter. Install it with `pip install jupyter` or install Great Docs with the docs extras: `pip install great-docs[docs]`.
+:::
+
+You can control execution behavior with hash-pipe options at the top of the code block:
+
+~~~markdown
+```{python}
+#| echo: true
+#| eval: true
+#| output: true
+
+print("This code is shown, executed, and its output displayed")
+```
+~~~
+
+Some useful hash-pipe options include:
+
+- `#| echo: false` – Hide the code, show only output
+- `#| eval: false` – Show the code but don't run it
+- `#| output: false` – Run the code but hide output
+- `#| warning: false` – Suppress warning messages
+- `#| fig-cap: "Caption"` – Add a caption to figure output
+
+### Tabsets
+
+Tabsets let you present alternative content (like code in multiple languages or instructions for different platforms) without cluttering the page. Readers can click to switch between tabs:
+
+````markdown
+::: {.panel-tabset}
+
+## Python
+
+```python
+print("Hello")
+```
+
+## JavaScript
+
+```javascript
+console.log("Hello");
+```
+
+:::
+````
+
+This is particularly useful for showing installation commands for different operating systems or demonstrating concepts in multiple programming languages.
+
+### Callouts
+
+Callouts draw attention to important information. Use them sparingly to highlight notes, warnings, or tips that readers shouldn't miss:
+
+```markdown
+::: {.callout-note}
+This is a note.
+:::
+
+::: {.callout-warning}
+This is a warning.
+:::
+
+::: {.callout-tip}
+This is a tip.
+:::
+```
+
+Each callout type has distinct styling. Notes are informational, warnings alert readers to potential issues, and tips offer helpful suggestions.
+
+### Images
+
+Visual content like screenshots, diagrams, and architecture charts can greatly improve documentation. Store images in a subdirectory to keep your User Guide organized:
+
+```{.default filename="user_guide/"}
+user_guide/
+├── 01-getting-started.qmd
+└── images/
+    └── screenshot.png
+```
+
+Reference them in your content using standard Markdown image syntax. The alt text in brackets improves accessibility:
+
+```markdown
+![Screenshot](images/screenshot.png)
+```
+
+### Cross-References
+
+Link freely between pages to help readers navigate related content. For other User Guide pages, use relative paths:
+
+```markdown
+See the [Installation](01-installation.qmd) guide for details.
+```
+
+To link to API reference pages, use a relative path that goes up one directory level first:
+
+```markdown
+See the [GreatDocs](../reference/GreatDocs.qmd) class for the full API.
+```
+
+These links are validated during the build, so you'll catch broken references early.
+
+## Asset Directories
+
+Subdirectories that don't contain `.qmd` files are treated as asset directories and copied as-is:
+
+```{.default filename="user_guide/"}
+user_guide/
+├── 01-guide.qmd
+├── images/          # Copied to docs/user-guide/images/
+│   ├── logo.png
+│   └── diagram.svg
+└── data/            # Copied to docs/user-guide/data/
+    └── example.json
+```
+
+## User Guide Styling
+
+Great Docs applies different styling to User Guide pages compared to API reference pages, optimizing for the narrative documentation experience. The sidebar filter that helps navigate large APIs is hidden since user guides are typically smaller and have a clear hierarchical structure. Breadcrumb navigation is also removed to provide a cleaner reading experience. The sidebar itself uses section-based navigation that mirrors your `guide-section` organization, making it easy for readers to see where they are in the documentation.
+
+## Example: This User Guide
+
+The Great Docs User Guide you're reading uses this exact structure:
+
+```
+user_guide/
+├── 00-introduction.qmd      # Getting Started
+├── 01-installation.qmd      # Getting Started
+├── 02-quickstart.qmd        # Getting Started
+├── 03-configuration.qmd     # Core Concepts
+├── 04-api-documentation.qmd # Core Concepts
+├── 05-cli-documentation.qmd # Core Concepts
+├── 06-user-guides.qmd       # Core Concepts
+└── 07-deployment.qmd        # Deployment
+```
+
+## Tips
+
+### Keep Source in Project Root
+
+The `user_guide/` directory should be in your project root, not inside `docs/`. Great Docs copies files during build, so your source stays separate from generated output.
+
+### Use Descriptive Titles
+
+The `title` in frontmatter appears in navigation. Make it clear and concise:
+
+```yaml
+---
+title: "Configuration Options"  # Good
+guide-section: "Reference"
+---
+```
+
+### Organize Logically
+
+Group related content into sections that make sense for your users. A common pattern starts with "Getting Started" content that covers installation and quick start guides. This is everything new users need to get up and running. "Core Concepts" sections explain the main features and typical usage patterns. "Advanced" sections dive into complex topics and customization options for power users. Finally, a "Reference" section can house configuration options and troubleshooting guides. Adapt this structure to fit your project's needs.
+
+## Next Steps
+
+- **[Deployment](06-deployment.qmd)** – Publish your documentation to GitHub Pages

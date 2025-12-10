@@ -1555,6 +1555,85 @@ body.quarto-dark .aa-Item[aria-selected="true"] {
     background-color: var(--gd-bg-tertiary);
 }
 
+/* Search results styling - keep light background but ensure dark text */
+body.quarto-dark .search-result-title,
+body.quarto-dark p.search-result-title,
+body.quarto-dark .aa-Panel .search-result-title,
+body.quarto-dark #quarto-search-results .search-result-title,
+html.quarto-dark .search-result-title,
+html.quarto-dark p.search-result-title {
+    color: #1a1a1a !important;
+}
+
+body.quarto-dark .search-result-header,
+body.quarto-dark div.search-result-header,
+body.quarto-dark .aa-Panel .search-result-header,
+body.quarto-dark #quarto-search-results .search-result-header,
+html.quarto-dark .search-result-header,
+html.quarto-dark div.search-result-header {
+    color: #333 !important;
+}
+
+body.quarto-dark .search-result-text {
+    color: var(--gd-text-secondary);
+}
+
+body.quarto-dark .search-result-doc-title {
+    color: var(--gd-text-primary);
+}
+
+body.quarto-dark .search-result-section {
+    color: var(--gd-text-muted);
+}
+
+body.quarto-dark .aa-SourceHeader {
+    color: var(--gd-text-muted);
+    border-bottom-color: var(--gd-border-color);
+}
+
+body.quarto-dark .aa-SourceNoResults {
+    color: var(--gd-text-muted);
+}
+
+body.quarto-dark .quarto-search-results {
+    background-color: var(--gd-bg-secondary);
+}
+
+body.quarto-dark .search-result-link {
+    color: var(--gd-link-color);
+}
+
+body.quarto-dark .search-result-link:hover {
+    color: #9dcaf0;
+}
+
+/* Algolia/Autocomplete specific dark mode */
+body.quarto-dark .aa-Autocomplete {
+    background-color: var(--gd-bg-secondary);
+}
+
+body.quarto-dark .aa-Form {
+    background-color: var(--gd-bg-tertiary);
+    border-color: var(--gd-border-color);
+}
+
+body.quarto-dark .aa-Input {
+    color: var(--gd-text-primary);
+}
+
+body.quarto-dark .aa-InputWrapperPrefix,
+body.quarto-dark .aa-InputWrapperSuffix {
+    color: var(--gd-text-muted);
+}
+
+body.quarto-dark .aa-ClearButton {
+    color: var(--gd-text-muted);
+}
+
+body.quarto-dark .aa-ClearButton:hover {
+    color: var(--gd-text-primary);
+}
+
 /* ==========================================================================
    Dark Mode - GitHub Widget
    ========================================================================== */

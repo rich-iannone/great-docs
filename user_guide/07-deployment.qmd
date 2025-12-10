@@ -1,0 +1,250 @@
+---
+title: "Deployment"
+guide-section: "Deployment"
+---
+
+# Deployment
+
+Great Docs makes it easy to publish your documentation to GitHub Pages with automatic builds on every push.
+
+## Quick Setup
+
+Deploy to GitHub Pages with a single command:
+
+```{.bash filename="Terminal"}
+great-docs setup-github-pages
+```
+
+This creates a complete GitHub Actions workflow at `.github/workflows/docs.yml`.
+
+## What the Workflow Does
+
+The generated workflow includes three jobs:
+
+### 1. Build Documentation
+
+- Checks out your repository
+- Sets up Python and Quarto
+- Installs dependencies (with caching)
+- Runs `great-docs build`
+- Uploads the built site as an artifact
+
+### 2. Publish to GitHub Pages
+
+- Downloads the built artifact
+- Deploys to GitHub Pages
+- Only runs on pushes to your main branch
+
+### 3. Preview for Pull Requests
+
+- Creates preview deployments for PRs
+- Lets reviewers see documentation changes before merging
+
+## Enabling GitHub Pages
+
+After generating the workflow:
+
+1. **Commit and push** the workflow file:
+
+   ```{.bash filename="Terminal"}
+   git add .github/workflows/docs.yml
+   git commit -m "Add documentation workflow"
+   git push
+   ```
+
+2. **Enable GitHub Pages** in your repository:
+   - Go to **Settings → Pages**
+   - Set **Source** to `GitHub Actions`
+
+3. **Trigger a build** by pushing to your main branch
+
+Your documentation will be published at:
+
+```
+https://[username].github.io/[repository]/
+```
+
+## Customization Options
+
+### Different Docs Directory
+
+```{.bash filename="Terminal"}
+great-docs setup-github-pages --docs-dir site
+```
+
+### Different Main Branch
+
+```{.bash filename="Terminal"}
+great-docs setup-github-pages --main-branch develop
+```
+
+### Different Python Version
+
+```{.bash filename="Terminal"}
+great-docs setup-github-pages --python-version 3.12
+```
+
+### Combined Options
+
+```{.bash filename="Terminal"}
+great-docs setup-github-pages \
+  --docs-dir site \
+  --main-branch develop \
+  --python-version 3.12
+```
+
+### Force Overwrite
+
+```{.bash filename="Terminal"}
+great-docs setup-github-pages --force
+```
+
+## Generated Workflow
+
+Here's what the generated workflow looks like:
+
+```{.yaml filename=".github/workflows/docs.yml"}
+name: Documentation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Install dependencies
+        run: |
+          pip install great-docs
+          pip install -e .
+
+      - name: Build documentation
+        run: great-docs build
+        working-directory: docs
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/_site
+
+  publish-docs:
+    needs: build-docs
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+```
+
+## Manual Deployment
+
+If you prefer to deploy manually or use a different hosting service:
+
+### Build Locally
+
+```{.bash filename="Terminal"}
+great-docs build
+```
+
+### Upload the Built Site
+
+The built site is in `docs/_site/`. Upload this directory to your hosting service:
+
+- **Netlify**: Drag and drop `_site/` folder
+- **Vercel**: Point to `docs/_site` as output directory
+- **AWS S3**: Sync the `_site/` folder to your bucket
+- **Any static host**: Copy contents of `_site/`
+
+## Custom Domain
+
+To use a custom domain with GitHub Pages:
+
+1. Add a `CNAME` file to `docs/` containing your domain:
+
+   ```{.default filename="docs/CNAME"}
+   docs.example.com
+   ```
+
+2. Configure DNS with your domain registrar:
+   - Add a CNAME record pointing to `[username].github.io`
+
+3. In GitHub repository settings:
+   - Go to **Settings → Pages**
+   - Enter your custom domain
+   - Enable "Enforce HTTPS"
+
+## Troubleshooting
+
+### Build Fails
+
+Check the GitHub Actions logs for errors. Common issues:
+
+- **Missing dependencies**: Ensure your `pyproject.toml` lists all dependencies
+- **Quarto version**: The workflow uses the latest Quarto; ensure compatibility
+- **Python version**: Make sure your code works with the specified Python version
+
+### Pages Not Updating
+
+If your documentation seems stuck on an old version, there are several things to check. First, verify the workflow completed successfully in the Actions tab. Then confirm that your GitHub Pages source is set to "GitHub Actions" in repository settings. Sometimes it's simply browser caching. Try clearing your cache or viewing in incognito mode.
+
+### Preview Not Working
+
+Pull request previews need a few things to be in place. The workflow must complete successfully, your repository needs appropriate permissions configured, and the `actions/deploy-pages` action must be allowed in your organization settings. Check each of these if previews aren't appearing on your PRs.
+
+## Best Practices
+
+### Keep Documentation in Sync
+
+Run `great-docs build` locally before pushing to catch errors early:
+
+```bash
+great-docs build && open docs/_site/index.html
+```
+
+### Use Pull Request Previews
+
+Review documentation changes in PRs before merging. This catches:
+
+- Broken links
+- Formatting issues
+- Missing content
+
+### Version Your Documentation
+
+For versioned documentation, consider:
+
+- Separate branches for major versions
+- Using tools like `mike` for version switching
+- Tagging releases with corresponding docs
+
+## Summary
+
+With Great Docs and GitHub Pages, you get:
+
+- **Automatic builds** on every push
+- **Preview deployments** for pull requests
+- **Zero maintenance** hosting
+- **Custom domains** support
+- **HTTPS** out of the box
+
+Your documentation stays in sync with your code automatically!

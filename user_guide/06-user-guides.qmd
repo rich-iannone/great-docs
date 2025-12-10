@@ -120,33 +120,7 @@ docs.build()
 
 Quarto supports syntax highlighting for dozens of languages including Python, JavaScript, TypeScript, R, Bash, YAML, TOML, and many more.
 
-For Python code that you want to actually execute and show the output, use `{python}` instead of just `python`:
-
-~~~markdown
-```{python}
-numbers = [1, 2, 3, 4, 5]
-squared = [x**2 for x in numbers]
-print(squared)
-```
-~~~
-
-::: {.callout-note}
-Executable code blocks require Jupyter. Install it with `pip install jupyter` or install Great Docs with the docs extras: `pip install great-docs[docs]`.
-:::
-
-You can control execution behavior with hash-pipe options at the top of the code block:
-
-~~~markdown
-```{python}
-#| echo: true
-#| eval: true
-#| output: true
-
-print("This code is shown, executed, and its output displayed")
-```
-~~~
-
-Some useful hash-pipe options include:
+For Python code that you want to actually execute and show the output, use `{python}` instead of just `python`. You can control execution behavior with hash-pipe options at the top of the code block. Some useful hash-pipe options include:
 
 - `#| echo: false` – Hide the code, show only output
 - `#| eval: false` – Show the code but don't run it

@@ -244,6 +244,22 @@ class GreatDocs:
                 shutil.copy2(ref_switcher_src, ref_switcher_dst)
                 print(f"Copied {ref_switcher_dst}")
 
+        # Copy dark mode toggle JavaScript file
+        dark_mode_src = self.assets_path / "dark-mode-toggle.js"
+        dark_mode_dst = self.project_path / "dark-mode-toggle.js"
+
+        if dark_mode_src.exists():
+            if dark_mode_dst.exists() and not force:
+                response = input(f"{dark_mode_dst} already exists. Overwrite? [y/N]: ")
+                if response.lower() != "y":
+                    print("Skipping dark-mode-toggle.js")
+                else:
+                    shutil.copy2(dark_mode_src, dark_mode_dst)
+                    print(f"Copied {dark_mode_dst}")
+            else:
+                shutil.copy2(dark_mode_src, dark_mode_dst)
+                print(f"Copied {dark_mode_dst}")
+
         # Update _quarto.yml configuration
         self._update_quarto_config()
 
@@ -3470,6 +3486,54 @@ toc: false
                     config["format"]["html"]["include-after-body"].insert(
                         filter_index, min_items_script
                     )
+
+        # Add dark mode toggle script
+        if "include-after-body" not in config["format"]["html"]:
+            config["format"]["html"]["include-after-body"] = []
+        elif isinstance(config["format"]["html"]["include-after-body"], str):
+            config["format"]["html"]["include-after-body"] = [
+                config["format"]["html"]["include-after-body"]
+            ]
+
+        dark_mode_script_entry = {"text": '<script src="dark-mode-toggle.js"></script>'}
+        has_dark_mode = any(
+            "dark-mode-toggle" in str(item)
+            for item in config["format"]["html"]["include-after-body"]
+        )
+        if not has_dark_mode:
+            config["format"]["html"]["include-after-body"].append(dark_mode_script_entry)
+
+        # Add early theme detection script in header to prevent flash of wrong theme
+        if "include-in-header" not in config["format"]["html"]:
+            config["format"]["html"]["include-in-header"] = []
+        elif isinstance(config["format"]["html"]["include-in-header"], str):
+            config["format"]["html"]["include-in-header"] = [
+                config["format"]["html"]["include-in-header"]
+            ]
+
+        # Inline script to apply theme before page renders
+        early_theme_script = {
+            "text": """<script>
+(function() {
+    var stored = localStorage.getItem('great-docs-theme');
+    var theme = stored || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    var html = document.documentElement;
+    if (theme === 'dark') {
+        html.classList.add('quarto-dark');
+        html.setAttribute('data-bs-theme', 'dark');
+    } else {
+        html.classList.add('quarto-light');
+        html.setAttribute('data-bs-theme', 'light');
+    }
+})();
+</script>"""
+        }
+        has_early_theme = any(
+            "great-docs-theme" in str(item)
+            for item in config["format"]["html"]["include-in-header"]
+        )
+        if not has_early_theme:
+            config["format"]["html"]["include-in-header"].append(early_theme_script)
 
         # Add sidebar navigation for reference pages
         if "sidebar" not in config["website"]:

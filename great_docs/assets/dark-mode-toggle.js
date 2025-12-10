@@ -1,0 +1,269 @@
+/**
+ * Dark Mode Toggle for Great Docs
+ *
+ * Features:
+ * - Toggle switch in the navbar
+ * - System preference detection
+ * - Persistent preference storage
+ * - Smooth transitions
+ */
+
+(function() {
+    'use strict';
+
+    const STORAGE_KEY = 'great-docs-theme';
+    const DARK_CLASS = 'quarto-dark';
+    const LIGHT_CLASS = 'quarto-light';
+
+    /**
+     * Get the user's system color scheme preference
+     */
+    function getSystemPreference() {
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            return 'dark';
+        }
+        return 'light';
+    }
+
+    /**
+     * Get the stored theme preference
+     */
+    function getStoredPreference() {
+        try {
+            return localStorage.getItem(STORAGE_KEY);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    /**
+     * Store the theme preference
+     */
+    function setStoredPreference(theme) {
+        try {
+            localStorage.setItem(STORAGE_KEY, theme);
+        } catch (e) {
+            // localStorage not available
+        }
+    }
+
+    /**
+     * Get the current effective theme
+     */
+    function getCurrentTheme() {
+        const stored = getStoredPreference();
+        if (stored === 'dark' || stored === 'light') {
+            return stored;
+        }
+        return getSystemPreference();
+    }
+
+    /**
+     * Apply the theme to the document
+     */
+    function applyTheme(theme) {
+        const html = document.documentElement;
+        const body = document.body;
+
+        if (theme === 'dark') {
+            html.classList.add(DARK_CLASS);
+            html.classList.remove(LIGHT_CLASS);
+            body.classList.add(DARK_CLASS);
+            body.classList.remove(LIGHT_CLASS);
+            html.setAttribute('data-bs-theme', 'dark');
+        } else {
+            html.classList.add(LIGHT_CLASS);
+            html.classList.remove(DARK_CLASS);
+            body.classList.add(LIGHT_CLASS);
+            body.classList.remove(DARK_CLASS);
+            html.setAttribute('data-bs-theme', 'light');
+        }
+
+        // Update toggle button state
+        updateToggleButton(theme);
+    }
+
+    /**
+     * Update the toggle button appearance
+     */
+    function updateToggleButton(theme) {
+        const toggle = document.getElementById('dark-mode-toggle');
+        if (!toggle) return;
+
+        const sunIcon = toggle.querySelector('.theme-icon-light');
+        const moonIcon = toggle.querySelector('.theme-icon-dark');
+
+        if (theme === 'dark') {
+            toggle.setAttribute('aria-pressed', 'true');
+            toggle.title = 'Switch to light mode';
+            if (sunIcon) sunIcon.style.display = 'none';
+            if (moonIcon) moonIcon.style.display = 'inline-block';
+        } else {
+            toggle.setAttribute('aria-pressed', 'false');
+            toggle.title = 'Switch to dark mode';
+            if (sunIcon) sunIcon.style.display = 'inline-block';
+            if (moonIcon) moonIcon.style.display = 'none';
+        }
+    }
+
+    /**
+     * Toggle between light and dark themes
+     */
+    function toggleTheme() {
+        const current = getCurrentTheme();
+        const newTheme = current === 'dark' ? 'light' : 'dark';
+        setStoredPreference(newTheme);
+        applyTheme(newTheme);
+    }
+
+    /**
+     * Create the toggle button HTML
+     */
+    function createToggleButton() {
+        const container = document.createElement('div');
+        container.id = 'dark-mode-toggle-container';
+        container.innerHTML = `
+            <button id="dark-mode-toggle"
+                    class="dark-mode-toggle"
+                    type="button"
+                    role="switch"
+                    aria-label="Toggle dark mode"
+                    title="Switch to dark mode">
+                <span class="theme-icon-light" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </span>
+                <span class="theme-icon-dark" aria-hidden="true" style="display: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </span>
+            </button>
+        `;
+        return container;
+    }
+
+    /**
+     * Insert the toggle button into the navbar
+     */
+    function insertToggleButton() {
+        // Look for the navbar right section
+        const navbarRight = document.querySelector('#navbarCollapse .navbar-nav.ms-auto');
+        const navbarContainer = document.querySelector('#navbarCollapse');
+
+        if (navbarRight) {
+            // Insert before the GitHub widget if present, or at the end
+            const githubWidget = navbarRight.querySelector('#github-widget')?.closest('li');
+            const toggleContainer = createToggleButton();
+
+            // Wrap in a nav item
+            const navItem = document.createElement('li');
+            navItem.className = 'nav-item';
+            navItem.appendChild(toggleContainer);
+
+            if (githubWidget) {
+                navbarRight.insertBefore(navItem, githubWidget);
+            } else {
+                navbarRight.appendChild(navItem);
+            }
+        } else if (navbarContainer) {
+            // Fallback: add to navbar collapse area
+            const toggleContainer = createToggleButton();
+            navbarContainer.appendChild(toggleContainer);
+        }
+
+        // Add click handler
+        const toggle = document.getElementById('dark-mode-toggle');
+        if (toggle) {
+            toggle.addEventListener('click', toggleTheme);
+        }
+    }
+
+    /**
+     * Listen for system preference changes
+     */
+    function setupSystemPreferenceListener() {
+        if (!window.matchMedia) return;
+
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+        mediaQuery.addEventListener('change', (e) => {
+            // Only respond to system changes if user hasn't set a preference
+            const stored = getStoredPreference();
+            if (!stored) {
+                applyTheme(e.matches ? 'dark' : 'light');
+            }
+        });
+    }
+
+    /**
+     * Apply theme immediately to prevent flash
+     */
+    function applyInitialTheme() {
+        const theme = getCurrentTheme();
+
+        // Apply to html element immediately (before body is available)
+        const html = document.documentElement;
+        if (theme === 'dark') {
+            html.classList.add(DARK_CLASS);
+            html.classList.remove(LIGHT_CLASS);
+            html.setAttribute('data-bs-theme', 'dark');
+        } else {
+            html.classList.add(LIGHT_CLASS);
+            html.classList.remove(DARK_CLASS);
+            html.setAttribute('data-bs-theme', 'light');
+        }
+    }
+
+    /**
+     * Initialize dark mode functionality
+     */
+    function init() {
+        // Apply theme to body now that DOM is ready
+        const theme = getCurrentTheme();
+        applyTheme(theme);
+
+        // Insert toggle button
+        insertToggleButton();
+
+        // Setup system preference listener
+        setupSystemPreferenceListener();
+    }
+
+    // Apply initial theme immediately to prevent flash of wrong theme
+    applyInitialTheme();
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+    // Expose API for external use
+    window.greatDocsDarkMode = {
+        toggle: toggleTheme,
+        setTheme: function(theme) {
+            if (theme === 'dark' || theme === 'light') {
+                setStoredPreference(theme);
+                applyTheme(theme);
+            }
+        },
+        getTheme: getCurrentTheme,
+        clearPreference: function() {
+            try {
+                localStorage.removeItem(STORAGE_KEY);
+            } catch (e) {}
+            applyTheme(getSystemPreference());
+        }
+    };
+})();

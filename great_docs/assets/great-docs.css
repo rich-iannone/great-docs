@@ -891,3 +891,765 @@ h1.title.cli-title {
         font-size: 0.95rem;
     }
 }
+
+/* ==========================================================================
+   Dark Mode Toggle Button Styles
+   ========================================================================== */
+
+/* Nav item containing the toggle - vertical alignment with GitHub widget */
+.nav-item:has(#dark-mode-toggle-container) {
+    display: flex;
+    align-items: center;
+}
+
+#dark-mode-toggle-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0;
+}
+
+.dark-mode-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.dark-mode-toggle:hover {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.dark-mode-toggle:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.dark-mode-toggle svg {
+    display: block;
+}
+
+.theme-icon-light,
+.theme-icon-dark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ==========================================================================
+   Dark Mode - Core Styles
+   ========================================================================== */
+
+/* CSS Custom Properties for theming */
+:root {
+    --gd-bg-primary: #FCFEFF;
+    --gd-bg-secondary: #FAFAFD;
+    --gd-bg-tertiary: #F7F1EB;
+    --gd-text-primary: rgb(18, 18, 18);
+    --gd-text-secondary: #333;
+    --gd-text-muted: #666;
+    --gd-border-color: #e9e9e9;
+    --gd-border-light: #E7EAF6;
+    --gd-link-color: black;
+    --gd-code-bg: #f8f9fa;
+    --gd-code-color: rgb(18, 18, 18);
+    --gd-blockquote-bg: #E8E8E8;
+    --gd-sidebar-bg: #FAFAFD;
+    --gd-navbar-bg: #2d2d2d;
+    --gd-footer-text: rgb(48, 48, 48);
+    --gd-highlight-color: rgba(255, 243, 205, 0.5);
+    --gd-active-link: rgb(244, 121, 0);
+    --gd-accent-blue: rgba(101, 180, 237, 0.75);
+
+    /* Syntax highlighting - light mode */
+    --gd-syn-class: #0e84b5;
+    --gd-syn-name: #4758AB;
+    --gd-syn-none: #7D4E9E;
+    --gd-syn-bool: #0077AA;
+    --gd-syn-operator: #D14D00;
+    --gd-syn-keyword: #008000;
+    --gd-syn-string: #BA2121;
+    --gd-syn-number: #666666;
+    --gd-syn-comment: #408080;
+    --gd-syn-function: #0000FF;
+    --gd-syn-builtin: #008000;
+}
+
+/* Dark mode custom properties */
+html.quarto-dark,
+body.quarto-dark {
+    --gd-bg-primary: #1a1a1a;
+    --gd-bg-secondary: #222222;
+    --gd-bg-tertiary: #2a2a2a;
+    --gd-text-primary: #e0e0e0;
+    --gd-text-secondary: #c8c8c8;
+    --gd-text-muted: #999;
+    --gd-border-color: #3d3d3d;
+    --gd-border-light: #333;
+    --gd-link-color: #7cb8e8;
+    --gd-code-bg: #2a2a2a;
+    --gd-code-color: #e0e0e0;
+    --gd-blockquote-bg: #2a2a2a;
+    --gd-sidebar-bg: #1e1e1e;
+    --gd-navbar-bg: #1a1a1a;
+    --gd-footer-text: #b0b0b0;
+    --gd-highlight-color: rgba(255, 193, 7, 0.2);
+    --gd-active-link: #ff9f43;
+    --gd-accent-blue: rgba(101, 180, 237, 0.6);
+
+    /* Syntax highlighting - dark mode (optimized for contrast) */
+    --gd-syn-class: #56c8ff;
+    --gd-syn-name: #8cb4ff;
+    --gd-syn-none: #c792ea;
+    --gd-syn-bool: #56c8ff;
+    --gd-syn-operator: #ff9f43;
+    --gd-syn-keyword: #c792ea;
+    --gd-syn-string: #c3e88d;
+    --gd-syn-number: #f78c6c;
+    --gd-syn-comment: #697098;
+    --gd-syn-function: #82aaff;
+    --gd-syn-builtin: #ffcb6b;
+}
+
+/* ==========================================================================
+   Dark Mode - Body & Background
+   ========================================================================== */
+
+body.quarto-dark {
+    background-color: var(--gd-bg-primary);
+    color: var(--gd-text-primary);
+}
+
+body.quarto-dark .quarto-body-content {
+    background-color: var(--gd-bg-primary);
+}
+
+/* ==========================================================================
+   Dark Mode - Typography & Links
+   ========================================================================== */
+
+body.quarto-dark h1,
+body.quarto-dark h2,
+body.quarto-dark h3,
+body.quarto-dark h4,
+body.quarto-dark h5,
+body.quarto-dark h6 {
+    color: var(--gd-text-primary);
+}
+
+body.quarto-dark p,
+body.quarto-dark li,
+body.quarto-dark dd,
+body.quarto-dark dt {
+    color: var(--gd-text-primary);
+}
+
+body.quarto-dark p a,
+body.quarto-dark li a {
+    color: var(--gd-link-color);
+}
+
+body.quarto-dark p a:hover,
+body.quarto-dark li a:hover {
+    color: #9dcaf0;
+}
+
+body.quarto-dark .table a {
+    color: var(--gd-link-color);
+}
+
+/* ==========================================================================
+   Dark Mode - Code & Syntax Highlighting
+   ========================================================================== */
+
+body.quarto-dark code {
+    color: var(--gd-code-color);
+    background-color: var(--gd-code-bg);
+}
+
+body.quarto-dark pre {
+    background-color: var(--gd-bg-tertiary);
+    border-color: var(--gd-border-color);
+}
+
+body.quarto-dark pre code {
+    background-color: transparent;
+    color: var(--gd-text-primary);
+}
+
+/* Override Quarto's default code token colors for dark mode */
+body.quarto-dark .sourceCode span,
+body.quarto-dark pre.sourceCode code span {
+    color: var(--gd-text-primary);
+}
+
+/* Shell/bash specific - ensure all text is readable */
+body.quarto-dark pre.bash code,
+body.quarto-dark pre.sh code,
+body.quarto-dark pre.shell code,
+body.quarto-dark .sourceCode.bash code,
+body.quarto-dark .sourceCode.sh code,
+body.quarto-dark div.sourceCode[data-language="bash"] code,
+body.quarto-dark div.sourceCode[data-language="sh"] code {
+    color: var(--gd-text-primary);
+}
+
+body.quarto-dark .sourceCode.bash span,
+body.quarto-dark .sourceCode.sh span,
+body.quarto-dark div.sourceCode[data-language="bash"] span,
+body.quarto-dark div.sourceCode[data-language="sh"] span {
+    color: var(--gd-text-primary) !important;
+}
+
+/* Ensure inline code in dark mode has proper contrast */
+body.quarto-dark :not(pre) > code {
+    color: #f0a0a0;
+    background-color: var(--gd-code-bg);
+}
+
+/* Signature highlighting - dark mode */
+body.quarto-dark code span.sig-class {
+    color: var(--gd-syn-class);
+}
+
+body.quarto-dark code span.sig-name {
+    color: var(--gd-syn-name);
+}
+
+body.quarto-dark code span.cn-none {
+    color: var(--gd-syn-none);
+}
+
+body.quarto-dark code span.cn-bool {
+    color: var(--gd-syn-bool);
+}
+
+body.quarto-dark #cb1 code span.op {
+    color: var(--gd-syn-operator);
+}
+
+/* Pandoc/Quarto syntax highlighting tokens - dark mode */
+body.quarto-dark .sourceCode span.kw,       /* Keywords */
+body.quarto-dark .highlight span.k {
+    color: var(--gd-syn-keyword);
+}
+
+body.quarto-dark .sourceCode span.cf {      /* Control flow */
+    color: var(--gd-syn-keyword);
+}
+
+body.quarto-dark .sourceCode span.op {      /* Operators */
+    color: var(--gd-syn-operator);
+}
+
+body.quarto-dark .sourceCode span.st,       /* Strings */
+body.quarto-dark .highlight span.s,
+body.quarto-dark .highlight span.s1,
+body.quarto-dark .highlight span.s2 {
+    color: var(--gd-syn-string);
+}
+
+body.quarto-dark .sourceCode span.dv,       /* Decimal values */
+body.quarto-dark .sourceCode span.fl,       /* Floats */
+body.quarto-dark .sourceCode span.bn,       /* Base-N integers */
+body.quarto-dark .highlight span.mi,
+body.quarto-dark .highlight span.mf {
+    color: var(--gd-syn-number);
+}
+
+body.quarto-dark .sourceCode span.co,       /* Comments */
+body.quarto-dark .highlight span.c,
+body.quarto-dark .highlight span.c1,
+body.quarto-dark .highlight span.cm {
+    color: var(--gd-syn-comment);
+    font-style: italic;
+}
+
+body.quarto-dark .sourceCode span.fu,       /* Functions */
+body.quarto-dark .highlight span.nf {
+    color: var(--gd-syn-function);
+}
+
+body.quarto-dark .sourceCode span.bu,       /* Built-ins */
+body.quarto-dark .highlight span.nb {
+    color: var(--gd-syn-builtin);
+}
+
+body.quarto-dark .sourceCode span.va,       /* Variables */
+body.quarto-dark .sourceCode span.at,       /* Attributes */
+body.quarto-dark .highlight span.n {
+    color: var(--gd-text-primary);
+}
+
+body.quarto-dark .sourceCode span.sc {      /* Special characters */
+    color: var(--gd-syn-string);
+}
+
+body.quarto-dark .sourceCode span.ss {      /* Special strings */
+    color: var(--gd-syn-string);
+}
+
+body.quarto-dark .sourceCode span.im {      /* Import */
+    color: var(--gd-syn-keyword);
+}
+
+body.quarto-dark .sourceCode span.cn {      /* Constants (None, True, False) */
+    color: var(--gd-syn-none);
+}
+
+body.quarto-dark .sourceCode span.dt {      /* Data types */
+    color: var(--gd-syn-class);
+}
+
+body.quarto-dark .sourceCode span.an {      /* Annotation */
+    color: var(--gd-syn-comment);
+}
+
+body.quarto-dark .sourceCode span.pp {      /* Preprocessor */
+    color: var(--gd-syn-keyword);
+}
+
+body.quarto-dark .sourceCode span.ex {      /* Extension */
+    color: var(--gd-syn-function);
+}
+
+body.quarto-dark .sourceCode span.do {      /* Documentation */
+    color: var(--gd-syn-comment);
+    font-style: italic;
+}
+
+body.quarto-dark .sourceCode span.al {      /* Alert */
+    color: #ff5555;
+    font-weight: bold;
+}
+
+body.quarto-dark .sourceCode span.er {      /* Error */
+    color: #ff5555;
+}
+
+body.quarto-dark .sourceCode span.wa {      /* Warning */
+    color: #ffb86c;
+}
+
+body.quarto-dark .sourceCode span.in {      /* Information */
+    color: var(--gd-syn-comment);
+}
+
+/* ==========================================================================
+   Dark Mode - Cell Output
+   ========================================================================== */
+
+body.quarto-dark .cell-output.cell-output-stdout {
+    background-color: var(--gd-bg-tertiary);
+    border-color: var(--gd-border-color);
+    color: var(--gd-text-primary);
+}
+
+body.quarto-dark .cell-output.cell-output-stderr {
+    background-color: rgba(255, 85, 85, 0.1);
+    border-color: rgba(255, 85, 85, 0.3);
+}
+
+/* ==========================================================================
+   Dark Mode - Blockquotes
+   ========================================================================== */
+
+body.quarto-dark .blockquote,
+body.quarto-dark blockquote {
+    background-color: var(--gd-blockquote-bg);
+    border-left-color: var(--gd-accent-blue);
+    color: var(--gd-text-secondary);
+}
+
+/* ==========================================================================
+   Dark Mode - Sidebar
+   ========================================================================== */
+
+body.quarto-dark #quarto-sidebar {
+    background-color: var(--gd-sidebar-bg);
+    border-right-color: var(--gd-border-color);
+}
+
+body.quarto-dark .sidebar-menu-container {
+    border-bottom-color: var(--gd-border-color);
+}
+
+body.quarto-dark #quarto-sidebar .sidebar-item-text {
+    color: var(--gd-text-secondary);
+}
+
+body.quarto-dark #quarto-sidebar .sidebar-item-text:hover {
+    color: var(--gd-text-primary);
+}
+
+body.quarto-dark #quarto-sidebar a.sidebar-item-text.sidebar-link.active {
+    color: var(--gd-active-link);
+}
+
+body.quarto-dark a.sidebar-item-text.sidebar-link.text-start > span {
+    color: #9e9e9e;
+}
+
+body.quarto-dark a.sidebar-item-toggle.text-start > i {
+    color: #9e9e9e;
+}
+
+body.quarto-dark .sidebar-tools-collapse {
+    color: var(--gd-text-muted);
+}
+
+/* ==========================================================================
+   Dark Mode - Navbar
+   ========================================================================== */
+
+body.quarto-dark .navbar {
+    background: var(--gd-navbar-bg) !important;
+    border-bottom: 1px solid var(--gd-border-color);
+}
+
+body.quarto-dark .navbar-brand img {
+    border-color: #555;
+}
+
+body.quarto-dark #navbarCollapse > ul.navbar-nav.navbar-nav-scroll.me-auto > li > a {
+    color: #e0e0e0;
+}
+
+body.quarto-dark #navbarCollapse > ul.navbar-nav.navbar-nav-scroll.me-auto > li > a:hover {
+    background-color: rgb(240, 112, 0);
+    color: white;
+}
+
+/* Dark mode toggle in dark mode */
+body.quarto-dark .dark-mode-toggle {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #e0e0e0;
+}
+
+body.quarto-dark .dark-mode-toggle:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* ==========================================================================
+   Dark Mode - Right Sidebar (TOC)
+   ========================================================================== */
+
+body.quarto-dark #quarto-margin-sidebar {
+    color: var(--gd-text-secondary);
+}
+
+body.quarto-dark #quarto-margin-sidebar nav a {
+    color: var(--gd-text-muted);
+}
+
+body.quarto-dark #quarto-margin-sidebar nav a:hover {
+    color: var(--gd-text-primary);
+}
+
+body.quarto-dark #quarto-margin-sidebar nav a.active {
+    color: var(--gd-active-link);
+}
+
+body.quarto-dark #toc-title {
+    color: var(--gd-text-primary);
+}
+
+/* ==========================================================================
+   Dark Mode - Footer
+   ========================================================================== */
+
+body.quarto-dark .nav-footer {
+    background-color: var(--gd-bg-secondary);
+    border-top: 1px solid var(--gd-border-color);
+}
+
+body.quarto-dark .nav-footer-left,
+body.quarto-dark .nav-footer-right,
+body.quarto-dark .nav-footer-center {
+    color: var(--gd-footer-text);
+}
+
+body.quarto-dark .nav-footer a {
+    color: var(--gd-link-color);
+}
+
+/* ==========================================================================
+   Dark Mode - Tables
+   ========================================================================== */
+
+body.quarto-dark .table {
+    color: var(--gd-text-primary);
+    border-color: var(--gd-border-color);
+}
+
+body.quarto-dark .table th {
+    background-color: var(--gd-bg-secondary);
+    border-color: var(--gd-border-color);
+}
+
+body.quarto-dark .table td {
+    border-color: var(--gd-border-color);
+}
+
+body.quarto-dark .table-striped > tbody > tr:nth-of-type(odd) > * {
+    background-color: var(--gd-bg-tertiary);
+}
+
+body.quarto-dark .table-hover > tbody > tr:hover > * {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* ==========================================================================
+   Dark Mode - Cards & Panels
+   ========================================================================== */
+
+body.quarto-dark .card {
+    background-color: var(--gd-bg-secondary);
+    border-color: var(--gd-border-color);
+}
+
+body.quarto-dark .card-header {
+    background-color: var(--gd-bg-tertiary);
+    border-color: var(--gd-border-color);
+}
+
+body.quarto-dark .callout {
+    background-color: var(--gd-bg-secondary);
+    border-color: var(--gd-border-color);
+}
+
+body.quarto-dark .callout-note {
+    border-left-color: #6ea8fe;
+}
+
+body.quarto-dark .callout-warning {
+    border-left-color: #ffb86c;
+}
+
+body.quarto-dark .callout-important {
+    border-left-color: #ff5555;
+}
+
+body.quarto-dark .callout-tip {
+    border-left-color: #50fa7b;
+}
+
+/* ==========================================================================
+   Dark Mode - Forms & Inputs
+   ========================================================================== */
+
+body.quarto-dark input,
+body.quarto-dark textarea,
+body.quarto-dark select {
+    background-color: var(--gd-bg-tertiary);
+    border-color: var(--gd-border-color);
+    color: var(--gd-text-primary);
+}
+
+body.quarto-dark input:focus,
+body.quarto-dark textarea:focus,
+body.quarto-dark select:focus {
+    border-color: #6ea8fe;
+    box-shadow: 0 0 0 0.15rem rgba(110, 168, 254, 0.25);
+}
+
+body.quarto-dark input::placeholder {
+    color: var(--gd-text-muted);
+}
+
+/* ==========================================================================
+   Dark Mode - Search
+   ========================================================================== */
+
+body.quarto-dark #quarto-search {
+    background-color: transparent;
+}
+
+body.quarto-dark #quarto-search input {
+    background-color: var(--gd-bg-tertiary);
+    border-color: var(--gd-border-color);
+    color: var(--gd-text-primary);
+}
+
+body.quarto-dark #quarto-search .aa-SubmitButton,
+body.quarto-dark #quarto-search .aa-DetachedSearchButton {
+    background-color: transparent;
+    color: var(--gd-text-muted);
+}
+
+body.quarto-dark .navbar .quarto-navbar-tools button,
+body.quarto-dark .navbar .quarto-navbar-tools .quarto-navigation-tool {
+    background-color: transparent;
+    color: #e0e0e0;
+}
+
+body.quarto-dark .navbar .quarto-navbar-tools button:hover,
+body.quarto-dark .navbar .quarto-navbar-tools .quarto-navigation-tool:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+body.quarto-dark .aa-Panel {
+    background-color: var(--gd-bg-secondary);
+    border-color: var(--gd-border-color);
+}
+
+body.quarto-dark .aa-Item {
+    color: var(--gd-text-primary);
+}
+
+body.quarto-dark .aa-Item:hover,
+body.quarto-dark .aa-Item[aria-selected="true"] {
+    background-color: var(--gd-bg-tertiary);
+}
+
+/* ==========================================================================
+   Dark Mode - GitHub Widget
+   ========================================================================== */
+
+body.quarto-dark .gh-widget-trigger {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #e0e0e0;
+}
+
+body.quarto-dark .gh-widget-trigger:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+body.quarto-dark .gh-dropdown {
+    background: var(--gd-bg-secondary);
+    border-color: var(--gd-border-color);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+body.quarto-dark .gh-dropdown-item {
+    color: var(--gd-text-primary) !important;
+}
+
+body.quarto-dark .gh-dropdown-item:hover {
+    background: var(--gd-bg-tertiary);
+}
+
+body.quarto-dark .gh-dropdown-item svg {
+    color: var(--gd-text-muted);
+}
+
+body.quarto-dark .gh-dropdown-divider {
+    background: var(--gd-border-color);
+}
+
+body.quarto-dark .gh-badge {
+    background: rgba(110, 168, 254, 0.2);
+    color: #6ea8fe;
+}
+
+/* ==========================================================================
+   Dark Mode - Source Link
+   ========================================================================== */
+
+body.quarto-dark .source-link {
+    color: #7cb8e8 !important;
+}
+
+body.quarto-dark .source-link:hover {
+    color: #9dcaf0 !important;
+}
+
+/* ==========================================================================
+   Dark Mode - Mobile Responsive
+   ========================================================================== */
+
+@media (max-width: 991.98px) {
+    body.quarto-dark .column-margin {
+        background-color: var(--gd-bg-secondary);
+        border-color: var(--gd-border-color);
+    }
+
+    body.quarto-dark .column-margin h4 {
+        color: var(--gd-text-secondary);
+        border-bottom-color: var(--gd-border-color);
+    }
+
+    body.quarto-dark .quarto-secondary-nav {
+        background-color: var(--gd-bg-secondary);
+        border-bottom-color: var(--gd-border-color);
+    }
+}
+
+/* ==========================================================================
+   Dark Mode - Copy Button
+   ========================================================================== */
+
+body.quarto-dark .code-copy-button {
+    background-color: var(--gd-bg-tertiary);
+    border-color: var(--gd-border-color);
+    color: var(--gd-text-muted);
+}
+
+body.quarto-dark .code-copy-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--gd-text-primary);
+}
+
+/* ==========================================================================
+   Dark Mode - Scrollbars (WebKit browsers)
+   ========================================================================== */
+
+body.quarto-dark ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+body.quarto-dark ::-webkit-scrollbar-track {
+    background: var(--gd-bg-secondary);
+}
+
+body.quarto-dark ::-webkit-scrollbar-thumb {
+    background: var(--gd-border-color);
+    border-radius: 5px;
+}
+
+body.quarto-dark ::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* ==========================================================================
+   Dark Mode - Transitions
+   ========================================================================== */
+
+/* Smooth transitions for theme switching */
+body,
+.navbar,
+#quarto-sidebar,
+.nav-footer,
+.card,
+pre,
+code,
+.table,
+input,
+textarea,
+.gh-dropdown,
+.dark-mode-toggle {
+    transition: background-color 0.2s ease,
+                border-color 0.2s ease,
+                color 0.2s ease;
+}
+
+/* Disable transitions on initial page load to prevent flash */
+html:not(.theme-loaded) *,
+html:not(.theme-loaded) *::before,
+html:not(.theme-loaded) *::after {
+    transition: none !important;
+}

@@ -434,6 +434,13 @@ class GreatDocs:
                 metadata["cli_module"] = cli_config.get("module", None)
                 metadata["cli_name"] = cli_config.get("name", None)
 
+                # Large class method threshold configuration
+                # Classes with more methods than this threshold get separate method pages
+                # Default: 5 methods
+                metadata["large_class_method_threshold"] = tool_config.get(
+                    "large_class_method_threshold", 5
+                )
+
         except Exception:
             pass
 
@@ -2214,10 +2221,10 @@ class GreatDocs:
 
         Uses the configured discovery method (dir() by default, or __all__ if specified).
 
-        Uses this heuristic:
+        Uses this heuristic (threshold is configurable via `large_class_method_threshold`):
 
-        - classes with ≤5 methods: documented inline
-        - classes with >5 methods: separate pages for each method
+        - classes with ≤N methods: documented inline (N defaults to 5)
+        - classes with >N methods: separate pages for each method
 
         Parameters
         ----------
@@ -2247,6 +2254,10 @@ class GreatDocs:
 
         sections = []
 
+        # Get the method threshold from configuration (default: 5)
+        metadata = self._get_package_metadata()
+        method_threshold = metadata.get("large_class_method_threshold", 5)
+
         # Add classes section if there are any
         if categories["classes"]:
             class_contents = []
@@ -2255,7 +2266,7 @@ class GreatDocs:
             for class_name in categories["classes"]:
                 method_count = categories["class_methods"].get(class_name, 0)
 
-                if method_count > 5:
+                if method_count > method_threshold:
                     # Class with many methods: add with members: [] to suppress inline docs
                     class_contents.append({"name": class_name, "members": []})
                     classes_with_separate_methods.append(class_name)

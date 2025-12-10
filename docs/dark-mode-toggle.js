@@ -1,6 +1,6 @@
 /**
  * Dark Mode Toggle for Great Docs
- * 
+ *
  * Features:
  * - Toggle switch in the navbar
  * - System preference detection
@@ -64,7 +64,7 @@
     function applyTheme(theme) {
         const html = document.documentElement;
         const body = document.body;
-        
+
         if (theme === 'dark') {
             html.classList.add(DARK_CLASS);
             html.classList.remove(LIGHT_CLASS);
@@ -92,7 +92,7 @@
 
         const sunIcon = toggle.querySelector('.theme-icon-light');
         const moonIcon = toggle.querySelector('.theme-icon-dark');
-        
+
         if (theme === 'dark') {
             toggle.setAttribute('aria-pressed', 'true');
             toggle.title = 'Switch to light mode';
@@ -123,9 +123,9 @@
         const container = document.createElement('div');
         container.id = 'dark-mode-toggle-container';
         container.innerHTML = `
-            <button id="dark-mode-toggle" 
-                    class="dark-mode-toggle" 
-                    type="button" 
+            <button id="dark-mode-toggle"
+                    class="dark-mode-toggle"
+                    type="button"
                     role="switch"
                     aria-label="Toggle dark mode"
                     title="Switch to dark mode">
@@ -159,17 +159,17 @@
         // Look for the navbar right section
         const navbarRight = document.querySelector('#navbarCollapse .navbar-nav.ms-auto');
         const navbarContainer = document.querySelector('#navbarCollapse');
-        
+
         if (navbarRight) {
             // Insert before the GitHub widget if present, or at the end
             const githubWidget = navbarRight.querySelector('#github-widget')?.closest('li');
             const toggleContainer = createToggleButton();
-            
+
             // Wrap in a nav item
             const navItem = document.createElement('li');
             navItem.className = 'nav-item';
             navItem.appendChild(toggleContainer);
-            
+
             if (githubWidget) {
                 navbarRight.insertBefore(navItem, githubWidget);
             } else {
@@ -193,9 +193,9 @@
      */
     function setupSystemPreferenceListener() {
         if (!window.matchMedia) return;
-        
+
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        
+
         mediaQuery.addEventListener('change', (e) => {
             // Only respond to system changes if user hasn't set a preference
             const stored = getStoredPreference();
@@ -210,7 +210,7 @@
      */
     function applyInitialTheme() {
         const theme = getCurrentTheme();
-        
+
         // Apply to html element immediately (before body is available)
         const html = document.documentElement;
         if (theme === 'dark') {
@@ -231,10 +231,13 @@
         // Apply theme to body now that DOM is ready
         const theme = getCurrentTheme();
         applyTheme(theme);
-        
+
         // Insert toggle button
         insertToggleButton();
-        
+
+        // Update toggle button to reflect current theme (must be after insertion)
+        updateToggleButton(theme);
+
         // Setup system preference listener
         setupSystemPreferenceListener();
     }

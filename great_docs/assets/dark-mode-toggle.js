@@ -235,6 +235,9 @@
         // Insert toggle button
         insertToggleButton();
 
+        // Update toggle button to reflect current theme (must be after insertion)
+        updateToggleButton(theme);
+
         // Setup system preference listener
         setupSystemPreferenceListener();
     }

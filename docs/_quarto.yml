@@ -6,6 +6,7 @@ project:
   - sidebar-filter.js
   - reference-switcher.js
   - dark-mode-toggle.js
+  - theme-init.js
 format:
   html:
     theme: flatly
@@ -17,12 +18,7 @@ format:
     shift-heading-level-by: -1
     include-in-header:
     - text: <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    - text: "<script>\n(function() {\n    var stored = localStorage.getItem('great-docs-theme');\n\
-        \    var theme = stored || (window.matchMedia('(prefers-color-scheme: dark)').matches\
-        \ ? 'dark' : 'light');\n    var html = document.documentElement;\n    if (theme\
-        \ === 'dark') {\n        html.classList.add('quarto-dark');\n        html.setAttribute('data-bs-theme',\
-        \ 'dark');\n    } else {\n        html.classList.add('quarto-light');\n  \
-        \      html.setAttribute('data-bs-theme', 'light');\n    }\n})();\n</script>\n"
+    - text: <script src="theme-init.js"></script>
     include-after-body:
     - text: <script src="github-widget.js"></script>
     - text: <script>document.body.dataset.sidebarFilterMinItems = "1";</script>

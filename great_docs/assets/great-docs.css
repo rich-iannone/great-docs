@@ -1772,6 +1772,34 @@ body.quarto-dark .code-copy-button:hover {
 }
 
 /* ==========================================================================
+   Dark Mode - Code Filename/Caption Bar
+   ========================================================================== */
+
+body.quarto-dark .code-with-filename .code-with-filename-file {
+    background-color: var(--gd-bg-tertiary);
+    border-color: var(--gd-border-color);
+}
+
+body.quarto-dark .code-with-filename .code-with-filename-file pre {
+    background-color: var(--gd-bg-tertiary);
+    color: var(--gd-text-primary);
+}
+
+body.quarto-dark .code-with-filename .code-with-filename-file pre strong {
+    color: var(--gd-text-primary);
+}
+
+body.quarto-dark .code-with-filename-file {
+    background-color: var(--gd-bg-tertiary);
+}
+
+body.quarto-dark .code-with-filename-file pre {
+    background-color: transparent;
+    color: var(--gd-text-primary);
+    margin: 0;
+}
+
+/* ==========================================================================
    Dark Mode - Scrollbars (WebKit browsers)
    ========================================================================== */
 

@@ -1,0 +1,232 @@
+---
+title: "CLI Documentation"
+guide-section: "Core Concepts"
+---
+
+# CLI Documentation
+
+Great Docs can automatically generate reference documentation for Click-based command-line interfaces. This creates terminal-style pages showing the `--help` output for each command.
+
+## Enabling CLI Documentation
+
+Add the following to your `pyproject.toml`:
+
+```{.toml filename="pyproject.toml"}
+[tool.great-docs.cli]
+enabled = true
+```
+
+That's it! Great Docs will automatically discover and document your CLI.
+
+## How It Works
+
+When CLI documentation is enabled, Great Docs:
+
+1. **Finds your CLI** – Looks for Click commands in common locations
+2. **Discovers entry point** – Reads `[project.scripts]` from `pyproject.toml`
+3. **Extracts help text** – Captures `--help` output for each command
+4. **Generates pages** – Creates `.qmd` files in `reference/cli/`
+5. **Updates navigation** – Adds CLI section to the sidebar
+
+## Auto-Discovery
+
+Great Docs searches for Click commands in these locations (in order):
+
+1. `your_package.cli` – The most common location
+2. `your_package.__main__` – For `python -m your_package` support
+3. `your_package.main` – Alternative location
+4. Entry point module from `[project.scripts]`
+
+### Entry Point Detection
+
+If you have a `[project.scripts]` section:
+
+```{.toml filename="pyproject.toml"}
+[project.scripts]
+my-cli = "my_package.cli:main"
+```
+
+Great Docs uses `my-cli` as the command name in documentation.
+
+## Explicit Configuration
+
+For non-standard setups, specify the module and command name:
+
+```{.toml filename="pyproject.toml"}
+[tool.great-docs.cli]
+enabled = true
+module = "my_package.commands"  # Module containing Click commands
+name = "app"                     # Name of the Click command object
+```
+
+## Generated Output
+
+### Sidebar Structure
+
+CLI commands appear in the Reference sidebar:
+
+```
+Reference
+├── API
+│   └── (your classes and functions)
+└── CLI
+    ├── my-cli (main command)
+    ├── my-cli build
+    ├── my-cli deploy
+    └── my-cli config
+```
+
+### Page Format
+
+Each CLI page displays the `--help` output in a terminal-style format:
+
+```
+Usage: my-cli build [OPTIONS] PATH
+
+  Build the project at PATH.
+
+  This command compiles all source files and generates output
+  in the specified directory.
+
+Options:
+  --output DIR    Output directory (default: ./dist)
+  --verbose       Enable verbose output
+  --help          Show this message and exit.
+```
+
+The styling mimics a terminal with:
+
+- Dark background
+- Monospace font
+- Proper spacing for readability
+
+## Writing Good CLI Help
+
+Great Docs displays your Click help text as-is. To get the best documentation:
+
+### Use Descriptive Help Text
+
+```{.python filename="cli.py"}
+@click.command()
+@click.argument("path")
+@click.option("--output", "-o", help="Output directory for generated files")
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose logging")
+def build(path, output, verbose):
+    """
+    Build the project at PATH.
+
+    This command compiles all source files and generates output
+    in the specified directory. Use --verbose to see detailed
+    progress information.
+    """
+    ...
+```
+
+### Document All Options
+
+```{.python filename="cli.py"}
+@click.option(
+    "--format",
+    type=click.Choice(["json", "yaml", "toml"]),
+    default="json",
+    help="Output format (default: json)"
+)
+```
+
+### Use Click Groups for Subcommands
+
+```{.python filename="cli.py"}
+@click.group()
+def cli():
+    """My CLI application for managing projects."""
+    pass
+
+@cli.command()
+def init():
+    """Initialize a new project."""
+    ...
+
+@cli.command()
+def build():
+    """Build the project."""
+    ...
+```
+
+## Example: Great Docs CLI
+
+Great Docs itself uses this feature. Its CLI documentation shows:
+
+**Main command (`great-docs`):**
+
+```
+Usage: great-docs [OPTIONS] COMMAND [ARGS]...
+
+  Great Docs - Beautiful documentation for Python packages.
+
+  Generate professional documentation sites with auto-discovered API
+  references, CLI documentation, and smart navigation.
+
+Commands:
+  init              Initialize great-docs in your project
+  build             Build documentation site
+  preview           Build and preview locally
+  scan              Scan package exports
+  setup-github-pages  Create GitHub Pages workflow
+  uninstall         Remove great-docs from project
+```
+
+**Subcommand (`great-docs build`):**
+
+```
+Usage: great-docs build [OPTIONS]
+
+  Build your documentation site.
+
+  Runs quartodoc to generate API reference, then quarto render
+  to build the HTML site.
+
+Options:
+  --no-refresh  Skip API discovery refresh (faster rebuild)
+  --watch       Watch for changes and rebuild
+  --help        Show this message and exit.
+```
+
+## Styling
+
+CLI documentation uses special styling that:
+
+- Disables the sidebar filter (CLIs are usually small)
+- Removes breadcrumb navigation
+- Uses a wider content area on large screens
+- Maintains responsive design on mobile
+
+## Troubleshooting
+
+### CLI Not Detected
+
+If your CLI isn't found:
+
+1. Verify Click is installed
+2. Check the module path is correct
+3. Ensure the Click command is importable
+4. Use explicit configuration:
+
+```{.toml filename="pyproject.toml"}
+[tool.great-docs.cli]
+enabled = true
+module = "your_package.cli"
+name = "cli"  # The Click command object name
+```
+
+### Help Text Missing
+
+If commands show minimal help:
+
+1. Add docstrings to your Click functions
+2. Add `help=` to all options
+3. Use `@click.argument()` with proper names
+
+## Next Steps
+
+- **[User Guides](05-user-guides.qmd)** – Add narrative documentation
+- **[Deployment](06-deployment.qmd)** – Publish to GitHub Pages

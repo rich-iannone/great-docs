@@ -1,3 +1,12 @@
+/* Theme loading - hide page until theme is applied to prevent flash */
+html.theme-loading {
+    visibility: hidden;
+}
+
+html.theme-loading body {
+    visibility: hidden;
+}
+
 .table a {
     text-underline-offset: 4px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;

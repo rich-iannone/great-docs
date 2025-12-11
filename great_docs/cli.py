@@ -629,6 +629,164 @@ def check_links(
 cli.add_command(check_links)
 
 
+@click.command("spell-check")
+@click.option(
+    "--project-path",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    help="Path to your project root directory (default: current directory)",
+)
+@click.option(
+    "--docs-dir",
+    type=str,
+    help="Path to documentation directory relative to project root",
+)
+@click.option(
+    "--include-docstrings",
+    is_flag=True,
+    help="Also check spelling in Python docstrings",
+)
+@click.option(
+    "-d",
+    "--dictionary",
+    "custom_words",
+    multiple=True,
+    help="Additional word(s) to consider correct (can be used multiple times)",
+)
+@click.option(
+    "--dictionary-file",
+    type=click.Path(exists=True),
+    help="Path to file with custom words (one per line)",
+)
+@click.option(
+    "-v",
+    "--verbose",
+    is_flag=True,
+    help="Show detailed progress for each file checked",
+)
+@click.option(
+    "--json-output",
+    is_flag=True,
+    help="Output results as JSON",
+)
+def spell_check(
+    project_path,
+    docs_dir,
+    include_docstrings,
+    custom_words,
+    dictionary_file,
+    verbose,
+    json_output,
+):
+    """Check spelling in documentation files.
+
+    This command scans documentation files (.qmd, .md) for spelling errors.
+    It intelligently skips code blocks, inline code, URLs, and technical terms.
+
+    A built-in dictionary of common programming terms is included (e.g., "api",
+    "cli", "json", "yaml", "pytest", etc.). You can add custom words using
+    -d/--dictionary or --dictionary-file.
+
+    \b
+    Examples:
+      great-docs spell-check                        # Check all docs
+      great-docs spell-check --verbose              # Show progress
+      great-docs spell-check -d myterm -d anotherterm  # Add custom words
+      great-docs spell-check --dictionary-file words.txt  # Load custom dictionary
+      great-docs spell-check --include-docstrings   # Also check Python docstrings
+      great-docs spell-check --json-output          # Output as JSON
+    """
+    import json as json_module
+
+    try:
+        docs = GreatDocs(project_path=project_path, docs_dir=docs_dir)
+
+        # Build custom dictionary
+        custom_dictionary = list(custom_words) if custom_words else []
+
+        # Load dictionary file if provided
+        if dictionary_file:
+            try:
+                with open(dictionary_file, "r", encoding="utf-8") as f:
+                    for line in f:
+                        word = line.strip()
+                        if word and not word.startswith("#"):
+                            custom_dictionary.append(word)
+            except Exception as e:
+                click.echo(f"Warning: Could not read dictionary file: {e}", err=True)
+
+        if verbose and not json_output:
+            click.echo("\n🔍 Checking spelling in documentation...\n")
+
+        results = docs.spell_check(
+            include_docs=True,
+            include_docstrings=include_docstrings,
+            custom_dictionary=custom_dictionary if custom_dictionary else None,
+            verbose=verbose and not json_output,
+        )
+
+        if json_output:
+            click.echo(json_module.dumps(results, indent=2))
+            sys.exit(1 if results["misspelled"] else 0)
+
+        # Print summary
+        click.echo("\n" + "=" * 60)
+        click.echo("📝 Spell Check Results")
+        click.echo("=" * 60)
+
+        click.echo(f"\n   Words checked: {results['total_words']}")
+        click.echo(f"   Unique misspellings: {len(results['misspelled'])}")
+        click.echo(f"   Files with issues: {len(results['by_file'])}")
+
+        if results["skipped_files"]:
+            click.echo(f"   Skipped files: {len(results['skipped_files'])}")
+
+        # Show misspelled words
+        if results["misspelled"]:
+            click.echo("\n" + "-" * 60)
+            click.echo("❌ Misspelled Words:")
+            click.echo("-" * 60)
+
+            for item in results["misspelled"]:
+                word = item["word"]
+                suggestions = item["suggestions"][:3]
+                files = item["files"]
+
+                click.echo(f"\n   '{word}'")
+                if suggestions:
+                    click.echo(f"   Suggestions: {', '.join(suggestions)}")
+                click.echo("   Found in:")
+                for f in files[:3]:  # Limit files shown
+                    click.echo(f"     • {f}")
+                if len(files) > 3:
+                    click.echo(f"     ... and {len(files) - 3} more file(s)")
+
+                # Show context
+                contexts = item.get("contexts", [])
+                if contexts:
+                    click.echo("   Context:")
+                    for ctx in contexts[:2]:
+                        click.echo(f'     "{ctx[:70]}..."' if len(ctx) > 70 else f'     "{ctx}"')
+
+            click.echo("\n" + "-" * 60)
+            click.echo("\n💡 Tips:")
+            click.echo("   • Add custom words with: -d word1 -d word2")
+            click.echo("   • Create a dictionary file with words (one per line)")
+            click.echo("   • Use --dictionary-file words.txt to load it")
+
+            click.echo(f"\n⚠️  Found {len(results['misspelled'])} spelling issue(s).")
+            sys.exit(1)
+        else:
+            click.echo("\n✅ No spelling errors found!")
+            sys.exit(0)
+
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+cli.add_command(spell_check)
+
+
 def main():
     """Main CLI entry point for great-docs."""
     cli()

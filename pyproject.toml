@@ -34,6 +34,7 @@ dependencies = [
     "click>=8.0.0",
     "griffe>=0.35.0",
     "pygments>=2.0.0",
+    "requests>=2.25.0",
 ]
 
 [project.optional-dependencies]

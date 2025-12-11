@@ -1,0 +1,300 @@
+---
+title: "Link Checker"
+guide-section: "Quality Assurance"
+---
+
+# Link Checker
+
+Great Docs includes a built-in link checker that scans your documentation and source code for broken links. This helps maintain the quality of your documentation by catching dead links before they frustrate your users.
+
+## Quick Start
+
+Check all links in your project:
+
+```{.bash filename="Terminal"}
+great-docs check-links
+```
+
+The command scans both your documentation files (`.qmd`, `.md`) and Python source code for URLs, then checks each one for validity.
+
+## What Gets Checked
+
+The link checker extracts URLs from:
+
+- **Documentation files**: All `.qmd` and `.md` files in your docs directory
+- **Source code**: Python files in your package directory (docstrings, comments, string literals)
+- **README**: Your project's `README.md` file
+
+Each URL is checked with an HTTP HEAD request (falling back to GET if needed) to verify it returns a successful status code.
+
+## Understanding the Output
+
+The link checker categorizes URLs into four groups:
+
+### ✅ OK (2xx responses)
+
+Links that return successful HTTP status codes (200-299). These are working correctly.
+
+### ⚠️ Redirects (3xx responses)
+
+Links that redirect to another URL. While these still work, you may want to update them to point directly to the final destination:
+
+```
+⚠️  301 https://old-url.com → https://new-url.com
+```
+
+### ❌ Broken (4xx/5xx responses)
+
+Links that return error status codes. These need to be fixed:
+
+```
+❌ 404 https://example.com/deleted-page (Not Found)
+❌ 500 https://example.com/broken (Server Error)
+```
+
+### ⏭️ Skipped
+
+Links that match ignore patterns and weren't checked.
+
+## Command Options
+
+### Check Only Documentation
+
+Skip source code and only check documentation files:
+
+```{.bash filename="Terminal"}
+great-docs check-links --docs-only
+```
+
+### Check Only Source Code
+
+Skip documentation and only check Python source files:
+
+```{.bash filename="Terminal"}
+great-docs check-links --source-only
+```
+
+### Verbose Output
+
+See progress for every URL being checked:
+
+```{.bash filename="Terminal"}
+great-docs check-links --verbose
+```
+
+### Custom Timeout
+
+Adjust the timeout for slow servers (default is 10 seconds):
+
+```{.bash filename="Terminal"}
+great-docs check-links --timeout 5
+```
+
+### JSON Output
+
+Get results in JSON format for CI/CD integration:
+
+```{.bash filename="Terminal"}
+great-docs check-links --json-output
+```
+
+### Ignore Patterns
+
+Skip URLs matching specific patterns:
+
+```{.bash filename="Terminal"}
+great-docs check-links -i "internal.company.com" -i "localhost"
+```
+
+Patterns can be literal strings or regular expressions:
+
+```{.bash filename="Terminal"}
+# Ignore all GitHub anchor links
+great-docs check-links -i "github.com/.*#"
+
+# Ignore version-specific URLs
+great-docs check-links -i "docs\.example\.com/v\d+"
+```
+
+## Default Ignore Patterns
+
+The link checker automatically skips certain URLs that are commonly used as examples or placeholders:
+
+| Pattern | Description |
+|---------|-------------|
+| `localhost` | Local development servers |
+| `127.0.0.1` | Local IP addresses |
+| `example.com` | RFC 2606 reserved domain |
+| `example.org` | RFC 2606 reserved domain |
+| `yoursite.com` | Common placeholder |
+| `YOUR-USERNAME` | GitHub template placeholder |
+| `[...]` | Bracket placeholders like `[username]` |
+| `.git@` or `.git$` | Git repository URLs with branches |
+
+## Excluding URLs in Documentation
+
+In `.qmd` files, you can mark specific URLs for exclusion by adding `{.gd-no-link}` immediately after the URL:
+
+```markdown
+Visit http://fake-example.com{.gd-no-link} for a placeholder example.
+
+See https://yoursite.com/api/endpoint{.gd-no-link} for the API format.
+```
+
+This is useful for:
+
+- **Example URLs** that are intentionally fake
+- **Template URLs** showing a pattern users should customize
+- **Placeholder URLs** in code examples
+
+The `{.gd-no-link}` directive uses Quarto's attribute syntax but doesn't render any visible styling—it simply tells the link checker to skip that URL.
+
+::: {.callout-note}
+The `{.gd-no-link}` directive only works in `.qmd` files. For `.md` files or source code, use the `--ignore` command-line option instead.
+:::
+
+## Python API
+
+You can also use the link checker programmatically:
+
+```python
+from great_docs import GreatDocs
+
+docs = GreatDocs()
+results = docs.check_links(
+    include_source=True,
+    include_docs=True,
+    timeout=10.0,
+    ignore_patterns=["localhost", "example.com"],
+    verbose=False,
+)
+
+print(f"Total links: {results['total']}")
+print(f"OK: {len(results['ok'])}")
+print(f"Redirects: {len(results['redirects'])}")
+print(f"Broken: {len(results['broken'])}")
+print(f"Skipped: {len(results['skipped'])}")
+
+# Handle broken links
+for item in results['broken']:
+    print(f"Broken: {item['url']} - {item['error']}")
+
+# Handle redirects
+for item in results['redirects']:
+    print(f"Redirect: {item['url']} → {item['location']}")
+```
+
+### Return Value
+
+The `check_links()` method returns a dictionary with:
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `total` | `int` | Total unique URLs found |
+| `ok` | `list[str]` | URLs returning 2xx status |
+| `redirects` | `list[dict]` | URLs returning 3xx status (with `url`, `status`, `location`) |
+| `broken` | `list[dict]` | URLs returning 4xx/5xx or errors (with `url`, `status`, `error`) |
+| `skipped` | `list[str]` | URLs matching ignore patterns |
+| `by_file` | `dict[str, list[str]]` | Mapping of file paths to URLs found in each |
+
+## CI/CD Integration
+
+### Exit Codes
+
+The `check-links` command returns:
+
+- **Exit code 0**: All links are valid (or only redirects/skipped)
+- **Exit code 1**: One or more broken links found
+
+This makes it easy to fail CI builds when broken links are detected.
+
+### GitHub Actions Example
+
+Add link checking to your documentation workflow:
+
+```yaml
+name: Check Documentation Links
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run weekly to catch external link rot
+    - cron: '0 0 * * 0'
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install great-docs
+
+      - name: Check links
+        run: |
+          great-docs check-links --docs-only --timeout 15
+```
+
+### Scheduled Checks
+
+External links can break over time ("link rot"). Consider running the link checker on a schedule to catch these issues:
+
+```yaml
+on:
+  schedule:
+    # Every Sunday at midnight
+    - cron: '0 0 * * 0'
+```
+
+## Tips and Best Practices
+
+### Start with Documentation Only
+
+If your source code has many URLs (e.g., in comments or docstrings), start by checking just documentation:
+
+```{.bash filename="Terminal"}
+great-docs check-links --docs-only
+```
+
+### Use Verbose Mode for Debugging
+
+When troubleshooting, verbose mode shows you exactly what's being checked:
+
+```{.bash filename="Terminal"}
+great-docs check-links --verbose
+```
+
+### Handle Rate Limiting
+
+Some websites rate-limit requests. If you're getting false positives, try:
+
+1. Increasing the timeout: `--timeout 30`
+2. Running the check less frequently in CI
+3. Ignoring specific domains: `-i "api.example.com"`
+
+### Fix Redirects Proactively
+
+While redirects still work, they:
+
+- Add latency for users clicking links
+- May eventually break if the redirect is removed
+- Indicate outdated references
+
+Update redirected links to point to their final destinations when practical.
+
+### Document Intentional Placeholder URLs
+
+When using fake URLs in examples, mark them with `{.gd-no-link}` to make your intent clear and prevent false positives:
+
+```markdown
+Replace `https://your-api.com/endpoint`{.gd-no-link} with your actual API URL.
+```

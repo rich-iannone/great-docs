@@ -4313,3 +4313,298 @@ toc: false
 
         finally:
             os.chdir(original_dir)
+
+    def check_links(
+        self,
+        include_source: bool = True,
+        include_docs: bool = True,
+        timeout: float = 10.0,
+        ignore_patterns: list[str] | None = None,
+        verbose: bool = False,
+    ) -> dict:
+        """
+        Check all links in source code and documentation for broken links.
+
+        This method scans Python source files and documentation files (`.qmd`, `.md`)
+        for URLs and checks their HTTP status. It reports broken links (404s) and
+        warns about redirects.
+
+        In `.qmd` files, you can exclude specific URLs from checking by adding
+        `{.gd-no-link}` immediately after the URL::
+
+            Visit http://example.com{.gd-no-link} for an example.
+
+        Parameters
+        ----------
+        include_source
+            If `True`, scan Python source files in the package directory for URLs.
+            Default is `True`.
+        include_docs
+            If `True`, scan documentation files (`.qmd`, `.md`) for URLs.
+            Default is `True`.
+        timeout
+            Timeout in seconds for each HTTP request. Default is `10.0`.
+        ignore_patterns
+            List of URL patterns (strings or regex) to ignore. URLs matching any
+            pattern will be skipped. Default is `None`.
+        verbose
+            If `True`, print detailed progress information. Default is `False`.
+
+        Returns
+        -------
+        dict
+            A dictionary containing:
+            - `total`: Total number of unique links checked
+            - `ok`: List of links that returned 2xx status
+            - `redirects`: List of dicts with `url`, `status`, `location` for 3xx responses
+            - `broken`: List of dicts with `url`, `status`, `error` for 4xx/5xx or errors
+            - `skipped`: List of URLs that were skipped (matched ignore patterns)
+            - `by_file`: Dict mapping file paths to lists of links found in each file
+
+        Examples
+        --------
+        Check all links in a project:
+
+        ```python
+        from great_docs import GreatDocs
+
+        docs = GreatDocs()
+        results = docs.check_links()
+
+        print(f"Checked {results['total']} links")
+        print(f"Broken: {len(results['broken'])}")
+        print(f"Redirects: {len(results['redirects'])}")
+        ```
+
+        Check only documentation files with custom timeout:
+
+        ```python
+        results = docs.check_links(
+            include_source=False,
+            timeout=5.0,
+            ignore_patterns=["localhost", "127.0.0.1", "example.com"]
+        )
+        ```
+        """
+        try:
+            import requests
+        except ImportError:
+            raise ImportError(
+                "The 'requests' package is required for link checking. "
+                "Install it with: pip install requests"
+            )
+
+        # URL regex pattern - matches http and https URLs
+        url_pattern = re.compile(
+            r'https?://[^\s<>"\')\]}`\\]+',
+            re.IGNORECASE,
+        )
+
+        # Pattern to detect URLs marked with {.gd-no-link} in .qmd files
+        # This allows marking example/fake links for exclusion: http://example.com{.gd-no-link}
+        gd_no_link_pattern = re.compile(
+            r'(https?://[^\s<>"\')\]}`\\{]+)\{\.gd-no-link\}',
+            re.IGNORECASE,
+        )
+
+        # Compile ignore patterns
+        ignore_regexes = []
+        if ignore_patterns:
+            for pattern in ignore_patterns:
+                try:
+                    ignore_regexes.append(re.compile(pattern, re.IGNORECASE))
+                except re.error:
+                    # Treat as literal string if not valid regex
+                    ignore_regexes.append(re.compile(re.escape(pattern), re.IGNORECASE))
+
+        # Collect all files to scan
+        files_to_scan: list[Path] = []
+
+        if include_source:
+            # Find package directory
+            package_name = self._detect_package_name()
+            if package_name:
+                package_dir = self.project_root / package_name.replace("-", "_")
+                if package_dir.exists():
+                    files_to_scan.extend(package_dir.rglob("*.py"))
+
+        if include_docs:
+            # Scan docs directory
+            if self.project_path.exists():
+                files_to_scan.extend(self.project_path.rglob("*.qmd"))
+                files_to_scan.extend(self.project_path.rglob("*.md"))
+
+            # Also check README in project root
+            readme = self.project_root / "README.md"
+            if readme.exists():
+                files_to_scan.append(readme)
+
+        # Extract URLs from all files
+        url_to_files: dict[str, list[str]] = {}
+        by_file: dict[str, list[str]] = {}
+
+        for file_path in files_to_scan:
+            try:
+                content = file_path.read_text(encoding="utf-8", errors="ignore")
+
+                # For .qmd files, find URLs marked with {.gd-no-link} and exclude them
+                excluded_urls: set[str] = set()
+                if file_path.suffix == ".qmd":
+                    for match in gd_no_link_pattern.finditer(content):
+                        excluded_urls.add(match.group(1))
+
+                urls = url_pattern.findall(content)
+
+                # Clean URLs (remove trailing punctuation)
+                cleaned_urls = []
+                for url in urls:
+                    # Remove trailing punctuation that's likely not part of the URL
+                    url = url.rstrip(".,;:!?")
+                    # Remove trailing parentheses if unbalanced
+                    while url.endswith(")") and url.count(")") > url.count("("):
+                        url = url[:-1]
+                    # Skip URLs with f-string placeholders (e.g., {variable} or partial {var)
+                    # This catches both complete {var} and incomplete {var patterns
+                    if "{" in url:
+                        continue
+                    # Skip URLs marked with {.gd-no-link}
+                    if url in excluded_urls:
+                        continue
+                    cleaned_urls.append(url)
+
+                if cleaned_urls:
+                    rel_path = str(file_path.relative_to(self.project_root))
+                    by_file[rel_path] = cleaned_urls
+
+                    for url in cleaned_urls:
+                        if url not in url_to_files:
+                            url_to_files[url] = []
+                        url_to_files[url].append(rel_path)
+
+            except Exception as e:
+                if verbose:
+                    print(f"Warning: Could not read {file_path}: {e}")
+
+        # Check each unique URL
+        results = {
+            "total": len(url_to_files),
+            "ok": [],
+            "redirects": [],
+            "broken": [],
+            "skipped": [],
+            "by_file": by_file,
+        }
+
+        if verbose:
+            print(f"\n🔍 Found {len(url_to_files)} unique URLs to check\n")
+
+        for url in url_to_files:
+            # Check if URL matches any ignore pattern
+            should_skip = False
+            for pattern in ignore_regexes:
+                if pattern.search(url):
+                    should_skip = True
+                    break
+
+            if should_skip:
+                results["skipped"].append(url)
+                if verbose:
+                    print(f"⏭️  Skipped: {url}")
+                continue
+
+            try:
+                # Use HEAD request first (faster), fall back to GET if needed
+                response = requests.head(
+                    url,
+                    timeout=timeout,
+                    allow_redirects=False,
+                    headers={"User-Agent": "great-docs-link-checker/1.0"},
+                )
+
+                # Some servers don't support HEAD, try GET
+                if response.status_code == 405:
+                    response = requests.get(
+                        url,
+                        timeout=timeout,
+                        allow_redirects=False,
+                        headers={"User-Agent": "great-docs-link-checker/1.0"},
+                        stream=True,  # Don't download body
+                    )
+                    response.close()
+
+                status = response.status_code
+
+                if 200 <= status < 300:
+                    results["ok"].append(url)
+                    if verbose:
+                        print(f"✅ {status} {url}")
+                elif 300 <= status < 400:
+                    location = response.headers.get("Location", "Unknown")
+                    results["redirects"].append(
+                        {
+                            "url": url,
+                            "status": status,
+                            "location": location,
+                            "files": url_to_files[url],
+                        }
+                    )
+                    if verbose:
+                        print(f"↪️  {status} {url} -> {location}")
+                else:
+                    results["broken"].append(
+                        {
+                            "url": url,
+                            "status": status,
+                            "error": f"HTTP {status}",
+                            "files": url_to_files[url],
+                        }
+                    )
+                    if verbose:
+                        print(f"❌ {status} {url}")
+
+            except requests.exceptions.Timeout:
+                results["broken"].append(
+                    {
+                        "url": url,
+                        "status": None,
+                        "error": "Timeout",
+                        "files": url_to_files[url],
+                    }
+                )
+                if verbose:
+                    print(f"⏱️  Timeout: {url}")
+            except requests.exceptions.SSLError as e:
+                results["broken"].append(
+                    {
+                        "url": url,
+                        "status": None,
+                        "error": f"SSL Error: {str(e)[:50]}",
+                        "files": url_to_files[url],
+                    }
+                )
+                if verbose:
+                    print(f"🔐 SSL Error: {url}")
+            except requests.exceptions.ConnectionError:
+                results["broken"].append(
+                    {
+                        "url": url,
+                        "status": None,
+                        "error": "Connection failed",
+                        "files": url_to_files[url],
+                    }
+                )
+                if verbose:
+                    print(f"🔌 Connection failed: {url}")
+            except Exception as e:
+                results["broken"].append(
+                    {
+                        "url": url,
+                        "status": None,
+                        "error": str(e)[:100],
+                        "files": url_to_files[url],
+                    }
+                )
+                if verbose:
+                    print(f"⚠️  Error: {url} - {e}")
+
+        return results

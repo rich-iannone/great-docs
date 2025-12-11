@@ -454,6 +454,181 @@ def setup_github_pages(project_path, docs_dir, main_branch, python_version, forc
 cli.add_command(setup_github_pages)
 
 
+@click.command(name="check-links")
+@click.option(
+    "--project-path",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    help="Path to your project root directory (default: current directory)",
+)
+@click.option(
+    "--docs-dir",
+    type=str,
+    help="Path to documentation directory relative to project root",
+)
+@click.option(
+    "--source-only",
+    is_flag=True,
+    help="Only check links in Python source files",
+)
+@click.option(
+    "--docs-only",
+    is_flag=True,
+    help="Only check links in documentation files",
+)
+@click.option(
+    "--timeout",
+    type=float,
+    default=10.0,
+    help="Timeout in seconds for each HTTP request (default: 10)",
+)
+@click.option(
+    "--ignore",
+    "-i",
+    multiple=True,
+    help="URL pattern to ignore (can be used multiple times)",
+)
+@click.option(
+    "--verbose",
+    "-v",
+    is_flag=True,
+    help="Show detailed progress for each URL checked",
+)
+@click.option(
+    "--json-output",
+    is_flag=True,
+    help="Output results as JSON",
+)
+def check_links(
+    project_path, docs_dir, source_only, docs_only, timeout, ignore, verbose, json_output
+):
+    """Check for broken links in source code and documentation.
+
+    This command scans Python source files and documentation (`.qmd`, `.md`)
+    for URLs and checks their HTTP status. It reports broken links (404s)
+    and warns about redirects.
+
+    \b
+    Default ignore patterns include:
+    • localhost and 127.0.0.1 URLs
+    • example.com, example.org, yoursite.com URLs
+    • Placeholder URLs with brackets like [username]
+
+    \b
+    Examples:
+      great-docs check-links                        # Check all links
+      great-docs check-links --verbose              # Show progress for each URL
+      great-docs check-links --docs-only            # Only check documentation
+      great-docs check-links --source-only          # Only check source code
+      great-docs check-links -i "github.com/.*#"    # Ignore GitHub anchor links
+      great-docs check-links --timeout 5            # Use 5 second timeout
+      great-docs check-links --json-output          # Output as JSON
+    """
+    import json as json_module
+
+    try:
+        docs = GreatDocs(project_path=project_path, docs_dir=docs_dir)
+
+        # Determine what to scan
+        include_source = not docs_only
+        include_docs = not source_only
+
+        # Build ignore patterns list
+        ignore_patterns = list(ignore) if ignore else []
+        # Add default ignore patterns
+        default_ignores = [
+            r"localhost",
+            r"127\.0\.0\.1",
+            r"0\.0\.0\.0",
+            r"example\.com",
+            r"example\.org",
+            r"example\.net",
+            r"\[",  # URLs with brackets (placeholders like [username])
+            r"yoursite\.com",
+            r"your-package",
+            r"YOUR-USERNAME",
+            r"\.git(@|$)",  # Git URLs (pip install git+...) with optional branch/tag
+        ]
+        ignore_patterns.extend(default_ignores)
+
+        if not json_output:
+            click.echo("🔗 Checking links...")
+            if not include_source:
+                click.echo("   (documentation files only)")
+            elif not include_docs:
+                click.echo("   (source files only)")
+
+        results = docs.check_links(
+            include_source=include_source,
+            include_docs=include_docs,
+            timeout=timeout,
+            ignore_patterns=ignore_patterns,
+            verbose=verbose,
+        )
+
+        if json_output:
+            # Output as JSON
+            click.echo(json_module.dumps(results, indent=2))
+            sys.exit(1 if results["broken"] else 0)
+
+        # Print summary
+        click.echo("\n" + "=" * 60)
+        click.echo("📊 Link Check Summary")
+        click.echo("=" * 60)
+
+        total_checked = results["total"] - len(results["skipped"])
+        click.echo(f"\n   Total URLs found: {results['total']}")
+        click.echo(f"   URLs checked: {total_checked}")
+        click.echo(f"   URLs skipped: {len(results['skipped'])}")
+
+        click.echo(f"\n   ✅ OK: {len(results['ok'])}")
+        click.echo(f"   ↪️  Redirects: {len(results['redirects'])}")
+        click.echo(f"   ❌ Broken: {len(results['broken'])}")
+
+        # Show broken links
+        if results["broken"]:
+            click.echo("\n" + "-" * 60)
+            click.echo("❌ Broken Links:")
+            click.echo("-" * 60)
+            for item in results["broken"]:
+                status = item["status"] or "N/A"
+                click.echo(f"\n   [{status}] {item['url']}")
+                click.echo(f"   Error: {item['error']}")
+                click.echo("   Found in:")
+                for f in item["files"]:
+                    click.echo(f"     • {f}")
+
+        # Show redirects
+        if results["redirects"]:
+            click.echo("\n" + "-" * 60)
+            click.echo("↪️  Redirects (consider updating):")
+            click.echo("-" * 60)
+            for item in results["redirects"]:
+                click.echo(f"\n   [{item['status']}] {item['url']}")
+                click.echo(f"   → {item['location']}")
+                click.echo("   Found in:")
+                for f in item["files"]:
+                    click.echo(f"     • {f}")
+
+        # Exit with error code if broken links found
+        if results["broken"]:
+            click.echo("\n⚠️  Found broken links. Please fix them before deployment.")
+            sys.exit(1)
+        else:
+            click.echo("\n✅ All links are valid!")
+            sys.exit(0)
+
+    except ImportError as e:
+        click.echo(f"Error: {e}", err=True)
+        click.echo("\nInstall the requests package with: pip install requests", err=True)
+        sys.exit(1)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+cli.add_command(check_links)
+
+
 def main():
     """Main CLI entry point for great-docs."""
     cli()

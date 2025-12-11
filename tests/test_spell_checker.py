@@ -12,11 +12,12 @@ class TestSpellChecker:
         """Test spell checking a file with correct spelling."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
             # Create test file
-            test_file = docs_dir / "correct.qmd"
+            test_file = user_guide_dir / "correct.qmd"
             test_file.write_text("""---
 title: "Test Document"
 ---
@@ -36,10 +37,11 @@ All words here should be recognized.
         """Test spell checking a file with misspelled words."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "misspelled.qmd"
+            test_file = user_guide_dir / "misspelled.qmd"
             test_file.write_text("""---
 title: "Test Document"
 ---
@@ -58,10 +60,11 @@ This documment has mispelled words.
         """Test that code blocks are skipped during spell checking."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "code_blocks.qmd"
+            test_file = user_guide_dir / "code_blocks.qmd"
             test_file.write_text("""---
 title: "Code Example"
 ---
@@ -87,10 +90,11 @@ The code above demonstrates something.
         """Test that inline code is skipped during spell checking."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "inline_code.qmd"
+            test_file = user_guide_dir / "inline_code.qmd"
             test_file.write_text("""---
 title: "Inline Code"
 ---
@@ -109,10 +113,11 @@ The `qwertyvar` variable holds the value.
         """Test that URLs are skipped during spell checking."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "urls.qmd"
+            test_file = user_guide_dir / "urls.qmd"
             test_file.write_text("""---
 title: "URLs"
 ---
@@ -131,10 +136,11 @@ Also see http://somesite.org/asdfghjkl.
         """Test that YAML frontmatter is skipped during spell checking."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "frontmatter.qmd"
+            test_file = user_guide_dir / "frontmatter.qmd"
             test_file.write_text("""---
 title: "Xyzzyqwerty Document"
 author: "Asdfghjkl Zxcvbnm"
@@ -154,10 +160,11 @@ This is the actual content with correct spelling.
         """Test that HTML tags are skipped during spell checking."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "html.qmd"
+            test_file = user_guide_dir / "html.qmd"
             test_file.write_text("""---
 title: "HTML"
 ---
@@ -177,10 +184,11 @@ title: "HTML"
         """Test that common technical terms are recognized."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "technical.qmd"
+            test_file = user_guide_dir / "technical.qmd"
             test_file.write_text("""---
 title: "Technical Terms"
 ---
@@ -200,10 +208,11 @@ The API documentation is generated with quartodoc.
         """Test using a custom dictionary."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "custom.qmd"
+            test_file = user_guide_dir / "custom.qmd"
             test_file.write_text("""---
 title: "Custom Terms"
 ---
@@ -226,10 +235,11 @@ Also qwertyterm appears.
         """Test that Quarto directives are skipped."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "directives.qmd"
+            test_file = user_guide_dir / "directives.qmd"
             test_file.write_text("""---
 title: "Directives"
 ---
@@ -256,25 +266,26 @@ Content here.
         """Test spell checking multiple files."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
             # Create multiple files
-            (docs_dir / "file1.qmd").write_text("""---
+            (user_guide_dir / "file1.qmd").write_text("""---
 title: "File One"
 ---
 
 This file has correct spelling.
 """)
 
-            (docs_dir / "file2.qmd").write_text("""---
+            (user_guide_dir / "file2.qmd").write_text("""---
 title: "File Two"
 ---
 
 This file has a mispeling.
 """)
 
-            (docs_dir / "file3.qmd").write_text("""---
+            (user_guide_dir / "file3.qmd").write_text("""---
 title: "File Three"
 ---
 
@@ -293,10 +304,11 @@ This file also has correct words.
         """Test that suggestions are provided for misspellings."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "suggestions.qmd"
+            test_file = user_guide_dir / "suggestions.qmd"
             test_file.write_text("""---
 title: "Suggestions"
 ---
@@ -316,10 +328,11 @@ This has a documment here.
         """Test verbose output during spell checking."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "verbose.qmd"
+            test_file = user_guide_dir / "verbose.qmd"
             test_file.write_text("""---
 title: "Verbose Test"
 ---
@@ -337,10 +350,11 @@ This is a test.
         """Test that email addresses are skipped."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "emails.qmd"
+            test_file = user_guide_dir / "emails.qmd"
             # Use real-looking email with common patterns
             test_file.write_text("""---
 title: "Emails"
@@ -360,10 +374,11 @@ Contact us at support@example.com or info@test.com.
         """Test that file paths are skipped."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "paths.qmd"
+            test_file = user_guide_dir / "paths.qmd"
             test_file.write_text("""---
 title: "Paths"
 ---
@@ -378,12 +393,13 @@ Also check ./qwertydir/asdffile.qmd.
             # File paths should be skipped
             assert len(results["misspelled"]) == 0
 
-    def test_spell_check_no_docs_directory(self):
-        """Test spell checking when docs directory is empty."""
+    def test_spell_check_no_user_guide_directory(self):
+        """Test spell checking when user_guide directory is empty."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create empty user_guide directory
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
             gd = GreatDocs(project_path=project_path, docs_dir="docs")
             results = gd.spell_check()
@@ -399,11 +415,12 @@ class TestSpellCheckCLI:
         """Test CLI with no spelling issues."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
             # Create test file
-            test_file = docs_dir / "correct.qmd"
+            test_file = user_guide_dir / "correct.qmd"
             test_file.write_text("""---
 title: "Test"
 ---
@@ -422,10 +439,11 @@ This document has correct spelling.
         """Test CLI with spelling issues."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "misspelled.qmd"
+            test_file = user_guide_dir / "misspelled.qmd"
             test_file.write_text("""---
 title: "Test"
 ---
@@ -443,10 +461,11 @@ This documment has mispelled words.
         """Test CLI verbose mode."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "test.qmd"
+            test_file = user_guide_dir / "test.qmd"
             test_file.write_text("""---
 title: "Test"
 ---
@@ -464,10 +483,11 @@ This is a test document.
         """Test CLI with custom dictionary words."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "custom.qmd"
+            test_file = user_guide_dir / "custom.qmd"
             test_file.write_text("""---
 title: "Test"
 ---
@@ -486,10 +506,11 @@ The xyzzyword is used here.
         """Test CLI with dictionary file."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "custom.qmd"
+            test_file = user_guide_dir / "custom.qmd"
             test_file.write_text("""---
 title: "Test"
 ---
@@ -521,10 +542,11 @@ The xyzzyword and qwertyterm are used here.
         """Test CLI with multiple custom dictionary words."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "multi.qmd"
+            test_file = user_guide_dir / "multi.qmd"
             test_file.write_text("""---
 title: "Test"
 ---
@@ -550,10 +572,11 @@ class TestSpellCheckEdgeCases:
         """Test spell checking an empty file."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "empty.qmd"
+            test_file = user_guide_dir / "empty.qmd"
             test_file.write_text("")
 
             gd = GreatDocs(project_path=project_path, docs_dir="docs")
@@ -565,10 +588,11 @@ class TestSpellCheckEdgeCases:
         """Test spell checking a file with only code blocks."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "code_only.qmd"
+            test_file = user_guide_dir / "code_only.qmd"
             test_file.write_text("""```python
 xyzzyfunction()
 qwertyvar = 123
@@ -584,10 +608,11 @@ qwertyvar = 123
         """Test spell checking with nested code structures."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "nested.qmd"
+            test_file = user_guide_dir / "nested.qmd"
             test_file.write_text("""---
 title: "Nested"
 ---
@@ -612,10 +637,11 @@ More text here.
         """Test spell checking with special characters."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "special.qmd"
+            test_file = user_guide_dir / "special.qmd"
             test_file.write_text("""---
 title: "Special"
 ---
@@ -634,10 +660,11 @@ Numbers like 123 and 45.67 should be ignored.
         """Test spell checking with mixed case words."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "mixedcase.qmd"
+            test_file = user_guide_dir / "mixedcase.qmd"
             test_file.write_text("""---
 title: "Mixed Case"
 ---
@@ -656,10 +683,11 @@ Also UPPERCASE and lowercase work too.
         """Test that LaTeX math expressions are skipped."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "math.qmd"
+            test_file = user_guide_dir / "math.qmd"
             test_file.write_text(r"""---
 title: "Math"
 ---
@@ -682,10 +710,11 @@ $$
         """Test that markdown link text is checked but URLs are not."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
-            test_file = docs_dir / "links.qmd"
+            test_file = user_guide_dir / "links.qmd"
             test_file.write_text("""---
 title: "Links"
 ---
@@ -704,11 +733,12 @@ Check out [this documment](https://example.com/xyzzy).
         """Test that subdirectories are scanned."""
         with tempfile.TemporaryDirectory() as project_dir:
             project_path = Path(project_dir)
-            docs_dir = project_path / "docs"
-            docs_dir.mkdir()
+            # Create user_guide directory (source documentation)
+            user_guide_dir = project_path / "user_guide"
+            user_guide_dir.mkdir()
 
             # Create subdirectory
-            subdir = docs_dir / "guide"
+            subdir = user_guide_dir / "guide"
             subdir.mkdir()
 
             test_file = subdir / "chapter1.qmd"

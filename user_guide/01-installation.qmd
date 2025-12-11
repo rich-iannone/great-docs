@@ -33,8 +33,9 @@ brew install quarto
 
 ```{.bash filename="Terminal"}
 # Download and install the .deb package (Ubuntu/Debian)
-wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.4.553/quarto-1.4.553-linux-amd64.deb
-sudo dpkg -i quarto-1.4.553-linux-amd64.deb
+# Get the latest release URL from https://quarto.org/docs/get-started/
+wget <quarto-release-url>.deb
+sudo dpkg -i <quarto-release-filename>.deb
 
 # Or use your package manager
 ```

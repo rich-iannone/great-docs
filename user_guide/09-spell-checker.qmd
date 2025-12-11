@@ -3,7 +3,17 @@ title: "Spell Checking"
 guide-section: "Quality Assurance"
 ---
 
-Good documentation requires accurate spelling. Great-Docs includes a built-in spell checker that scans your documentation files for spelling errors while intelligently skipping code, URLs, and technical terms.
+Good documentation requires accurate spelling. Great-Docs includes a built-in spell checker that scans your documentation source files for spelling errors while intelligently skipping code, URLs, and technical terms.
+
+## What Gets Scanned
+
+The spell checker scans **source documentation**, not generated output:
+
+- Files in `user_guide/` directory (`.qmd` and `.md` files)
+- `README.md` in the project root
+- Optionally: docstrings from your Python source code
+
+It does **not** scan the `docs/` directory, as that contains generated output that users shouldn't edit directly.
 
 ## Basic Usage
 
@@ -13,7 +23,7 @@ Run the spell checker from your project directory:
 great-docs spell-check
 ```
 
-The spell checker will scan all `.qmd` and `.md` files in your docs directory and report any misspellings found.
+The spell checker will scan all `.qmd` and `.md` files in your `user_guide/` directory and report any misspellings found.
 
 ## Verbose Output
 
@@ -69,7 +79,7 @@ The spell checker automatically skips content that shouldn't be spell-checked:
 | Inline code | `` `function_name` `` |
 | URLs | `https://example.com` |
 | Email addresses | `user@example.com` |
-| YAML frontmatter | `---\ntitle: "Page"\n---` |
+| YAML frontmatter | `--- title: "Page" ---` |
 | HTML tags | `<div class="example">` |
 | Quarto directives | `{.callout-note}` |
 | LaTeX math | `$x^2 + y^2$` |

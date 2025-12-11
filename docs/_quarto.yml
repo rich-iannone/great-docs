@@ -53,6 +53,7 @@ website:
     - reference/cli/init.qmd
     - reference/cli/build.qmd
     - reference/cli/preview.qmd
+    - reference/cli/check_links.qmd
     - reference/cli/uninstall.qmd
     - reference/cli/scan.qmd
     - reference/cli/setup_github_pages.qmd
@@ -73,6 +74,9 @@ website:
     - section: Deployment
       contents:
       - user-guide/07-deployment.qmd
+    - section: Quality Assurance
+      contents:
+      - user-guide/08-link-checker.qmd
   page-footer:
     left: '&copy; 2025 Rich Iannone'
 quartodoc:

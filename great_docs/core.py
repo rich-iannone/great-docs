@@ -4387,12 +4387,7 @@ toc: false
         ```
         """
         try:
-            import requests
-        except ImportError:
-            raise ImportError(
-                "The 'requests' package is required for link checking. "
-                "Install it with: pip install requests"
-            )
+        import requests
 
         # URL regex pattern - matches http and https URLs
         url_pattern = re.compile(

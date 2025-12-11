@@ -4386,7 +4386,6 @@ toc: false
         )
         ```
         """
-        try:
         import requests
 
         # URL regex pattern - matches http and https URLs

@@ -4329,10 +4329,21 @@ toc: false
         for URLs and checks their HTTP status. It reports broken links (404s) and
         warns about redirects.
 
+        The following content is automatically excluded from link checking:
+
+        - **Python comments**: URLs in lines starting with `#`
+        - **Code blocks**: URLs inside fenced code blocks (````` ... `````)
+        - **Inline code**: URLs inside backticks (`` `...` ``)
+        - **Marked URLs**: URLs followed by `{.gd-no-link}` in `.qmd`/`.md` files
+
+        For documentation, the checker scans the source `user_guide/` directory
+        rather than the generated `docs/` directory to avoid checking transient files.
+
         In `.qmd` files, you can exclude specific URLs from checking by adding
         `{.gd-no-link}` immediately after the URL::
 
             Visit http://example.com{.gd-no-link} for an example.
+            Also works with inline code: `http://example.com`{.gd-no-link}
 
         Parameters
         ----------
@@ -4396,8 +4407,9 @@ toc: false
 
         # Pattern to detect URLs marked with {.gd-no-link} in .qmd files
         # This allows marking example/fake links for exclusion: http://example.com{.gd-no-link}
+        # Also handles URLs in inline code: `http://example.com`{.gd-no-link}
         gd_no_link_pattern = re.compile(
-            r'(https?://[^\s<>"\')\]}`\\{]+)\{\.gd-no-link\}',
+            r'`?(https?://[^\s<>"\')\]}`\\{]+)`?\{\.gd-no-link\}',
             re.IGNORECASE,
         )
 
@@ -4423,8 +4435,17 @@ toc: false
                     files_to_scan.extend(package_dir.rglob("*.py"))
 
         if include_docs:
-            # Scan docs directory
-            if self.project_path.exists():
+            # Scan documentation files
+            # Priority: if user_guide/ exists, scan that (it's the source)
+            # Otherwise, scan the docs directory directly
+
+            user_guide_dir = self.project_root / "user_guide"
+            if user_guide_dir.exists():
+                # Scan user_guide source directory instead of generated docs/
+                files_to_scan.extend(user_guide_dir.rglob("*.qmd"))
+                files_to_scan.extend(user_guide_dir.rglob("*.md"))
+            elif self.project_path.exists():
+                # No user_guide/, scan docs directory directly
                 files_to_scan.extend(self.project_path.rglob("*.qmd"))
                 files_to_scan.extend(self.project_path.rglob("*.md"))
 
@@ -4441,11 +4462,38 @@ toc: false
             try:
                 content = file_path.read_text(encoding="utf-8", errors="ignore")
 
-                # For .qmd files, find URLs marked with {.gd-no-link} and exclude them
+                # For .qmd and .md files, find URLs marked with {.gd-no-link} and exclude them
+                # Also strip code blocks to avoid checking example URLs
                 excluded_urls: set[str] = set()
-                if file_path.suffix == ".qmd":
+                if file_path.suffix in (".qmd", ".md"):
                     for match in gd_no_link_pattern.finditer(content):
                         excluded_urls.add(match.group(1))
+
+                    # Remove fenced code blocks (``` ... ```) before URL extraction
+                    # This prevents example URLs in code blocks from being checked
+                    content = re.sub(r"```[^`]*```", "", content, flags=re.DOTALL)
+
+                    # Also remove inline code (`...`) to avoid example URLs
+                    content = re.sub(r"`[^`]+`", "", content)
+
+                # For Python files, exclude URLs in comments (lines starting with #)
+                # This prevents example URLs in code comments from being checked
+                if file_path.suffix == ".py":
+                    # Remove single-line comments before URL extraction
+                    lines = content.split("\n")
+                    non_comment_lines = []
+                    for line in lines:
+                        # Find the start of a comment (# not inside a string)
+                        # Simple approach: strip the comment portion from each line
+                        stripped = line.lstrip()
+                        if stripped.startswith("#"):
+                            # Entire line is a comment, skip it
+                            non_comment_lines.append("")
+                        else:
+                            # Keep the line (inline comments after code are less common
+                            # for example URLs, but we keep them for now)
+                            non_comment_lines.append(line)
+                    content = "\n".join(non_comment_lines)
 
                 urls = url_pattern.findall(content)
 

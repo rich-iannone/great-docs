@@ -559,3 +559,133 @@ placement = "title"
         assert metadata.get("source_link_branch") == "develop"
         assert metadata.get("source_link_path") == "src/mypackage"
         assert metadata.get("source_link_placement") == "title"
+
+
+# ============================================================================
+# Link Checker Tests
+# ============================================================================
+
+
+def test_check_links_extracts_urls():
+    """Test that check_links extracts URLs from files."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Create a docs directory with a file containing URLs
+        docs_dir = Path(tmp_dir) / "docs"
+        docs_dir.mkdir()
+
+        test_md = docs_dir / "test.md"
+        test_md.write_text("""
+# Test Document
+
+Check out https://httpbin.org/status/200 for more info.
+Also see https://httpbin.org/status/404 for errors.
+        """)
+
+        # Create _quarto.yml so it's detected
+        quarto_yml = docs_dir / "_quarto.yml"
+        quarto_yml.write_text("project:\n  type: website\n")
+
+        docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+        results = docs.check_links(
+            include_source=False,
+            include_docs=True,
+            timeout=5.0,
+            verbose=False,
+        )
+
+        assert results["total"] >= 2
+        assert "by_file" in results
+        assert len(results["by_file"]) > 0
+
+
+def test_check_links_ignore_patterns():
+    """Test that ignore patterns work correctly."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs_dir = Path(tmp_dir) / "docs"
+        docs_dir.mkdir()
+
+        test_md = docs_dir / "test.md"
+        test_md.write_text("""
+# Test
+
+https://localhost:8000/api
+https://127.0.0.1:3000/test
+https://example.com/page
+        """)
+
+        quarto_yml = docs_dir / "_quarto.yml"
+        quarto_yml.write_text("project:\n  type: website\n")
+
+        docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+        results = docs.check_links(
+            include_source=False,
+            include_docs=True,
+            ignore_patterns=["localhost", "127.0.0.1", "example.com"],
+            verbose=False,
+        )
+
+        # All URLs should be skipped
+        assert len(results["skipped"]) == 3
+        assert len(results["ok"]) == 0
+        assert len(results["broken"]) == 0
+
+
+def test_check_links_url_cleaning():
+    """Test that URLs are properly cleaned of trailing punctuation."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs_dir = Path(tmp_dir) / "docs"
+        docs_dir.mkdir()
+
+        test_md = docs_dir / "test.md"
+        test_md.write_text("""
+See https://example.com/page.
+Check https://example.com/other,
+Visit https://example.com/test!
+        """)
+
+        quarto_yml = docs_dir / "_quarto.yml"
+        quarto_yml.write_text("project:\n  type: website\n")
+
+        docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+        results = docs.check_links(
+            include_source=False,
+            include_docs=True,
+            ignore_patterns=["example.com"],
+            verbose=False,
+        )
+
+        # Check that URLs don't have trailing punctuation
+        for url in results["skipped"]:
+            assert not url.endswith(".")
+            assert not url.endswith(",")
+            assert not url.endswith("!")
+
+
+def test_check_links_returns_correct_structure():
+    """Test that check_links returns the expected result structure."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs_dir = Path(tmp_dir) / "docs"
+        docs_dir.mkdir()
+
+        test_md = docs_dir / "test.md"
+        test_md.write_text("No URLs here")
+
+        quarto_yml = docs_dir / "_quarto.yml"
+        quarto_yml.write_text("project:\n  type: website\n")
+
+        docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+        results = docs.check_links(include_source=False, include_docs=True)
+
+        # Check result structure
+        assert "total" in results
+        assert "ok" in results
+        assert "redirects" in results
+        assert "broken" in results
+        assert "skipped" in results
+        assert "by_file" in results
+
+        assert isinstance(results["ok"], list)
+        assert isinstance(results["redirects"], list)
+        assert isinstance(results["broken"], list)
+        assert isinstance(results["skipped"], list)
+        assert isinstance(results["by_file"], dict)

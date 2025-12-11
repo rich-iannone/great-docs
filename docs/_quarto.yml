@@ -54,6 +54,7 @@ website:
     - reference/cli/build.qmd
     - reference/cli/preview.qmd
     - reference/cli/check_links.qmd
+    - reference/cli/spell_check.qmd
     - reference/cli/uninstall.qmd
     - reference/cli/scan.qmd
     - reference/cli/setup_github_pages.qmd
@@ -77,6 +78,7 @@ website:
     - section: Quality Assurance
       contents:
       - user-guide/08-link-checker.qmd
+      - user-guide/09-spell-checker.qmd
   page-footer:
     left: '&copy; 2025 Rich Iannone'
 quartodoc:

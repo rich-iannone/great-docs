@@ -1,7 +1,3 @@
-"""
-Basic tests for great-docs functionality.
-"""
-
 import tempfile
 from pathlib import Path
 from great_docs import GreatDocs

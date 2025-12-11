@@ -4860,6 +4860,61 @@ toc: false
             "serializer",
             "deserialize",
             "lifecycle",
+            # Web/cloud services
+            "aws",
+            "netlify",
+            "vercel",
+            "cloudflare",
+            "heroku",
+            "azure",
+            # Quarto/documentation specific
+            "callout",
+            "callouts",
+            "backticks",
+            "monospace",
+            "codeblock",
+            "codeblocks",
+            "filename",
+            "filenames",
+            "quickstart",
+            "theming",
+            "versioned",
+            "screenshots",
+            # CLI terms
+            "subcommand",
+            "subcommands",
+            "clis",
+            "eval",
+            "cname",
+            # Standards/formats
+            "orcid",
+            "rfc",
+            "llm",
+            "llms",
+            # Contraction fragments (common in docs)
+            "aren",  # aren't
+            "doesn",  # doesn't
+            "isn",  # isn't
+            "shouldn",  # shouldn't
+            "wouldn",  # wouldn't
+            "couldn",  # couldn't
+            "didn",  # didn't
+            "hasn",  # hasn't
+            "haven",  # haven't
+            "wasn",  # wasn't
+            "weren",  # weren't
+            "won",  # won't (also a real word)
+            "ll",  # you'll, we'll
+            "ve",  # we've, you've
+            # Other tech terms
+            "classname",
+            "classnames",
+            "programmatically",
+            "ip",
+            "qa",
+            "alt",
+            "org",
+            "greatdocs",
         }
 
         # Add custom dictionary words
@@ -4883,12 +4938,16 @@ toc: false
         file_path_pattern = re.compile(r"(?:\.?\.?/[\w./\-_]+)")
 
         # Collect files to scan
+        # Note: We scan source directories (user_guide/) not generated output (docs/)
+        # because docs/ is transient and users shouldn't edit files there directly
         files_to_scan: list[Path] = []
 
         if include_docs:
-            if self.project_path.exists():
-                files_to_scan.extend(self.project_path.rglob("*.qmd"))
-                files_to_scan.extend(self.project_path.rglob("*.md"))
+            # Scan user_guide directory if it exists (source documentation)
+            user_guide_dir = self.project_root / "user_guide"
+            if user_guide_dir.exists():
+                files_to_scan.extend(user_guide_dir.rglob("*.qmd"))
+                files_to_scan.extend(user_guide_dir.rglob("*.md"))
 
             # Also check README in project root
             readme = self.project_root / "README.md"

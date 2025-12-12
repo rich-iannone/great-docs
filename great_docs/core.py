@@ -3949,6 +3949,16 @@ toc: false
             lines.append("")
             lines.append(cli_text)
 
+        # Add User Guide content if available
+        user_guide_text = self._get_user_guide_text_for_llms()
+        if user_guide_text:
+            lines.append("")
+            lines.append(sep_line)
+            lines.append("This is the User Guide documentation for the package.")
+            lines.append(sep_line)
+            lines.append("")
+            lines.append(user_guide_text)
+
         # Write the llms-full.txt file
         llms_full_path = self.project_path / "llms-full.txt"
         with open(llms_full_path, "w", encoding="utf-8") as f:

@@ -3954,6 +3954,57 @@ toc: false
 
         print(f"Created {llms_full_path}")
 
+    def _get_api_details(self, module, item_name: str) -> str:
+        """
+        Retrieve the signature and docstring for a function/class.
+
+        Parameters
+        ----------
+        module
+            The module from which to retrieve the function/class.
+        item_name
+            The name of the function or class (can be dotted for nested attributes).
+
+        Returns
+        -------
+        str
+            A string containing the name, signature, and docstring.
+        """
+        import inspect
+
+        try:
+            # Split the attribute path to handle nested attributes (e.g., "Class.method")
+            parts = item_name.split(".")
+            obj = module
+            for part in parts:
+                obj = getattr(obj, part)
+
+            # Get the name of the object
+            obj_name = getattr(obj, "__name__", item_name)
+
+            # Get the function/class signature
+            try:
+                sig = inspect.signature(obj)
+                sig_str = f"{obj_name}{sig}"
+            except (ValueError, TypeError):
+                # Some objects don't have signatures (e.g., some built-ins)
+                sig_str = obj_name
+
+            # Get the docstring
+            doc = getattr(obj, "__doc__", None) or ""
+
+            # Clean up the docstring - remove excessive indentation
+            if doc:
+                doc = inspect.cleandoc(doc)
+
+            # Combine the signature and docstring
+            return f"{sig_str}\n\n{doc}" if doc else sig_str
+
+        except AttributeError:
+            return ""
+        except Exception:
+            return ""
+
     def uninstall(self) -> None:
         """
         Remove great-docs assets and configuration from the project.

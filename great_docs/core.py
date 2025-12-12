@@ -3853,6 +3853,107 @@ toc: false
         except Exception:
             return ""
 
+    def _generate_llms_full_txt(self) -> None:
+        """
+        Generate an llms-full.txt file with comprehensive API documentation for LLMs.
+
+        Creates a detailed markdown file containing full function/class signatures and
+        docstrings, plus CLI help text if available. This provides comprehensive context
+        for LLM-based tools to understand and work with the package's API.
+
+        The format includes:
+        - Package header with description
+        - Full API documentation with signatures and docstrings organized by family/section
+        - CLI documentation with --help output for all commands
+        """
+
+        quarto_yml = self.project_path / "_quarto.yml"
+
+        if not quarto_yml.exists():
+            return
+
+        with open(quarto_yml, "r") as f:
+            config = yaml.safe_load(f) or {}
+
+        # Get quartodoc sections and package info
+        if "quartodoc" not in config:
+            return
+
+        quartodoc_config = config["quartodoc"]
+        sections = quartodoc_config.get("sections", [])
+        package_name = quartodoc_config.get("package")
+
+        if not package_name:
+            return
+
+        # Get package metadata
+        metadata = self._get_package_metadata()
+        description = metadata.get("description", "")
+
+        # Import the package
+        try:
+            import importlib
+
+            normalized_name = package_name.replace("-", "_")
+            module = importlib.import_module(normalized_name)
+        except ImportError as e:
+            print(f"Could not import {package_name}: {e}")
+            return
+
+        sep_line = "-" * 70
+
+        # Build the content
+        lines = []
+        lines.append(sep_line)
+        lines.append(f"This is the API documentation for the {package_name} library.")
+        lines.append(sep_line)
+        lines.append("")
+
+        # Process each section
+        for section in sections:
+            section_title = section.get("title", "")
+            section_desc = section.get("desc", "")
+
+            # Add section header
+            if section_title:
+                lines.append(f"\n## {section_title}\n")
+                if section_desc:
+                    lines.append(f"{section_desc}\n")
+                lines.append("")
+
+            # Process each item in the section
+            for item in section.get("contents", []):
+                # Handle both string and dict formats
+                if isinstance(item, str):
+                    item_name = item
+                elif isinstance(item, dict):
+                    item_name = item.get("name", str(item))
+                else:
+                    continue
+
+                # Get the object's signature and docstring
+                api_text = self._get_api_details(module, item_name)
+                if api_text:
+                    lines.append(api_text)
+                    lines.append("")
+
+        # Add CLI documentation if enabled
+        cli_text = self._get_cli_help_text_for_llms()
+        if cli_text:
+            lines.append("")
+            lines.append(sep_line)
+            lines.append("This is the CLI documentation for the package.")
+            lines.append(sep_line)
+            lines.append("")
+            lines.append(cli_text)
+
+        # Write the llms-full.txt file
+        llms_full_path = self.project_path / "llms-full.txt"
+        with open(llms_full_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines))
+
+        print(f"Created {llms_full_path}")
+
     def uninstall(self) -> None:
         """
         Remove great-docs assets and configuration from the project.

@@ -101,7 +101,7 @@ def build(project_path, docs_dir, watch, no_refresh):
 
     \b
     1. Refreshes quartodoc configuration (discovers API changes)
-    2. Generates llms.txt for AI/LLM documentation indexing
+    2. Generates llms.txt and llms-full.txt for AI/LLM documentation indexing
     3. Creates source links to GitHub
     4. Generates CLI reference pages (if enabled)
     5. Runs quartodoc to generate API reference

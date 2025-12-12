@@ -12,7 +12,7 @@ Great Docs automatically creates professional documentation with auto-generated 
 - **Smart organization** — intelligent class/method/function categorization
 - **User Guide support** — write narrative documentation alongside API reference
 - **Source links** — automatic links to source code on GitHub
-- **LLM-friendly** — auto-generates `llms.txt` for AI documentation indexing
+- **LLM-friendly** — auto-generates `llms.txt` and `llms-full.txt` for AI documentation indexing
 - **GitHub Pages ready** — one command sets up deployment workflow
 
 ## Quick Start

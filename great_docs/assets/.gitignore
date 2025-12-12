@@ -13,6 +13,7 @@ github-widget.js
 sidebar-filter.js
 reference-switcher.js
 llms.txt
+llms-full.txt
 scripts/
 
 # Generated user guide files (copied from user_guide/ in project root)

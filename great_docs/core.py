@@ -4063,6 +4063,63 @@ toc: false
 
         return "\n".join(lines)
 
+    def _get_user_guide_text_for_llms(self) -> str:
+        """
+        Get User Guide content formatted for llms-full.txt.
+
+        Reads all user guide .qmd files in order and extracts their content,
+        stripping YAML frontmatter but preserving the document structure.
+
+        Returns
+        -------
+        str
+            Formatted User Guide content with all pages in order.
+        """
+        user_guide_info = self._discover_user_guide()
+        if not user_guide_info:
+            return ""
+
+        lines = []
+        files = user_guide_info.get("files", [])
+
+        if not files:
+            return ""
+
+        current_section = None
+
+        for file_info in files:
+            file_path = file_info.get("path")
+            title = file_info.get("title", "")
+            section = file_info.get("section")
+
+            if not file_path or not file_path.exists():
+                continue
+
+            # Add section header if this is a new section
+            if section and section != current_section:
+                lines.append(f"\n## {section}\n")
+                current_section = section
+
+            # Read the file content
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+            except Exception:
+                continue
+
+            # Strip YAML frontmatter
+            content = self._strip_frontmatter(content)
+
+            # Add the page title as a header if not already starting with one
+            content_stripped = content.strip()
+            if not content_stripped.startswith("#"):
+                lines.append(f"### {title}\n")
+
+            lines.append(content)
+            lines.append("")
+
+        return "\n".join(lines)
+
     def uninstall(self) -> None:
         """
         Remove great-docs assets and configuration from the project.

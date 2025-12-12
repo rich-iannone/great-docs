@@ -4005,6 +4005,62 @@ toc: false
         except Exception:
             return ""
 
+    def _get_cli_help_text_for_llms(self) -> str:
+        """
+        Get CLI help text formatted for llms-full.txt.
+
+        Returns
+        -------
+        str
+            Formatted CLI help text with all commands and subcommands.
+        """
+        metadata = self._get_package_metadata()
+
+        if not metadata.get("cli_enabled", False):
+            return ""
+
+        package_name = self._detect_package_name()
+        if not package_name:
+            return ""
+
+        cli_info = self._discover_click_cli(package_name)
+        if not cli_info:
+            return ""
+
+        lines = []
+        entry_point = cli_info.get("entry_point_name", package_name)
+
+        # Main CLI help
+        lines.append(f"## CLI: {entry_point}")
+        lines.append("")
+        lines.append("```")
+        lines.append(cli_info.get("help_text", ""))
+        lines.append("```")
+        lines.append("")
+
+        # Process subcommands recursively
+        def add_subcommand_help(cmd_info: dict, depth: int = 0):
+            nonlocal lines
+            for subcmd in cmd_info.get("commands", []):
+                if subcmd.get("hidden"):
+                    continue
+
+                full_path = subcmd.get("full_path", subcmd.get("name", ""))
+                lines.append(f"### {full_path}")
+                lines.append("")
+                lines.append("```")
+                lines.append(subcmd.get("help_text", ""))
+                lines.append("```")
+                lines.append("")
+
+                # Recurse for nested subcommands
+                if subcmd.get("commands"):
+                    add_subcommand_help(subcmd, depth + 1)
+
+        add_subcommand_help(cli_info)
+
+        return "\n".join(lines)
+
     def uninstall(self) -> None:
         """
         Remove great-docs assets and configuration from the project.

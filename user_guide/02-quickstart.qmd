@@ -55,7 +55,7 @@ This single command:
 
 1. Syncs your landing page with `README.md`
 2. Refreshes the API configuration (discovers new exports)
-3. Generates `llms.txt` for AI documentation indexing
+3. Generates `llms.txt` and `llms-full.txt` for AI documentation indexing
 4. Creates source links JSON for GitHub integration
 5. Runs `quartodoc build` to generate API reference pages
 6. Runs `quarto render` to build the HTML site
@@ -85,6 +85,7 @@ your-project/
 │   ├── github-widget.js     # GitHub stars widget
 │   ├── sidebar-filter.js    # API search filter
 │   ├── llms.txt             # LLM-friendly docs index
+│   ├── llms-full.txt        # Full API docs for LLMs
 │   ├── _source_links.json   # Source code links
 │   ├── reference/           # API reference pages (generated)
 │   │   ├── index.qmd

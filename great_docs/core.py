@@ -2986,13 +2986,15 @@ title: "Authors and Citation"
                 if display_name:
                     margin_sections.append(f"[{display_name}]({url})<br>")
 
-        # Add llms.txt link at the end of Links section
+        # Add llms.txt and llms-full.txt links at the end of Links section
         if links_added or metadata.get("urls"):
             margin_sections.append("[llms.txt](llms.txt)<br>")
+            margin_sections.append("[llms-full.txt](llms-full.txt)<br>")
         else:
-            # If no links section exists yet, create one just for llms.txt
+            # If no links section exists yet, create one just for llms.txt files
             margin_sections.append("#### Links\n")
             margin_sections.append("[llms.txt](llms.txt)<br>")
+            margin_sections.append("[llms-full.txt](llms-full.txt)<br>")
 
         # License section
         if license_link:
@@ -4362,9 +4364,10 @@ toc: false
                 print("\n🔄 Refreshing quartodoc configuration...")
                 self._refresh_quartodoc_config()
 
-            # Step 0.6: Generate llms.txt file
-            print("\n📝 Generating llms.txt...")
+            # Step 0.6: Generate llms.txt and llms-full.txt files
+            print("\n📝 Generating llms.txt and llms-full.txt...")
             self._generate_llms_txt()
+            self._generate_llms_full_txt()
 
             # Step 0.7: Generate source links JSON
             print("\n🔗 Generating source links...")

@@ -4120,6 +4120,26 @@ toc: false
 
         return "\n".join(lines)
 
+    def _strip_frontmatter(self, content: str) -> str:
+        """
+        Remove YAML frontmatter from a document.
+
+        Parameters
+        ----------
+        content
+            The document content.
+
+        Returns
+        -------
+        str
+            The content with frontmatter removed.
+        """
+        if content.startswith("---"):
+            parts = content.split("---", 2)
+            if len(parts) >= 3:
+                return parts[2].lstrip()
+        return content
+
     def uninstall(self) -> None:
         """
         Remove great-docs assets and configuration from the project.

@@ -152,6 +152,7 @@ docs/_site/
 docs/objects.json
 docs/_source_links.json
 docs/llms.txt
+docs/llms-full.txt
 docs/great-docs.css
 docs/github-widget.js
 docs/scripts/

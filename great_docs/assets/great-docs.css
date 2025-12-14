@@ -340,6 +340,15 @@ a.sidebar-item-text.sidebar-link.text-start > span {
         border: 1px solid #e9ecef;
     }
 
+    /* Ensure all child elements inside column-margin have transparent background */
+    .column-margin,
+    .column-margin > *,
+    .column-margin section,
+    .column-margin p,
+    .column-margin code {
+        background-color: #f8f9fa;
+    }
+
     /* Main content comes first */
     #quarto-document-content > *:not(.column-margin) {
         order: 1;
@@ -1752,6 +1761,15 @@ body.quarto-dark .source-link:hover {
     body.quarto-dark .column-margin {
         background-color: var(--gd-bg-secondary);
         border-color: var(--gd-border-color);
+    }
+
+    /* Ensure all child elements inside column-margin have matching background in dark mode */
+    body.quarto-dark .column-margin,
+    body.quarto-dark .column-margin > *,
+    body.quarto-dark .column-margin section,
+    body.quarto-dark .column-margin p,
+    body.quarto-dark .column-margin code {
+        background-color: var(--gd-bg-secondary);
     }
 
     body.quarto-dark .column-margin h4 {

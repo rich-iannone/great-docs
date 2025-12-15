@@ -340,21 +340,10 @@ a.sidebar-item-text.sidebar-link.text-start > span {
         border: 1px solid #e9ecef;
     }
 
-    /* Remove extra top space from first child elements */
-    .column-margin > div:first-child,
-    .column-margin > section:first-child,
-    .column-margin > div:first-child > section:first-child {
-        margin-top: 0;
-        padding-top: 0;
-    }
-
-    .column-margin > div:first-child > section:first-child > h3:first-child,
-    .column-margin > div:first-child > section:first-child > h4:first-child,
+    /* Remove top margin from the first heading */
     .column-margin h3:first-child,
-    .column-margin h4:first-child,
-    .column-margin section:first-child h3:first-child,
-    .column-margin section:first-child h4:first-child {
-        margin-top: 0 !important;
+    .column-margin > div > section:first-child > h3 {
+        margin-top: 0;
     }
 
     /* Ensure all child elements inside column-margin have transparent background */

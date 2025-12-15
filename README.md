@@ -70,8 +70,6 @@ Creates a GitHub Actions workflow for automatic deployment.
 
 ## Documentation
 
-📖 **[Read the full documentation](https://rich-iannone.github.io/great-docs/)**
-
 The User Guide covers:
 
 - [Installation](https://rich-iannone.github.io/great-docs/user-guide/01-installation.html)

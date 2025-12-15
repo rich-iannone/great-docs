@@ -340,10 +340,9 @@ a.sidebar-item-text.sidebar-link.text-start > span {
         border: 1px solid #e9ecef;
     }
 
-    /* Remove top margin from the first heading */
-    .column-margin h3:first-child,
+    /* Remove top margin from only the first heading */
     .column-margin > div > section:first-child > h3 {
-        margin-top: 0;
+        margin-top: 0.5em;
     }
 
     /* Ensure all child elements inside column-margin have transparent background */

@@ -1,18 +1,9 @@
 # Great Docs Configuration
 # See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html
 
-# API Discovery Settings
-# ----------------------
-# Discovery method: "dir" (default) uses static analysis to find public objects,
-# "all" uses __all__ from __init__.py
-# discovery_method: dir
-
-# Force-include items that are auto-excluded by default
-# include:
-#   - main
-#   - cli
-
-# Exclude additional items from auto-documentation
+# Exclusions
+# ----------
+# Items to exclude from auto-documentation (affects 'init' and 'scan')
 exclude:
   - Config
   - create_default_config

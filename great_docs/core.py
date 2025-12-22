@@ -453,7 +453,6 @@ class GreatDocs:
         # Map config properties to metadata dict for backward compatibility
         metadata["rich_authors"] = self._config.authors
         metadata["exclude"] = self._config.exclude
-        metadata["include"] = self._config.include
         metadata["discovery_method"] = self._config.discovery_method
 
         # Source link configuration
@@ -1850,8 +1849,8 @@ class GreatDocs:
         package and discover all public objects by filtering out private/internal names (those
         starting with underscore).
 
-        Auto-excludes common internal names (see `AUTO_EXCLUDE`) unless they are explicitly included
-        via the `include` option in `pyproject.toml`.
+        Auto-excludes common internal names (see `AUTO_EXCLUDE`). Additional items can be
+        excluded via the `exclude` option in `great-docs.yml`.
 
         Parameters
         ----------
@@ -1888,20 +1887,17 @@ class GreatDocs:
             # Get config from great-docs.yml
             metadata = self._get_package_metadata()
             config_exclude = set(metadata.get("exclude", []))
-            config_include = set(metadata.get("include", []))
 
-            # Apply auto-exclusions (but respect explicit includes)
-            auto_excluded = self.AUTO_EXCLUDE - config_include
-            if auto_excluded:
-                auto_excluded_found = [name for name in public_members if name in auto_excluded]
-                if auto_excluded_found:
-                    print(
-                        f"Auto-excluding {len(auto_excluded_found)} item(s): "
-                        f"{', '.join(sorted(auto_excluded_found))}"
-                    )
+            # Apply auto-exclusions
+            auto_excluded_found = [name for name in public_members if name in self.AUTO_EXCLUDE]
+            if auto_excluded_found:
+                print(
+                    f"Auto-excluding {len(auto_excluded_found)} item(s): "
+                    f"{', '.join(sorted(auto_excluded_found))}"
+                )
 
-            # Combine all exclusions (auto + user-specified), minus explicit includes
-            all_exclude = (auto_excluded | config_exclude) - config_include
+            # Combine all exclusions (auto + user-specified)
+            all_exclude = self.AUTO_EXCLUDE | config_exclude
 
             # Filter out excluded items
             filtered = [name for name in public_members if name not in all_exclude]
@@ -1911,25 +1907,12 @@ class GreatDocs:
                 user_excluded_found = [
                     name
                     for name in public_members
-                    if name in config_exclude and name not in auto_excluded
+                    if name in config_exclude and name not in self.AUTO_EXCLUDE
                 ]
                 if user_excluded_found:
                     print(
                         f"Filtered out {len(user_excluded_found)} item(s) from great-docs.yml exclude: "
                         f"{', '.join(sorted(user_excluded_found))}"
-                    )
-
-            # Report explicit includes that overrode auto-exclusions
-            if config_include:
-                overridden = [
-                    name
-                    for name in public_members
-                    if name in config_include and name in self.AUTO_EXCLUDE
-                ]
-                if overridden:
-                    print(
-                        f"Including {len(overridden)} auto-excluded item(s) via great-docs.yml include: "
-                        f"{', '.join(sorted(overridden))}"
                     )
 
             # Super-safe filtering: try each object with quartodoc's get_object

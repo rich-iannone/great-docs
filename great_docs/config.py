@@ -7,7 +7,6 @@ import yaml
 DEFAULT_CONFIG: dict[str, Any] = {
     # API discovery settings
     "discovery_method": "dir",  # "dir" (default) or "all" (use __all__)
-    "include": [],
     "exclude": [],
     # GitHub integration
     "github_style": "widget",  # "widget" (shows stars) or "icon"
@@ -153,11 +152,6 @@ class Config:
         return self.get("discovery_method", "dir")
 
     @property
-    def include(self) -> list[str]:
-        """Get the list of items to force-include."""
-        return self.get("include", [])
-
-    @property
     def exclude(self) -> list[str]:
         """Get the list of items to exclude."""
         return self.get("exclude", [])
@@ -288,12 +282,7 @@ def create_default_config() -> str:
 # "all" uses __all__ from __init__.py
 # discovery_method: dir
 
-# Force-include items that are auto-excluded by default
-# include:
-#   - main
-#   - cli
-
-# Exclude additional items from auto-documentation
+# Exclude items from auto-documentation (affects 'init' and 'scan' commands)
 # exclude:
 #   - InternalClass
 #   - helper_function

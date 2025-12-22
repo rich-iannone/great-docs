@@ -49,14 +49,15 @@ def init(project_path, docs_dir, force):
     This command sets up everything needed for your documentation site:
 
     \b
+    • Creates great-docs.yml with discovered exports (customize your API reference)
     • Installs CSS, JavaScript, and configuration files
     • Auto-detects your package name and public API
     • Creates index.qmd from your README.md
     • Configures navigation and sidebar
     • Sets up quartodoc for API reference generation
 
-    Run this once to get started, then use 'great-docs build' to generate
-    your documentation.
+    Run this once to get started, then customize great-docs.yml to organize
+    your API reference, and use 'great-docs build' to generate your documentation.
 
     \b
     Examples:
@@ -198,11 +199,61 @@ def preview(project_path, docs_dir):
         sys.exit(1)
 
 
+@click.command()
+@click.option(
+    "--project-path",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    help="Path to your project root directory (default: current directory)",
+)
+@click.option(
+    "--force",
+    is_flag=True,
+    help="Overwrite existing great-docs.yml without prompting",
+)
+def config(project_path, force):
+    """Generate a great-docs.yml configuration file.
+
+    Creates a great-docs.yml file with all available options documented.
+    The generated file contains commented examples for each setting.
+
+    \b
+    Examples:
+      great-docs config                     # Generate in current directory
+      great-docs config --force             # Overwrite existing file
+      great-docs config --project-path ../pkg
+    """
+    from pathlib import Path
+
+    from .config import create_default_config
+
+    try:
+        project_root = Path(project_path) if project_path else Path.cwd()
+        config_path = project_root / "great-docs.yml"
+
+        if config_path.exists() and not force:
+            if not click.confirm(
+                f"⚠️  Configuration file already exists at {config_path}\n   Overwrite it?"
+            ):
+                click.echo("Cancelled.")
+                return
+
+        config_content = create_default_config()
+        config_path.write_text(config_content, encoding="utf-8")
+        click.echo(f"✓ Created {config_path}")
+        click.echo("\nEdit this file to customize your documentation settings.")
+        click.echo("See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html")
+
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
 # Register commands in the desired order
 cli.add_command(init)
 cli.add_command(build)
 cli.add_command(preview)
 cli.add_command(uninstall)
+cli.add_command(config)
 
 
 @click.command()
@@ -250,79 +301,64 @@ def scan(project_path, docs_dir, verbose):
         importable_name = docs._normalize_package_name(package_name)
         click.echo(f"Scanning package: {importable_name}\n")
 
-        # Extract all directives
-        directive_map = docs._extract_all_directives(importable_name)
-
-        if not directive_map:
-            click.echo("No %family directives found in docstrings.")
-            click.echo("\nTo organize your API documentation, add directives to your docstrings:")
-            click.echo("    %family Family Name")
-            click.echo("    %order 1")
-            click.echo("    %seealso other_func, AnotherClass")
+        # Get discovered exports
+        exports = docs._get_package_exports(importable_name)
+        if not exports:
+            click.echo("No exports discovered.")
             sys.exit(0)
 
-        # Group by family
-        families: dict[str, list] = {}
-        nodoc_items = []
+        # Categorize exports
+        categories = docs._categorize_api_objects(importable_name, exports)
 
-        for name, directives in directive_map.items():
-            if directives.nodoc:
-                nodoc_items.append(name)
-                continue
+        click.echo(f"Found {len(exports)} public export(s):\n")
 
-            if directives.family:
-                family = directives.family
-                if family not in families:
-                    families[family] = []
-                families[family].append(
-                    {
-                        "name": name,
-                        "order": directives.order,
-                        "seealso": directives.seealso,
-                    }
-                )
+        # Show classes
+        if categories.get("classes"):
+            click.echo("📦 Classes:")
+            for class_name in categories["classes"]:
+                method_count = categories.get("class_methods", {}).get(class_name, 0)
+                method_names = categories.get("class_method_names", {}).get(class_name, [])
+                click.echo(f"    • {class_name} ({method_count} method(s))")
+                if verbose and method_names:
+                    for method in method_names[:5]:  # Show first 5
+                        click.echo(f"      └─ {method}")
+                    if len(method_names) > 5:
+                        click.echo(f"      └─ ... and {len(method_names) - 5} more")
 
-        # Display results
-        click.echo(f"Found {len(directive_map)} item(s) with directives:\n")
+        # Show functions
+        if categories.get("functions"):
+            click.echo("\n⚡ Functions:")
+            for func_name in categories["functions"]:
+                click.echo(f"    • {func_name}")
 
-        # Show families
-        if families:
-            click.echo("📁 Families:")
-            click.echo("-" * 50)
+        # Show other exports
+        if categories.get("other"):
+            click.echo("\n📄 Other:")
+            for other_name in categories["other"]:
+                click.echo(f"    • {other_name}")
 
-            for family_name in sorted(families.keys()):
-                items = families[family_name]
-                # Sort by order, then name
-                items.sort(key=lambda x: (x["order"] or 999, x["name"]))
-
-                click.echo(f"\n  {family_name} ({len(items)} item(s)):")
-                for item in items:
-                    order_str = f" [%order {item['order']}]" if item["order"] is not None else ""
-                    click.echo(f"    • {item['name']}{order_str}")
-
-                    if verbose and item["seealso"]:
-                        seealso_str = ", ".join(item["seealso"])
-                        click.echo(f"      └─ %seealso {seealso_str}")
-
-        # Show nodoc items
-        if nodoc_items:
-            click.echo(f"\n🚫 Excluded (%nodoc): {len(nodoc_items)} item(s)")
+        # Show current reference config status
+        reference_config = docs._config.reference
+        if reference_config:
+            click.echo(
+                f"\n✅ Reference config found in great-docs.yml ({len(reference_config)} section(s))"
+            )
             if verbose:
-                for item in sorted(nodoc_items):
-                    click.echo(f"    • {item}")
-
-        # Show configuration hint
-        family_config = docs._get_family_config()
-        unconfigured = [
-            f for f in families.keys() if docs._normalize_family_key(f) not in family_config
-        ]
-
-        if unconfigured:
-            click.echo("\n💡 Tip: Add descriptions for your families in pyproject.toml:")
-            click.echo("   [tool.great-docs.families.validation-steps]")
-            click.echo('   title = "Family Name"')
-            click.echo('   desc = "Methods for validating data."')
-            click.echo("   order = 1")
+                for section in reference_config:
+                    title = section.get("title", "Untitled")
+                    contents = section.get("contents", [])
+                    click.echo(f"    • {title}: {len(contents)} item(s)")
+        else:
+            click.echo(
+                "\n💡 Tip: Add a reference config to great-docs.yml to control API organization:"
+            )
+            click.echo("   reference:")
+            click.echo("     - title: Core Classes")
+            click.echo("       desc: Main classes for the package")
+            click.echo("       contents:")
+            click.echo("         - name: MyClass")
+            click.echo("           members: separate  # Methods on separate pages")
+            click.echo("         - SimpleClass        # Methods inline")
 
     except Exception as e:
         click.echo(f"Error: {e}", err=True)

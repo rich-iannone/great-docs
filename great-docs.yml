@@ -44,11 +44,6 @@ cli:
   module: great_docs.cli
   name: cli
 
-# Large Class Method Threshold
-# ----------------------------
-# Classes with more methods than this get separate method pages (default: 5)
-# large_class_method_threshold: 5
-
 # Dark Mode Toggle
 # ----------------
 # Enable/disable the dark mode toggle in navbar (default: true)

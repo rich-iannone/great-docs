@@ -118,16 +118,6 @@ When enabled, the toggle appears in the navbar and:
 - Persists the user's choice in local storage
 - Provides instant switching without page reload
 
-## Large Class Method Threshold
-
-Classes with many methods get their methods documented on separate pages for better navigation. By default, classes with more than 5 methods trigger this behavior. Adjust the threshold:
-
-```{.yaml filename="great-docs.yml"}
-large_class_method_threshold: 10  # Default: 5
-```
-
-Set to a higher value to keep more methods inline, or lower to separate methods sooner.
-
 ## CLI Documentation
 
 Enable automatic CLI documentation for Click-based CLIs:
@@ -235,9 +225,6 @@ sidebar_filter:
 
 # Dark Mode
 dark_mode_toggle: true
-
-# Large Class Handling
-large_class_method_threshold: 8
 
 # CLI Documentation
 cli:

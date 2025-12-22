@@ -98,16 +98,6 @@ sections:
 
 This creates better navigation for classes with many methods.
 
-### Customizing the Threshold
-
-The default threshold of 5 methods works well for most projects, but you can adjust it in your `great-docs.yml`:
-
-```{.yaml filename="great-docs.yml"}
-large_class_method_threshold: 10   # Classes with >10 methods get separate pages
-```
-
-Set this to a higher value if you prefer more methods documented inline, or lower if you want methods separated out sooner. Setting it to `0` will give every class its own method section regardless of size.
-
 ## API Organization
 
 ### Default Sections

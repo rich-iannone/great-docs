@@ -52,21 +52,15 @@ logger      # Logging
 log
 ```
 
-To include any auto-excluded names:
-
-```{.yaml filename="great-docs.yml"}
-include:
-  - main
-  - cli
-```
-
-To exclude additional names:
+To exclude additional names from `init` and `scan`:
 
 ```{.yaml filename="great-docs.yml"}
 exclude:
   - InternalHelper
   - deprecated_function
 ```
+
+Note: Once you have a `reference` config in `great-docs.yml`, you control exactly what gets documented by listing items there. The `exclude` setting only affects what `great-docs init` discovers when generating your initial config.
 
 ## Smart Method Handling
 

@@ -24,19 +24,9 @@ great-docs config
 
 ## API Discovery Settings
 
-### Including Specific Items
-
-By default, Great Docs auto-excludes common internal names like `main`, `cli`, `version`, etc. To force-include any of these:
-
-```{.yaml filename="great-docs.yml"}
-include:
-  - main
-  - cli
-```
-
 ### Excluding Items
 
-To exclude specific items from documentation:
+To exclude specific items from documentation during `init` and `scan`:
 
 ```{.yaml filename="great-docs.yml"}
 exclude:
@@ -44,9 +34,11 @@ exclude:
   - helper_function
 ```
 
+Note: The `exclude` setting affects what appears when running `great-docs init` (which auto-generates your `reference` config) and `great-docs scan` (which shows discovered exports). Once you have a `reference` config, you control exactly what's documented by listing items there.
+
 ### Auto-Excluded Names
 
-Great Docs automatically excludes these common internal names:
+Great Docs automatically excludes these common internal names during discovery:
 
 | Category | Names |
 |----------|-------|
@@ -224,8 +216,6 @@ Here's a comprehensive configuration demonstrating all available options:
 
 ```{.yaml filename="great-docs.yml"}
 # API Discovery
-include:
-  - cli
 exclude:
   - _InternalClass
 

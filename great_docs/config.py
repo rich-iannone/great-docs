@@ -361,15 +361,16 @@ def create_default_config() -> str:
 # auto-generated from discovered exports. Each section has a title, description,
 # and list of contents.
 #
-# For classes, use `members: separate` to document methods on separate pages,
-# or `members: inline` (default) to document methods on the same page.
+# For classes, use `members: true` (default) to document methods inline on the
+# class page, or `members: false` to exclude methods (you can place them
+# explicitly elsewhere in the reference if needed).
 #
 # reference:
 #   - title: Core Classes
 #     desc: Main classes for working with the package
 #     contents:
 #       - name: MyClass
-#         members: separate    # Methods get their own pages
+#         members: false       # Don't document methods here
 #       - SimpleClass          # Methods documented inline (default)
 #
 #   - title: Utility Functions

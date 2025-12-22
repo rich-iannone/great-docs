@@ -1,6 +1,7 @@
 ---
 title: "CLI Documentation"
 guide-section: "Core Concepts"
+bread-crumbs: false
 ---
 
 # CLI Documentation
@@ -9,11 +10,11 @@ Great Docs can automatically generate reference documentation for Click-based co
 
 ## Enabling CLI Documentation
 
-Add the following to your `pyproject.toml`:
+Add the following to your `great-docs.yml`:
 
-```{.toml filename="pyproject.toml"}
-[tool.great-docs.cli]
-enabled = true
+```{.yaml filename="great-docs.yml"}
+cli:
+  enabled: true
 ```
 
 That's it! Great Docs will automatically discover and document your CLI.
@@ -52,11 +53,11 @@ Great Docs uses `my-cli` as the command name in documentation.
 
 For non-standard setups, specify the module and command name:
 
-```{.toml filename="pyproject.toml"}
-[tool.great-docs.cli]
-enabled = true
-module = "my_package.commands"  # Module containing Click commands
-name = "app"                     # Name of the Click command object
+```{.yaml filename="great-docs.yml"}
+cli:
+  enabled: true
+  module: my_package.commands   # Module containing Click commands
+  name: app                      # Name of the Click command object
 ```
 
 ## Generated Output
@@ -211,11 +212,11 @@ If your CLI isn't found:
 3. Ensure the Click command is importable
 4. Use explicit configuration:
 
-```{.toml filename="pyproject.toml"}
-[tool.great-docs.cli]
-enabled = true
-module = "your_package.cli"
-name = "cli"  # The Click command object name
+```{.yaml filename="great-docs.yml"}
+cli:
+  enabled: true
+  module: your_package.cli
+  name: cli   # The Click command object name
 ```
 
 ### Help Text Missing

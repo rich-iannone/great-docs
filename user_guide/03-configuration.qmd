@@ -1,19 +1,25 @@
 ---
 title: "Configuration"
 guide-section: "Core Concepts"
+bread-crumbs: false
 ---
 
 # Configuration
 
-Great Docs is designed to work with zero configuration, but you can customize its behavior through your `pyproject.toml` file. This page covers all available options, from API discovery settings to author information and GitHub integration.
+Great Docs is designed to work with zero configuration, but you can customize its behavior through a `great-docs.yml` file. This page covers all available options, from API discovery settings to author information and GitHub integration.
 
 ## Configuration Location
 
-All Great Docs settings go in your `pyproject.toml` under the `[tool.great-docs]` section. This keeps your documentation configuration alongside other tool settings in a single, version-controlled file:
+All Great Docs settings go in a `great-docs.yml` file in your project root directory. This dedicated configuration file keeps your documentation settings separate and easy to manage:
 
-```{.toml filename="pyproject.toml"}
-[tool.great-docs]
+```{.yaml filename="great-docs.yml"}
 # Your settings here
+```
+
+To generate a starter configuration file with all options documented:
+
+```bash
+great-docs config
 ```
 
 ## API Discovery Settings
@@ -22,18 +28,20 @@ All Great Docs settings go in your `pyproject.toml` under the `[tool.great-docs]
 
 By default, Great Docs auto-excludes common internal names like `main`, `cli`, `version`, etc. To force-include any of these:
 
-```{.toml filename="pyproject.toml"}
-[tool.great-docs]
-include = ["main", "cli"]
+```{.yaml filename="great-docs.yml"}
+include:
+  - main
+  - cli
 ```
 
 ### Excluding Items
 
 To exclude specific items from documentation:
 
-```{.toml filename="pyproject.toml"}
-[tool.great-docs]
-exclude = ["InternalClass", "helper_function"]
+```{.yaml filename="great-docs.yml"}
+exclude:
+  - InternalClass
+  - helper_function
 ```
 
 ### Auto-Excluded Names
@@ -54,53 +62,62 @@ Great Docs automatically excludes these common internal names:
 
 Choose how the GitHub link appears in the navbar:
 
-```{.toml filename="pyproject.toml"}
-[tool.great-docs]
-github_style = "widget"  # Shows stars count (default)
-# or
-github_style = "icon"    # Simple GitHub icon
+```{.yaml filename="great-docs.yml"}
+# Shows stars count (default)
+github_style: widget
+
+# Or use a simple GitHub icon
+github_style: icon
 ```
 
 ### Source Links
 
 Great Docs automatically creates "source" links to GitHub. Configure the branch:
 
-```{.toml filename="pyproject.toml"}
-[tool.great-docs]
-source_link_branch = "main"  # Default: auto-detected from git
+```{.yaml filename="great-docs.yml"}
+source:
+  branch: main  # Default: auto-detected from git
 ```
 
 To disable source links entirely:
 
-```{.toml filename="pyproject.toml"}
-[tool.great-docs]
-source_links_enabled = false
+```{.yaml filename="great-docs.yml"}
+source:
+  enabled: false
+```
+
+Full source link configuration:
+
+```{.yaml filename="great-docs.yml"}
+source:
+  enabled: true        # Enable/disable source links (default: true)
+  branch: main         # Git branch/tag to link to (default: auto-detect)
+  path: src/package    # Custom source path for monorepos (default: auto-detect)
+  placement: usage     # Where to place the link: "usage" (default) or "title"
 ```
 
 ## Sidebar Filter
 
 The API reference sidebar includes a search filter for large APIs. Configure it:
 
-```{.toml filename="pyproject.toml"}
-[tool.great-docs]
-sidebar_filter_enabled = true   # Enable/disable (default: true)
-sidebar_filter_min_items = 20   # Minimum items before showing filter
+```{.yaml filename="great-docs.yml"}
+sidebar_filter:
+  enabled: true   # Enable/disable filter (default: true)
+  min_items: 20   # Minimum items before showing filter (default: 20)
 ```
 
 ## Dark Mode Toggle
 
 Great Docs includes a light/dark mode toggle in the navbar that respects system preferences and remembers user choice. It's enabled by default:
 
-```{.toml filename="pyproject.toml"}
-[tool.great-docs]
-dark_mode_toggle = true   # Enable/disable (default: true)
+```{.yaml filename="great-docs.yml"}
+dark_mode_toggle: true   # Enable/disable (default: true)
 ```
 
 To disable the dark mode toggle:
 
-```{.toml filename="pyproject.toml"}
-[tool.great-docs]
-dark_mode_toggle = false
+```{.yaml filename="great-docs.yml"}
+dark_mode_toggle: false
 ```
 
 When enabled, the toggle appears in the navbar and:
@@ -113,9 +130,8 @@ When enabled, the toggle appears in the navbar and:
 
 Classes with many methods get their methods documented on separate pages for better navigation. By default, classes with more than 5 methods trigger this behavior. Adjust the threshold:
 
-```{.toml filename="pyproject.toml"}
-[tool.great-docs]
-large_class_method_threshold = 10  # Default: 5
+```{.yaml filename="great-docs.yml"}
+large_class_method_threshold: 10  # Default: 5
 ```
 
 Set to a higher value to keep more methods inline, or lower to separate methods sooner.
@@ -124,49 +140,48 @@ Set to a higher value to keep more methods inline, or lower to separate methods 
 
 Enable automatic CLI documentation for Click-based CLIs:
 
-```{.toml filename="pyproject.toml"}
-[tool.great-docs.cli]
-enabled = true
+```{.yaml filename="great-docs.yml"}
+cli:
+  enabled: true
 ```
 
 With optional explicit configuration:
 
-```{.toml filename="pyproject.toml"}
-[tool.great-docs.cli]
-enabled = true
-module = "my_package.cli"  # Module containing Click commands
-name = "cli"                # Name of the Click command object
+```{.yaml filename="great-docs.yml"}
+cli:
+  enabled: true
+  module: my_package.cli   # Module containing Click commands
+  name: cli                # Name of the Click command object
 ```
 
-See [CLI Documentation](04-cli-documentation.qmd) for details.
+See [CLI Documentation](05-cli-documentation.qmd) for details.
 
 ## Author Information
 
 Customize author display in the landing page sidebar:
 
-```{.toml filename="pyproject.toml"}
-[[tool.great-docs.authors]]
-name = "Your Name"
-email = "you@example.com"
-role = "Lead Developer"
-affiliation = "Organization"
-github = "yourusername"
-homepage = "https://yoursite.com"
-orcid = "0000-0002-1234-5678"
+```{.yaml filename="great-docs.yml"}
+authors:
+  - name: Your Name
+    email: you@example.com
+    role: Lead Developer
+    affiliation: Organization
+    github: yourusername
+    homepage: https://yoursite.com
+    orcid: 0000-0002-1234-5678
 ```
 
 Multiple authors are supported:
 
-```{.toml filename="pyproject.toml"}
-[[tool.great-docs.authors]]
-name = "First Author"
-role = "Lead Developer"
-github = "firstauthor"
+```{.yaml filename="great-docs.yml"}
+authors:
+  - name: First Author
+    role: Lead Developer
+    github: firstauthor
 
-[[tool.great-docs.authors]]
-name = "Second Author"
-role = "Contributor"
-github = "secondauthor"
+  - name: Second Author
+    role: Contributor
+    github: secondauthor
 ```
 
 ### Supported Author Fields
@@ -181,49 +196,102 @@ github = "secondauthor"
 | `homepage` | Personal website URL (clickable icon) |
 | `orcid` | ORCID identifier (clickable icon) |
 
+## API Reference Structure
+
+Control how your API documentation is organized with the `reference` config:
+
+```{.yaml filename="great-docs.yml"}
+reference:
+  - title: Core Classes
+    desc: Main classes for working with the package
+    contents:
+      - name: MyClass
+        members: separate    # Methods get their own pages
+      - SimpleClass          # Methods documented inline
+
+  - title: Utility Functions
+    desc: Helper functions for common tasks
+    contents:
+      - helper_func
+      - another_func
+```
+
+If no `reference` config is provided, Great Docs auto-generates sections from discovered exports.
+
 ## Complete Example
 
-While most projects only need a few settings, here's a comprehensive configuration that demonstrates all available options working together. This example shows a well-configured project with custom API discovery rules, GitHub integration, sidebar filtering, CLI documentation, and detailed author information.
+Here's a comprehensive configuration demonstrating all available options:
 
-```{.toml filename="pyproject.toml"}
-[tool.great-docs]
-# API discovery
-include = ["cli"]
-exclude = ["_InternalClass"]
+```{.yaml filename="great-docs.yml"}
+# API Discovery
+include:
+  - cli
+exclude:
+  - _InternalClass
 
-# GitHub integration
-github_style = "widget"
-source_link_branch = "main"
+# GitHub Integration
+github_style: widget
+
+# Source Links
+source:
+  enabled: true
+  branch: main
+  placement: usage
 
 # Sidebar
-sidebar_filter_enabled = true
-sidebar_filter_min_items = 15
+sidebar_filter:
+  enabled: true
+  min_items: 15
 
-# Dark mode
-dark_mode_toggle = true
+# Dark Mode
+dark_mode_toggle: true
 
-# Large class handling
-large_class_method_threshold = 8
+# Large Class Handling
+large_class_method_threshold: 8
 
-# CLI documentation
-[tool.great-docs.cli]
-enabled = true
+# CLI Documentation
+cli:
+  enabled: true
+
+# API Reference Structure
+reference:
+  - title: Core Classes
+    desc: Main classes for the library
+    contents:
+      - name: MainClass
+        members: separate
+      - HelperClass
+
+  - title: Utility Functions
+    desc: Helper functions
+    contents:
+      - utility_func
+      - helper_func
 
 # Authors
-[[tool.great-docs.authors]]
-name = "Jane Developer"
-email = "jane@example.com"
-role = "Lead Developer"
-github = "janedev"
-orcid = "0000-0001-2345-6789"
+authors:
+  - name: Jane Developer
+    email: jane@example.com
+    role: Lead Developer
+    github: janedev
+    orcid: 0000-0001-2345-6789
 
-[[tool.great-docs.authors]]
-name = "John Contributor"
-role = "Contributor"
-github = "johncontrib"
+  - name: John Contributor
+    role: Contributor
+    github: johncontrib
 ```
 
 You don't need all of these settings. Start with just the options you need and add more as your project grows. The defaults work well for most packages, so you may find that a minimal configuration (or none at all) is sufficient.
+
+## Generating a Configuration File
+
+To create a starter `great-docs.yml` with all options documented:
+
+```bash
+great-docs config
+```
+
+This creates a file with all available options as comments, making it easy to enable the features you need.
 
 ## Quarto Configuration
 
@@ -235,43 +303,7 @@ Great Docs generates and maintains a `_quarto.yml` file in your docs directory. 
 
 **GitHub CI considerations:** When using `great-docs setup-github-pages`, the workflow runs `great-docs build` which regenerates any auto-managed sections. This means CI builds will always use the latest API structure from your code, keeping documentation in sync even if local `_quarto.yml` changes weren't committed.
 
-Here's what a typical configuration looks like:
-
-```{.yaml filename="_quarto.yml"}
-project:
-  type: website
-  post-render: scripts/post-render.py
-
-website:
-  title: "Your Package"
-  navbar:
-    left:
-      - text: Home
-        href: index.qmd
-      - text: Reference
-        href: reference/index.qmd
-    right:
-      - icon: github
-        href: https://github.com/you/your-package
-
-format:
-  html:
-    theme: flatly
-    css:
-      - great-docs.css
-
-quartodoc:
-  package: your_package
-  dir: reference
-  title: Reference
-  style: pkgdown
-  sections:
-    # Auto-generated sections
-```
-
-The `quartodoc.sections` block is regenerated each build, but the rest of the file is preserved. If you need to customize theming or add extra pages to the navbar, those changes will persist across builds.
-
 ## Next Steps
 
-- **[API Documentation](03-api-documentation.qmd)** – Learn how API discovery and organization works
-- **[CLI Documentation](04-cli-documentation.qmd)** – Document your Click CLI
+- **[API Documentation](04-api-documentation.qmd)** – Learn how API discovery and organization works
+- **[CLI Documentation](05-cli-documentation.qmd)** – Document your Click CLI

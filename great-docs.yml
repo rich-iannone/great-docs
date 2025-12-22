@@ -69,6 +69,7 @@ authors:
     affiliation: Posit, PBC
     email: tomasz@posit.co
     github: t-kalinowski
+
 # Site Settings
 # -------------
 # These settings are forwarded to _quarto.yml (format.html section)

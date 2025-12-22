@@ -148,21 +148,27 @@ reference:
 
 Items appear in the order listed within each section. This explicit configuration gives you complete control over how your API documentation is organized.
 
-### Documenting Class Methods Separately
+### Controlling Method Documentation
 
-For classes with many methods, you can document methods on separate pages by using `members: separate`:
+By default, class methods are documented inline on the class page. To exclude methods from documentation (for example, if you want to document them separately elsewhere), use `members: false`:
 
 ```{.yaml filename="great-docs.yml"}
 reference:
   - title: Core Classes
     desc: Main classes for the package
     contents:
-      - name: MyLargeClass
-        members: separate    # Methods get their own pages
+      - name: MyClass
+        members: false       # Don't document methods here
       - SimpleClass          # Methods documented inline (default)
+
+  - title: MyClass Methods
+    desc: Methods for the MyClass class
+    contents:
+      - MyClass.method1
+      - MyClass.method2
 ```
 
-When `members: separate` is set, Great Docs automatically creates a "[ClassName] Methods" section with individual pages for each method.
+When `members: false` is set, only the class itself is documented. You can then place individual methods wherever you want in your reference structure.
 
 ### Excluding Items with `exclude`
 

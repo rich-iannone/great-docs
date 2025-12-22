@@ -206,8 +206,8 @@ reference:
     desc: Main classes for working with the package
     contents:
       - name: MyClass
-        members: separate    # Methods get their own pages
-      - SimpleClass          # Methods documented inline
+        members: false       # Don't document methods here
+      - SimpleClass          # Methods documented inline (default)
 
   - title: Utility Functions
     desc: Helper functions for common tasks
@@ -259,8 +259,14 @@ reference:
     desc: Main classes for the library
     contents:
       - name: MainClass
-        members: separate
+        members: false
       - HelperClass
+
+  - title: MainClass Methods
+    desc: Methods for the MainClass
+    contents:
+      - MainClass.process
+      - MainClass.validate
 
   - title: Utility Functions
     desc: Helper functions

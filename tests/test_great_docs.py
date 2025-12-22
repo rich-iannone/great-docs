@@ -714,7 +714,6 @@ def test_config_defaults():
         assert config.cli_enabled is False
         assert config.cli_module is None
         assert config.cli_name is None
-        assert config.large_class_method_threshold == 5
         assert config.dark_mode_toggle is True
         assert config.reference == []
         assert config.authors == []
@@ -739,7 +738,6 @@ cli:
   module: mypackage.cli
   name: app
 
-large_class_method_threshold: 8
 dark_mode_toggle: false
 
 authors:
@@ -756,7 +754,6 @@ authors:
         assert config.cli_enabled is True
         assert config.cli_module == "mypackage.cli"
         assert config.cli_name == "app"
-        assert config.large_class_method_threshold == 8
         assert config.dark_mode_toggle is False
         assert len(config.authors) == 1
         assert config.authors[0]["name"] == "Test Author"

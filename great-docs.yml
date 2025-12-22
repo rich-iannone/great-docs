@@ -86,4 +86,14 @@ reference:
     desc: Core classes and types
     contents:
       - name: GreatDocs
-        members: separate
+        members: false
+
+  - title: GreatDocs Methods
+    desc: Methods for the GreatDocs class
+    contents:
+      - GreatDocs.install
+      - GreatDocs.uninstall
+      - GreatDocs.build
+      - GreatDocs.preview
+      - GreatDocs.check_links
+      - GreatDocs.spell_check

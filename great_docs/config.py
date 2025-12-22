@@ -28,8 +28,6 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "module": None,
         "name": None,
     },
-    # Large class method threshold
-    "large_class_method_threshold": 5,
     # Dark mode toggle
     "dark_mode_toggle": True,
     # Authors (rich author metadata)
@@ -207,11 +205,6 @@ class Config:
         return self.get("cli.name")
 
     @property
-    def large_class_method_threshold(self) -> int:
-        """Get the threshold for large class method separation."""
-        return self.get("large_class_method_threshold", 5)
-
-    @property
     def dark_mode_toggle(self) -> bool:
         """Check if dark mode toggle is enabled."""
         return self.get("dark_mode_toggle", True)
@@ -312,11 +305,6 @@ def create_default_config() -> str:
 #   enabled: false             # Enable CLI documentation (default: false)
 #   module: my_package.cli     # Module containing Click commands (auto-detected)
 #   name: cli                  # Name of the Click command object (auto-detected)
-
-# Large Class Method Threshold
-# ----------------------------
-# Classes with more methods than this get separate method pages (default: 5)
-# large_class_method_threshold: 5
 
 # Dark Mode Toggle
 # ----------------

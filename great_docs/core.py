@@ -473,9 +473,6 @@ class GreatDocs:
         metadata["cli_module"] = self._config.cli_module
         metadata["cli_name"] = self._config.cli_name
 
-        # Large class method threshold
-        metadata["large_class_method_threshold"] = self._config.large_class_method_threshold
-
         # Dark mode toggle
         metadata["dark_mode_toggle_enabled"] = self._config.dark_mode_toggle
 
@@ -2238,10 +2235,10 @@ class GreatDocs:
 
         Uses the configured discovery method (dir() by default, or __all__ if specified).
 
-        Uses this heuristic (threshold is configurable via `large_class_method_threshold`):
+        Uses this heuristic:
 
-        - classes with ≤N methods: documented inline (N defaults to 5)
-        - classes with >N methods: separate pages for each method
+        - classes with ≤5 methods: documented inline
+        - classes with >5 methods: separate pages for each method
 
         Parameters
         ----------
@@ -2271,9 +2268,8 @@ class GreatDocs:
 
         sections = []
 
-        # Get the method threshold from configuration (default: 5)
-        metadata = self._get_package_metadata()
-        method_threshold = metadata.get("large_class_method_threshold", 5)
+        # Use static threshold of 5 methods for large class separation
+        method_threshold = 5
 
         # Add classes section if there are any
         if categories["classes"]:
@@ -2736,7 +2732,9 @@ class GreatDocs:
         other = categories.get("other", [])
         class_methods = categories.get("class_methods", {})
         class_method_names = categories.get("class_method_names", {})
-        threshold = self._config.large_class_method_threshold
+
+        # Use static threshold of 5 methods for large class separation
+        threshold = 5
 
         # Track large classes that need separate method sections
         large_classes = []

@@ -303,7 +303,7 @@ class GreatDocs:
         if not skip_quartodoc:
             print("\nNext steps:")
             print("1. Review great-docs.yml to customize your API reference structure")
-            print("   (Reorder items, add sections, adjust 'members: separate' for large classes)")
+            print("   (Reorder items, add sections, set 'members: false' to exclude methods)")
             print("2. Run `great-docs build` to generate docs and build your site")
             print(f"3. Open {self.project_path / '_site' / 'index.html'} to preview your site")
             print("\nOther helpful commands:")
@@ -2530,7 +2530,6 @@ class GreatDocs:
         categories = self._categorize_api_objects(package_name, exports)
 
         sections = []
-        classes_with_separate_methods = []
 
         for section_config in reference_config:
             title = section_config.get("title", "Untitled")
@@ -2552,14 +2551,13 @@ class GreatDocs:
                     if not name:
                         continue
 
-                    members = item.get("members", "inline")
+                    members = item.get("members", True)
 
-                    if members == "separate":
-                        # Class with methods on separate pages
+                    if members is False:
+                        # Don't document methods - just the class
                         section_contents.append({"name": name, "members": []})
-                        classes_with_separate_methods.append(name)
                     else:
-                        # Default: inline documentation
+                        # Default: inline documentation (members: true)
                         section_contents.append(name)
 
             if section_contents:
@@ -2570,24 +2568,6 @@ class GreatDocs:
                         "contents": section_contents,
                     }
                 )
-
-        # Create separate sections for methods of classes marked with `members: separate`
-        for class_name in classes_with_separate_methods:
-            method_names = categories.get("class_method_names", {}).get(class_name, [])
-
-            if method_names:
-                method_contents = [f"{class_name}.{method}" for method in method_names]
-                method_count = len(method_names)
-
-                sections.append(
-                    {
-                        "title": f"{class_name} Methods",
-                        "desc": f"Methods for the {class_name} class",
-                        "contents": method_contents,
-                    }
-                )
-
-                print(f"  Created separate section for {class_name} with {method_count} methods")
 
         if sections:
             print(f"Generated {len(sections)} section(s) from reference config")
@@ -2720,7 +2700,7 @@ class GreatDocs:
 #     desc: Main classes for working with the package
 #     contents:
 #       - name: MyClass
-#         members: separate    # Methods get their own pages
+#         members: false       # Don't document methods here
 #       - SimpleClass          # Methods documented inline (default)
 """
 
@@ -2761,7 +2741,7 @@ class GreatDocs:
                 "# Customize the sections below to organize your API documentation.",
                 "# - Reorder items within a section to change their display order",
                 "# - Move items between sections or create new sections",
-                "# - Use 'members: separate' for classes with many methods",
+                "# - Use 'members: false' to exclude methods from documentation",
                 "# - Add 'desc:' to sections for descriptions",
                 "",
                 "reference:",
@@ -2772,7 +2752,11 @@ class GreatDocs:
         functions = categories.get("functions", [])
         other = categories.get("other", [])
         class_methods = categories.get("class_methods", {})
+        class_method_names = categories.get("class_method_names", {})
         threshold = self._config.large_class_method_threshold
+
+        # Track large classes that need separate method sections
+        large_classes = []
 
         # Classes section
         if classes:
@@ -2782,15 +2766,29 @@ class GreatDocs:
             for class_name in sorted(classes):
                 method_count = class_methods.get(class_name, 0)
                 if method_count > threshold:
-                    # Large class - suggest separate pages for methods
+                    # Large class: use members: false, methods listed separately
                     lines.append(f"      - name: {class_name}")
-                    lines.append(f"        members: separate  # {method_count} methods")
+                    lines.append(f"        members: false  # {method_count} methods listed below")
+                    large_classes.append(class_name)
+                elif method_count > 0:
+                    lines.append(f"      - {class_name}  # {method_count} method(s)")
                 else:
                     lines.append(f"      - {class_name}")
 
+        # Add separate method sections for large classes
+        for class_name in large_classes:
+            method_names = class_method_names.get(class_name, [])
+            if method_names:
+                lines.append("")
+                lines.append(f"  - title: {class_name} Methods")
+                lines.append(f"    desc: Methods for the {class_name} class")
+                lines.append("    contents:")
+                for method_name in method_names:
+                    lines.append(f"      - {class_name}.{method_name}")
+
         # Functions section
         if functions:
-            if classes:
+            if classes or large_classes:
                 lines.append("")
             lines.append("  - title: Functions")
             lines.append("    desc: Utility functions")

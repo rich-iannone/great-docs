@@ -6,7 +6,6 @@ import yaml
 # Default configuration values
 DEFAULT_CONFIG: dict[str, Any] = {
     # API discovery settings
-    "discovery_method": "dir",  # "dir" (default) or "all" (use __all__)
     "exclude": [],
     # GitHub integration
     "github_style": "widget",  # "widget" (shows stars) or "icon"
@@ -145,11 +144,6 @@ class Config:
         return value
 
     @property
-    def discovery_method(self) -> str:
-        """Get the API discovery method."""
-        return self.get("discovery_method", "dir")
-
-    @property
     def exclude(self) -> list[str]:
         """Get the list of items to exclude."""
         return self.get("exclude", [])
@@ -269,13 +263,9 @@ def create_default_config() -> str:
     return """# Great Docs Configuration
 # See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html
 
-# API Discovery Settings
-# ----------------------
-# Discovery method: "dir" (default) uses static analysis to find public objects,
-# "all" uses __all__ from __init__.py
-# discovery_method: dir
-
-# Exclude items from auto-documentation (affects 'init' and 'scan' commands)
+# Exclusions
+# ----------
+# Items to exclude from auto-documentation (affects 'init' and 'scan')
 # exclude:
 #   - InternalClass
 #   - helper_function

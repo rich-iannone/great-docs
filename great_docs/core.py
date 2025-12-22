@@ -453,7 +453,6 @@ class GreatDocs:
         # Map config properties to metadata dict for backward compatibility
         metadata["rich_authors"] = self._config.authors
         metadata["exclude"] = self._config.exclude
-        metadata["discovery_method"] = self._config.discovery_method
 
         # Source link configuration
         metadata["source_link_enabled"] = self._config.source_enabled
@@ -2006,10 +2005,10 @@ class GreatDocs:
 
     def _get_package_exports(self, package_name: str) -> list | None:
         """
-        Get package exports using the configured discovery method.
+        Get package exports using static analysis.
 
-        By default, uses dir() to discover public objects. If `discovery_method`
-        is set to "all" in great-docs.yml, uses __all__ instead.
+        Uses griffe to statically analyze the package and discover public objects.
+        Falls back to parsing __all__ if griffe introspection fails.
 
         Parameters
         ----------
@@ -2021,19 +2020,11 @@ class GreatDocs:
         list | None
             List of exported/public names, or None if discovery failed.
         """
-        metadata = self._get_package_metadata()
-        discovery_method = metadata.get("discovery_method", "dir")
-
-        if discovery_method == "all":
-            print("Using __all__ discovery method (configured in pyproject.toml)")
+        exports = self._discover_package_exports(package_name)
+        if exports is None:
+            print("Falling back to __all__ discovery")
             return self._parse_package_exports(package_name)
-        else:
-            print("Using griffe introspection discovery method (default)")
-            exports = self._discover_package_exports(package_name)
-            if exports is None:
-                print("Falling back to __all__ discovery method")
-                return self._parse_package_exports(package_name)
-            return exports
+        return exports
 
     def _categorize_api_objects(self, package_name: str, exports: list) -> dict:
         """
@@ -2174,12 +2165,12 @@ class GreatDocs:
 
                         if skipped_methods:
                             print(
-                                f"  {name}: class with {len(method_names)} public methods "
+                                f"{name}: class with {len(method_names)} public methods "
                                 f"(skipped {len(skipped_methods)} undocumentable method(s): "
                                 f"{', '.join(skipped_methods[:3])}{'...' if len(skipped_methods) > 3 else ''})"
                             )
                         else:
-                            print(f"  {name}: class with {len(method_names)} public methods")
+                            print(f"{name}: class with {len(method_names)} public methods")
 
                         categories["class_methods"][name] = len(method_names)
                         categories["class_method_names"][name] = method_names
@@ -2233,7 +2224,7 @@ class GreatDocs:
         """
         Create quartodoc sections based on discovered package exports.
 
-        Uses the configured discovery method (dir() by default, or __all__ if specified).
+        Uses static analysis (griffe) to discover public objects.
 
         Uses this heuristic:
 
@@ -2650,13 +2641,9 @@ class GreatDocs:
         return """# Great Docs Configuration
 # See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html
 
-# API Discovery Settings
-# ----------------------
-# Discovery method: "dir" (default) uses static analysis to find public objects,
-# "all" uses __all__ from __init__.py
-# discovery_method: dir
-
-# Exclude items from auto-documentation
+# Exclusions
+# ----------
+# Items to exclude from auto-documentation (affects 'init' and 'scan')
 # exclude:
 #   - InternalClass
 #   - helper_function

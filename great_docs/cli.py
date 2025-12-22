@@ -357,7 +357,7 @@ def scan(project_path, docs_dir, verbose):
             click.echo("       desc: Main classes for the package")
             click.echo("       contents:")
             click.echo("         - name: MyClass")
-            click.echo("           members: separate  # Methods on separate pages")
+            click.echo("           members: false     # Don't document methods")
             click.echo("         - SimpleClass        # Methods inline")
 
     except Exception as e:

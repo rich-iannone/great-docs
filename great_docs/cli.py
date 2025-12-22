@@ -271,21 +271,19 @@ cli.add_command(config)
     "--verbose",
     "-v",
     is_flag=True,
-    help="Show detailed information including %seealso and %order values",
+    help="Show method names for each class",
 )
 def scan(project_path, docs_dir, verbose):
-    """Scan docstrings for %family directives and preview API organization.
+    """Discover package exports and preview what can be documented.
 
-    This command analyzes your package's docstrings to find %family, %order,
-    %seealso, and %nodoc directives, then shows how the API reference would
-    be organized.
-
-    Use this to preview your documentation structure before building.
+    This command analyzes your package to find public classes, functions,
+    and other exports. Use this to see what's available before writing
+    your reference config.
 
     \b
     Examples:
-      great-docs scan                       # Preview API organization
-      great-docs scan --verbose             # Include @seealso and @order details
+      great-docs scan                       # Show discovered exports
+      great-docs scan --verbose             # Include method names for classes
       great-docs scan -v                    # Short form of --verbose
     """
 
@@ -299,7 +297,12 @@ def scan(project_path, docs_dir, verbose):
             sys.exit(1)
 
         importable_name = docs._normalize_package_name(package_name)
-        click.echo(f"Scanning package: {importable_name}\n")
+
+        # Section 1: Discovery
+        click.echo("─" * 50)
+        click.echo("📡 Discovery")
+        click.echo("─" * 50)
+        click.echo(f"Package: {importable_name}\n")
 
         # Get discovered exports
         exports = docs._get_package_exports(importable_name)
@@ -310,48 +313,86 @@ def scan(project_path, docs_dir, verbose):
         # Categorize exports
         categories = docs._categorize_api_objects(importable_name, exports)
 
-        click.echo(f"Found {len(exports)} public export(s):\n")
+        # Build sets of what's in the reference config
+        reference_config = docs._config.reference
+        ref_items = set()  # Items explicitly listed
+        ref_classes_with_members = set()  # Classes with members: true (or default)
+        ref_classes_without_members = set()  # Classes with members: false
+
+        for section in reference_config:
+            for item in section.get("contents", []):
+                if isinstance(item, str):
+                    ref_items.add(item)
+                elif isinstance(item, dict):
+                    name = item.get("name", "")
+                    ref_items.add(name)
+                    # Check members setting
+                    members = item.get("members", True)
+                    if members is False:
+                        ref_classes_without_members.add(name)
+                    else:
+                        ref_classes_with_members.add(name)
+
+        # Section 2: Exports
+        click.echo("\n" + "─" * 50)
+        click.echo(f"📦 Exports ({len(exports)} item(s))")
+        click.echo("─" * 50)
+
+        # Markers with colors
+        marker_included = click.style("[x]", fg="green")
+        marker_not_included = click.style("[ ]", fg="red")
+        marker_class_only = click.style("[-]", fg="yellow")
 
         # Show classes
         if categories.get("classes"):
-            click.echo("📦 Classes:")
+            click.echo("\nClasses:")
             for class_name in categories["classes"]:
-                method_count = categories.get("class_methods", {}).get(class_name, 0)
                 method_names = categories.get("class_method_names", {}).get(class_name, [])
-                click.echo(f"    • {class_name} ({method_count} method(s))")
-                if verbose and method_names:
-                    for method in method_names[:5]:  # Show first 5
-                        click.echo(f"      └─ {method}")
-                    if len(method_names) > 5:
-                        click.echo(f"      └─ ... and {len(method_names) - 5} more")
+
+                # Determine class marker
+                if class_name in ref_classes_without_members:
+                    class_marker = marker_class_only
+                elif class_name in ref_classes_with_members or class_name in ref_items:
+                    class_marker = marker_included
+                else:
+                    class_marker = marker_not_included
+
+                click.echo(f"• {class_marker} {class_name}")
+                for method in method_names:
+                    full_method = f"{class_name}.{method}"
+                    method_marker = (
+                        marker_included if full_method in ref_items else marker_not_included
+                    )
+                    click.echo(f"    • {method_marker} {full_method}")
 
         # Show functions
         if categories.get("functions"):
-            click.echo("\n⚡ Functions:")
+            click.echo("\nFunctions:")
             for func_name in categories["functions"]:
-                click.echo(f"    • {func_name}")
+                func_marker = marker_included if func_name in ref_items else marker_not_included
+                click.echo(f"• {func_marker} {func_name}")
 
         # Show other exports
         if categories.get("other"):
-            click.echo("\n📄 Other:")
+            click.echo("\nOther:")
             for other_name in categories["other"]:
-                click.echo(f"    • {other_name}")
+                other_marker = marker_included if other_name in ref_items else marker_not_included
+                click.echo(f"• {other_marker} {other_name}")
 
-        # Show current reference config status
-        reference_config = docs._config.reference
+        # Section 3: Config status
+        click.echo("\n" + "─" * 50)
+        click.echo("📋 Reference Config")
+        click.echo("─" * 50)
+
         if reference_config:
-            click.echo(
-                f"\n✅ Reference config found in great-docs.yml ({len(reference_config)} section(s))"
-            )
+            click.echo(f"\n✅ Found in great-docs.yml ({len(reference_config)} section(s))")
             if verbose:
                 for section in reference_config:
                     title = section.get("title", "Untitled")
                     contents = section.get("contents", [])
                     click.echo(f"    • {title}: {len(contents)} item(s)")
         else:
-            click.echo(
-                "\n💡 Tip: Add a reference config to great-docs.yml to control API organization:"
-            )
+            click.echo("\n💡 No reference config found. Add one to great-docs.yml:")
             click.echo("   reference:")
             click.echo("     - title: Core Classes")
             click.echo("       desc: Main classes for the package")

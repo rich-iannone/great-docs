@@ -1,6 +1,7 @@
 ---
 title: "API Documentation"
 guide-section: "Core Concepts"
+bread-crumbs: false
 ---
 
 # API Documentation
@@ -51,19 +52,15 @@ logger      # Logging
 log
 ```
 
-To include any auto-excluded names:
+To exclude additional names from `init` and `scan`:
 
-```{.toml filename="pyproject.toml"}
-[tool.great-docs]
-include = ["main", "cli"]
+```{.yaml filename="great-docs.yml"}
+exclude:
+  - InternalHelper
+  - deprecated_function
 ```
 
-To exclude additional names:
-
-```{.toml filename="pyproject.toml"}
-[tool.great-docs]
-exclude = ["InternalHelper", "deprecated_function"]
-```
+Note: Once you have a `reference` config in `great-docs.yml`, you control exactly what gets documented by listing items there. The `exclude` setting only affects what `great-docs init` discovers when generating your initial config.
 
 ## Smart Method Handling
 
@@ -101,17 +98,6 @@ sections:
 
 This creates better navigation for classes with many methods.
 
-### Customizing the Threshold
-
-The default threshold of 5 methods works well for most projects, but you can adjust it in your `pyproject.toml`:
-
-```{.toml filename="pyproject.toml"}
-[tool.great-docs]
-large_class_method_threshold = 10  # Classes with >10 methods get separate pages
-```
-
-Set this to a higher value if you prefer more methods documented inline, or lower if you want methods separated out sooner. Setting it to `0` will give every class its own method section regardless of size.
-
 ## API Organization
 
 ### Default Sections
@@ -122,87 +108,63 @@ Great Docs creates these sections by default:
 2. **Functions** – All public functions
 3. **[ClassName] Methods** – For large classes with >5 methods
 
-These default section names are serviceable for most projects, giving users a clear starting point for navigating your API. However, you're encouraged to customize the organization using docstring directives like `@family` to create sections that better reflect your package's domain. For example, you might group functions by feature area or use case rather than just by type.
+These default section names are serviceable for most projects, giving users a clear starting point for navigating your API. However, you're encouraged to customize the organization using the `reference` config in `great-docs.yml` to create sections that better reflect your package's domain.
 
-### Custom Organization with `@family`
+### Custom Organization with `reference` Config
 
-You can group related items using the `@family` directive in docstrings. As a matter of style, place directives at the very bottom of your docstring, after all other documentation content:
+You can explicitly control the API reference structure in `great-docs.yml`:
 
-```{.python filename="Source code"}
-def create_user(name: str) -> User:
-    """
-    Create a new user.
+```{.yaml filename="great-docs.yml"}
+reference:
+  - title: User Management
+    desc: Functions for managing users
+    contents:
+      - create_user
+      - delete_user
+      - update_user
 
-    @family User Management
-    """
-    ...
-
-def delete_user(user_id: int) -> None:
-    """
-    Delete a user.
-
-    @family User Management
-    """
-    ...
+  - title: Authentication
+    desc: Functions for authentication
+    contents:
+      - login
+      - logout
 ```
 
-Items with the same `@family` value are grouped together in the sidebar.
+Items appear in the order listed within each section. This explicit configuration gives you complete control over how your API documentation is organized.
 
-### Ordering with `@order`
+### Controlling Method Documentation
 
-By default, items within a section appear in the order they're defined in your source code. Great Docs preserves this natural ordering so that your documentation reflects the logical structure you've already established. However, when you need finer control (perhaps to highlight a key entry point or ensure related functions appear together regardless of where they're defined) you can use the `@order` directive.
+By default, class methods are documented inline on the class page. To exclude methods from documentation (for example, if you want to document them separately elsewhere), use `members: false`:
 
-```{.python filename="Source code"}
-def important_function():
-    """
-    This appears first.
+```{.yaml filename="great-docs.yml"}
+reference:
+  - title: Core Classes
+    desc: Main classes for the package
+    contents:
+      - name: MyClass
+        members: false       # Don't document methods here
+      - SimpleClass          # Methods documented inline (default)
 
-    @order 1
-    """
-    ...
-
-def secondary_function():
-    """
-    This appears second.
-
-    @order 2
-    """
-    ...
+  - title: MyClass Methods
+    desc: Methods for the MyClass class
+    contents:
+      - MyClass.method1
+      - MyClass.method2
 ```
 
-Lower numbers appear first. Items without an `@order` directive appear after all ordered items, in their default order. This is particularly useful for ensuring that introductory or commonly-used functions appear at the top of their section.
+When `members: false` is set, only the class itself is documented. You can then place individual methods wherever you want in your reference structure.
 
-### Excluding Items with `@nodoc`
+### Excluding Items with `exclude`
 
-Sometimes you have public functions or classes that shouldn't appear in the documentation: internal helpers that are technically public for testing purposes, or deprecated items you're phasing out. The `@nodoc` directive tells Great Docs to skip these items entirely.
+To exclude items from documentation, add them to the `exclude` list in `great-docs.yml`:
 
-```{.python filename="Source code"}
-def internal_helper():
-    """
-    This won't be documented.
-
-    @nodoc
-    """
-    ...
+```{.yaml filename="great-docs.yml"}
+exclude:
+  - internal_helper
+  - deprecated_function
 ```
 
-Unlike adding items to the `exclude` list in `pyproject.toml`, the `@nodoc` directive keeps the exclusion decision right next to the code it affects. This makes it easier to remember why something was excluded and to reverse the decision later if needed.
-
-### Cross-References with `@seealso`
-
-Good documentation helps users discover related functionality. The `@seealso` directive adds a "See Also" section to an item's documentation page, linking to other classes or functions that users might find relevant.
-
-```{.python filename="Source code"}
-def parse_data(raw: str) -> Data:
-    """
-    Parse raw data.
-
-    @seealso validate_data, transform_data
-    """
-    ...
-```
-
-List multiple items separated by commas. Great Docs automatically creates links to each referenced item, making it easy for readers to navigate between related parts of your API. This is especially valuable in larger packages where functionality is spread across many modules.
+Items in the exclude list won't appear when running `great-docs init` or `great-docs scan`, and won't be documented even if discovered.
 
 ## Source Code Links
 
@@ -216,13 +178,13 @@ Great Docs automatically adds "source" links to each documented item, pointing t
 
 ### Configuration
 
-```{.toml filename="pyproject.toml"}
-[tool.great-docs]
-# Use a specific branch (default: auto-detected)
-source_link_branch = "main"
+```{.yaml filename="great-docs.yml"}
+source:
+  # Use a specific branch (default: auto-detected)
+  branch: main
 
-# Disable source links
-source_links_enabled = false
+  # Disable source links
+  enabled: false
 ```
 
 ## Visual Enhancements
@@ -247,15 +209,15 @@ For packages with many exports, navigating the sidebar can become cumbersome. Gr
 
 The filter provides instant results as you type, narrowing down the sidebar to show only matching items. A count indicator shows how many items match your search out of the total. The section structure is preserved during filtering, so you maintain context about where items live in your API hierarchy.
 
-You can customize when the filter appears in your `pyproject.toml`:
+You can customize when the filter appears in your `great-docs.yml`:
 
-```{.toml filename="pyproject.toml"}
-[tool.great-docs]
-sidebar_filter_enabled = true
-sidebar_filter_min_items = 15  # Show filter with 15+ items
+```{.yaml filename="great-docs.yml"}
+sidebar_filter:
+  enabled: true
+  min_items: 15   # Show filter with 15+ items
 ```
 
-Set `sidebar_filter_enabled = false` to disable it entirely, or adjust `sidebar_filter_min_items` to change the threshold.
+Set `enabled: false` to disable it entirely, or adjust `min_items` to change the threshold.
 
 ## Refreshing API Documentation
 

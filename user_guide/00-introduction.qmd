@@ -1,6 +1,7 @@
 ---
 title: "Welcome to Great Docs"
 guide-section: "Getting Started"
+bread-crumbs: false
 ---
 
 # Welcome to Great Docs
@@ -57,7 +58,7 @@ This User Guide covers everything you need to know:
 
 1. **Installation** – Getting Great Docs set up
 2. **Quick Start** – Creating your first documentation site
-3. **Configuration** – Customizing behavior via `pyproject.toml`
+3. **Configuration** – Customizing behavior via `great-docs.yml`
 4. **API Documentation** – How auto-discovery works and how to customize it
 5. **CLI Documentation** – Documenting Click-based CLIs
 6. **User Guides** – Writing narrative documentation

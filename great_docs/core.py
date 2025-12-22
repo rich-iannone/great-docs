@@ -6,6 +6,8 @@ from pathlib import Path
 
 import yaml
 
+from .config import Config
+
 
 class GreatDocs:
     """
@@ -39,6 +41,9 @@ class GreatDocs:
 
             self.package_path = Path(importlib_resources.files("great_docs"))
         self.assets_path = self.package_path / "assets"
+
+        # Load configuration from great-docs.yml
+        self._config = Config(self._find_package_root())
 
     def _find_or_create_docs_dir(self, docs_dir: str | None = None) -> Path:
         """
@@ -279,6 +284,12 @@ class GreatDocs:
         # Update _quarto.yml configuration
         self._update_quarto_config()
 
+        # Generate great-docs.yml with discovered exports
+        self._generate_initial_config(force=force)
+
+        # Reload configuration after generating it
+        self._config = Config(self._find_package_root())
+
         # Create index.qmd from README.md if it doesn't exist
         self._create_index_from_readme()
 
@@ -291,11 +302,12 @@ class GreatDocs:
         print("\nGreat Docs installation complete!")
         if not skip_quartodoc:
             print("\nNext steps:")
-            print("1. Review the generated configuration in _quarto.yml")
+            print("1. Review great-docs.yml to customize your API reference structure")
+            print("   (Reorder items, add sections, set 'members: false' to exclude methods)")
             print("2. Run `great-docs build` to generate docs and build your site")
-            print("   (This runs `quartodoc build` followed by `quarto render`)")
             print(f"3. Open {self.project_path / '_site' / 'index.html'} to preview your site")
             print("\nOther helpful commands:")
+            print("  great-docs scan           # Preview API organization")
             print("  great-docs build          # Build everything")
             print("  great-docs build --watch  # Watch for changes and rebuild")
             print("  great-docs preview        # Build and serve locally")
@@ -396,89 +408,72 @@ class GreatDocs:
 
     def _get_package_metadata(self) -> dict:
         """
-        Extract package metadata from pyproject.toml for sidebar.
+        Extract package metadata from pyproject.toml and great-docs configuration.
+
+        Reads project metadata (license, authors, URLs, etc.) from pyproject.toml
+        and Great Docs configuration from great-docs.yml.
 
         Returns
         -------
         dict
-            Dictionary containing package metadata like license, authors, URLs, etc.
+            Dictionary containing package metadata and great-docs configuration.
         """
         metadata = {}
         package_root = self._find_package_root()
         pyproject_path = package_root / "pyproject.toml"
 
-        if not pyproject_path.exists():
-            return metadata
+        # Read project metadata from pyproject.toml
+        if pyproject_path.exists():
+            import tomllib
 
-        import tomllib
+            try:
+                with open(pyproject_path, "rb") as f:
+                    data = tomllib.load(f)
+                    project = data.get("project", {})
 
-        try:
-            with open(pyproject_path, "rb") as f:
-                data = tomllib.load(f)
-                project = data.get("project", {})
+                    # Extract relevant fields from [project] section
+                    metadata["license"] = project.get("license", {}).get("text") or project.get(
+                        "license", {}
+                    ).get("file", "")
+                    metadata["authors"] = project.get("authors", [])
+                    metadata["maintainers"] = project.get("maintainers", [])
+                    metadata["urls"] = project.get("urls", {})
+                    metadata["requires_python"] = project.get("requires-python", "")
+                    metadata["keywords"] = project.get("keywords", [])
+                    metadata["description"] = project.get("description", "")
+                    metadata["optional_dependencies"] = project.get("optional-dependencies", {})
 
-                # Extract relevant fields
-                metadata["license"] = project.get("license", {}).get("text") or project.get(
-                    "license", {}
-                ).get("file", "")
-                metadata["authors"] = project.get("authors", [])
-                metadata["maintainers"] = project.get("maintainers", [])
-                metadata["urls"] = project.get("urls", {})
-                metadata["requires_python"] = project.get("requires-python", "")
-                metadata["keywords"] = project.get("keywords", [])
-                metadata["description"] = project.get("description", "")
-                metadata["optional_dependencies"] = project.get("optional-dependencies", {})
+            except Exception:
+                pass
 
-                # Extract rich author metadata and exclude list from tool.great-docs if available
-                tool_config = data.get("tool", {}).get("great-docs", {})
-                metadata["rich_authors"] = tool_config.get("authors", [])
-                metadata["exclude"] = tool_config.get("exclude", [])
-                metadata["include"] = tool_config.get("include", [])
-                # Discovery method: "dir" (default) or "all" (use __all__)
-                metadata["discovery_method"] = tool_config.get("discovery_method", "dir")
+        # Read Great Docs configuration from great-docs.yml
+        # Reload config to ensure we have the latest
+        self._config = Config(package_root)
 
-                # Source link configuration
-                source_config = tool_config.get("source", {})
-                metadata["source_link_enabled"] = source_config.get("enabled", True)
-                metadata["source_link_branch"] = source_config.get("branch", None)
-                metadata["source_link_path"] = source_config.get("path", None)
-                metadata["source_link_placement"] = source_config.get("placement", "usage")
+        # Map config properties to metadata dict for backward compatibility
+        metadata["rich_authors"] = self._config.authors
+        metadata["exclude"] = self._config.exclude
 
-                # Family/group configuration for API organization
-                metadata["families"] = tool_config.get("families", {})
+        # Source link configuration
+        metadata["source_link_enabled"] = self._config.source_enabled
+        metadata["source_link_branch"] = self._config.source_branch
+        metadata["source_link_path"] = self._config.source_path
+        metadata["source_link_placement"] = self._config.source_placement
 
-                # GitHub link style: "widget" (default) or "icon"
-                metadata["github_style"] = tool_config.get("github_style", "widget")
+        # GitHub link style
+        metadata["github_style"] = self._config.github_style
 
-                # Sidebar filter configuration
-                # - enabled: True (default) or False to disable
-                # - min_items: minimum number of items to show filter (default: 20)
-                sidebar_filter_config = tool_config.get("sidebar_filter", {})
-                metadata["sidebar_filter_enabled"] = sidebar_filter_config.get("enabled", True)
-                metadata["sidebar_filter_min_items"] = sidebar_filter_config.get("min_items", 20)
+        # Sidebar filter configuration
+        metadata["sidebar_filter_enabled"] = self._config.sidebar_filter_enabled
+        metadata["sidebar_filter_min_items"] = self._config.sidebar_filter_min_items
 
-                # CLI documentation configuration
-                # - enabled: True to auto-discover and document Click CLIs
-                # - module: optional module path to CLI (e.g., "mypackage.cli")
-                # - name: optional CLI name override (defaults to package name)
-                cli_config = tool_config.get("cli", {})
-                metadata["cli_enabled"] = cli_config.get("enabled", False)
-                metadata["cli_module"] = cli_config.get("module", None)
-                metadata["cli_name"] = cli_config.get("name", None)
+        # CLI documentation configuration
+        metadata["cli_enabled"] = self._config.cli_enabled
+        metadata["cli_module"] = self._config.cli_module
+        metadata["cli_name"] = self._config.cli_name
 
-                # Large class method threshold configuration
-                # Classes with more methods than this threshold get separate method pages
-                # Default: 5 methods
-                metadata["large_class_method_threshold"] = tool_config.get(
-                    "large_class_method_threshold", 5
-                )
-
-                # Dark mode toggle configuration
-                # - enabled: True (default) or False to disable the toggle
-                metadata["dark_mode_toggle_enabled"] = tool_config.get("dark_mode_toggle", True)
-
-        except Exception:
-            pass
+        # Dark mode toggle
+        metadata["dark_mode_toggle_enabled"] = self._config.dark_mode_toggle
 
         return metadata
 
@@ -996,8 +991,7 @@ class GreatDocs:
                     ] + contents
                 break
 
-        with open(quarto_yml, "w") as f:
-            yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+        self._write_quarto_yml(quarto_yml, config)
 
         print(f"Updated sidebar with {len(cli_files)} CLI reference page(s)")
 
@@ -1391,8 +1385,7 @@ class GreatDocs:
                         },
                     )
 
-        with open(quarto_yml, "w") as f:
-            yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+        self._write_quarto_yml(quarto_yml, config)
 
     def _process_user_guide(self) -> bool:
         """
@@ -1732,7 +1725,7 @@ class GreatDocs:
         """
         Parse __all__ from package's __init__.py to get public API.
 
-        Also checks for __gt_exclude__ in __init__.py or exclude in [tool.great-docs]
+        Also checks for __gt_exclude__ in __init__.py or exclude in great-docs.yml
         to filter out non-documentable items.
 
         Parameters
@@ -1753,7 +1746,7 @@ class GreatDocs:
 
         print(f"Found package __init__.py at: {init_file.relative_to(self.project_root)}")
 
-        # Get exclusions from pyproject.toml [tool.great-docs]
+        # Get exclusions from great-docs.yml
         metadata = self._get_package_metadata()
         config_exclude = metadata.get("exclude", [])
 
@@ -1802,7 +1795,7 @@ class GreatDocs:
                         if gt_exclude:
                             source.append("__gt_exclude__")
                         if config_exclude:
-                            source.append("[tool.great-docs] exclude")
+                            source.append("great-docs.yml exclude")
                         print(
                             f"Filtered out {excluded_count} item(s) from {' and '.join(source)}: {', '.join(all_exclude)}"
                         )
@@ -1852,8 +1845,8 @@ class GreatDocs:
         package and discover all public objects by filtering out private/internal names (those
         starting with underscore).
 
-        Auto-excludes common internal names (see `AUTO_EXCLUDE`) unless they are explicitly included
-        via the `include` option in `pyproject.toml`.
+        Auto-excludes common internal names (see `AUTO_EXCLUDE`). Additional items can be
+        excluded via the `exclude` option in `great-docs.yml`.
 
         Parameters
         ----------
@@ -1887,23 +1880,20 @@ class GreatDocs:
 
             print(f"Discovered {len(public_members)} public names")
 
-            # Get config from pyproject.toml [tool.great-docs]
+            # Get config from great-docs.yml
             metadata = self._get_package_metadata()
             config_exclude = set(metadata.get("exclude", []))
-            config_include = set(metadata.get("include", []))
 
-            # Apply auto-exclusions (but respect explicit includes)
-            auto_excluded = self.AUTO_EXCLUDE - config_include
-            if auto_excluded:
-                auto_excluded_found = [name for name in public_members if name in auto_excluded]
-                if auto_excluded_found:
-                    print(
-                        f"Auto-excluding {len(auto_excluded_found)} item(s): "
-                        f"{', '.join(sorted(auto_excluded_found))}"
-                    )
+            # Apply auto-exclusions
+            auto_excluded_found = [name for name in public_members if name in self.AUTO_EXCLUDE]
+            if auto_excluded_found:
+                print(
+                    f"Auto-excluding {len(auto_excluded_found)} item(s): "
+                    f"{', '.join(sorted(auto_excluded_found))}"
+                )
 
-            # Combine all exclusions (auto + user-specified), minus explicit includes
-            all_exclude = (auto_excluded | config_exclude) - config_include
+            # Combine all exclusions (auto + user-specified)
+            all_exclude = self.AUTO_EXCLUDE | config_exclude
 
             # Filter out excluded items
             filtered = [name for name in public_members if name not in all_exclude]
@@ -1913,25 +1903,12 @@ class GreatDocs:
                 user_excluded_found = [
                     name
                     for name in public_members
-                    if name in config_exclude and name not in auto_excluded
+                    if name in config_exclude and name not in self.AUTO_EXCLUDE
                 ]
                 if user_excluded_found:
                     print(
-                        f"Filtered out {len(user_excluded_found)} item(s) from [tool.great-docs] exclude: "
+                        f"Filtered out {len(user_excluded_found)} item(s) from great-docs.yml exclude: "
                         f"{', '.join(sorted(user_excluded_found))}"
-                    )
-
-            # Report explicit includes that overrode auto-exclusions
-            if config_include:
-                overridden = [
-                    name
-                    for name in public_members
-                    if name in config_include and name in self.AUTO_EXCLUDE
-                ]
-                if overridden:
-                    print(
-                        f"Including {len(overridden)} auto-excluded item(s) via [tool.great-docs] include: "
-                        f"{', '.join(sorted(overridden))}"
                     )
 
             # Super-safe filtering: try each object with quartodoc's get_object
@@ -2028,10 +2005,10 @@ class GreatDocs:
 
     def _get_package_exports(self, package_name: str) -> list | None:
         """
-        Get package exports using the configured discovery method.
+        Get package exports using static analysis.
 
-        By default, uses dir() to discover public objects. If `discovery_method`
-        is set to "all" in [tool.great-docs], uses __all__ instead.
+        Uses griffe to statically analyze the package and discover public objects.
+        Falls back to parsing __all__ if griffe introspection fails.
 
         Parameters
         ----------
@@ -2043,19 +2020,11 @@ class GreatDocs:
         list | None
             List of exported/public names, or None if discovery failed.
         """
-        metadata = self._get_package_metadata()
-        discovery_method = metadata.get("discovery_method", "dir")
-
-        if discovery_method == "all":
-            print("Using __all__ discovery method (configured in pyproject.toml)")
+        exports = self._discover_package_exports(package_name)
+        if exports is None:
+            print("Falling back to __all__ discovery")
             return self._parse_package_exports(package_name)
-        else:
-            print("Using griffe introspection discovery method (default)")
-            exports = self._discover_package_exports(package_name)
-            if exports is None:
-                print("Falling back to __all__ discovery method")
-                return self._parse_package_exports(package_name)
-            return exports
+        return exports
 
     def _categorize_api_objects(self, package_name: str, exports: list) -> dict:
         """
@@ -2196,12 +2165,12 @@ class GreatDocs:
 
                         if skipped_methods:
                             print(
-                                f"  {name}: class with {len(method_names)} public methods "
+                                f"{name}: class with {len(method_names)} public methods "
                                 f"(skipped {len(skipped_methods)} undocumentable method(s): "
                                 f"{', '.join(skipped_methods[:3])}{'...' if len(skipped_methods) > 3 else ''})"
                             )
                         else:
-                            print(f"  {name}: class with {len(method_names)} public methods")
+                            print(f"{name}: class with {len(method_names)} public methods")
 
                         categories["class_methods"][name] = len(method_names)
                         categories["class_method_names"][name] = method_names
@@ -2255,12 +2224,12 @@ class GreatDocs:
         """
         Create quartodoc sections based on discovered package exports.
 
-        Uses the configured discovery method (dir() by default, or __all__ if specified).
+        Uses static analysis (griffe) to discover public objects.
 
-        Uses this heuristic (threshold is configurable via `large_class_method_threshold`):
+        Uses this heuristic:
 
-        - classes with ≤N methods: documented inline (N defaults to 5)
-        - classes with >N methods: separate pages for each method
+        - classes with ≤5 methods: documented inline
+        - classes with >5 methods: separate pages for each method
 
         Parameters
         ----------
@@ -2290,9 +2259,8 @@ class GreatDocs:
 
         sections = []
 
-        # Get the method threshold from configuration (default: 5)
-        metadata = self._get_package_metadata()
-        method_threshold = metadata.get("large_class_method_threshold", 5)
+        # Use static threshold of 5 methods for large class separation
+        method_threshold = 5
 
         # Add classes section if there are any
         if categories["classes"]:
@@ -2452,15 +2420,14 @@ class GreatDocs:
 
     def _get_family_config(self) -> dict:
         """
-        Get family configuration from pyproject.toml.
+        Get family configuration (deprecated - now uses reference config).
 
         Returns
         -------
         dict
-            Family configuration with titles, descriptions, and ordering.
+            Empty dict - family config is no longer used.
         """
-        metadata = self._get_package_metadata()
-        return metadata.get("families", {})
+        return {}
 
     def _auto_title(self, family_name: str) -> str:
         """
@@ -2499,13 +2466,90 @@ class GreatDocs:
         """
         return family_name.lower().replace(" ", "-").replace("_", "-")
 
+    def _create_quartodoc_sections_from_config(self, package_name: str) -> list | None:
+        """
+        Create quartodoc sections from the `reference` config in great-docs.yml.
+
+        This method reads the explicit section configuration from great-docs.yml
+        and generates quartodoc sections accordingly. If no `reference` config
+        is provided, returns None to fall back to auto-discovery.
+
+        Parameters
+        ----------
+        package_name
+            The name of the package.
+
+        Returns
+        -------
+        list | None
+            List of section dictionaries, or None if no reference config.
+        """
+        reference_config = self._config.reference
+        if not reference_config:
+            return None
+
+        print("Using explicit reference configuration from great-docs.yml")
+
+        # Get all exports to validate references and get method info
+        exports = self._get_package_exports(package_name)
+        if not exports:
+            print("Warning: Could not discover package exports for validation")
+            exports = []
+
+        # Categorize exports to get class method info
+        categories = self._categorize_api_objects(package_name, exports)
+
+        sections = []
+
+        for section_config in reference_config:
+            title = section_config.get("title", "Untitled")
+            desc = section_config.get("desc", "")
+            contents_config = section_config.get("contents", [])
+
+            if not contents_config:
+                continue
+
+            section_contents = []
+
+            for item in contents_config:
+                if isinstance(item, str):
+                    # Simple string reference - use as-is
+                    section_contents.append(item)
+                elif isinstance(item, dict):
+                    # Dict with name and optional members config
+                    name = item.get("name", "")
+                    if not name:
+                        continue
+
+                    members = item.get("members", True)
+
+                    if members is False:
+                        # Don't document methods - just the class
+                        section_contents.append({"name": name, "members": []})
+                    else:
+                        # Default: inline documentation (members: true)
+                        section_contents.append(name)
+
+            if section_contents:
+                sections.append(
+                    {
+                        "title": title,
+                        "desc": desc,
+                        "contents": section_contents,
+                    }
+                )
+
+        if sections:
+            print(f"Generated {len(sections)} section(s) from reference config")
+
+        return sections if sections else None
+
     def _create_quartodoc_sections_from_families(self, package_name: str) -> list | None:
         """
-        Create quartodoc sections based on @family directives in docstrings.
+        Create quartodoc sections, prioritizing explicit config over auto-discovery.
 
-        This method scans all docstrings for @family, @order, and @nodoc directives and generates
-        organized sections. Items without @family directives are placed in auto-generated
-        categories (Classes, Functions, Other).
+        First checks for explicit `reference` configuration in great-docs.yml.
+        If not found, falls back to auto-generating sections from discovered exports.
 
         Parameters
         ----------
@@ -2518,198 +2562,240 @@ class GreatDocs:
             List of section dictionaries organized by family, or None if
             no exports found.
         """
-        from ._directives import DocDirectives
+        # First, check for explicit reference config in great-docs.yml
+        config_sections = self._create_quartodoc_sections_from_config(package_name)
+        if config_sections:
+            return config_sections
 
-        exports = self._get_package_exports(package_name)
+        # Fall back to auto-generated sections from discovered exports
+        print("No reference config found, using auto-discovery")
+        return self._create_quartodoc_sections(package_name)
+
+    def _generate_initial_config(self, force: bool = False) -> bool:
+        """
+        Generate an initial great-docs.yml with discovered exports.
+
+        Creates a great-docs.yml file in the project root with sensible defaults
+        and a reference section populated from discovered package exports.
+
+        Parameters
+        ----------
+        force
+            If `True`, overwrite existing great-docs.yml without prompting.
+
+        Returns
+        -------
+        bool
+            True if config was created, False if skipped.
+        """
+        config_path = self._find_package_root() / "great-docs.yml"
+
+        # Check if config already exists
+        if config_path.exists() and not force:
+            response = input(f"{config_path} already exists. Overwrite? [y/N]: ")
+            if response.lower() != "y":
+                print("Skipping great-docs.yml")
+                return False
+
+        # Detect package name
+        package_name = self._detect_package_name()
+        if not package_name:
+            print("Warning: Could not detect package name, creating minimal config")
+            # Create minimal config without reference section
+            config_content = self._generate_minimal_config()
+            config_path.write_text(config_content, encoding="utf-8")
+            print(f"Created {config_path}")
+            return True
+
+        # Get normalized package name for imports
+        importable_name = self._normalize_package_name(package_name)
+
+        # Discover exports
+        exports = self._get_package_exports(importable_name)
         if not exports:
-            return None
+            print("Warning: Could not discover exports, creating minimal config")
+            config_content = self._generate_minimal_config()
+            config_path.write_text(config_content, encoding="utf-8")
+            print(f"Created {config_path}")
+            return True
 
-        # Filter out metadata variables
-        skip_names = {"__version__", "__author__", "__email__", "__all__"}
-        exports = [e for e in exports if e not in skip_names]
+        # Categorize exports
+        categories = self._categorize_api_objects(importable_name, exports)
 
-        if not exports:
-            return None
+        # Generate config content
+        config_content = self._generate_config_with_reference(categories, importable_name)
 
-        # Extract directives from all docstrings
-        directive_map = self._extract_all_directives(package_name)
+        config_path.write_text(config_content, encoding="utf-8")
+        print(f"Created {config_path}")
+        return True
 
-        # Get family configuration from pyproject.toml
-        family_config = self._get_family_config()
+    def _generate_minimal_config(self) -> str:
+        """
+        Generate minimal great-docs.yml without reference section.
 
-        # Categorize exports for fallback (items without @family)
-        categories = self._categorize_api_objects(package_name, exports)
+        Returns
+        -------
+        str
+            YAML content for a minimal configuration file.
+        """
+        return """# Great Docs Configuration
+# See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html
 
-        # Build family map: family_name -> list of items
-        family_map: dict[str, list[dict]] = {}
-        items_with_family: set[str] = set()
-        excluded_items: set[str] = set()  # Track %nodoc items
+# Exclusions
+# ----------
+# Items to exclude from auto-documentation (affects 'init' and 'scan')
+# exclude:
+#   - InternalClass
+#   - helper_function
 
-        # Process top-level exports
-        for item_name in exports:
-            directives = directive_map.get(item_name, DocDirectives())
+# Site Settings
+# -------------
+# site:
+#   theme: flatly              # Quarto theme (default: flatly)
+#   toc: true                  # Show table of contents (default: true)
+#   toc-depth: 2               # TOC heading depth (default: 2)
+#   toc-title: On this page    # TOC title (default: "On this page")
 
-            # Skip items marked %nodoc
-            if directives.nodoc:
-                print(f"  Excluding '{item_name}' (%nodoc)")
-                excluded_items.add(item_name)
-                continue
+# API Reference Structure
+# -----------------------
+# Add a reference section to control how your API documentation is organized.
+# Run 'great-docs scan' to see discovered exports.
+#
+# reference:
+#   - title: Core Classes
+#     desc: Main classes for working with the package
+#     contents:
+#       - name: MyClass
+#         members: false       # Don't document methods here
+#       - SimpleClass          # Methods documented inline (default)
+"""
 
-            if directives.family:
-                family = directives.family
-                if family not in family_map:
-                    family_map[family] = []
+    def _generate_config_with_reference(self, categories: dict, package_name: str) -> str:
+        """
+        Generate great-docs.yml with a reference section from discovered exports.
 
-                # Determine if this is a class with methods
-                is_class = item_name in categories.get("classes", [])
-                method_count = categories.get("class_methods", {}).get(item_name, 0)
+        Parameters
+        ----------
+        categories
+            Dictionary from _categorize_api_objects with classes, functions, other.
+        package_name
+            The package name (for method threshold comments).
 
-                family_map[family].append(
-                    {
-                        "name": item_name,
-                        "order": directives.order if directives.order is not None else 999,
-                        "seealso": directives.seealso,
-                        "is_class": is_class,
-                        "method_count": method_count,
-                    }
-                )
-                items_with_family.add(item_name)
+        Returns
+        -------
+        str
+            YAML content for the configuration file.
+        """
+        lines = [
+            "# Great Docs Configuration",
+            "# See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html",
+            "",
+            "# API Discovery Settings",
+            "# ----------------------",
+            "# Exclude items from auto-documentation",
+            "# exclude:",
+            "#   - InternalClass",
+            "#   - helper_function",
+            "",
+        ]
 
-        # Process class methods that might have their own %family
-        for class_name in categories.get("classes", []):
-            method_names = categories.get("class_method_names", {}).get(class_name, [])
-            for method_name in method_names:
-                full_name = f"{class_name}.{method_name}"
-                directives = directive_map.get(full_name, DocDirectives())
+        # Add reference section
+        lines.extend(
+            [
+                "# API Reference Structure",
+                "# -----------------------",
+                "# Customize the sections below to organize your API documentation.",
+                "# - Reorder items within a section to change their display order",
+                "# - Move items between sections or create new sections",
+                "# - Use 'members: false' to exclude methods from documentation",
+                "# - Add 'desc:' to sections for descriptions",
+                "",
+                "reference:",
+            ]
+        )
 
-                if directives.nodoc:
-                    excluded_items.add(full_name)
-                    continue
+        classes = categories.get("classes", [])
+        functions = categories.get("functions", [])
+        other = categories.get("other", [])
+        class_methods = categories.get("class_methods", {})
+        class_method_names = categories.get("class_method_names", {})
 
-                if directives.family:
-                    family = directives.family
-                    if family not in family_map:
-                        family_map[family] = []
+        # Use static threshold of 5 methods for large class separation
+        threshold = 5
 
-                    family_map[family].append(
-                        {
-                            "name": full_name,
-                            "order": directives.order if directives.order is not None else 999,
-                            "seealso": directives.seealso,
-                            "is_class": False,
-                            "method_count": 0,
-                        }
-                    )
-                    items_with_family.add(full_name)
+        # Track large classes that need separate method sections
+        large_classes = []
 
-        # If no families found, fall back to default categorization
-        if not family_map:
-            print("No @family directives found, using default categorization")
-            return self._create_quartodoc_sections(package_name)
-
-        print(f"Found {len(family_map)} family group(s) from @family directives")
-
-        # Build sections from families
-        sections = []
-
-        # Sort families by their configured order, then alphabetically
-        def family_sort_key(family_name: str) -> tuple:
-            config_key = self._normalize_family_key(family_name)
-            config = family_config.get(config_key, {})
-            order = config.get("order", 999)
-            return (order, family_name.lower())
-
-        sorted_families = sorted(family_map.keys(), key=family_sort_key)
-
-        for family_name in sorted_families:
-            items = family_map[family_name]
-
-            # Sort items by order, then alphabetically
-            items.sort(key=lambda x: (x["order"], x["name"].lower()))
-
-            # Get display name and description from config
-            config_key = self._normalize_family_key(family_name)
-            config = family_config.get(config_key, {})
-            title = config.get("title", family_name)  # Use family name as-is if no config
-            desc = config.get("desc", "")
-
-            # Format contents for quartodoc
-            contents = []
-            for item in items:
-                name = item["name"]
-                if item["is_class"] and item["method_count"] > 5:
-                    # Large class: suppress inline method docs
-                    contents.append({"name": name, "members": []})
+        # Classes section
+        if classes:
+            lines.append("  - title: Classes")
+            lines.append("    desc: Main classes provided by the package")
+            lines.append("    contents:")
+            for class_name in sorted(classes):
+                method_count = class_methods.get(class_name, 0)
+                if method_count > threshold:
+                    # Large class: use members: false, methods listed separately
+                    lines.append(f"      - name: {class_name}")
+                    lines.append(f"        members: false  # {method_count} methods listed below")
+                    large_classes.append(class_name)
+                elif method_count > 0:
+                    lines.append(f"      - {class_name}  # {method_count} method(s)")
                 else:
-                    contents.append(name)
+                    lines.append(f"      - {class_name}")
 
-            sections.append(
-                {
-                    "title": title,
-                    "desc": desc,
-                    "contents": contents,
-                }
-            )
+        # Add separate method sections for large classes
+        for class_name in large_classes:
+            method_names = class_method_names.get(class_name, [])
+            if method_names:
+                lines.append("")
+                lines.append(f"  - title: {class_name} Methods")
+                lines.append(f"    desc: Methods for the {class_name} class")
+                lines.append("    contents:")
+                for method_name in method_names:
+                    lines.append(f"      - {class_name}.{method_name}")
 
-            print(f"  {title}: {len(items)} item(s)")
+        # Functions section
+        if functions:
+            if classes or large_classes:
+                lines.append("")
+            lines.append("  - title: Functions")
+            lines.append("    desc: Utility functions")
+            lines.append("    contents:")
+            for func_name in sorted(functions):
+                lines.append(f"      - {func_name}")
 
-        # Add items without %family to fallback sections
-        # Exclude both items with families AND items marked %nodoc
-        unassigned_classes = [
-            c
-            for c in categories.get("classes", [])
-            if c not in items_with_family and c not in excluded_items
-        ]
-        unassigned_functions = [
-            f
-            for f in categories.get("functions", [])
-            if f not in items_with_family and f not in excluded_items
-        ]
-        unassigned_other = [
-            o
-            for o in categories.get("other", [])
-            if o not in items_with_family and o not in excluded_items
-        ]
+        # Other section (if any non-class, non-function exports)
+        if other:
+            if classes or functions:
+                lines.append("")
+            lines.append("  - title: Other")
+            lines.append("    desc: Additional exports")
+            lines.append("    contents:")
+            for other_name in sorted(other):
+                lines.append(f"      - {other_name}")
 
-        if unassigned_classes:
-            class_contents = []
-            for class_name in unassigned_classes:
-                method_count = categories.get("class_methods", {}).get(class_name, 0)
-                if method_count > 5:
-                    class_contents.append({"name": class_name, "members": []})
-                else:
-                    class_contents.append(class_name)
+        # Add trailing sections for site settings (commented out)
+        lines.extend(
+            [
+                "",
+                "# Site Settings",
+                "# -------------",
+                "# site:",
+                "#   theme: flatly              # Quarto theme (default: flatly)",
+                "#   toc: true                  # Show table of contents (default: true)",
+                "#   toc-depth: 2               # TOC heading depth (default: 2)",
+                "#   toc-title: On this page    # TOC title",
+                "",
+                "# CLI Documentation",
+                "# -----------------",
+                "# cli:",
+                "#   enabled: true              # Enable CLI documentation",
+                "#   module: my_package.cli     # Module containing Click commands",
+                "#   name: cli                  # Name of the Click command object",
+            ]
+        )
 
-            sections.append(
-                {
-                    "title": "Classes",
-                    "desc": "Core classes and types",
-                    "contents": class_contents,
-                }
-            )
-            print(f"  Classes (unassigned): {len(unassigned_classes)} item(s)")
-
-        if unassigned_functions:
-            sections.append(
-                {
-                    "title": "Functions",
-                    "desc": "Public functions",
-                    "contents": unassigned_functions,
-                }
-            )
-            print(f"  Functions (unassigned): {len(unassigned_functions)} item(s)")
-
-        if unassigned_other:
-            sections.append(
-                {
-                    "title": "Other",
-                    "desc": "Additional exports",
-                    "contents": unassigned_other,
-                }
-            )
-            print(f"  Other (unassigned): {len(unassigned_other)} item(s)")
-
-        return sections if sections else None
+        return "\n".join(lines) + "\n"
 
     def _find_index_source_file(self) -> tuple[Path | None, list[str]]:
         """
@@ -3091,7 +3177,7 @@ title: "Code of Conduct"
                     name = author.get("name", "")
                     email = author.get("email", "")
 
-                    # Rich metadata fields (from tool.great-docs.authors)
+                    # Rich metadata fields (from great-docs.yml authors)
                     role = author.get("role", "")
                     affiliation = author.get("affiliation", "")
                     github = author.get("github", "")
@@ -3282,8 +3368,7 @@ toc: false
         config["quartodoc"] = quartodoc_config
 
         # Write back to file
-        with open(quarto_yml, "w") as f:
-            yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+        self._write_quarto_yml(quarto_yml, config)
 
         print(f"Added quartodoc configuration to {quarto_yml}")
         if not sections:
@@ -3334,8 +3419,7 @@ toc: false
             print(f"Updated quartodoc config with {len(sections)} section(s)")
 
             # Write back to file first, so sidebar update reads the new sections
-            with open(quarto_yml, "w") as f:
-                yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+            self._write_quarto_yml(quarto_yml, config)
 
             # Now update the sidebar to match the new sections
             self._update_sidebar_from_sections()
@@ -3343,6 +3427,25 @@ toc: false
             print(f"✅ Refreshed quartodoc configuration in {quarto_yml}")
         else:
             print("Warning: Could not discover package exports. Config unchanged.")
+
+    def _write_quarto_yml(self, quarto_yml: Path, config: dict) -> None:
+        """
+        Write _quarto.yml with a header comment.
+
+        Parameters
+        ----------
+        quarto_yml
+            Path to the _quarto.yml file.
+        config
+            The configuration dictionary to write.
+        """
+        header_comment = (
+            "# Generated by Great Docs - Do not modify this file by hand.\n"
+            "# Configure settings in great-docs.yml instead.\n\n"
+        )
+        with open(quarto_yml, "w") as f:
+            f.write(header_comment)
+            yaml.dump(config, f, default_flow_style=False, sort_keys=False)
 
     def _update_quarto_config(self) -> None:
         """
@@ -3403,17 +3506,13 @@ toc: false
         if "great-docs.css" not in config["format"]["html"]["css"]:
             config["format"]["html"]["css"].append("great-docs.css")
 
-        # Ensure flatly theme is used (works well with great-docs)
-        if "theme" not in config["format"]["html"]:
-            config["format"]["html"]["theme"] = "flatly"
+        # Apply site settings from great-docs.yml (forwarded to format.html)
+        site_settings = self._config.site
+        config["format"]["html"]["theme"] = site_settings.get("theme", "flatly")
+        config["format"]["html"]["toc"] = site_settings.get("toc", True)
+        config["format"]["html"]["toc-depth"] = site_settings.get("toc-depth", 2)
+        config["format"]["html"]["toc-title"] = site_settings.get("toc-title", "On this page")
 
-        # Add table of contents configuration for API reference navigation
-        if "toc" not in config["format"]["html"]:
-            config["format"]["html"]["toc"] = True
-        if "toc-depth" not in config["format"]["html"]:
-            config["format"]["html"]["toc-depth"] = 2
-        if "toc-title" not in config["format"]["html"]:
-            config["format"]["html"]["toc-title"] = "On this page"
         if "shift-heading-level-by" not in config["format"]["html"]:
             config["format"]["html"]["shift-heading-level-by"] = -1
 
@@ -3605,8 +3704,7 @@ toc: false
                 config["website"]["page-footer"] = {"left": f"&copy; {current_year} {author_name}"}
 
         # Write back to file
-        with open(quarto_yml, "w") as f:
-            yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+        self._write_quarto_yml(quarto_yml, config)
 
         print(f"Updated {quarto_yml} with great-docs configuration")
 
@@ -3669,8 +3767,7 @@ toc: false
         ]
 
         # Write back
-        with open(quarto_yml, "w") as f:
-            yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+        self._write_quarto_yml(quarto_yml, config)
 
     def _update_reference_index_frontmatter(self) -> None:
         """Ensure reference/index.qmd has proper frontmatter."""
@@ -4234,8 +4331,7 @@ toc: false
                 del config["format"]["html"]["css"]
 
         # Write back to file
-        with open(quarto_yml, "w") as f:
-            yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+        self._write_quarto_yml(quarto_yml, config)
 
         print(f"Cleaned great-docs configuration from {quarto_yml}")
 
@@ -4439,8 +4535,7 @@ toc: false
                     if not has_ref_switcher:
                         config["format"]["html"]["include-after-body"].append(ref_switcher_entry)
 
-                with open(quarto_yml, "w") as f:
-                    yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+                self._write_quarto_yml(quarto_yml, config)
 
             # Step 0: Rebuild index.qmd from source file (README.md, index.md, or index.qmd)
             print("\n📄 Step 0: Syncing landing page with source file...")

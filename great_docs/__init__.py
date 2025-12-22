@@ -9,9 +9,13 @@ except PackageNotFoundError:  # pragma: no cover
     __version__ = "0.0.0"
 
 from .cli import main
+from .config import Config, create_default_config, load_config
 from .core import GreatDocs
 
 __all__ = [
+    "Config",
     "GreatDocs",
+    "create_default_config",
+    "load_config",
     "main",
 ]

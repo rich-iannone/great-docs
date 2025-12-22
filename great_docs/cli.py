@@ -49,14 +49,15 @@ def init(project_path, docs_dir, force):
     This command sets up everything needed for your documentation site:
 
     \b
+    • Creates great-docs.yml with discovered exports (customize your API reference)
     • Installs CSS, JavaScript, and configuration files
     • Auto-detects your package name and public API
     • Creates index.qmd from your README.md
     • Configures navigation and sidebar
     • Sets up quartodoc for API reference generation
 
-    Run this once to get started, then use 'great-docs build' to generate
-    your documentation.
+    Run this once to get started, then customize great-docs.yml to organize
+    your API reference, and use 'great-docs build' to generate your documentation.
 
     \b
     Examples:
@@ -198,11 +199,61 @@ def preview(project_path, docs_dir):
         sys.exit(1)
 
 
+@click.command()
+@click.option(
+    "--project-path",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    help="Path to your project root directory (default: current directory)",
+)
+@click.option(
+    "--force",
+    is_flag=True,
+    help="Overwrite existing great-docs.yml without prompting",
+)
+def config(project_path, force):
+    """Generate a great-docs.yml configuration file.
+
+    Creates a great-docs.yml file with all available options documented.
+    The generated file contains commented examples for each setting.
+
+    \b
+    Examples:
+      great-docs config                     # Generate in current directory
+      great-docs config --force             # Overwrite existing file
+      great-docs config --project-path ../pkg
+    """
+    from pathlib import Path
+
+    from .config import create_default_config
+
+    try:
+        project_root = Path(project_path) if project_path else Path.cwd()
+        config_path = project_root / "great-docs.yml"
+
+        if config_path.exists() and not force:
+            if not click.confirm(
+                f"⚠️  Configuration file already exists at {config_path}\n   Overwrite it?"
+            ):
+                click.echo("Cancelled.")
+                return
+
+        config_content = create_default_config()
+        config_path.write_text(config_content, encoding="utf-8")
+        click.echo(f"✓ Created {config_path}")
+        click.echo("\nEdit this file to customize your documentation settings.")
+        click.echo("See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html")
+
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
 # Register commands in the desired order
 cli.add_command(init)
 cli.add_command(build)
 cli.add_command(preview)
 cli.add_command(uninstall)
+cli.add_command(config)
 
 
 @click.command()
@@ -220,21 +271,19 @@ cli.add_command(uninstall)
     "--verbose",
     "-v",
     is_flag=True,
-    help="Show detailed information including %seealso and %order values",
+    help="Show method names for each class",
 )
 def scan(project_path, docs_dir, verbose):
-    """Scan docstrings for %family directives and preview API organization.
+    """Discover package exports and preview what can be documented.
 
-    This command analyzes your package's docstrings to find %family, %order,
-    %seealso, and %nodoc directives, then shows how the API reference would
-    be organized.
-
-    Use this to preview your documentation structure before building.
+    This command analyzes your package to find public classes, functions,
+    and other exports. Use this to see what's available before writing
+    your reference config.
 
     \b
     Examples:
-      great-docs scan                       # Preview API organization
-      great-docs scan --verbose             # Include @seealso and @order details
+      great-docs scan                       # Show discovered exports
+      great-docs scan --verbose             # Include method names for classes
       great-docs scan -v                    # Short form of --verbose
     """
 
@@ -248,81 +297,109 @@ def scan(project_path, docs_dir, verbose):
             sys.exit(1)
 
         importable_name = docs._normalize_package_name(package_name)
-        click.echo(f"Scanning package: {importable_name}\n")
 
-        # Extract all directives
-        directive_map = docs._extract_all_directives(importable_name)
+        # Section 1: Discovery
+        click.echo("─" * 50)
+        click.echo("📡 Discovery")
+        click.echo("─" * 50)
+        click.echo(f"Package: {importable_name}\n")
 
-        if not directive_map:
-            click.echo("No %family directives found in docstrings.")
-            click.echo("\nTo organize your API documentation, add directives to your docstrings:")
-            click.echo("    %family Family Name")
-            click.echo("    %order 1")
-            click.echo("    %seealso other_func, AnotherClass")
+        # Get discovered exports
+        exports = docs._get_package_exports(importable_name)
+        if not exports:
+            click.echo("No exports discovered.")
             sys.exit(0)
 
-        # Group by family
-        families: dict[str, list] = {}
-        nodoc_items = []
+        # Categorize exports
+        categories = docs._categorize_api_objects(importable_name, exports)
 
-        for name, directives in directive_map.items():
-            if directives.nodoc:
-                nodoc_items.append(name)
-                continue
+        # Build sets of what's in the reference config
+        reference_config = docs._config.reference
+        ref_items = set()  # Items explicitly listed
+        ref_classes_with_members = set()  # Classes with members: true (or default)
+        ref_classes_without_members = set()  # Classes with members: false
 
-            if directives.family:
-                family = directives.family
-                if family not in families:
-                    families[family] = []
-                families[family].append(
-                    {
-                        "name": name,
-                        "order": directives.order,
-                        "seealso": directives.seealso,
-                    }
-                )
+        for section in reference_config:
+            for item in section.get("contents", []):
+                if isinstance(item, str):
+                    ref_items.add(item)
+                elif isinstance(item, dict):
+                    name = item.get("name", "")
+                    ref_items.add(name)
+                    # Check members setting
+                    members = item.get("members", True)
+                    if members is False:
+                        ref_classes_without_members.add(name)
+                    else:
+                        ref_classes_with_members.add(name)
 
-        # Display results
-        click.echo(f"Found {len(directive_map)} item(s) with directives:\n")
+        # Section 2: Exports
+        click.echo("\n" + "─" * 50)
+        click.echo(f"📦 Exports ({len(exports)} item(s))")
+        click.echo("─" * 50)
 
-        # Show families
-        if families:
-            click.echo("📁 Families:")
-            click.echo("-" * 50)
+        # Markers with colors
+        marker_included = click.style("[x]", fg="green")
+        marker_not_included = click.style("[ ]", fg="red")
+        marker_class_only = click.style("[-]", fg="yellow")
 
-            for family_name in sorted(families.keys()):
-                items = families[family_name]
-                # Sort by order, then name
-                items.sort(key=lambda x: (x["order"] or 999, x["name"]))
+        # Show classes
+        if categories.get("classes"):
+            click.echo("\nClasses:")
+            for class_name in categories["classes"]:
+                method_names = categories.get("class_method_names", {}).get(class_name, [])
 
-                click.echo(f"\n  {family_name} ({len(items)} item(s)):")
-                for item in items:
-                    order_str = f" [%order {item['order']}]" if item["order"] is not None else ""
-                    click.echo(f"    • {item['name']}{order_str}")
+                # Determine class marker
+                if class_name in ref_classes_without_members:
+                    class_marker = marker_class_only
+                elif class_name in ref_classes_with_members or class_name in ref_items:
+                    class_marker = marker_included
+                else:
+                    class_marker = marker_not_included
 
-                    if verbose and item["seealso"]:
-                        seealso_str = ", ".join(item["seealso"])
-                        click.echo(f"      └─ %seealso {seealso_str}")
+                click.echo(f"• {class_marker} {class_name}")
+                for method in method_names:
+                    full_method = f"{class_name}.{method}"
+                    method_marker = (
+                        marker_included if full_method in ref_items else marker_not_included
+                    )
+                    click.echo(f"    • {method_marker} {full_method}")
 
-        # Show nodoc items
-        if nodoc_items:
-            click.echo(f"\n🚫 Excluded (%nodoc): {len(nodoc_items)} item(s)")
+        # Show functions
+        if categories.get("functions"):
+            click.echo("\nFunctions:")
+            for func_name in categories["functions"]:
+                func_marker = marker_included if func_name in ref_items else marker_not_included
+                click.echo(f"• {func_marker} {func_name}")
+
+        # Show other exports
+        if categories.get("other"):
+            click.echo("\nOther:")
+            for other_name in categories["other"]:
+                other_marker = marker_included if other_name in ref_items else marker_not_included
+                click.echo(f"• {other_marker} {other_name}")
+
+        # Section 3: Config status
+        click.echo("\n" + "─" * 50)
+        click.echo("📋 Reference Config")
+        click.echo("─" * 50)
+
+        if reference_config:
+            click.echo(f"\n✅ Found in great-docs.yml ({len(reference_config)} section(s))")
             if verbose:
-                for item in sorted(nodoc_items):
-                    click.echo(f"    • {item}")
-
-        # Show configuration hint
-        family_config = docs._get_family_config()
-        unconfigured = [
-            f for f in families.keys() if docs._normalize_family_key(f) not in family_config
-        ]
-
-        if unconfigured:
-            click.echo("\n💡 Tip: Add descriptions for your families in pyproject.toml:")
-            click.echo("   [tool.great-docs.families.validation-steps]")
-            click.echo('   title = "Family Name"')
-            click.echo('   desc = "Methods for validating data."')
-            click.echo("   order = 1")
+                for section in reference_config:
+                    title = section.get("title", "Untitled")
+                    contents = section.get("contents", [])
+                    click.echo(f"    • {title}: {len(contents)} item(s)")
+        else:
+            click.echo("\n💡 No reference config found. Add one to great-docs.yml:")
+            click.echo("   reference:")
+            click.echo("     - title: Core Classes")
+            click.echo("       desc: Main classes for the package")
+            click.echo("       contents:")
+            click.echo("         - name: MyClass")
+            click.echo("           members: false     # Don't document methods")
+            click.echo("         - SimpleClass        # Methods inline")
 
     except Exception as e:
         click.echo(f"Error: {e}", err=True)

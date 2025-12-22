@@ -1,6 +1,6 @@
 import tempfile
 from pathlib import Path
-from great_docs import GreatDocs
+from great_docs import GreatDocs, Config, load_config, create_default_config
 
 
 def test_great_docs_init():
@@ -534,18 +534,22 @@ version = "0.1.0"
 def test_source_link_config_custom():
     """Test custom source link configuration."""
     with tempfile.TemporaryDirectory() as tmp_dir:
-        # Create pyproject.toml with custom source config
+        # Create pyproject.toml for project metadata
         pyproject = Path(tmp_dir) / "pyproject.toml"
         pyproject.write_text("""
 [project]
 name = "test-package"
 version = "0.1.0"
+""")
 
-[tool.great-docs.source]
-enabled = false
-branch = "develop"
-path = "src/mypackage"
-placement = "title"
+        # Create great-docs.yml with custom source config
+        config_file = Path(tmp_dir) / "great-docs.yml"
+        config_file.write_text("""
+source:
+  enabled: false
+  branch: develop
+  path: src/mypackage
+  placement: title
 """)
 
         docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
@@ -685,3 +689,156 @@ def test_check_links_returns_correct_structure():
         assert isinstance(results["broken"], list)
         assert isinstance(results["skipped"], list)
         assert isinstance(results["by_file"], dict)
+
+
+# ============================================================================
+# Config Module Tests
+# ============================================================================
+
+
+def test_config_defaults():
+    """Test that Config provides sensible defaults when no file exists."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        config = Config(Path(tmp_dir))
+
+        # Check defaults
+        assert config.exclude == []
+        assert config.github_style == "widget"
+        assert config.source_enabled is True
+        assert config.source_branch is None
+        assert config.source_path is None
+        assert config.source_placement == "usage"
+        assert config.sidebar_filter_enabled is True
+        assert config.sidebar_filter_min_items == 20
+        assert config.cli_enabled is False
+        assert config.cli_module is None
+        assert config.cli_name is None
+        assert config.dark_mode_toggle is True
+        assert config.reference == []
+        assert config.authors == []
+
+
+def test_config_load_yaml():
+    """Test loading configuration from great-docs.yml."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        config_file = Path(tmp_dir) / "great-docs.yml"
+        config_file.write_text("""
+exclude:
+  - InternalClass
+
+github_style: icon
+
+sidebar_filter:
+  enabled: false
+  min_items: 10
+
+cli:
+  enabled: true
+  module: mypackage.cli
+  name: app
+
+dark_mode_toggle: false
+
+authors:
+  - name: Test Author
+    github: testuser
+""")
+
+        config = Config(Path(tmp_dir))
+
+        assert config.exclude == ["InternalClass"]
+        assert config.github_style == "icon"
+        assert config.sidebar_filter_enabled is False
+        assert config.sidebar_filter_min_items == 10
+        assert config.cli_enabled is True
+        assert config.cli_module == "mypackage.cli"
+        assert config.cli_name == "app"
+        assert config.dark_mode_toggle is False
+        assert len(config.authors) == 1
+        assert config.authors[0]["name"] == "Test Author"
+
+
+def test_config_partial_yaml():
+    """Test that partial config merges with defaults."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        config_file = Path(tmp_dir) / "great-docs.yml"
+        config_file.write_text("""
+cli:
+  enabled: true
+""")
+
+        config = Config(Path(tmp_dir))
+
+        # CLI is set
+        assert config.cli_enabled is True
+        # But other CLI fields still have defaults
+        assert config.cli_module is None
+        assert config.cli_name is None
+        # And other config has defaults
+        assert config.github_style == "widget"
+        assert config.dark_mode_toggle is True
+
+
+def test_config_exists():
+    """Test the exists() method."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        config = Config(Path(tmp_dir))
+        assert config.exists() is False
+
+        config_file = Path(tmp_dir) / "great-docs.yml"
+        config_file.write_text("cli:\n  enabled: true\n")
+
+        config2 = Config(Path(tmp_dir))
+        assert config2.exists() is True
+
+
+def test_config_to_dict():
+    """Test converting config to dictionary."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        config_file = Path(tmp_dir) / "great-docs.yml"
+        config_file.write_text("""
+github_style: icon
+""")
+
+        config = Config(Path(tmp_dir))
+        config_dict = config.to_dict()
+
+        assert isinstance(config_dict, dict)
+        assert config_dict["github_style"] == "icon"
+        assert "cli" in config_dict
+        assert "source" in config_dict
+
+
+def test_config_get_nested():
+    """Test getting nested config values with dot notation."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        config_file = Path(tmp_dir) / "great-docs.yml"
+        config_file.write_text("""
+source:
+  enabled: false
+  branch: develop
+""")
+
+        config = Config(Path(tmp_dir))
+
+        assert config.get("source.enabled") is False
+        assert config.get("source.branch") == "develop"
+        assert config.get("source.nonexistent", "default") == "default"
+
+
+def test_load_config_function():
+    """Test the load_config helper function."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        config = load_config(tmp_dir)
+        assert isinstance(config, Config)
+
+
+def test_create_default_config():
+    """Test creating default configuration content."""
+    content = create_default_config()
+
+    assert isinstance(content, str)
+    assert "Great Docs Configuration" in content
+    assert "sidebar_filter" in content
+    assert "cli:" in content
+    assert "authors:" in content

@@ -1,0 +1,86 @@
+# Great Docs Configuration
+# See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html
+
+# Exclusions
+# ----------
+# Items to exclude from auto-documentation (affects 'init' and 'scan')
+exclude:
+  - Config
+  - create_default_config
+  - load_config
+
+# GitHub Integration
+# ------------------
+# GitHub link style: "widget" (shows stars count) or "icon" (simple icon)
+github_style: widget
+
+# Source Link Configuration
+# -------------------------
+# source:
+#   enabled: true              # Enable/disable source links (default: true)
+#   branch: main               # Git branch/tag to link to (default: auto-detect)
+#   path: src/package          # Custom source path for monorepos (default: auto-detect)
+#   placement: usage           # Where to place the link: "usage" (default) or "title"
+
+# Sidebar Filter
+# --------------
+sidebar_filter:
+  enabled: true
+  min_items: 1 # Set low for testing (default: 20)
+
+# CLI Documentation
+# -----------------
+cli:
+  enabled: true
+  module: great_docs.cli
+  name: cli
+
+# Dark Mode Toggle
+# ----------------
+# Enable/disable the dark mode toggle in navbar (default: true)
+dark_mode_toggle: true
+
+# Author Information
+# ------------------
+# Rich author metadata for display in the landing page sidebar
+authors:
+  - name: Rich Iannone
+    role: Maintainer
+    affiliation: Posit, PBC
+    email: riannone@me.com
+    github: rich-iannone
+    orcid: 0000-0003-3925-190X
+  - name: Tomasz Kalinowski
+    role: Contributor
+    affiliation: Posit, PBC
+    email: tomasz@posit.co
+    github: t-kalinowski
+
+# Site Settings
+# -------------
+# These settings are forwarded to _quarto.yml (format.html section)
+# site:
+#   theme: flatly
+#   toc: true
+#   toc-depth: 2
+#   toc-title: On this page
+
+# API Reference Structure
+# -----------------------
+# Explicit control over API reference organization
+reference:
+  - title: Classes
+    desc: Core classes and types
+    contents:
+      - name: GreatDocs
+        members: false
+
+  - title: GreatDocs Methods
+    desc: Methods for the GreatDocs class
+    contents:
+      - GreatDocs.install
+      - GreatDocs.uninstall
+      - GreatDocs.build
+      - GreatDocs.preview
+      - GreatDocs.check_links
+      - GreatDocs.spell_check

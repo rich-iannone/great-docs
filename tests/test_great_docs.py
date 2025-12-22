@@ -702,7 +702,6 @@ def test_config_defaults():
         config = Config(Path(tmp_dir))
 
         # Check defaults
-        assert config.discovery_method == "dir"
         assert config.exclude == []
         assert config.github_style == "widget"
         assert config.source_enabled is True
@@ -840,7 +839,6 @@ def test_create_default_config():
 
     assert isinstance(content, str)
     assert "Great Docs Configuration" in content
-    assert "discovery_method" in content
     assert "sidebar_filter" in content
     assert "cli:" in content
     assert "authors:" in content

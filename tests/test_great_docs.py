@@ -703,7 +703,6 @@ def test_config_defaults():
 
         # Check defaults
         assert config.discovery_method == "dir"
-        assert config.include == []
         assert config.exclude == []
         assert config.github_style == "widget"
         assert config.source_enabled is True
@@ -726,9 +725,6 @@ def test_config_load_yaml():
     with tempfile.TemporaryDirectory() as tmp_dir:
         config_file = Path(tmp_dir) / "great-docs.yml"
         config_file.write_text("""
-include:
-  - main
-  - cli
 exclude:
   - InternalClass
 
@@ -753,7 +749,6 @@ authors:
 
         config = Config(Path(tmp_dir))
 
-        assert config.include == ["main", "cli"]
         assert config.exclude == ["InternalClass"]
         assert config.github_style == "icon"
         assert config.sidebar_filter_enabled is False

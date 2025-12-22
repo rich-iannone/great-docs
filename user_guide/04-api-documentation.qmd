@@ -164,33 +164,7 @@ exclude:
   - deprecated_function
 ```
 
-```{.python filename="Source code"}
-def internal_helper():
-    """
-    This won't be documented.
-
-    @nodoc
-    """
-    ...
-```
-
-Unlike adding items to the `exclude` list in `great-docs.yml`, the `@nodoc` directive keeps the exclusion decision right next to the code it affects. This makes it easier to remember why something was excluded and to reverse the decision later if needed.
-
-### Cross-References with `@seealso`
-
-Good documentation helps users discover related functionality. The `@seealso` directive adds a "See Also" section to an item's documentation page, linking to other classes or functions that users might find relevant.
-
-```{.python filename="Source code"}
-def parse_data(raw: str) -> Data:
-    """
-    Parse raw data.
-
-    @seealso validate_data, transform_data
-    """
-    ...
-```
-
-List multiple items separated by commas. Great Docs automatically creates links to each referenced item, making it easy for readers to navigate between related parts of your API. This is especially valuable in larger packages where functionality is spread across many modules.
+Items in the exclude list won't appear when running `great-docs init` or `great-docs scan`, and won't be documented even if discovered.
 
 ## Source Code Links
 

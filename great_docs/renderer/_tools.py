@@ -34,7 +34,7 @@ def _canonical_path(klass: type | MethodType) -> str:
     """
     Return the canonical path to python type object
     """
-    if not hasattr(klass, "__class__"):
+    if not isinstance(klass, type):
         klass = klass.__class__
     module = klass.__module__
     if module == "builtins":

@@ -10,9 +10,9 @@ from ._render.extending import (
     exclude_functions,
     exclude_parameters,
 )
-from ._render.layout import RenderLayout
 from ._render.mixin_call import RenderDocCallMixin
 from ._render.mixin_members import RenderDocMembersMixin
+from ._render.reference_page import RenderReferencePage
 from ._render.reference_section import RenderReferenceSection
 from ._renderer import Renderer
 
@@ -25,7 +25,7 @@ __all__ = (
     "RenderDocModule",
     "RenderDocCallMixin",
     "RenderDocMembersMixin",
-    "RenderLayout",
+    "RenderReferencePage",
     "RenderAPIPage",
     "RenderReferenceSection",
     "exclude_attributes",

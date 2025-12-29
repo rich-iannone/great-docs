@@ -17,7 +17,7 @@ from .docattribute import RenderDocAttribute
 from .docclass import RenderDocClass
 from .docfunction import RenderDocFunction
 from .docmodule import RenderDocModule
-from .layout import RenderLayout
+from .reference_page import RenderReferencePage
 from .reference_section import RenderReferenceSection
 
 if TYPE_CHECKING:
@@ -29,7 +29,7 @@ _class_mapping: dict[type[Documentable], type[RenderObjType]] = {
     DocClass: RenderDocClass,
     DocFunction: RenderDocFunction,
     DocModule: RenderDocModule,
-    Layout: RenderLayout,
+    Layout: RenderReferencePage,
     Page: RenderAPIPage,
     Section: RenderReferenceSection,
 }
@@ -52,7 +52,7 @@ def get_render_type(obj: DocModule) -> type[RenderDocModule]: ...
 
 
 @overload
-def get_render_type(obj: Layout) -> type[RenderLayout]: ...
+def get_render_type(obj: Layout) -> type[RenderReferencePage]: ...
 
 
 @overload

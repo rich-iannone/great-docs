@@ -43,9 +43,9 @@ class Renderer(_Renderer):
 
         A Layout consists of a sequence of layout sections and/or layout pages
         """
-        from . import RenderLayout
+        from . import RenderReferencePage
 
-        return str(RenderLayout(el, self, self.header_level))
+        return str(RenderReferencePage(el, self, self.header_level))
 
     def _pages_written(self, builder: Builder):
         self._write_typing_information(builder)

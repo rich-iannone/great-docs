@@ -2777,17 +2777,27 @@ class GreatDocs:
         print(f"Created {config_path}")
         return True
 
-    def _generate_minimal_config(self) -> str:
+    def _generate_minimal_config(self, parser: str = "numpy") -> str:
         """
         Generate minimal great-docs.yml without reference section.
+
+        Parameters
+        ----------
+        parser
+            The docstring parser style ("numpy", "google", or "sphinx").
 
         Returns
         -------
         str
             YAML content for a minimal configuration file.
         """
-        return """# Great Docs Configuration
+        return f"""# Great Docs Configuration
 # See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html
+
+# Docstring Parser
+# ----------------
+# The docstring format used in your package (numpy, google, or sphinx)
+parser: {parser}
 
 # Exclusions
 # ----------
@@ -2818,7 +2828,9 @@ class GreatDocs:
 #       - SimpleClass          # Methods documented inline (default)
 """
 
-    def _generate_config_with_reference(self, categories: dict, package_name: str) -> str:
+    def _generate_config_with_reference(
+        self, categories: dict, package_name: str, parser: str = "numpy"
+    ) -> str:
         """
         Generate great-docs.yml with a reference section from discovered exports.
 
@@ -2828,6 +2840,8 @@ class GreatDocs:
             Dictionary from _categorize_api_objects with classes, functions, other.
         package_name
             The package name (for method threshold comments).
+        parser
+            The docstring parser style ("numpy", "google", or "sphinx").
 
         Returns
         -------
@@ -2837,6 +2851,11 @@ class GreatDocs:
         lines = [
             "# Great Docs Configuration",
             "# See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html",
+            "",
+            "# Docstring Parser",
+            "# ----------------",
+            "# The docstring format used in your package (numpy, google, or sphinx)",
+            f"parser: {parser}",
             "",
             "# API Discovery Settings",
             "# ----------------------",
@@ -3504,6 +3523,16 @@ toc: false
             "dynamic": True,
             "renderer": {"style": "markdown", "table_style": "description-list"},
         }
+
+        # Get parser from great-docs.yml config (defaults to numpy)
+        parser = self._config.parser
+        if parser and parser != "numpy":
+            # Only add parser if it's not the default (numpy)
+            quartodoc_config["parser"] = parser
+            print(f"Using '{parser}' docstring parser")
+        else:
+            # Always explicitly set parser for clarity
+            quartodoc_config["parser"] = "numpy"
 
         # Add sections if we found them
         if sections:

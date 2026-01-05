@@ -8,6 +8,7 @@ Great Docs automatically creates professional documentation with auto-generated 
 
 - **One-command setup** — `great-docs init` creates your entire docs site
 - **Auto-generated API docs** — discovers and documents your package's public API
+- **Docstring detection** — automatically detects NumPy, Google, or Sphinx style
 - **CLI documentation** — generates reference pages for Click-based CLIs
 - **Smart organization** — intelligent class/method/function categorization
 - **User Guide support** — write narrative documentation alongside API reference

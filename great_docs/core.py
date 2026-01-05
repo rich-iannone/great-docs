@@ -2196,8 +2196,9 @@ class GreatDocs:
         accurate but can fail for packages with certain module structures (e.g.,
         PyO3/Rust bindings, complex re-exports) that cause cyclic alias errors.
 
-        This method tests if dynamic mode works by attempting to load a sample of
-        the package's exports with quartodoc's get_object function in dynamic mode.
+        This method tests if dynamic mode works by attempting to load objects
+        with quartodoc's get_object function in dynamic mode AND accessing their
+        members (which is what triggers cyclic alias errors in some packages).
 
         Parameters
         ----------
@@ -2235,10 +2236,23 @@ class GreatDocs:
             return True
 
         # Test dynamic mode with a few exports
+        # We need to actually access .members and .kind to trigger cyclic alias errors
         cyclic_errors = 0
         for name in exports[:5]:  # Test up to 5 exports
             try:
-                qd_get_object(f"{normalized_name}:{name}", dynamic=True)
+                obj = qd_get_object(f"{normalized_name}:{name}", dynamic=True)
+                # Access .members to trigger cyclic alias resolution
+                # This is what quartodoc does when rendering docs
+                _ = obj.members
+                _ = obj.kind
+                # For classes, try to access individual members too
+                if hasattr(obj, "members") and obj.members:
+                    for member_name, member in list(obj.members.items())[:3]:
+                        try:
+                            _ = member.kind
+                        except griffe.CyclicAliasError:
+                            cyclic_errors += 1
+                            break
             except griffe.CyclicAliasError:
                 cyclic_errors += 1
             except Exception:
@@ -2331,6 +2345,7 @@ class GreatDocs:
                     "other": filtered_exports,
                     "class_methods": {},
                     "class_method_names": {},
+                    "cyclic_alias_count": 0,
                 }
 
             categories = {
@@ -2339,6 +2354,7 @@ class GreatDocs:
                 "other": [],
                 "class_methods": {},
                 "class_method_names": {},
+                "cyclic_alias_count": 0,
             }
             failed_introspection = []
             cyclic_aliases = []
@@ -2448,6 +2464,7 @@ class GreatDocs:
 
             if cyclic_aliases:
                 print(f"Note: Excluded {len(cyclic_aliases)} cyclic alias(es) from documentation")
+                categories["cyclic_alias_count"] = len(cyclic_aliases)
 
             if failed_introspection:
                 print(
@@ -2467,6 +2484,7 @@ class GreatDocs:
                 "other": filtered_exports,
                 "class_methods": {},
                 "class_method_names": {},
+                "cyclic_alias_count": 0,
             }
 
     def _create_quartodoc_sections(self, package_name: str) -> list | None:
@@ -2929,14 +2947,13 @@ class GreatDocs:
         print("Detecting docstring style...")
         parser_style = self._detect_docstring_style(importable_name)
 
-        # Detect dynamic mode compatibility
-        print("Testing dynamic introspection mode...")
-        dynamic_mode = self._detect_dynamic_mode(importable_name)
-
         # Discover exports
         exports = self._get_package_exports(importable_name)
         if not exports:
             print("Warning: Could not discover exports, creating minimal config")
+            # Without exports, we still try to detect dynamic mode
+            print("Testing dynamic introspection mode...")
+            dynamic_mode = self._detect_dynamic_mode(importable_name)
             config_content = self._generate_minimal_config(
                 parser=parser_style, dynamic=dynamic_mode
             )
@@ -2944,8 +2961,19 @@ class GreatDocs:
             print(f"Created {config_path}")
             return True
 
-        # Categorize exports
+        # Categorize exports (this also detects cyclic aliases)
+        print("Categorizing API objects...")
         categories = self._categorize_api_objects(importable_name, exports)
+
+        # Determine dynamic mode based on cyclic alias detection during categorization
+        cyclic_alias_count = categories.get("cyclic_alias_count", 0)
+        if cyclic_alias_count > 0:
+            print(f"Detected {cyclic_alias_count} cyclic alias(es), using dynamic: false")
+            dynamic_mode = False
+        else:
+            # Run the explicit detection as a fallback
+            print("Testing dynamic introspection mode...")
+            dynamic_mode = self._detect_dynamic_mode(importable_name)
 
         # Generate config content
         config_content = self._generate_config_with_reference(

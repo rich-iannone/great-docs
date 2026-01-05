@@ -5,6 +5,8 @@ import yaml
 
 # Default configuration values
 DEFAULT_CONFIG: dict[str, Any] = {
+    # Docstring parser format
+    "parser": "numpy",  # "numpy" (default), "google", or "sphinx"
     # API discovery settings
     "exclude": [],
     # GitHub integration
@@ -204,6 +206,11 @@ class Config:
         return self.get("dark_mode_toggle", True)
 
     @property
+    def parser(self) -> str:
+        """Get the docstring parser format (numpy, google, or sphinx)."""
+        return self.get("parser", "numpy")
+
+    @property
     def reference(self) -> list[dict[str, Any]]:
         """Get the API reference configuration (explicit section ordering)."""
         return self.get("reference", [])
@@ -262,6 +269,12 @@ def create_default_config() -> str:
     """
     return """# Great Docs Configuration
 # See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html
+
+# Docstring Parser
+# ----------------
+# The docstring format used in your package (numpy, google, or sphinx)
+# This is auto-detected during initialization, but can be overridden here.
+# parser: numpy
 
 # Exclusions
 # ----------

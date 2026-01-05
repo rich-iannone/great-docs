@@ -1033,3 +1033,103 @@ def test_config_parser_property():
         config_file.write_text("parser: sphinx")
         config = Config(Path(tmp_dir))
         assert config.parser == "sphinx"
+
+
+# --- Explicit Reference Config Tests ---
+
+
+def test_build_sections_from_reference_config():
+    """Test building sections from explicit reference config."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+
+        # Test simple string contents
+        reference_config = [
+            {
+                "title": "Functions",
+                "desc": "Public functions",
+                "contents": ["func1", "func2"],
+            }
+        ]
+
+        sections = docs._build_sections_from_reference_config(reference_config)
+
+        assert sections is not None
+        assert len(sections) == 1
+        assert sections[0]["title"] == "Functions"
+        assert sections[0]["desc"] == "Public functions"
+        assert sections[0]["contents"] == ["func1", "func2"]
+
+
+def test_build_sections_from_reference_config_with_members():
+    """Test building sections with members: false config."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+
+        reference_config = [
+            {
+                "title": "Classes",
+                "desc": "Main classes",
+                "contents": [
+                    {"name": "MyClass", "members": False},
+                    "SimpleClass",
+                ],
+            }
+        ]
+
+        sections = docs._build_sections_from_reference_config(reference_config)
+
+        assert sections is not None
+        assert len(sections) == 1
+        assert {"name": "MyClass", "members": []} in sections[0]["contents"]
+        assert "SimpleClass" in sections[0]["contents"]
+
+
+def test_build_sections_from_reference_config_empty():
+    """Test that empty reference config returns None."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+
+        assert docs._build_sections_from_reference_config([]) is None
+        assert docs._build_sections_from_reference_config(None) is None
+
+
+def test_explicit_reference_config_applied_when_discovery_fails():
+    """Test that explicit reference config is used when auto-discovery fails."""
+    import sys
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Create a minimal package that will fail discovery
+        package_dir = Path(tmp_dir) / "emptypkg"
+        package_dir.mkdir()
+        (package_dir / "__init__.py").write_text("# Empty package")
+
+        # Create great-docs.yml with explicit reference config
+        config_content = """
+parser: numpy
+
+reference:
+  - title: Functions
+    desc: My functions
+    contents:
+      - my_func
+      - other_func
+"""
+        (Path(tmp_dir) / "great-docs.yml").write_text(config_content)
+
+        sys.path.insert(0, tmp_dir)
+        try:
+            docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+
+            # The reference config should be loaded
+            assert docs._config.reference is not None
+            assert len(docs._config.reference) == 1
+            assert docs._config.reference[0]["title"] == "Functions"
+
+            # Build sections from config should work
+            sections = docs._build_sections_from_reference_config(docs._config.reference)
+            assert sections is not None
+            assert len(sections) == 1
+            assert "my_func" in sections[0]["contents"]
+        finally:
+            sys.path.remove(tmp_dir)

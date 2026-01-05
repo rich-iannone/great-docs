@@ -1133,3 +1133,52 @@ reference:
             assert "my_func" in sections[0]["contents"]
         finally:
             sys.path.remove(tmp_dir)
+
+
+# --- Quarto Environment Tests ---
+
+
+def test_get_quarto_env_returns_current_python():
+    """Test that _get_quarto_env returns QUARTO_PYTHON with current interpreter."""
+    import sys
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+        env = docs._get_quarto_env()
+
+        assert "QUARTO_PYTHON" in env
+        # Should either be the current interpreter or a venv Python
+        assert env["QUARTO_PYTHON"].endswith("python") or env["QUARTO_PYTHON"].endswith(
+            "python.exe"
+        )
+
+
+def test_get_quarto_env_detects_venv():
+    """Test that _get_quarto_env detects a virtual environment."""
+    import sys
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Create a fake .venv directory structure
+        venv_dir = Path(tmp_dir) / ".venv" / "bin"
+        venv_dir.mkdir(parents=True)
+        fake_python = venv_dir / "python"
+        fake_python.write_text("#!/bin/bash\n# fake python")
+
+        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+        env = docs._get_quarto_env()
+
+        assert "QUARTO_PYTHON" in env
+        assert env["QUARTO_PYTHON"] == str(fake_python)
+
+
+def test_get_quarto_env_preserves_existing_env():
+    """Test that _get_quarto_env preserves existing environment variables."""
+    import os
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+        env = docs._get_quarto_env()
+
+        # Should contain existing env vars like PATH
+        assert "PATH" in env
+        assert env["PATH"] == os.environ.get("PATH")

@@ -406,6 +406,49 @@ class GreatDocs:
         # Fallback to project_root if we can't find it
         return self.project_root
 
+    def _get_quarto_env(self) -> dict[str, str]:
+        """
+        Get environment variables for running Quarto commands.
+
+        Sets QUARTO_PYTHON to ensure Quarto uses the correct Python environment
+        where the package and its dependencies are installed. This is essential
+        for notebook execution and quartodoc introspection.
+
+        The method looks for Python in the following order:
+        1. Virtual environment in the project root (.venv/bin/python or .venv/Scripts/python.exe)
+        2. The currently running Python interpreter
+
+        Returns
+        -------
+        dict[str, str]
+            Environment variables dictionary with QUARTO_PYTHON set.
+        """
+        import sys
+
+        env = os.environ.copy()
+        package_root = self._find_package_root()
+
+        # Look for a virtual environment in the project
+        venv_paths = [
+            package_root / ".venv" / "bin" / "python",  # Unix
+            package_root / ".venv" / "Scripts" / "python.exe",  # Windows
+            package_root / "venv" / "bin" / "python",  # Alternative name
+            package_root / "venv" / "Scripts" / "python.exe",  # Windows alternative
+        ]
+
+        python_path = None
+        for venv_python in venv_paths:
+            if venv_python.exists():
+                python_path = str(venv_python)
+                break
+
+        # Fallback to the currently running Python
+        if python_path is None:
+            python_path = sys.executable
+
+        env["QUARTO_PYTHON"] = python_path
+        return env
+
     def _get_package_metadata(self) -> dict:
         """
         Extract package metadata from pyproject.toml and great-docs configuration.
@@ -4896,11 +4939,14 @@ toc: false
             else:
                 print("\n✅ API reference generated")
 
+            # Get environment with QUARTO_PYTHON set for proper Python detection
+            quarto_env = self._get_quarto_env()
+
             # Step 2: Run quarto render or preview
             if watch:
                 print("\n🔄 Step 2: Starting Quarto in watch mode...")
                 print("Press Ctrl+C to stop watching")
-                subprocess.run(["quarto", "preview", "--no-browser"])
+                subprocess.run(["quarto", "preview", "--no-browser"], env=quarto_env)
             else:
                 print("\n🔨 Step 2: Building site with Quarto...")
 
@@ -4910,7 +4956,9 @@ toc: false
                 )
                 progress_thread.start()
 
-                result = subprocess.run(["quarto", "render"], capture_output=True, text=True)
+                result = subprocess.run(
+                    ["quarto", "render"], capture_output=True, text=True, env=quarto_env
+                )
 
                 stop_event.set()
                 progress_thread.join()
@@ -4978,10 +5026,13 @@ toc: false
             else:
                 print("✅ API reference generated")
 
+            # Get environment with QUARTO_PYTHON set for proper Python detection
+            quarto_env = self._get_quarto_env()
+
             # Step 2: Run quarto preview
             print("\n🌐 Step 2: Starting preview server...")
             print("Press Ctrl+C to stop the server")
-            subprocess.run(["quarto", "preview"])
+            subprocess.run(["quarto", "preview"], env=quarto_env)
 
         finally:
             os.chdir(original_dir)

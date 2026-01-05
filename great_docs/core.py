@@ -2188,6 +2188,70 @@ class GreatDocs:
             print(f"Error detecting docstring style: {type(e).__name__}: {e}")
             return "numpy"
 
+    def _detect_dynamic_mode(self, package_name: str) -> bool:
+        """
+        Detect whether dynamic introspection mode works for a package.
+
+        Quartodoc's `dynamic: true` mode uses runtime introspection which is more
+        accurate but can fail for packages with certain module structures (e.g.,
+        PyO3/Rust bindings, complex re-exports) that cause cyclic alias errors.
+
+        This method tests if dynamic mode works by attempting to load a sample of
+        the package's exports with quartodoc's get_object function in dynamic mode.
+
+        Parameters
+        ----------
+        package_name
+            The name of the package to test.
+
+        Returns
+        -------
+        bool
+            True if dynamic mode works, False if it causes errors.
+        """
+        try:
+            import griffe
+            from quartodoc import get_object as qd_get_object
+        except ImportError:
+            # If quartodoc isn't available, default to True (will fail at build time anyway)
+            return True
+
+        # Normalize package name
+        normalized_name = package_name.replace("-", "_")
+
+        # Get a sample of exports to test
+        try:
+            pkg = griffe.load(normalized_name)
+            exports = [
+                name
+                for name in list(pkg.members.keys())[:10]  # Test first 10
+                if not name.startswith("_")
+            ]
+        except Exception:
+            # Can't load package, default to True
+            return True
+
+        if not exports:
+            return True
+
+        # Test dynamic mode with a few exports
+        cyclic_errors = 0
+        for name in exports[:5]:  # Test up to 5 exports
+            try:
+                qd_get_object(f"{normalized_name}:{name}", dynamic=True)
+            except griffe.CyclicAliasError:
+                cyclic_errors += 1
+            except Exception:
+                # Other errors don't necessarily mean dynamic mode won't work
+                pass
+
+        if cyclic_errors > 0:
+            print(f"Detected {cyclic_errors} cyclic alias error(s), using dynamic: false")
+            return False
+        else:
+            print("Dynamic introspection mode works for this package")
+            return True
+
     def _get_package_exports(self, package_name: str) -> list | None:
         """
         Get package exports using static analysis.

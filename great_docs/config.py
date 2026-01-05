@@ -7,6 +7,8 @@ import yaml
 DEFAULT_CONFIG: dict[str, Any] = {
     # Docstring parser format
     "parser": "numpy",  # "numpy" (default), "google", or "sphinx"
+    # Dynamic introspection mode for quartodoc
+    "dynamic": True,  # True (default) or False for packages with cyclic aliases
     # API discovery settings
     "exclude": [],
     # GitHub integration
@@ -211,6 +213,11 @@ class Config:
         return self.get("parser", "numpy")
 
     @property
+    def dynamic(self) -> bool:
+        """Get the dynamic introspection mode for quartodoc."""
+        return self.get("dynamic", True)
+
+    @property
     def reference(self) -> list[dict[str, Any]]:
         """Get the API reference configuration (explicit section ordering)."""
         return self.get("reference", [])
@@ -275,6 +282,13 @@ def create_default_config() -> str:
 # The docstring format used in your package (numpy, google, or sphinx)
 # This is auto-detected during initialization, but can be overridden here.
 # parser: numpy
+
+# Dynamic Introspection
+# ---------------------
+# When true, quartodoc uses runtime introspection (more accurate for complex packages).
+# When false, uses static analysis only (better for packages with cyclic aliases).
+# This is auto-detected during initialization based on what works for your package.
+# dynamic: true
 
 # Exclusions
 # ----------

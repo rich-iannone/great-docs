@@ -2608,6 +2608,72 @@ class GreatDocs:
         """
         return family_name.lower().replace(" ", "-").replace("_", "-")
 
+    def _build_sections_from_reference_config(
+        self, reference_config: list[dict]
+    ) -> list[dict] | None:
+        """
+        Build quartodoc sections directly from reference config without validation.
+
+        This is a fallback method used when auto-discovery fails but the user has
+        explicitly specified their API structure in great-docs.yml. Unlike
+        `_create_quartodoc_sections_from_config`, this method doesn't attempt to
+        validate the references against discovered exports.
+
+        Parameters
+        ----------
+        reference_config
+            The reference configuration from great-docs.yml.
+
+        Returns
+        -------
+        list[dict] | None
+            List of section dictionaries, or None if config is empty.
+        """
+        if not reference_config:
+            return None
+
+        sections = []
+
+        for section_config in reference_config:
+            title = section_config.get("title", "Untitled")
+            desc = section_config.get("desc", "")
+            contents_config = section_config.get("contents", [])
+
+            if not contents_config:
+                continue
+
+            section_contents = []
+
+            for item in contents_config:
+                if isinstance(item, str):
+                    # Simple string reference - use as-is
+                    section_contents.append(item)
+                elif isinstance(item, dict):
+                    # Dict with name and optional members config
+                    name = item.get("name", "")
+                    if not name:
+                        continue
+
+                    members = item.get("members", True)
+
+                    if members is False:
+                        # Don't document methods - just the class
+                        section_contents.append({"name": name, "members": []})
+                    else:
+                        # Default: inline documentation (members: true)
+                        section_contents.append(name)
+
+            if section_contents:
+                sections.append(
+                    {
+                        "title": title,
+                        "desc": desc,
+                        "contents": section_contents,
+                    }
+                )
+
+        return sections if sections else None
+
     def _create_quartodoc_sections_from_config(self, package_name: str) -> list | None:
         """
         Create quartodoc sections from the `reference` config in great-docs.yml.
@@ -2816,16 +2882,26 @@ parser: {parser}
 
 # API Reference Structure
 # -----------------------
-# Add a reference section to control how your API documentation is organized.
-# Run 'great-docs scan' to see discovered exports.
+# Auto-discovery couldn't determine your package's public API.
+# You can manually specify which items to document here.
+#
+# Uncomment and customize the reference section below:
 #
 # reference:
-#   - title: Core Classes
+#   - title: Functions
+#     desc: Public functions provided by the package
+#     contents:
+#       - my_function
+#       - another_function
+#
+#   - title: Classes
 #     desc: Main classes for working with the package
 #     contents:
 #       - name: MyClass
-#         members: false       # Don't document methods here
+#         members: false       # Don't document methods inline
 #       - SimpleClass          # Methods documented inline (default)
+#
+# After editing, run 'great-docs build' to generate your documentation.
 """
 
     def _generate_config_with_reference(
@@ -3589,16 +3665,17 @@ toc: false
 
         # Re-generate sections from current package exports
         # Uses family-based organization if @family directives are found
+        # Prioritizes explicit config from great-docs.yml over auto-discovery
         sections = self._create_quartodoc_sections_from_families(package_name)
+
+        # Update parser from great-docs.yml config
+        parser = self._config.parser
+        if parser:
+            config["quartodoc"]["parser"] = parser
 
         if sections:
             config["quartodoc"]["sections"] = sections
             print(f"Updated quartodoc config with {len(sections)} section(s)")
-
-            # Update parser from great-docs.yml config if it has changed
-            parser = self._config.parser
-            if parser:
-                config["quartodoc"]["parser"] = parser
 
             # Write back to file first, so sidebar update reads the new sections
             self._write_quarto_yml(quarto_yml, config)
@@ -3608,7 +3685,27 @@ toc: false
 
             print(f"✅ Refreshed quartodoc configuration in {quarto_yml}")
         else:
-            print("Warning: Could not discover package exports. Config unchanged.")
+            # Check if user has explicit reference config that should be applied
+            # even though auto-discovery failed
+            reference_config = self._config.reference
+            if reference_config:
+                print(
+                    "Auto-discovery failed, but applying explicit reference config from great-docs.yml"
+                )
+                # Build sections directly from user config without validation
+                user_sections = self._build_sections_from_reference_config(reference_config)
+                if user_sections:
+                    config["quartodoc"]["sections"] = user_sections
+                    self._write_quarto_yml(quarto_yml, config)
+                    self._update_sidebar_from_sections()
+                    print(f"✅ Applied {len(user_sections)} section(s) from great-docs.yml")
+                else:
+                    print("Warning: reference config in great-docs.yml produced no sections")
+            else:
+                print("Warning: Could not discover package exports. Config unchanged.")
+                print(
+                    "Tip: Add a 'reference' section to great-docs.yml to manually specify your API structure."
+                )
 
     def _write_quarto_yml(self, quarto_yml: Path, config: dict) -> None:
         """

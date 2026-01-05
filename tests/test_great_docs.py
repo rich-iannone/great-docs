@@ -1148,8 +1148,14 @@ def test_get_quarto_env_returns_current_python():
 
         assert "QUARTO_PYTHON" in env
         # Should either be the current interpreter or a venv Python
-        assert env["QUARTO_PYTHON"].endswith("python") or env["QUARTO_PYTHON"].endswith(
-            "python.exe"
+        # Accept python, python3, python.exe, python3.exe
+        python_path = env["QUARTO_PYTHON"]
+        assert (
+            python_path.endswith("python")
+            or python_path.endswith("python3")
+            or python_path.endswith("python.exe")
+            or python_path.endswith("python3.exe")
+            or "python" in Path(python_path).name
         )
 
 

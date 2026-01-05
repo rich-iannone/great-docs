@@ -2752,11 +2752,15 @@ class GreatDocs:
         # Get normalized package name for imports
         importable_name = self._normalize_package_name(package_name)
 
+        # Detect docstring style
+        print("Detecting docstring style...")
+        parser_style = self._detect_docstring_style(importable_name)
+
         # Discover exports
         exports = self._get_package_exports(importable_name)
         if not exports:
             print("Warning: Could not discover exports, creating minimal config")
-            config_content = self._generate_minimal_config()
+            config_content = self._generate_minimal_config(parser=parser_style)
             config_path.write_text(config_content, encoding="utf-8")
             print(f"Created {config_path}")
             return True
@@ -2765,7 +2769,9 @@ class GreatDocs:
         categories = self._categorize_api_objects(importable_name, exports)
 
         # Generate config content
-        config_content = self._generate_config_with_reference(categories, importable_name)
+        config_content = self._generate_config_with_reference(
+            categories, importable_name, parser=parser_style
+        )
 
         config_path.write_text(config_content, encoding="utf-8")
         print(f"Created {config_path}")

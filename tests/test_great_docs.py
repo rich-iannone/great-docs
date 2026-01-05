@@ -1188,3 +1188,83 @@ def test_get_quarto_env_preserves_existing_env():
         # Should contain existing env vars like PATH
         assert "PATH" in env
         assert env["PATH"] == os.environ.get("PATH")
+
+
+# --- Dynamic Mode Tests ---
+
+
+def test_detect_dynamic_mode_returns_true_for_simple_package():
+    """Test that _detect_dynamic_mode returns True for packages without cyclic aliases."""
+    import sys
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Create a simple package with no cyclic aliases
+        package_dir = Path(tmp_dir) / "simple_pkg"
+        package_dir.mkdir()
+        (package_dir / "__init__.py").write_text(
+            '''"""Simple package."""
+
+def hello():
+    """Say hello."""
+    return "hello"
+
+class MyClass:
+    """A simple class."""
+    pass
+'''
+        )
+
+        sys.path.insert(0, tmp_dir)
+        try:
+            docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+            result = docs._detect_dynamic_mode("simple_pkg")
+            # Should return True for a simple package
+            assert result is True
+        finally:
+            sys.path.remove(tmp_dir)
+
+
+def test_detect_dynamic_mode_returns_true_with_no_package():
+    """Test that _detect_dynamic_mode returns True when package name is empty."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+        result = docs._detect_dynamic_mode("")
+        assert result is True
+
+
+def test_config_dynamic_property():
+    """Test Config.dynamic property returns correct value."""
+    from great_docs.config import Config
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        config_path = Path(tmp_dir)
+
+        # Test with dynamic: true
+        config_file = config_path / "great-docs.yml"
+        config_file.write_text("dynamic: true\n")
+        config = Config(config_path)
+        assert config.dynamic is True
+
+    # Create a separate temp dir for dynamic: false test
+    with tempfile.TemporaryDirectory() as tmp_dir2:
+        config_path2 = Path(tmp_dir2)
+        config_file2 = config_path2 / "great-docs.yml"
+        config_file2.write_text("dynamic: false\n")
+        config2 = Config(config_path2)
+        assert config2.dynamic is False
+
+
+def test_config_dynamic_property_default():
+    """Test Config.dynamic property returns default when not set."""
+    from great_docs.config import Config
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Config without dynamic key
+        config_content = "parser: numpy\n"
+        config_dir = Path(tmp_dir)
+        config_file = config_dir / "great-docs.yml"
+        config_file.write_text(config_content)
+
+        config = Config(config_dir)
+        # Default should be True
+        assert config.dynamic is True

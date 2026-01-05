@@ -48,6 +48,104 @@ Great Docs automatically excludes these common internal names during discovery:
 | Standard library | `PackageNotFoundError`, `typing`, `annotations`, `TYPE_CHECKING` |
 | Logging | `logger`, `log`, `logging` |
 
+## Docstring Parser
+
+Different projects use different docstring conventions, so Great Docs automatically detects your docstring style during initialization.
+
+### Supported Styles
+
+| Style | Description | Example |
+|-------|-------------|--------|
+| `numpy` | NumPy-style with section underlines | `Parameters\n----------` |
+| `google` | Google-style with indented sections | `Args:\n    x: The value` |
+| `sphinx` | Sphinx-style with field markers | `:param x: The value` |
+
+### Automatic Detection
+
+When you run `great-docs init`, Great Docs analyzes your package's docstrings to detect the style:
+
+- **NumPy style** is identifiable by section headers with `---` underlines (e.g., `Parameters\n----------`)
+- **Google style** is identifiable by section headers with colons (e.g., `Args:`, `Returns:`)
+- **Sphinx style** is identifiable by field markers (e.g., `:param:`, `:returns:`, `:rtype:`)
+
+The detected style is saved to `great-docs.yml` and forwarded to quartodoc during builds.
+
+### Manual Configuration
+
+If auto-detection doesn't work for your project, or you want to override it:
+
+```{.yaml filename="great-docs.yml"}
+parser: google  # Options: numpy (default), google, sphinx
+```
+
+### When to Change the Parser
+
+You might need to manually set the parser if:
+
+- your package has few or no docstrings (detection defaults to `numpy`)
+- you use a mix of styles and want to standardize on one
+- auto-detection chose the wrong style
+
+### Example Docstrings
+
+::: {.panel-tabset}
+
+#### NumPy Style
+
+```python
+def my_function(x, y):
+    """
+    Add two numbers together.
+
+    Parameters
+    ----------
+    x
+      The first number.
+    y
+      The second number.
+
+    Returns
+    -------
+    int
+      The sum of x and y.
+    """
+    return x + y
+```
+
+#### Google Style
+
+```python
+def my_function(x, y):
+    """Add two numbers together.
+
+    Args:
+      x: The first number.
+      y: The second number.
+
+    Returns:
+      The sum of x and y.
+    """
+    return x + y
+```
+
+#### Sphinx Style
+
+```python
+def my_function(x, y):
+    """Add two numbers together.
+
+    :param x: The first number.
+    :type x: int
+    :param y: The second number.
+    :type y: int
+    :returns: The sum of x and y.
+    :rtype: int
+    """
+    return x + y
+```
+
+:::
+
 ## GitHub Integration
 
 ### GitHub Link Style
@@ -205,6 +303,9 @@ If no `reference` config is provided, Great Docs auto-generates sections from di
 Here's a comprehensive configuration demonstrating all available options:
 
 ```{.yaml filename="great-docs.yml"}
+# Docstring Parser
+parser: numpy  # Auto-detected: numpy, google, or sphinx
+
 # API Discovery
 exclude:
   - _InternalClass

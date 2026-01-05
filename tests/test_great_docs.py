@@ -842,3 +842,194 @@ def test_create_default_config():
     assert "sidebar_filter" in content
     assert "cli:" in content
     assert "authors:" in content
+    assert "parser:" in content
+
+
+# --- Docstring Style Detection Tests ---
+
+
+def test_detect_docstring_style_numpy():
+    """Test detection of NumPy-style docstrings."""
+    import sys
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        package_dir = Path(tmp_dir) / "numpypkg"
+        package_dir.mkdir()
+
+        # Create a package with NumPy-style docstrings
+        init_content = '''
+"""Test package with NumPy-style docstrings."""
+__version__ = "1.0.0"
+__all__ = ["my_function"]
+
+def my_function(x, y):
+    """
+    Add two numbers together.
+
+    Parameters
+    ----------
+    x : int
+        The first number.
+    y : int
+        The second number.
+
+    Returns
+    -------
+    int
+        The sum of x and y.
+
+    Examples
+    --------
+    >>> my_function(1, 2)
+    3
+    """
+    return x + y
+'''
+        (package_dir / "__init__.py").write_text(init_content)
+
+        sys.path.insert(0, tmp_dir)
+        try:
+            docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+            style = docs._detect_docstring_style("numpypkg")
+            assert style == "numpy"
+        finally:
+            sys.path.remove(tmp_dir)
+
+
+def test_detect_docstring_style_google():
+    """Test detection of Google-style docstrings."""
+    import sys
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        package_dir = Path(tmp_dir) / "googlepkg"
+        package_dir.mkdir()
+
+        # Create a package with Google-style docstrings
+        init_content = '''
+"""Test package with Google-style docstrings."""
+__version__ = "1.0.0"
+__all__ = ["my_function", "MyClass"]
+
+def my_function(x, y):
+    """Add two numbers together.
+
+    Args:
+        x: The first number.
+        y: The second number.
+
+    Returns:
+        The sum of x and y.
+
+    Examples:
+        >>> my_function(1, 2)
+        3
+    """
+    return x + y
+
+class MyClass:
+    """A sample class.
+
+    Attributes:
+        value: The stored value.
+    """
+
+    def __init__(self, value):
+        """Initialize the class.
+
+        Args:
+            value: The initial value.
+        """
+        self.value = value
+'''
+        (package_dir / "__init__.py").write_text(init_content)
+
+        sys.path.insert(0, tmp_dir)
+        try:
+            docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+            style = docs._detect_docstring_style("googlepkg")
+            assert style == "google"
+        finally:
+            sys.path.remove(tmp_dir)
+
+
+def test_detect_docstring_style_sphinx():
+    """Test detection of Sphinx-style docstrings."""
+    import sys
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        package_dir = Path(tmp_dir) / "sphinxpkg"
+        package_dir.mkdir()
+
+        # Create a package with Sphinx-style docstrings
+        init_content = '''
+"""Test package with Sphinx-style docstrings."""
+__version__ = "1.0.0"
+__all__ = ["my_function"]
+
+def my_function(x, y):
+    """Add two numbers together.
+
+    :param x: The first number.
+    :type x: int
+    :param y: The second number.
+    :type y: int
+    :returns: The sum of x and y.
+    :rtype: int
+    """
+    return x + y
+'''
+        (package_dir / "__init__.py").write_text(init_content)
+
+        sys.path.insert(0, tmp_dir)
+        try:
+            docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+            style = docs._detect_docstring_style("sphinxpkg")
+            assert style == "sphinx"
+        finally:
+            sys.path.remove(tmp_dir)
+
+
+def test_detect_docstring_style_defaults_to_numpy():
+    """Test that detection defaults to numpy when no docstrings are found."""
+    import sys
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        package_dir = Path(tmp_dir) / "nodocspkg"
+        package_dir.mkdir()
+
+        # Create a package with no docstrings
+        init_content = """
+__version__ = "1.0.0"
+__all__ = ["my_function"]
+
+def my_function(x, y):
+    return x + y
+"""
+        (package_dir / "__init__.py").write_text(init_content)
+
+        sys.path.insert(0, tmp_dir)
+        try:
+            docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+            style = docs._detect_docstring_style("nodocspkg")
+            assert style == "numpy"  # Default when no docstrings found
+        finally:
+            sys.path.remove(tmp_dir)
+
+
+def test_config_parser_property():
+    """Test the parser property in Config class."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Test default value
+        config = Config(Path(tmp_dir))
+        assert config.parser == "numpy"
+
+        # Test custom value
+        config_file = Path(tmp_dir) / "great-docs.yml"
+        config_file.write_text("parser: google")
+        config = Config(Path(tmp_dir))
+        assert config.parser == "google"
+
+        # Test sphinx value
+        config_file.write_text("parser: sphinx")
+        config = Config(Path(tmp_dir))
+        assert config.parser == "sphinx"

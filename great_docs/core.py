@@ -2003,6 +2003,148 @@ class GreatDocs:
             print(f"Error discovering exports via dir(): {type(e).__name__}: {e}")
             return None
 
+    def _detect_docstring_style(self, package_name: str) -> str:
+        """
+        Detect the docstring style used in a package.
+
+        Analyzes docstrings from the package to determine if they use NumPy, Google,
+        or Sphinx style formatting. The detection is based on characteristic patterns:
+
+        - NumPy style: Uses `---` underlines under section headers (Parameters, Returns, etc.)
+        - Google style: Uses section headers with colons but NO underlines (Args:, Returns:)
+        - Sphinx style: Uses `:param:`, `:returns:`, etc. field markers
+
+        Parameters
+        ----------
+        package_name
+            The name of the package to analyze.
+
+        Returns
+        -------
+        str
+            The detected docstring style: "numpy", "google", or "sphinx".
+            Defaults to "numpy" if detection is inconclusive.
+        """
+        try:
+            import griffe
+
+            # Normalize package name
+            normalized_name = package_name.replace("-", "_")
+
+            # Load the package using griffe
+            try:
+                pkg = griffe.load(normalized_name)
+            except Exception as e:
+                print(
+                    f"Warning: Could not load package for docstring detection ({type(e).__name__})"
+                )
+                return "numpy"
+
+            # Collect docstrings from the package
+            docstrings = []
+
+            def collect_docstrings(obj, depth=0):
+                """Recursively collect docstrings from an object and its members."""
+                if depth > 2:  # Limit recursion depth
+                    return
+
+                # Get the object's docstring
+                if hasattr(obj, "docstring") and obj.docstring:
+                    docstrings.append(obj.docstring.value)
+
+                # Recurse into members
+                if hasattr(obj, "members"):
+                    for member in obj.members.values():
+                        try:
+                            # Skip aliases to avoid infinite loops
+                            if hasattr(member, "is_alias") and member.is_alias:
+                                continue
+                            collect_docstrings(member, depth + 1)
+                        except Exception:
+                            continue
+
+            collect_docstrings(pkg)
+
+            if not docstrings:
+                print("No docstrings found, defaulting to numpy style")
+                return "numpy"
+
+            # Analyze docstrings for style indicators
+            numpy_indicators = 0
+            google_indicators = 0
+            sphinx_indicators = 0
+
+            # Patterns for detection
+            # NumPy: section headers followed by dashes (e.g., "Parameters\n----------")
+            numpy_section_pattern = re.compile(
+                r"^\s*(Parameters|Returns|Yields|Raises|Examples|Attributes|Methods|See Also|Notes|References|Warnings)\s*\n\s*-{3,}",
+                re.MULTILINE,
+            )
+
+            # Google: section headers with colons (e.g., "Args:", "Returns:")
+            google_section_pattern = re.compile(
+                r"^\s*(Args|Arguments|Returns|Yields|Raises|Examples|Attributes|Note|Notes|Todo|Warning|Warnings):\s*$",
+                re.MULTILINE,
+            )
+
+            # Sphinx: field markers (e.g., ":param name:", ":returns:")
+            sphinx_pattern = re.compile(
+                r"^\s*:(param|type|returns|rtype|raises|var|ivar|cvar)\s",
+                re.MULTILINE,
+            )
+
+            # Example blocks with >>> are common in both NumPy and Google styles
+            # but the presence/absence of --- is the key differentiator
+
+            for docstring in docstrings:
+                if not docstring:
+                    continue
+
+                # Check for NumPy style (section + dashes)
+                if numpy_section_pattern.search(docstring):
+                    numpy_indicators += 1
+
+                # Check for Google style (section headers with colons, no dashes)
+                if google_section_pattern.search(docstring):
+                    # Only count as Google if there are NO numpy-style dashes nearby
+                    if not numpy_section_pattern.search(docstring):
+                        google_indicators += 1
+
+                # Check for Sphinx style
+                if sphinx_pattern.search(docstring):
+                    sphinx_indicators += 1
+
+            # Determine the winner
+            total_indicators = numpy_indicators + google_indicators + sphinx_indicators
+
+            if total_indicators == 0:
+                print("No clear docstring style detected, defaulting to numpy")
+                return "numpy"
+
+            # Report findings
+            print(
+                f"Docstring style detection: numpy={numpy_indicators}, "
+                f"google={google_indicators}, sphinx={sphinx_indicators}"
+            )
+
+            # Return the style with most indicators
+            if sphinx_indicators > numpy_indicators and sphinx_indicators > google_indicators:
+                print("Detected sphinx docstring style")
+                return "sphinx"
+            elif google_indicators > numpy_indicators:
+                print("Detected google docstring style")
+                return "google"
+            else:
+                print("Detected numpy docstring style")
+                return "numpy"
+
+        except ImportError:
+            print("Warning: griffe not available for docstring detection, defaulting to numpy")
+            return "numpy"
+        except Exception as e:
+            print(f"Error detecting docstring style: {type(e).__name__}: {e}")
+            return "numpy"
+
     def _get_package_exports(self, package_name: str) -> list | None:
         """
         Get package exports using static analysis.
@@ -2610,11 +2752,15 @@ class GreatDocs:
         # Get normalized package name for imports
         importable_name = self._normalize_package_name(package_name)
 
+        # Detect docstring style
+        print("Detecting docstring style...")
+        parser_style = self._detect_docstring_style(importable_name)
+
         # Discover exports
         exports = self._get_package_exports(importable_name)
         if not exports:
             print("Warning: Could not discover exports, creating minimal config")
-            config_content = self._generate_minimal_config()
+            config_content = self._generate_minimal_config(parser=parser_style)
             config_path.write_text(config_content, encoding="utf-8")
             print(f"Created {config_path}")
             return True
@@ -2623,23 +2769,35 @@ class GreatDocs:
         categories = self._categorize_api_objects(importable_name, exports)
 
         # Generate config content
-        config_content = self._generate_config_with_reference(categories, importable_name)
+        config_content = self._generate_config_with_reference(
+            categories, importable_name, parser=parser_style
+        )
 
         config_path.write_text(config_content, encoding="utf-8")
         print(f"Created {config_path}")
         return True
 
-    def _generate_minimal_config(self) -> str:
+    def _generate_minimal_config(self, parser: str = "numpy") -> str:
         """
         Generate minimal great-docs.yml without reference section.
+
+        Parameters
+        ----------
+        parser
+            The docstring parser style ("numpy", "google", or "sphinx").
 
         Returns
         -------
         str
             YAML content for a minimal configuration file.
         """
-        return """# Great Docs Configuration
+        return f"""# Great Docs Configuration
 # See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html
+
+# Docstring Parser
+# ----------------
+# The docstring format used in your package (numpy, google, or sphinx)
+parser: {parser}
 
 # Exclusions
 # ----------
@@ -2670,7 +2828,9 @@ class GreatDocs:
 #       - SimpleClass          # Methods documented inline (default)
 """
 
-    def _generate_config_with_reference(self, categories: dict, package_name: str) -> str:
+    def _generate_config_with_reference(
+        self, categories: dict, package_name: str, parser: str = "numpy"
+    ) -> str:
         """
         Generate great-docs.yml with a reference section from discovered exports.
 
@@ -2680,6 +2840,8 @@ class GreatDocs:
             Dictionary from _categorize_api_objects with classes, functions, other.
         package_name
             The package name (for method threshold comments).
+        parser
+            The docstring parser style ("numpy", "google", or "sphinx").
 
         Returns
         -------
@@ -2689,6 +2851,11 @@ class GreatDocs:
         lines = [
             "# Great Docs Configuration",
             "# See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html",
+            "",
+            "# Docstring Parser",
+            "# ----------------",
+            "# The docstring format used in your package (numpy, google, or sphinx)",
+            f"parser: {parser}",
             "",
             "# API Discovery Settings",
             "# ----------------------",
@@ -3357,6 +3524,16 @@ toc: false
             "renderer": {"style": "markdown", "table_style": "description-list"},
         }
 
+        # Get parser from great-docs.yml config (defaults to numpy)
+        parser = self._config.parser
+        if parser and parser != "numpy":
+            # Only add parser if it's not the default (numpy)
+            quartodoc_config["parser"] = parser
+            print(f"Using '{parser}' docstring parser")
+        else:
+            # Always explicitly set parser for clarity
+            quartodoc_config["parser"] = "numpy"
+
         # Add sections if we found them
         if sections:
             quartodoc_config["sections"] = sections
@@ -3417,6 +3594,11 @@ toc: false
         if sections:
             config["quartodoc"]["sections"] = sections
             print(f"Updated quartodoc config with {len(sections)} section(s)")
+
+            # Update parser from great-docs.yml config if it has changed
+            parser = self._config.parser
+            if parser:
+                config["quartodoc"]["parser"] = parser
 
             # Write back to file first, so sidebar update reads the new sections
             self._write_quarto_yml(quarto_yml, config)

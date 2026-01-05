@@ -3595,6 +3595,11 @@ toc: false
             config["quartodoc"]["sections"] = sections
             print(f"Updated quartodoc config with {len(sections)} section(s)")
 
+            # Update parser from great-docs.yml config if it has changed
+            parser = self._config.parser
+            if parser:
+                config["quartodoc"]["parser"] = parser
+
             # Write back to file first, so sidebar update reads the new sections
             self._write_quarto_yml(quarto_yml, config)
 

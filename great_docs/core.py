@@ -2929,11 +2929,17 @@ class GreatDocs:
         print("Detecting docstring style...")
         parser_style = self._detect_docstring_style(importable_name)
 
+        # Detect dynamic mode compatibility
+        print("Testing dynamic introspection mode...")
+        dynamic_mode = self._detect_dynamic_mode(importable_name)
+
         # Discover exports
         exports = self._get_package_exports(importable_name)
         if not exports:
             print("Warning: Could not discover exports, creating minimal config")
-            config_content = self._generate_minimal_config(parser=parser_style)
+            config_content = self._generate_minimal_config(
+                parser=parser_style, dynamic=dynamic_mode
+            )
             config_path.write_text(config_content, encoding="utf-8")
             print(f"Created {config_path}")
             return True
@@ -2943,14 +2949,14 @@ class GreatDocs:
 
         # Generate config content
         config_content = self._generate_config_with_reference(
-            categories, importable_name, parser=parser_style
+            categories, importable_name, parser=parser_style, dynamic=dynamic_mode
         )
 
         config_path.write_text(config_content, encoding="utf-8")
         print(f"Created {config_path}")
         return True
 
-    def _generate_minimal_config(self, parser: str = "numpy") -> str:
+    def _generate_minimal_config(self, parser: str = "numpy", dynamic: bool = True) -> str:
         """
         Generate minimal great-docs.yml without reference section.
 
@@ -2958,12 +2964,15 @@ class GreatDocs:
         ----------
         parser
             The docstring parser style ("numpy", "google", or "sphinx").
+        dynamic
+            Whether to use dynamic introspection mode for quartodoc.
 
         Returns
         -------
         str
             YAML content for a minimal configuration file.
         """
+        dynamic_str = "true" if dynamic else "false"
         return f"""# Great Docs Configuration
 # See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html
 
@@ -2971,6 +2980,12 @@ class GreatDocs:
 # ----------------
 # The docstring format used in your package (numpy, google, or sphinx)
 parser: {parser}
+
+# Dynamic Introspection
+# ---------------------
+# Use runtime introspection for more accurate documentation (default: true)
+# Set to false if your package has cyclic alias issues (e.g., PyO3/Rust bindings)
+dynamic: {dynamic_str}
 
 # Exclusions
 # ----------
@@ -3012,7 +3027,7 @@ parser: {parser}
 """
 
     def _generate_config_with_reference(
-        self, categories: dict, package_name: str, parser: str = "numpy"
+        self, categories: dict, package_name: str, parser: str = "numpy", dynamic: bool = True
     ) -> str:
         """
         Generate great-docs.yml with a reference section from discovered exports.
@@ -3025,12 +3040,15 @@ parser: {parser}
             The package name (for method threshold comments).
         parser
             The docstring parser style ("numpy", "google", or "sphinx").
+        dynamic
+            Whether to use dynamic introspection mode for quartodoc.
 
         Returns
         -------
         str
             YAML content for the configuration file.
         """
+        dynamic_str = "true" if dynamic else "false"
         lines = [
             "# Great Docs Configuration",
             "# See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html",
@@ -3039,6 +3057,12 @@ parser: {parser}
             "# ----------------",
             "# The docstring format used in your package (numpy, google, or sphinx)",
             f"parser: {parser}",
+            "",
+            "# Dynamic Introspection",
+            "# ---------------------",
+            "# Use runtime introspection for more accurate documentation (default: true)",
+            "# Set to false if your package has cyclic alias issues (e.g., PyO3/Rust bindings)",
+            f"dynamic: {dynamic_str}",
             "",
             "# API Discovery Settings",
             "# ----------------------",
@@ -3703,9 +3727,14 @@ toc: false
             "dir": "reference",
             "title": "Reference",
             "style": "pkgdown",
-            "dynamic": True,
             "renderer": {"style": "markdown", "table_style": "description-list"},
         }
+
+        # Get dynamic setting from great-docs.yml config (defaults to True)
+        dynamic = self._config.dynamic
+        quartodoc_config["dynamic"] = dynamic
+        if not dynamic:
+            print("Using static introspection mode (dynamic: false)")
 
         # Get parser from great-docs.yml config (defaults to numpy)
         parser = self._config.parser
@@ -3775,10 +3804,13 @@ toc: false
         # Prioritizes explicit config from great-docs.yml over auto-discovery
         sections = self._create_quartodoc_sections_from_families(package_name)
 
-        # Update parser from great-docs.yml config
+        # Update parser and dynamic settings from great-docs.yml config
         parser = self._config.parser
         if parser:
             config["quartodoc"]["parser"] = parser
+
+        dynamic = self._config.dynamic
+        config["quartodoc"]["dynamic"] = dynamic
 
         if sections:
             config["quartodoc"]["sections"] = sections

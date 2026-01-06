@@ -1,3 +1,4 @@
+# pyright: reportPrivateUsage=false
 import tempfile
 from pathlib import Path
 from great_docs import GreatDocs, Config, load_config, create_default_config

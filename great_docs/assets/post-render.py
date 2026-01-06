@@ -426,11 +426,11 @@ for html_file in html_files:
             # Store classification based on original content
             if original_h1_content and original_h1_content[0].isupper():
                 if "." in original_h1_content:
-                    classification_info[i] = ("method", "steelblue", "#E3F2FF")
+                    classification_info[i] = ("method", "#0891b2", "#ECFEFF")
                 else:
-                    classification_info[i] = ("class", "darkgreen", "#E3FEE3")
+                    classification_info[i] = ("class", "#6366f1", "#EEF2FF")
             else:
-                classification_info[i] = ("function", "darkorange", "#FFF1E0")
+                classification_info[i] = ("function", "#7c3aed", "#F5F3FF")
 
     # Remove the literal text `Validate.` from the h1 tag
     # TODO: Add line below stating the class name for the method

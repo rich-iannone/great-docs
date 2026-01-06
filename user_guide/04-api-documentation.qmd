@@ -193,7 +193,7 @@ Great Docs applies consistent styling to your API documentation, making it easie
 
 ### Type Labels
 
-Each documented item displays a colored label indicating its type. Classes appear with a green label, making them easy to spot as primary building blocks. Methods show a blue label with their full qualified name (like `Class.method()`), clearly indicating they belong to a class. Functions display an orange label (like `function()`), distinguishing them from methods. These visual cues help readers quickly identify what kind of object they're looking at.
+Each documented item displays a colored label indicating its type. Classes appear with an indigo label, making them easy to spot as primary building blocks. Methods show a cyan label with their full qualified name (like `Class.method()`), clearly indicating they belong to a class. Functions display a violet label (like `function()`), distinguishing them from methods. These visual cues help readers quickly identify what kind of object they're looking at.
 
 ### Code Styling
 

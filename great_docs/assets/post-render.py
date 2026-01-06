@@ -475,7 +475,7 @@ for html_file in html_files:
                 h1_content = h1_match.group(1)
                 label_type, label_color, background_color = classification_info[i]
 
-                label_span = f'<span style="font-size: 0.75rem; border-style: solid; border-width: 1px; border-color: {label_color}; background-color: {background_color}; margin-left: 12px; vertical-align: 3.5px;"><code style="background-color: transparent; color: {label_color};">{label_type}</code></span>'
+                label_span = f'<span style="font-size: 1rem; border-style: solid; border-width: 1px; border-color: {label_color}; background-color: {background_color}; margin-left: 12px; vertical-align: 0.1rem;"><code style="background-color: transparent; color: {label_color};">{label_type}</code></span>'
 
                 new_h1_content = h1_content + label_span
                 new_line = line.replace(h1_content, new_h1_content)

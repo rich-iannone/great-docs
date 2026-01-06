@@ -425,6 +425,9 @@ class GreatDocs:
         where the package and its dependencies are installed. This is essential
         for notebook execution and quartodoc introspection.
 
+        Also sets PYTHONPATH to include the package root directory, ensuring that
+        griffe and quartodoc can find the package even if it's not installed.
+
         The method looks for Python in the following order:
         1. Virtual environment in the project root (.venv/bin/python or .venv/Scripts/python.exe)
         2. The currently running Python interpreter
@@ -432,7 +435,7 @@ class GreatDocs:
         Returns
         -------
         dict[str, str]
-            Environment variables dictionary with QUARTO_PYTHON set.
+            Environment variables dictionary with QUARTO_PYTHON and PYTHONPATH set.
         """
         import sys
 
@@ -458,6 +461,17 @@ class GreatDocs:
             python_path = sys.executable
 
         env["QUARTO_PYTHON"] = python_path
+
+        # Add package root to PYTHONPATH so griffe/quartodoc can find the package
+        # even if it's not installed (e.g., during development)
+        existing_pythonpath = env.get("PYTHONPATH", "")
+        package_root_str = str(package_root)
+        if existing_pythonpath:
+            # Prepend package root to existing PYTHONPATH
+            env["PYTHONPATH"] = f"{package_root_str}{os.pathsep}{existing_pythonpath}"
+        else:
+            env["PYTHONPATH"] = package_root_str
+
         return env
 
     def _get_package_metadata(self) -> dict:
@@ -5074,8 +5088,15 @@ toc: false
             )
             progress_thread.start()
 
+            # Get environment with PYTHONPATH set to include the package root
+            # This ensures griffe/quartodoc can find the package even if not installed
+            quartodoc_env = self._get_quarto_env()
+
             result = subprocess.run(
-                [sys.executable, "-m", "quartodoc", "build"], capture_output=True, text=True
+                [sys.executable, "-m", "quartodoc", "build"],
+                capture_output=True,
+                text=True,
+                env=quartodoc_env,
             )
 
             stop_event.set()
@@ -5162,10 +5183,17 @@ toc: false
         try:
             os.chdir(self.project_path)
 
+            # Get environment with PYTHONPATH set to include the package root
+            # This ensures griffe/quartodoc can find the package even if not installed
+            quarto_env = self._get_quarto_env()
+
             # Step 1: Run quartodoc build
             print("\n📚 Step 1: Generating API reference with quartodoc...")
             result = subprocess.run(
-                [sys.executable, "-m", "quartodoc", "build"], capture_output=True, text=True
+                [sys.executable, "-m", "quartodoc", "build"],
+                capture_output=True,
+                text=True,
+                env=quarto_env,
             )
 
             if result.returncode != 0:
@@ -5182,9 +5210,6 @@ toc: false
                 return
             else:
                 print("✅ API reference generated")
-
-            # Get environment with QUARTO_PYTHON set for proper Python detection
-            quarto_env = self._get_quarto_env()
 
             # Step 2: Run quarto preview
             print("\n🌐 Step 2: Starting preview server...")

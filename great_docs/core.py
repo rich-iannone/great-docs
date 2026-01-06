@@ -390,6 +390,129 @@ class GreatDocs:
         """
         return package_name.replace("-", "_")
 
+    def _detect_module_name(self) -> str | None:
+        """
+        Detect the actual importable module name for the package.
+
+        The module name may differ from the project name (e.g., project 'py-yaml12'
+        might have module 'yaml12' or 'pyyaml12'). This method tries to find the
+        actual module directory or stub file.
+
+        Priority:
+        1. Explicit 'module' setting in great-docs.yml
+        2. .pyi stub files (for compiled extensions)
+        3. pyproject.toml configuration ([tool.maturin], [tool.setuptools], etc.)
+        4. Auto-discovery via _find_package_init
+
+        Returns
+        -------
+        str | None
+            The detected module name, or None if not found.
+        """
+        # First, check for explicit module name in great-docs.yml
+        if self._config.module:
+            return self._config.module
+
+        package_root = self._find_package_root()
+
+        # Check for .pyi stub files (common for PyO3/Rust/compiled extensions)
+        # These indicate the actual module name for compiled packages
+        pyi_files = list(package_root.glob("*.pyi"))
+        if pyi_files:
+            # Use the first .pyi file found (excluding __init__.pyi)
+            for pyi_file in pyi_files:
+                if pyi_file.stem != "__init__":
+                    return pyi_file.stem
+
+        # Check pyproject.toml for explicit package configuration
+        pyproject_path = package_root / "pyproject.toml"
+        if pyproject_path.exists():
+            import tomllib
+
+            try:
+                with open(pyproject_path, "rb") as f:
+                    data = tomllib.load(f)
+
+                # Check [tool.maturin] for PyO3/Rust projects
+                maturin = data.get("tool", {}).get("maturin", {})
+                if maturin:
+                    # maturin projects: module name is often in module-name or derived from Cargo.toml
+                    module_name = maturin.get("module-name")
+                    if module_name:
+                        return module_name
+
+                # Check [tool.setuptools.packages] for explicit package list
+                setuptools = data.get("tool", {}).get("setuptools", {})
+                if "packages" in setuptools:
+                    packages = setuptools["packages"]
+                    if packages and isinstance(packages, list):
+                        # Return the first package (main package)
+                        return packages[0].split("/")[-1]
+
+                # Check [tool.setuptools.packages.find]
+                find_config = setuptools.get("packages", {})
+                if isinstance(find_config, dict) and "find" in find_config:
+                    where = find_config["find"].get("where", ["."])
+                    if isinstance(where, str):
+                        where = [where]
+                    for base_dir in where:
+                        base_path = package_root / base_dir
+                        if base_path.exists():
+                            for item in base_path.iterdir():
+                                if item.is_dir() and (item / "__init__.py").exists():
+                                    if not item.name.startswith((".", "_", "test")):
+                                        return item.name
+
+                # Check [tool.hatch.build.targets.wheel.packages]
+                hatch_packages = (
+                    data.get("tool", {})
+                    .get("hatch", {})
+                    .get("build", {})
+                    .get("targets", {})
+                    .get("wheel", {})
+                    .get("packages", [])
+                )
+                if hatch_packages:
+                    pkg = hatch_packages[0]
+                    return pkg.split("/")[-1]
+
+            except Exception:
+                pass
+
+        # Try to find via _find_package_init
+        project_name = self._detect_package_name()
+        if project_name:
+            init_file = self._find_package_init(project_name)
+            if init_file:
+                return init_file.parent.name
+
+        return None
+
+    def _is_compiled_extension(self) -> bool:
+        """
+        Check if this is a compiled extension package (PyO3, Cython, etc.).
+
+        Returns
+        -------
+        bool
+            True if this appears to be a compiled extension package.
+        """
+        package_root = self._find_package_root()
+
+        # Check for Cargo.toml (Rust/PyO3)
+        if (package_root / "Cargo.toml").exists():
+            return True
+
+        # Check for .pyi stub files without corresponding .py files
+        pyi_files = list(package_root.glob("*.pyi"))
+        for pyi_file in pyi_files:
+            if pyi_file.stem != "__init__":
+                py_file = pyi_file.with_suffix(".py")
+                if not py_file.exists():
+                    return True
+
+        return False
+
     def _find_package_root(self) -> Path:
         """
         Find the actual package root directory (where pyproject.toml or setup.py exists).
@@ -464,13 +587,25 @@ class GreatDocs:
 
         # Add package root to PYTHONPATH so griffe/quartodoc can find the package
         # even if it's not installed (e.g., during development)
+        pythonpath_dirs = [str(package_root)]
+
+        # Also add src/ directory if it exists (common src-layout)
+        src_dir = package_root / "src"
+        if src_dir.exists() and src_dir.is_dir():
+            pythonpath_dirs.append(str(src_dir))
+
+        # Also add python/ directory if it exists (common for Rust/PyO3 projects)
+        python_dir = package_root / "python"
+        if python_dir.exists() and python_dir.is_dir():
+            pythonpath_dirs.append(str(python_dir))
+
         existing_pythonpath = env.get("PYTHONPATH", "")
-        package_root_str = str(package_root)
+        new_pythonpath = os.pathsep.join(pythonpath_dirs)
         if existing_pythonpath:
-            # Prepend package root to existing PYTHONPATH
-            env["PYTHONPATH"] = f"{package_root_str}{os.pathsep}{existing_pythonpath}"
+            # Prepend our paths to existing PYTHONPATH
+            env["PYTHONPATH"] = f"{new_pythonpath}{os.pathsep}{existing_pythonpath}"
         else:
-            env["PYTHONPATH"] = package_root_str
+            env["PYTHONPATH"] = new_pythonpath
 
         return env
 
@@ -1759,36 +1894,93 @@ class GreatDocs:
         # Normalize package name (replace dashes with underscores)
         normalized_name = package_name.replace("-", "_")
 
-        # Common locations to search for package directories
-        search_paths = [
-            self.project_root / package_name,
-            self.project_root / normalized_name,
-            self.project_root / "python" / package_name,
-            self.project_root / "python" / normalized_name,
-            self.project_root / "src" / package_name,
-            self.project_root / "src" / normalized_name,
-            self.project_root / "lib" / package_name,
-            self.project_root / "lib" / normalized_name,
-        ]
+        # First, try to get explicit package info from pyproject.toml
+        package_root = self._find_package_root()
+        pyproject_path = package_root / "pyproject.toml"
+        explicit_packages = []
 
+        if pyproject_path.exists():
+            import tomllib
+
+            try:
+                with open(pyproject_path, "rb") as f:
+                    data = tomllib.load(f)
+
+                # Check [tool.setuptools.packages] for explicit package list
+                setuptools = data.get("tool", {}).get("setuptools", {})
+                if "packages" in setuptools:
+                    explicit_packages = setuptools["packages"]
+                elif "packages" in setuptools.get("find", {}):
+                    # [tool.setuptools.packages.find] with where
+                    where = setuptools.get("find", {}).get("where", ["."])
+                    if isinstance(where, str):
+                        where = [where]
+                    for base_dir in where:
+                        base_path = package_root / base_dir
+                        if base_path.exists():
+                            # Look for packages in this directory
+                            for item in base_path.iterdir():
+                                if item.is_dir() and (item / "__init__.py").exists():
+                                    if not item.name.startswith((".", "_", "test")):
+                                        explicit_packages.append(item.name)
+
+                # Check [tool.hatch.build.targets.wheel] for hatch projects
+                hatch_packages = (
+                    data.get("tool", {})
+                    .get("hatch", {})
+                    .get("build", {})
+                    .get("targets", {})
+                    .get("wheel", {})
+                    .get("packages", [])
+                )
+                if hatch_packages:
+                    explicit_packages.extend(hatch_packages)
+
+            except Exception:
+                pass
+
+        # Build search paths, prioritizing explicit packages from pyproject.toml
+        search_paths = []
+
+        # Add explicit packages first (from pyproject.toml config)
+        for pkg in explicit_packages:
+            # Handle "src/package" style paths
+            if "/" in pkg:
+                search_paths.append(package_root / pkg)
+            else:
+                search_paths.append(package_root / pkg)
+                search_paths.append(package_root / "src" / pkg)
+
+        # Then add standard locations based on package name
+        search_paths.extend(
+            [
+                package_root / package_name,
+                package_root / normalized_name,
+                package_root / "python" / package_name,
+                package_root / "python" / normalized_name,
+                package_root / "src" / package_name,
+                package_root / "src" / normalized_name,
+                package_root / "lib" / package_name,
+                package_root / "lib" / normalized_name,
+            ]
+        )
+
+        # First pass: look for __init__.py with __version__ or __all__
         for package_dir in search_paths:
             if not package_dir.exists() or not package_dir.is_dir():
                 continue
 
             init_file = package_dir / "__init__.py"
             if init_file.exists():
-                # First check if it's likely the main package (has __version__ or __all__)
                 try:
                     with open(init_file, "r", encoding="utf-8") as f:
                         content = f.read()
-                        # Check if it has __version__ (good indicator of main package __init__)
                         if "__version__" in content or "__all__" in content:
                             return init_file
                 except Exception:
                     continue
 
         # Second pass: accept any __init__.py in a matching directory
-        # This handles packages that don't define __version__ or __all__
         for package_dir in search_paths:
             if not package_dir.exists() or not package_dir.is_dir():
                 continue
@@ -1796,6 +1988,42 @@ class GreatDocs:
             init_file = package_dir / "__init__.py"
             if init_file.exists():
                 return init_file
+
+        # Third pass: auto-discover any Python package in common locations
+        # This handles cases where the package name doesn't match the project name
+        auto_discover_dirs = [
+            package_root,
+            package_root / "src",
+            package_root / "python",
+            package_root / "lib",
+        ]
+
+        for base_dir in auto_discover_dirs:
+            if not base_dir.exists():
+                continue
+            for item in base_dir.iterdir():
+                if not item.is_dir():
+                    continue
+                # Skip common non-package directories
+                if item.name.startswith((".", "_")) or item.name in (
+                    "tests",
+                    "test",
+                    "docs",
+                    "doc",
+                    "examples",
+                    "scripts",
+                    "build",
+                    "dist",
+                    "__pycache__",
+                    "venv",
+                    ".venv",
+                    "node_modules",
+                    "site-packages",
+                ):
+                    continue
+                init_file = item / "__init__.py"
+                if init_file.exists():
+                    return init_file
 
         return None
 
@@ -3051,6 +3279,12 @@ class GreatDocs:
         return f"""# Great Docs Configuration
 # See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html
 
+# Module Name (optional)
+# ----------------------
+# Set this if your importable module name differs from the project name.
+# Example: project 'py-yaml12' with module name 'yaml12'
+# module: yaml12
+
 # Docstring Parser
 # ----------------
 # The docstring format used in your package (numpy, google, or sphinx)
@@ -3127,6 +3361,12 @@ dynamic: {dynamic_str}
         lines = [
             "# Great Docs Configuration",
             "# See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html",
+            "",
+            "# Module Name (optional)",
+            "# ----------------------",
+            "# Set this if your importable module name differs from the project name.",
+            "# Example: project 'py-yaml12' with module name 'yaml12'",
+            "# module: yaml12",
             "",
             "# Docstring Parser",
             "# ----------------",
@@ -3773,7 +4013,7 @@ toc: false
             print("quartodoc configuration already exists, skipping")
             return
 
-        # Detect package name
+        # Detect package name (project name from pyproject.toml)
         package_name = self._detect_package_name()
 
         if not package_name:
@@ -3787,8 +4027,24 @@ toc: false
 
         print(f"Adding quartodoc configuration for package: {package_name}")
 
-        # Convert package name to importable form (hyphens -> underscores)
-        importable_name = self._normalize_package_name(package_name)
+        # Detect actual module name (may differ from project name)
+        # e.g., project 'py-yaml12' might have module 'yaml12'
+        module_name = self._detect_module_name()
+        if module_name:
+            importable_name = module_name
+            if module_name != package_name and module_name != self._normalize_package_name(
+                package_name
+            ):
+                print(f"Detected module name: {module_name}")
+        else:
+            # Fall back to normalizing package name (hyphens -> underscores)
+            importable_name = self._normalize_package_name(package_name)
+
+        # Check if this is a compiled extension
+        if self._is_compiled_extension():
+            print("Detected compiled extension package (PyO3/Rust/Cython)")
+            print("Note: The package must be installed (`pip install -e .` or `maturin develop`)")
+            print("      for quartodoc to generate documentation.")
 
         # Try to auto-generate sections from discovered exports
         # First try family-based organization (from @family directives)
@@ -3796,7 +4052,7 @@ toc: false
         sections = self._create_quartodoc_sections_from_families(importable_name)
 
         # Add quartodoc configuration with sensible defaults
-        # Use the importable name (with underscores) for the package field
+        # Use the importable name (actual module name) for the package field
         quartodoc_config = {
             "package": importable_name,
             "dir": "reference",

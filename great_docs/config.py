@@ -5,6 +5,9 @@ import yaml
 
 # Default configuration values
 DEFAULT_CONFIG: dict[str, Any] = {
+    # Module name (importable name, if different from project name)
+    # e.g., project 'py-yaml12' might have module 'yaml12'
+    "module": None,
     # Docstring parser format
     "parser": "numpy",  # "numpy" (default), "google", or "sphinx"
     # Dynamic introspection mode for quartodoc
@@ -216,6 +219,16 @@ class Config:
     def dynamic(self) -> bool:
         """Get the dynamic introspection mode for quartodoc."""
         return self.get("dynamic", True)
+
+    @property
+    def module(self) -> str | None:
+        """
+        Get the explicit module name (importable name).
+
+        Use this when the importable module name differs from the project name,
+        e.g., project 'py-yaml12' with module 'yaml12'.
+        """
+        return self.get("module")
 
     @property
     def reference(self) -> list[dict[str, Any]]:

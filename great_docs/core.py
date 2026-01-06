@@ -75,6 +75,17 @@ class GreatDocs:
         # Check if _quarto.yml exists in project root
         if (self.project_root / "_quarto.yml").exists():
             print("Found _quarto.yml in project root")
+            # But also check if there's a docs/ directory that might be preferred
+            for dir_name in common_docs_dirs:
+                potential_dir = self.project_root / dir_name
+                if potential_dir.exists() and potential_dir.is_dir():
+                    print(f"Also found existing '{dir_name}/' directory.")
+                    response = input(
+                        f"Install great-docs in '{dir_name}/' instead of project root? [Y/n]: "
+                    )
+                    if response.lower() != "n":
+                        return Path(dir_name)
+                    break  # Only ask about the first found docs dir
             return Path(".")
 
         # Look for any existing common docs directories (even without _quarto.yml)
@@ -1752,7 +1763,7 @@ class GreatDocs:
 
             init_file = package_dir / "__init__.py"
             if init_file.exists():
-                # Verify this is likely the right __init__.py by checking for __version__
+                # First check if it's likely the main package (has __version__ or __all__)
                 try:
                     with open(init_file, "r", encoding="utf-8") as f:
                         content = f.read()
@@ -1761,6 +1772,16 @@ class GreatDocs:
                             return init_file
                 except Exception:
                     continue
+
+        # Second pass: accept any __init__.py in a matching directory
+        # This handles packages that don't define __version__ or __all__
+        for package_dir in search_paths:
+            if not package_dir.exists() or not package_dir.is_dir():
+                continue
+
+            init_file = package_dir / "__init__.py"
+            if init_file.exists():
+                return init_file
 
         return None
 
@@ -1784,7 +1805,15 @@ class GreatDocs:
         # Find the package's __init__.py file
         init_file = self._find_package_init(package_name)
         if not init_file:
-            print(f"Could not locate __init__.py for package '{package_name}'")
+            # Show both the original and normalized name for clarity
+            normalized = package_name.replace("-", "_")
+            if normalized != package_name:
+                print(
+                    f"Could not locate __init__.py for package '{package_name}' (module name: '{normalized}')"
+                )
+                print(f"Tip: Ensure a '{normalized}/' directory exists with an __init__.py file")
+            else:
+                print(f"Could not locate __init__.py for package '{package_name}'")
             return None
 
         print(f"Found package __init__.py at: {init_file.relative_to(self.project_root)}")
@@ -1912,6 +1941,10 @@ class GreatDocs:
                 pkg = griffe.load(normalized_name)
             except Exception as e:
                 print(f"Warning: Could not load package with griffe ({type(e).__name__})")
+                if package_name != normalized_name:
+                    print(
+                        f"   (Looking for module '{normalized_name}' from project '{package_name}')"
+                    )
                 return None
 
             # Get all members from the package (equivalent to dir(package))

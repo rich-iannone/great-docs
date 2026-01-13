@@ -175,7 +175,7 @@ class GreatDocs:
         self._config = Config(self._find_package_root())
 
         # Update project root .gitignore to exclude great-docs/
-        self._update_project_gitignore()
+        self._update_project_gitignore(force=force)
 
         print("\n✅ Great Docs initialization complete!")
         print("\nNext steps:")
@@ -187,12 +187,17 @@ class GreatDocs:
         print("  great-docs scan           # Preview API organization")
         print("  great-docs build --watch  # Watch for changes and rebuild")
 
-    def _update_project_gitignore(self) -> None:
+    def _update_project_gitignore(self, force: bool = False) -> None:
         """
         Update project root .gitignore to exclude the great-docs/ build directory.
 
-        Prompts the user for permission before modifying .gitignore.
+        Prompts the user for permission before modifying .gitignore, unless force=True.
         This ensures the ephemeral build directory is not committed to version control.
+
+        Parameters
+        ----------
+        force
+            If True, skip the prompt and automatically update .gitignore.
         """
         gitignore_path = self.project_root / ".gitignore"
 
@@ -208,7 +213,21 @@ class GreatDocs:
                 # Already present, no need to ask
                 return
 
-        # Ask for permission
+        # If force=True, skip the prompt
+        if force:
+            if gitignore_path.exists():
+                # Append to existing .gitignore
+                with open(gitignore_path, "a", encoding="utf-8") as f:
+                    f.write("\n" + entry)
+                print("✅ Updated .gitignore to exclude great-docs/ directory")
+            else:
+                # Create new .gitignore
+                with open(gitignore_path, "w", encoding="utf-8") as f:
+                    f.write(entry)
+                print("✅ Created .gitignore to exclude great-docs/ directory")
+            return
+
+        # Ask for permission in interactive mode
         print("\nThe great-docs/ directory is ephemeral and should not be committed to git.")
         response = input("Add 'great-docs/' to .gitignore? [Y/n]: ").strip().lower()
 

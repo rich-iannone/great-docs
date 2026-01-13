@@ -398,12 +398,6 @@ cli.add_command(scan)
     help="Path to your project root directory (default: current directory)",
 )
 @click.option(
-    "--docs-dir",
-    type=str,
-    default="docs",
-    help="Path to documentation directory relative to project root (default: docs)",
-)
-@click.option(
     "--main-branch",
     type=str,
     default="main",
@@ -420,7 +414,7 @@ cli.add_command(scan)
     is_flag=True,
     help="Overwrite existing workflow file without prompting",
 )
-def setup_github_pages(project_path, docs_dir, main_branch, python_version, force):
+def setup_github_pages(project_path, main_branch, python_version, force):
     """Set up automatic deployment to GitHub Pages.
 
     This command creates a GitHub Actions workflow that automatically builds
@@ -483,7 +477,6 @@ def setup_github_pages(project_path, docs_dir, main_branch, python_version, forc
         workflow_content = template_content.format(
             main_branch=main_branch,
             python_version=python_version,
-            docs_dir=docs_dir,
         )
 
         # Write workflow file
@@ -520,11 +513,6 @@ cli.add_command(setup_github_pages)
     help="Path to your project root directory (default: current directory)",
 )
 @click.option(
-    "--docs-dir",
-    type=str,
-    help="Path to documentation directory relative to project root",
-)
-@click.option(
     "--source-only",
     is_flag=True,
     help="Only check links in Python source files",
@@ -557,9 +545,7 @@ cli.add_command(setup_github_pages)
     is_flag=True,
     help="Output results as JSON",
 )
-def check_links(
-    project_path, docs_dir, source_only, docs_only, timeout, ignore, verbose, json_output
-):
+def check_links(project_path, source_only, docs_only, timeout, ignore, verbose, json_output):
     """Check for broken links in source code and documentation.
 
     This command scans Python source files and documentation (`.qmd`, `.md`)
@@ -585,7 +571,7 @@ def check_links(
     import json as json_module
 
     try:
-        docs = GreatDocs(project_path=project_path, docs_dir=docs_dir)
+        docs = GreatDocs(project_path=project_path)
 
         # Determine what to scan
         include_source = not docs_only

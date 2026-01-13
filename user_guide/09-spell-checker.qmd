@@ -13,7 +13,7 @@ The spell checker scans **source documentation**, not generated output:
 - `README.md` in the project root
 - Optionally: docstrings from your Python source code
 
-It does **not** scan the `docs/` directory, as that contains generated output that users shouldn't edit directly.
+It does **not** scan the `great-docs/` build directory, as that contains generated output.
 
 ## Basic Usage
 
@@ -36,9 +36,9 @@ great-docs spell-check --verbose
 This shows each file as it's scanned:
 
 ```
-✅ docs/index.qmd: OK
-📄 docs/guide.qmd: 2 issue(s)
-✅ docs/reference.qmd: OK
+✅ user_guide/index.qmd: OK
+📄 user_guide/guide.qmd: 2 issue(s)
+✅ user_guide/reference.qmd: OK
 ```
 
 ## Custom Dictionary
@@ -124,12 +124,12 @@ This returns structured JSON:
     {
       "word": "documment",
       "suggestions": ["document", "documents"],
-      "files": ["docs/guide.qmd"],
+      "files": ["user_guide/guide.qmd"],
       "contexts": ["This documment explains..."]
     }
   ],
   "by_file": {
-    "docs/guide.qmd": ["documment"]
+    "user_guide/guide.qmd": ["documment"]
   },
   "skipped_files": []
 }

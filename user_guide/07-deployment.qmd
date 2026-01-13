@@ -66,12 +66,6 @@ https://[username].github.io/[repository]/
 
 ## Customization Options
 
-### Different Docs Directory
-
-```{.bash filename="Terminal"}
-great-docs setup-github-pages --docs-dir site
-```
-
 ### Different Main Branch
 
 ```{.bash filename="Terminal"}
@@ -88,7 +82,6 @@ great-docs setup-github-pages --python-version 3.12
 
 ```{.bash filename="Terminal"}
 great-docs setup-github-pages \
-  --docs-dir site \
   --main-branch develop \
   --python-version 3.12
 ```
@@ -133,12 +126,11 @@ jobs:
 
       - name: Build documentation
         run: great-docs build
-        working-directory: docs
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/_site
+          path: great-docs/_site
 
   publish-docs:
     needs: build-docs
@@ -168,20 +160,20 @@ great-docs build
 
 ### Upload the Built Site
 
-The built site is in `docs/_site/`. Upload this directory to your hosting service:
+The built site is in `great-docs/_site/`. Upload this directory to your hosting service:
 
-- **Netlify**: Drag and drop `_site/` folder
-- **Vercel**: Point to `docs/_site` as output directory
-- **AWS S3**: Sync the `_site/` folder to your bucket
-- **Any static host**: Copy contents of `_site/`
+- **Netlify**: Drag and drop `great-docs/_site/` folder
+- **Vercel**: Point to `great-docs/_site` as output directory
+- **AWS S3**: Sync the `great-docs/_site/` folder to your bucket
+- **Any static host**: Copy contents of `great-docs/_site/`
 
 ## Custom Domain
 
 To use a custom domain with GitHub Pages:
 
-1. Add a `CNAME` file to `docs/` containing your domain:
+1. Add a `CNAME` file to your project root (it will be copied during build):
 
-   ```{.default filename="docs/CNAME"}
+   ```{.default filename="CNAME"}
    docs.example.com
    ```
 
@@ -218,7 +210,7 @@ Pull request previews need a few things to be in place. The workflow must comple
 Run `great-docs build` locally before pushing to catch errors early:
 
 ```bash
-great-docs build && open docs/_site/index.html
+great-docs build && open great-docs/_site/index.html
 ```
 
 ### Use Pull Request Previews

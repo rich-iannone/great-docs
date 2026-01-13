@@ -11,13 +11,13 @@ Beyond API reference documentation, you often need narrative documentation: tuto
 
 To add a User Guide to your documentation:
 
-1. Create a `user_guide/` directory in your project root (not in `docs/`)
+1. Create a `user_guide/` directory in your project root
 2. Add `.qmd` files for each page
 3. Run `great-docs build`
 
 That's it! Great Docs automatically:
 
-- Copies files to `docs/user-guide/`
+- Copies files to `great-docs/user-guide/`
 - Generates sidebar navigation
 - Adds a "User Guide" link to the navbar
 - Organizes pages into sections
@@ -26,14 +26,17 @@ That's it! Great Docs automatically:
 
 ```{.default filename="Project structure"}
 your-project/
-├── docs/                    # Generated docs (don't edit directly)
-├── user_guide/              # Your source files
+├── great-docs/              # Build directory (ephemeral, gitignored)
+│   ├── user-guide/          # Copied from user_guide/
+│   └── ...
+├── user_guide/              # Your source files (committed to git)
 │   ├── 00-introduction.qmd
 │   ├── 01-installation.qmd
 │   ├── 02-quickstart.qmd
 │   ├── 03-configuration.qmd
 │   └── images/              # Asset directories are copied too
 │       └── screenshot.png
+├── great-docs.yml
 ├── pyproject.toml
 └── your_package/
 ```
@@ -212,10 +215,10 @@ Subdirectories that don't contain `.qmd` files are treated as asset directories 
 ```{.default filename="user_guide/"}
 user_guide/
 ├── 01-guide.qmd
-├── images/          # Copied to docs/user-guide/images/
+├── images/          # Copied to great-docs/user-guide/images/
 │   ├── logo.png
 │   └── diagram.svg
-└── data/            # Copied to docs/user-guide/data/
+└── data/            # Copied to great-docs/user-guide/data/
     └── example.json
 ```
 
@@ -243,7 +246,7 @@ user_guide/
 
 ### Keep Source in Project Root
 
-The `user_guide/` directory should be in your project root, not inside `docs/`. Great Docs copies files during build, so your source stays separate from generated output.
+The `user_guide/` directory should be in your project root. Great Docs copies files to `great-docs/user-guide/` during each build, keeping your source separate from generated output.
 
 ### Use Descriptive Titles
 

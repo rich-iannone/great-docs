@@ -518,6 +518,36 @@ a.sidebar-item-text.sidebar-link.text-start > span {
 }
 
 /* Mobile responsive adjustments */
+@media (max-width: 991.98px) {
+    /* Align both widgets with consistent left positioning */
+    #github-widget {
+        margin-left: 0;
+    }
+
+    #dark-mode-toggle-container {
+        margin-right: 8px;
+    }
+
+    /* Stack widgets vertically with consistent width */
+    .nav-item:has(#dark-mode-toggle-container),
+    .nav-item:has(#github-widget) {
+        display: flex;
+        width: 100%;
+        padding: 4px 0;
+    }
+
+    /* Make dark mode toggle full width to match GitHub widget */
+    #dark-mode-toggle-container .dark-mode-toggle {
+        margin-left: 10px;
+    }
+
+    /* Make GitHub widget full width */
+    .gh-widget-trigger {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
+
 @media (max-width: 768px) {
     .gh-stats {
         display: none;

@@ -99,5 +99,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           env: ${{ env.RELEASE_NAME }}
           ref: ${{ github.head_ref }}
-          transient: true
           logs: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

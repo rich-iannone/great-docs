@@ -3506,7 +3506,20 @@ title: "License"
                 title = citation_data.get("title", "")
                 version = citation_data.get("version", "")
                 url = citation_data.get("url", "")
-                year = "2025"  # Could parse from date-released if available
+
+                # Parse year from date-released field or use current year
+                from datetime import datetime
+
+                year = datetime.now().year
+                if citation_data.get("date-released"):
+                    try:
+                        date_released = citation_data["date-released"]
+                        if isinstance(date_released, str):
+                            year = datetime.fromisoformat(date_released).year
+                        elif hasattr(date_released, "year"):
+                            year = date_released.year
+                    except (ValueError, AttributeError):
+                        pass  # Keep current year as fallback
 
                 citation_section += (
                     f"{authors_str} ({year}). {title} Python package version {version}, {url}.\n\n"
@@ -3528,7 +3541,21 @@ title: "License"
                     author_names.append(full_name)
                 citation_section += f"  author = {{{' and '.join(author_names)}}},\n"
 
-            citation_section += "  year = {2025},\n"
+            # Parse year from date-released or use current year
+            from datetime import datetime
+
+            year = datetime.now().year
+            if citation_data.get("date-released"):
+                try:
+                    date_released = citation_data["date-released"]
+                    if isinstance(date_released, str):
+                        year = datetime.fromisoformat(date_released).year
+                    elif hasattr(date_released, "year"):
+                        year = date_released.year
+                except (ValueError, AttributeError):
+                    pass  # Keep current year as fallback
+
+            citation_section += f"  year = {{{year}}},\n"
 
             if citation_data.get("version"):
                 citation_section += (

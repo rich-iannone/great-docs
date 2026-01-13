@@ -191,6 +191,7 @@ class GreatDocs:
         """
         Update project root .gitignore to exclude the great-docs/ build directory.
 
+        Prompts the user for permission before modifying .gitignore.
         This ensures the ephemeral build directory is not committed to version control.
         """
         gitignore_path = self.project_root / ".gitignore"
@@ -198,21 +199,34 @@ class GreatDocs:
         # Entry to add
         entry = "# Great Docs build directory (ephemeral, do not commit)\ngreat-docs/\n"
 
+        # Check if already present
         if gitignore_path.exists():
             with open(gitignore_path, "r", encoding="utf-8") as f:
                 content = f.read()
 
-            # Check if entry already exists
-            if "great-docs/" not in content:
+            if "great-docs/" in content:
+                # Already present, no need to ask
+                return
+
+        # Ask for permission
+        print("\nThe great-docs/ directory is ephemeral and should not be committed to git.")
+        response = input("Add 'great-docs/' to .gitignore? [Y/n]: ").strip().lower()
+
+        if response in ("", "y", "yes"):
+            if gitignore_path.exists():
                 # Append to existing .gitignore
                 with open(gitignore_path, "a", encoding="utf-8") as f:
                     f.write("\n" + entry)
-                print("Updated .gitignore to exclude great-docs/ directory")
+                print("✅ Updated .gitignore to exclude great-docs/ directory")
+            else:
+                # Create new .gitignore
+                with open(gitignore_path, "w", encoding="utf-8") as f:
+                    f.write(entry)
+                print("✅ Created .gitignore to exclude great-docs/ directory")
         else:
-            # Create new .gitignore
-            with open(gitignore_path, "w", encoding="utf-8") as f:
-                f.write(entry)
-            print("Created .gitignore to exclude great-docs/ directory")
+            print(
+                "⚠️  Skipped .gitignore update. Remember to exclude great-docs/ from version control."
+            )
 
     def _detect_package_name(self) -> str | None:
         """

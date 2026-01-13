@@ -17,20 +17,18 @@ class GreatDocs:
     Quarto projects with the great-docs styling and functionality.
     """
 
-    def __init__(self, project_path: str | None = None, docs_dir: str | None = None):
+    def __init__(self, project_path: str | None = None):
         """
         Initialize GreatDocs instance.
 
         Parameters
         ----------
         project_path
-            Path to the Quarto project root directory. Defaults to current directory.
-        docs_dir
-            Path to the documentation directory relative to project_path.
-            If not provided, will be auto-detected or user will be prompted.
+            Path to the project root directory. Defaults to current directory.
         """
         self.project_root = Path(project_path or os.getcwd())
-        self.docs_dir = self._find_or_create_docs_dir(docs_dir)
+        # Build directory is always 'great-docs' - created during build, not init
+        self.docs_dir = Path("great-docs")
         self.project_path = self.project_root / self.docs_dir
         try:
             # Python 3.9+
@@ -45,98 +43,114 @@ class GreatDocs:
         # Load configuration from great-docs.yml
         self._config = Config(self._find_package_root())
 
-    def _find_or_create_docs_dir(self, docs_dir: str | None = None) -> Path:
+    def _prepare_build_directory(self) -> None:
         """
-        Find or create the documentation directory.
+        Prepare the great-docs/ build directory with all necessary assets.
 
-        Parameters
-        ----------
-        docs_dir
-            User-specified docs directory path.
+        This method creates the great-docs/ directory (if it doesn't exist) and
+        copies all CSS, JavaScript, and other assets needed for the build.
+        It also creates the _quarto.yml configuration and other necessary files.
 
-        Returns
-        -------
-        Path
-            Path to the docs directory relative to project root.
+        The great-docs/ directory is ephemeral and should not be committed to
+        version control. It will be recreated on each build.
         """
-        if docs_dir:
-            return Path(docs_dir)
+        print(f"Preparing build directory: {self.project_path.relative_to(self.project_root)}/")
 
-        # Common documentation directory names
-        common_docs_dirs = ["docs", "documentation", "site", "docsrc", "doc"]
+        # Create the great-docs directory
+        self.project_path.mkdir(parents=True, exist_ok=True)
 
-        # First, look for existing _quarto.yml in common locations
-        for dir_name in common_docs_dirs:
-            potential_dir = self.project_root / dir_name
-            if (potential_dir / "_quarto.yml").exists():
-                print(f"Found existing Quarto project in '{dir_name}/' directory")
-                return Path(dir_name)
+        # Create necessary subdirectories
+        scripts_dir = self.project_path / "scripts"
+        scripts_dir.mkdir(exist_ok=True)
 
-        # Check if _quarto.yml exists in project root
-        if (self.project_root / "_quarto.yml").exists():
-            print("Found _quarto.yml in project root")
-            # But also check if there's a docs/ directory that might be preferred
-            for dir_name in common_docs_dirs:
-                potential_dir = self.project_root / dir_name
-                if potential_dir.exists() and potential_dir.is_dir():
-                    print(f"Also found existing '{dir_name}/' directory.")
-                    response = input(
-                        f"Install great-docs in '{dir_name}/' instead of project root? [Y/n]: "
-                    )
-                    if response.lower() != "n":
-                        return Path(dir_name)
-                    break  # Only ask about the first found docs dir
-            return Path(".")
+        reference_dir = self.project_path / "reference"
+        reference_dir.mkdir(exist_ok=True)
 
-        # Look for any existing common docs directories (even without _quarto.yml)
-        for dir_name in common_docs_dirs:
-            potential_dir = self.project_root / dir_name
-            if potential_dir.exists() and potential_dir.is_dir():
-                response = input(
-                    f"Found existing '{dir_name}/' directory. Install great-docs here? [Y/n]: "
-                )
-                if response.lower() != "n":
-                    return Path(dir_name)
+        # Copy post-render script
+        post_render_src = self.assets_path / "post-render.py"
+        post_render_dst = scripts_dir / "post-render.py"
+        shutil.copy2(post_render_src, post_render_dst)
 
-        # No existing docs directory found so ask user
-        print("\nNo documentation directory detected.")
-        print("Where would you like to install great-docs?")
-        print("  1. docs/ (recommended for most projects)")
-        print("  2. Current directory (project root)")
-        print("  3. Custom directory")
+        # Copy CSS file
+        css_src = self.assets_path / "great-docs.css"
+        css_dst = self.project_path / "great-docs.css"
+        shutil.copy2(css_src, css_dst)
 
-        choice = input("Enter choice [1]: ").strip() or "1"
+        # Copy JavaScript files
+        js_files = [
+            "github-widget.js",
+            "sidebar-filter.js",
+            "reference-switcher.js",
+            "dark-mode-toggle.js",
+            "theme-init.js",
+        ]
+        for js_file in js_files:
+            js_src = self.assets_path / js_file
+            if js_src.exists():
+                js_dst = self.project_path / js_file
+                shutil.copy2(js_src, js_dst)
 
-        if choice == "1":
-            return Path("docs")
-        elif choice == "2":
-            return Path(".")
-        elif choice == "3":
-            custom_dir = input("Enter directory path: ").strip()
-            return Path(custom_dir) if custom_dir else Path("docs")
-        else:
-            print("Invalid choice, using 'docs/' as default")
-            return Path("docs")
+        # Create .gitignore for the great-docs directory
+        gitignore_content = """# Great Docs build directory
+# This directory is ephemeral and regenerated on each build
+# Do not commit this directory to version control
+*
+!.gitignore
+"""
+        gitignore_path = self.project_path / ".gitignore"
+        gitignore_path.write_text(gitignore_content, encoding="utf-8")
 
-    def install(self, force: bool = False, skip_quartodoc: bool = False) -> None:
+        # Create index.qmd from README.md or user_guide files
+        self._create_index_from_readme()
+
+        # Copy user guide files if they exist in project root
+        self._copy_user_guide_files()
+
+        # Create _quarto.yml configuration
+        self._update_quarto_config()
+
+        # Add quartodoc configuration
+        self._add_quartodoc_config()
+        self._update_sidebar_from_sections()
+        self._update_reference_index_frontmatter()
+
+    def _copy_user_guide_files(self) -> None:
         """
-        Install great-docs assets and configuration to the project.
+        Copy user guide files from project root to build directory.
 
-        This method copies the necessary CSS files and post-render script to your Quarto project
-        directory, and automatically updates your `_quarto.yml` configuration file to use the
-        great-docs styling.
+        Looks for user_guide/ directory in project root and copies
+        .qmd and .md files to great-docs/user-guide/ directory.
+        """
+        source_user_guide = self.project_root / "user_guide"
+        if not source_user_guide.exists():
+            # Also check for 'user-guide' with hyphen
+            source_user_guide = self.project_root / "user-guide"
+
+        if source_user_guide.exists() and source_user_guide.is_dir():
+            dest_user_guide = self.project_path / "user-guide"
+            dest_user_guide.mkdir(exist_ok=True)
+
+            # Copy all .qmd and .md files
+            for pattern in ["*.qmd", "*.md"]:
+                for file_path in source_user_guide.glob(pattern):
+                    shutil.copy2(file_path, dest_user_guide / file_path.name)
+
+    def install(self, force: bool = False) -> None:
+        """
+        Initialize great-docs in your project.
+
+        This method creates a great-docs.yml configuration file in the project root
+        with discovered exports and sensible defaults. The docs directory and assets
+        will be created later during the build process.
 
         Parameters
         ----------
         force
-            If `True`, overwrite existing files without prompting. Default is `False`.
-        skip_quartodoc
-            If `True`, skip adding quartodoc configuration. Useful for testing or when quartodoc is
-            not needed. Default is `False`.
+            If `True`, overwrite existing great-docs.yml without prompting. Default is `False`.
 
         Examples
         --------
-        Install documentation in the current directory:
+        Initialize great-docs in the current directory:
 
         ```python
         from great_docs import GreatDocs
@@ -145,155 +159,14 @@ class GreatDocs:
         docs.install()
         ```
 
-        Install documentation in a specific project directory, overwriting existing files:
+        Initialize in a specific project directory, overwriting existing config:
 
         ```python
         docs = GreatDocs("/path/to/my/project")
         docs.install(force=True)
         ```
         """
-        print("Installing great-docs...")
-
-        # Create docs directory if it doesn't exist
-        self.project_path.mkdir(parents=True, exist_ok=True)
-        print(f"Using directory: {self.project_path.relative_to(self.project_root)}")
-
-        # Create necessary directories
-        scripts_dir = self.project_path / "scripts"
-        scripts_dir.mkdir(exist_ok=True)
-
-        # Copy post-render script
-        post_render_src = self.assets_path / "post-render.py"
-        post_render_dst = scripts_dir / "post-render.py"
-
-        if post_render_dst.exists() and not force:
-            response = input(f"{post_render_dst} already exists. Overwrite? [y/N]: ")
-            if response.lower() != "y":
-                print("Skipping post-render.py")
-            else:
-                shutil.copy2(post_render_src, post_render_dst)
-                print(f"Copied {post_render_dst}")
-        else:
-            shutil.copy2(post_render_src, post_render_dst)
-            print(f"Copied {post_render_dst}")
-
-        # Copy CSS file
-        css_src = self.assets_path / "great-docs.css"
-        css_dst = self.project_path / "great-docs.css"
-
-        if css_dst.exists() and not force:
-            response = input(f"{css_dst} already exists. Overwrite? [y/N]: ")
-            if response.lower() != "y":
-                print("Skipping great-docs.css")
-            else:
-                shutil.copy2(css_src, css_dst)
-                print(f"Copied {css_dst}")
-        else:
-            shutil.copy2(css_src, css_dst)
-            print(f"Copied {css_dst}")
-
-        # Copy .gitignore file
-        gitignore_src = self.assets_path / ".gitignore"
-        gitignore_dst = self.project_path / ".gitignore"
-
-        if gitignore_dst.exists() and not force:
-            # Append to existing .gitignore if it doesn't already contain our entries
-            with open(gitignore_dst, "r") as f:
-                existing_content = f.read()
-
-            if "_site/" not in existing_content:
-                with open(gitignore_src, "r") as f:
-                    new_content = f.read()
-                with open(gitignore_dst, "a") as f:
-                    f.write("\n" + new_content)
-                print(f"Appended to {gitignore_dst}")
-            else:
-                print("Skipping .gitignore (already contains _site/ entry)")
-        else:
-            shutil.copy2(gitignore_src, gitignore_dst)
-            print(f"Copied {gitignore_dst}")
-
-        # Copy GitHub widget JavaScript file
-        gh_widget_src = self.assets_path / "github-widget.js"
-        gh_widget_dst = self.project_path / "github-widget.js"
-
-        if gh_widget_dst.exists() and not force:
-            response = input(f"{gh_widget_dst} already exists. Overwrite? [y/N]: ")
-            if response.lower() != "y":
-                print("Skipping github-widget.js")
-            else:
-                shutil.copy2(gh_widget_src, gh_widget_dst)
-                print(f"Copied {gh_widget_dst}")
-        else:
-            shutil.copy2(gh_widget_src, gh_widget_dst)
-            print(f"Copied {gh_widget_dst}")
-
-        # Copy sidebar filter JavaScript file
-        sidebar_filter_src = self.assets_path / "sidebar-filter.js"
-        sidebar_filter_dst = self.project_path / "sidebar-filter.js"
-
-        if sidebar_filter_src.exists():
-            if sidebar_filter_dst.exists() and not force:
-                response = input(f"{sidebar_filter_dst} already exists. Overwrite? [y/N]: ")
-                if response.lower() != "y":
-                    print("Skipping sidebar-filter.js")
-                else:
-                    shutil.copy2(sidebar_filter_src, sidebar_filter_dst)
-                    print(f"Copied {sidebar_filter_dst}")
-            else:
-                shutil.copy2(sidebar_filter_src, sidebar_filter_dst)
-                print(f"Copied {sidebar_filter_dst}")
-
-        # Copy reference switcher JavaScript file (for CLI docs)
-        ref_switcher_src = self.assets_path / "reference-switcher.js"
-        ref_switcher_dst = self.project_path / "reference-switcher.js"
-
-        if ref_switcher_src.exists():
-            if ref_switcher_dst.exists() and not force:
-                response = input(f"{ref_switcher_dst} already exists. Overwrite? [y/N]: ")
-                if response.lower() != "y":
-                    print("Skipping reference-switcher.js")
-                else:
-                    shutil.copy2(ref_switcher_src, ref_switcher_dst)
-                    print(f"Copied {ref_switcher_dst}")
-            else:
-                shutil.copy2(ref_switcher_src, ref_switcher_dst)
-                print(f"Copied {ref_switcher_dst}")
-
-        # Copy dark mode toggle JavaScript file
-        dark_mode_src = self.assets_path / "dark-mode-toggle.js"
-        dark_mode_dst = self.project_path / "dark-mode-toggle.js"
-
-        if dark_mode_src.exists():
-            if dark_mode_dst.exists() and not force:
-                response = input(f"{dark_mode_dst} already exists. Overwrite? [y/N]: ")
-                if response.lower() != "y":
-                    print("Skipping dark-mode-toggle.js")
-                else:
-                    shutil.copy2(dark_mode_src, dark_mode_dst)
-                    print(f"Copied {dark_mode_dst}")
-            else:
-                shutil.copy2(dark_mode_src, dark_mode_dst)
-                print(f"Copied {dark_mode_dst}")
-
-        # Copy theme initialization JavaScript file (for early theme detection)
-        theme_init_src = self.assets_path / "theme-init.js"
-        theme_init_dst = self.project_path / "theme-init.js"
-
-        if theme_init_src.exists():
-            if theme_init_dst.exists() and not force:
-                response = input(f"{theme_init_dst} already exists. Overwrite? [y/N]: ")
-                if response.lower() != "y":
-                    print("Skipping theme-init.js")
-                else:
-                    shutil.copy2(theme_init_src, theme_init_dst)
-                    print(f"Copied {theme_init_dst}")
-            else:
-                shutil.copy2(theme_init_src, theme_init_dst)
-                print(f"Copied {theme_init_dst}")
-
-        # Update _quarto.yml configuration
-        self._update_quarto_config()
+        print("Initializing great-docs...")
 
         # Generate great-docs.yml with discovered exports
         self._generate_initial_config(force=force)
@@ -301,30 +174,45 @@ class GreatDocs:
         # Reload configuration after generating it
         self._config = Config(self._find_package_root())
 
-        # Create index.qmd from README.md if it doesn't exist
-        self._create_index_from_readme()
+        # Update project root .gitignore to exclude great-docs/
+        self._update_project_gitignore()
 
-        # Add quartodoc configuration if not present
-        if not skip_quartodoc:
-            self._add_quartodoc_config()
-            self._update_sidebar_from_sections()
-            self._update_reference_index_frontmatter()
+        print("\n✅ Great Docs initialization complete!")
+        print("\nNext steps:")
+        print("1. Review great-docs.yml to customize your API reference structure")
+        print("   (Reorder items, add sections, set 'members: false' to exclude methods)")
+        print("2. Run `great-docs build` to generate and build your documentation site")
+        print("3. Run `great-docs preview` to view the site locally")
+        print("\nOther helpful commands:")
+        print("  great-docs scan           # Preview API organization")
+        print("  great-docs build --watch  # Watch for changes and rebuild")
 
-        print("\nGreat Docs installation complete!")
-        if not skip_quartodoc:
-            print("\nNext steps:")
-            print("1. Review great-docs.yml to customize your API reference structure")
-            print("   (Reorder items, add sections, set 'members: false' to exclude methods)")
-            print("2. Run `great-docs build` to generate docs and build your site")
-            print(f"3. Open {self.project_path / '_site' / 'index.html'} to preview your site")
-            print("\nOther helpful commands:")
-            print("  great-docs scan           # Preview API organization")
-            print("  great-docs build          # Build everything")
-            print("  great-docs build --watch  # Watch for changes and rebuild")
-            print("  great-docs preview        # Build and serve locally")
+    def _update_project_gitignore(self) -> None:
+        """
+        Update project root .gitignore to exclude the great-docs/ build directory.
+
+        This ensures the ephemeral build directory is not committed to version control.
+        """
+        gitignore_path = self.project_root / ".gitignore"
+
+        # Entry to add
+        entry = "# Great Docs build directory (ephemeral, do not commit)\ngreat-docs/\n"
+
+        if gitignore_path.exists():
+            with open(gitignore_path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            # Check if entry already exists
+            if "great-docs/" not in content:
+                # Append to existing .gitignore
+                with open(gitignore_path, "a", encoding="utf-8") as f:
+                    f.write("\n" + entry)
+                print("Updated .gitignore to exclude great-docs/ directory")
         else:
-            print("\nNext steps:")
-            print("1. Run `quarto render` to build your site")
+            # Create new .gitignore
+            with open(gitignore_path, "w", encoding="utf-8") as f:
+                f.write(entry)
+            print("Created .gitignore to exclude great-docs/ directory")
 
     def _detect_package_name(self) -> str | None:
         """
@@ -4998,14 +4886,14 @@ toc: false
 
     def uninstall(self) -> None:
         """
-        Remove great-docs assets and configuration from the project.
+        Remove great-docs configuration and build directory from the project.
 
-        This method deletes the great-docs CSS file and post-render script, and cleans up the
-        `_quarto.yml` configuration file by removing great-docs-specific settings.
+        This method deletes the great-docs.yml configuration file and the great-docs/
+        build directory (if it exists).
 
         Examples
         --------
-        Uninstall the docs from the current directory:
+        Uninstall great-docs from the current directory:
 
         ```python
         from great_docs import GreatDocs
@@ -5021,68 +4909,20 @@ toc: false
         docs.uninstall()
         ```
         """
-        print("Uninstalling great-docs from your quartodoc project...")
-        print(f"Removing from: {self.project_path.relative_to(self.project_root)}")
+        print("Uninstalling great-docs from your project...")
 
-        # Remove files
-        files_to_remove = [
-            self.project_path / "scripts" / "post-render.py",
-            self.project_path / "great-docs.css",
-            self.project_path / ".gitignore",
-        ]
+        # Remove the great-docs.yml configuration file
+        config_path = self.project_root / "great-docs.yml"
+        if config_path.exists():
+            config_path.unlink()
+            print(f"Removed {config_path.relative_to(self.project_root)}")
 
-        for file_path in files_to_remove:
-            if file_path.exists():
-                # For .gitignore, only remove if it matches our template exactly
-                if file_path.name == ".gitignore":
-                    with open(file_path, "r") as f:
-                        content = f.read()
-                    # Only remove if it's purely our .gitignore (starts with our comment)
-                    if content.strip().startswith("# Quarto build output"):
-                        file_path.unlink()
-                        print(f"Removed {file_path}")
-                    else:
-                        print(f"Skipping {file_path} (contains user modifications)")
-                else:
-                    file_path.unlink()
-                    print(f"Removed {file_path}")
-
-        # Clean up _quarto.yml
-        self._clean_quarto_config()
+        # Remove the great-docs/ build directory if it exists
+        if self.project_path.exists():
+            shutil.rmtree(self.project_path)
+            print(f"Removed {self.project_path.relative_to(self.project_root)}/ directory")
 
         print("✅ Great-docs uninstalled successfully!")
-
-    def _clean_quarto_config(self) -> None:
-        """
-        Remove great-docs configuration from _quarto.yml.
-
-        This private method removes the post-render script reference and CSS file entry from the
-        Quarto configuration file, reverting it to its pre-installation state while preserving other
-        user settings.
-        """
-        quarto_yml = self.project_path / "_quarto.yml"
-
-        if not quarto_yml.exists():
-            return
-
-        with open(quarto_yml, "r") as f:
-            config = yaml.safe_load(f) or {}
-
-        # Remove post-render script if it's ours
-        if config.get("project", {}).get("post-render") == "scripts/post-render.py":
-            del config["project"]["post-render"]
-
-        # Remove CSS file
-        css_list = config.get("format", {}).get("html", {}).get("css", [])
-        if isinstance(css_list, list) and "great-docs.css" in css_list:
-            css_list.remove("great-docs.css")
-            if not css_list:
-                del config["format"]["html"]["css"]
-
-        # Write back to file
-        self._write_quarto_yml(quarto_yml, config)
-
-        print(f"Cleaned great-docs configuration from {quarto_yml}")
 
     def build(self, watch: bool = False, refresh: bool = True) -> None:
         """
@@ -5139,156 +4979,13 @@ toc: false
 
         print("Building documentation with great-docs...")
 
-        # Change to docs directory
+        # Prepare the build directory with all assets and configuration
+        self._prepare_build_directory()
+
+        # Change to build directory
         original_dir = os.getcwd()
         try:
             os.chdir(self.project_path)
-
-            # Ensure latest CSS and post-render script from package assets are in place
-            css_src = self.assets_path / "great-docs.css"
-            css_dst = self.project_path / "great-docs.css"
-            if css_src.exists():
-                shutil.copy2(css_src, css_dst)
-
-            scripts_dir = self.project_path / "scripts"
-            scripts_dir.mkdir(exist_ok=True)
-            post_render_src = self.assets_path / "post-render.py"
-            post_render_dst = scripts_dir / "post-render.py"
-            if post_render_src.exists():
-                shutil.copy2(post_render_src, post_render_dst)
-
-            # Ensure GitHub widget JS is in place
-            gh_widget_src = self.assets_path / "github-widget.js"
-            gh_widget_dst = self.project_path / "github-widget.js"
-            if gh_widget_src.exists():
-                shutil.copy2(gh_widget_src, gh_widget_dst)
-
-            # Ensure sidebar filter JS is in place
-            sidebar_filter_src = self.assets_path / "sidebar-filter.js"
-            sidebar_filter_dst = self.project_path / "sidebar-filter.js"
-            if sidebar_filter_src.exists():
-                shutil.copy2(sidebar_filter_src, sidebar_filter_dst)
-
-            # Ensure reference switcher JS is in place (for CLI docs)
-            ref_switcher_src = self.assets_path / "reference-switcher.js"
-            ref_switcher_dst = self.project_path / "reference-switcher.js"
-            if ref_switcher_src.exists():
-                shutil.copy2(ref_switcher_src, ref_switcher_dst)
-
-            # Update navbar to use GitHub widget (if configured)
-            quarto_yml = self.project_path / "_quarto.yml"
-            if quarto_yml.exists():
-                with open(quarto_yml) as f:
-                    config = yaml.safe_load(f)
-
-                owner, repo, repo_url = self._get_github_repo_info()
-                metadata = self._get_package_metadata()
-                github_style = metadata.get("github_style", "widget")
-
-                if config and "website" in config and "navbar" in config["website"]:
-                    self._update_navbar_github_link(config, owner, repo, repo_url, github_style)
-
-                    # Also ensure the GitHub widget script is included
-                    if owner and repo and github_style == "widget":
-                        if "format" not in config:
-                            config["format"] = {"html": {}}
-                        if "html" not in config["format"]:
-                            config["format"]["html"] = {}
-                        if "include-after-body" not in config["format"]["html"]:
-                            config["format"]["html"]["include-after-body"] = []
-                        elif isinstance(config["format"]["html"]["include-after-body"], str):
-                            config["format"]["html"]["include-after-body"] = [
-                                config["format"]["html"]["include-after-body"]
-                            ]
-
-                        gh_script_entry = {"text": '<script src="github-widget.js"></script>'}
-                        has_gh_widget = any(
-                            "github-widget" in str(item)
-                            for item in config["format"]["html"]["include-after-body"]
-                        )
-                        if not has_gh_widget:
-                            config["format"]["html"]["include-after-body"].append(gh_script_entry)
-
-                # Add sidebar filter script if enabled
-                if metadata.get("sidebar_filter_enabled", True):
-                    if "format" not in config:
-                        config["format"] = {"html": {}}
-                    if "html" not in config["format"]:
-                        config["format"]["html"] = {}
-                    if "include-after-body" not in config["format"]["html"]:
-                        config["format"]["html"]["include-after-body"] = []
-                    elif isinstance(config["format"]["html"]["include-after-body"], str):
-                        config["format"]["html"]["include-after-body"] = [
-                            config["format"]["html"]["include-after-body"]
-                        ]
-
-                    filter_script_entry = {"text": '<script src="sidebar-filter.js"></script>'}
-                    has_filter = any(
-                        "sidebar-filter" in str(item)
-                        for item in config["format"]["html"]["include-after-body"]
-                    )
-                    if not has_filter:
-                        config["format"]["html"]["include-after-body"].append(filter_script_entry)
-
-                    # Add min_items configuration if different from default
-                    min_items = metadata.get("sidebar_filter_min_items", 20)
-                    if min_items != 20:
-                        min_items_script = {
-                            "text": f'<script>document.body.dataset.sidebarFilterMinItems = "{min_items}";</script>'
-                        }
-                        has_min_items = any(
-                            "sidebarFilterMinItems" in str(item)
-                            for item in config["format"]["html"]["include-after-body"]
-                        )
-                        if not has_min_items:
-                            # Insert before the sidebar-filter.js script
-                            filter_index = next(
-                                (
-                                    i
-                                    for i, item in enumerate(
-                                        config["format"]["html"]["include-after-body"]
-                                    )
-                                    if "sidebar-filter" in str(item)
-                                ),
-                                len(config["format"]["html"]["include-after-body"]),
-                            )
-                            config["format"]["html"]["include-after-body"].insert(
-                                filter_index, min_items_script
-                            )
-
-                # Add resources to copy static JS files to _site
-                if "project" not in config:
-                    config["project"] = {}
-                if "resources" not in config["project"]:
-                    config["project"]["resources"] = []
-                elif isinstance(config["project"]["resources"], str):
-                    config["project"]["resources"] = [config["project"]["resources"]]
-
-                for js_file in [
-                    "github-widget.js",
-                    "sidebar-filter.js",
-                    "reference-switcher.js",
-                    "dark-mode-toggle.js",
-                    "theme-init.js",
-                ]:
-                    if js_file not in config["project"]["resources"]:
-                        config["project"]["resources"].append(js_file)
-
-                # Add reference switcher script if CLI documentation is enabled
-                if metadata.get("cli_enabled", False):
-                    ref_switcher_entry = {"text": '<script src="reference-switcher.js"></script>'}
-                    has_ref_switcher = any(
-                        "reference-switcher" in str(item)
-                        for item in config["format"]["html"]["include-after-body"]
-                    )
-                    if not has_ref_switcher:
-                        config["format"]["html"]["include-after-body"].append(ref_switcher_entry)
-
-                self._write_quarto_yml(quarto_yml, config)
-
-            # Step 0: Rebuild index.qmd from source file (README.md, index.md, or index.qmd)
-            print("\n📄 Step 0: Syncing landing page with source file...")
-            self._create_index_from_readme(force_rebuild=True)
 
             # Step 0.5: Refresh quartodoc config if requested
             if refresh:
@@ -5414,9 +5111,11 @@ toc: false
 
     def preview(self) -> None:
         """
-        Build and serve the documentation site locally.
+        Preview the documentation site locally.
 
-        Runs quartodoc build, then starts a local server with quarto preview.
+        Opens the built site in the default browser. If the site hasn't been built yet,
+        it will be built first. Use `great-docs build` to rebuild the site if you've
+        made changes.
 
         Examples
         --------
@@ -5429,51 +5128,26 @@ toc: false
         docs.preview()
         ```
         """
-        import subprocess
         import sys
+        import webbrowser
 
-        print("Building and previewing documentation...")
+        print("Previewing documentation...")
 
-        # Change to docs directory
-        original_dir = os.getcwd()
-        try:
-            os.chdir(self.project_path)
+        # Check if site has been built
+        site_path = self.project_path / "_site"
+        index_html = site_path / "index.html"
 
-            # Get environment with PYTHONPATH set to include the package root
-            # This ensures griffe/quartodoc can find the package even if not installed
-            quarto_env = self._get_quarto_env()
+        if not index_html.exists():
+            print("Site not found, building first...")
+            self.build()
 
-            # Step 1: Run quartodoc build
-            print("\n📚 Step 1: Generating API reference with quartodoc...")
-            result = subprocess.run(
-                [sys.executable, "-m", "quartodoc", "build"],
-                capture_output=True,
-                text=True,
-                env=quarto_env,
-            )
-
-            if result.returncode != 0:
-                print("❌ quartodoc build failed:")
-                # Check if quartodoc is not installed
-                if "No module named quartodoc" in result.stderr:
-                    print("\n⚠️  quartodoc is not installed in your environment.")
-                    print("\nTo fix this, install quartodoc:")
-                    print(f"  {sys.executable} -m pip install quartodoc")
-                    print("\nOr if using pip directly:")
-                    print("  pip install quartodoc")
-                else:
-                    print(result.stderr)
-                return
-            else:
-                print("✅ API reference generated")
-
-            # Step 2: Run quarto preview
-            print("\n🌐 Step 2: Starting preview server...")
-            print("Press Ctrl+C to stop the server")
-            subprocess.run(["quarto", "preview"], env=quarto_env)
-
-        finally:
-            os.chdir(original_dir)
+        # Open the site in the default browser
+        if index_html.exists():
+            print(f"\n🌐 Opening site in browser: {index_html}")
+            webbrowser.open(f"file://{index_html.absolute()}")
+        else:
+            print("❌ Could not find built site")
+            sys.exit(1)
 
     def check_links(
         self,

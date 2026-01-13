@@ -31,43 +31,38 @@ def cli():
 @click.option(
     "--project-path",
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
-    help="Path to your Quarto project root directory (default: current directory)",
-)
-@click.option(
-    "--docs-dir",
-    type=str,
-    help="Path to documentation directory relative to project root (e.g., 'docs', 'site')",
+    help="Path to your project root directory (default: current directory)",
 )
 @click.option(
     "--force",
     is_flag=True,
-    help="Overwrite existing files without prompting",
+    help="Overwrite existing great-docs.yml without prompting",
 )
-def init(project_path, docs_dir, force):
+def init(project_path, force):
     """Initialize great-docs in your project.
 
-    This command sets up everything needed for your documentation site:
+    This command creates a great-docs.yml configuration file with discovered
+    package exports and sensible defaults. The build directory and assets will
+    be created during the build process.
 
     \b
-    • Creates great-docs.yml with discovered exports (customize your API reference)
-    • Installs CSS, JavaScript, and configuration files
+    • Creates great-docs.yml with discovered API exports
     • Auto-detects your package name and public API
-    • Creates index.qmd from your README.md
-    • Configures navigation and sidebar
-    • Sets up quartodoc for API reference generation
+    • Updates .gitignore to exclude the build directory
+    • Detects docstring style (numpy, google, sphinx)
 
     Run this once to get started, then customize great-docs.yml to organize
-    your API reference, and use 'great-docs build' to generate your documentation.
+    your API reference. The 'great-docs/' build directory will be created
+    when you run 'great-docs build'.
 
     \b
     Examples:
       great-docs init                       # Initialize in current directory
-      great-docs init --docs-dir site       # Use 'site/' instead of 'docs/'
-      great-docs init --force               # Overwrite existing files
+      great-docs init --force               # Overwrite existing great-docs.yml
       great-docs init --project-path ../pkg # Initialize in another project
     """
     try:
-        docs = GreatDocs(project_path=project_path, docs_dir=docs_dir)
+        docs = GreatDocs(project_path=project_path)
         docs.install(force=force)
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
@@ -78,12 +73,7 @@ def init(project_path, docs_dir, force):
 @click.option(
     "--project-path",
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
-    help="Path to your Quarto project root directory (default: current directory)",
-)
-@click.option(
-    "--docs-dir",
-    type=str,
-    help="Path to documentation directory relative to project root (e.g., 'docs', 'site')",
+    help="Path to your project root directory (default: current directory)",
 )
 @click.option(
     "--watch",
@@ -95,18 +85,23 @@ def init(project_path, docs_dir, force):
     is_flag=True,
     help="Skip re-discovering package exports (faster rebuild when API unchanged)",
 )
-def build(project_path, docs_dir, watch, no_refresh):
+def build(project_path, watch, no_refresh):
     """Build your documentation site.
 
-    This command runs the complete build process:
+    This command creates the 'great-docs/' build directory, copies all assets,
+    and builds the documentation site. The build directory is ephemeral and
+    should not be committed to version control.
 
     \b
-    1. Refreshes quartodoc configuration (discovers API changes)
-    2. Generates llms.txt and llms-full.txt for AI/LLM documentation indexing
-    3. Creates source links to GitHub
-    4. Generates CLI reference pages (if enabled)
-    5. Runs quartodoc to generate API reference
-    6. Runs Quarto to render the final HTML site
+    1. Creates great-docs/ directory with all assets
+    2. Copies user guide files from project root
+    3. Generates index.qmd from README.md
+    4. Refreshes quartodoc configuration (discovers API changes)
+    5. Generates llms.txt and llms-full.txt for AI/LLM indexing
+    6. Creates source links to GitHub
+    7. Generates CLI reference pages (if enabled)
+    8. Runs quartodoc to generate API reference
+    9. Runs Quarto to render the final HTML site in great-docs/_site/
 
     Use --no-refresh to skip API discovery for faster rebuilds when your
     package's public API hasn't changed.
@@ -119,7 +114,7 @@ def build(project_path, docs_dir, watch, no_refresh):
       great-docs build --project-path ../pkg
     """
     try:
-        docs = GreatDocs(project_path=project_path, docs_dir=docs_dir)
+        docs = GreatDocs(project_path=project_path)
         docs.build(watch=watch, refresh=not no_refresh)
     except KeyboardInterrupt:
         click.echo("\n👋 Stopped watching")
@@ -132,33 +127,25 @@ def build(project_path, docs_dir, watch, no_refresh):
 @click.option(
     "--project-path",
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
-    help="Path to your Quarto project root directory (default: current directory)",
+    help="Path to your project root directory (default: current directory)",
 )
-@click.option(
-    "--docs-dir",
-    type=str,
-    help="Path to documentation directory relative to project root (e.g., 'docs', 'site')",
-)
-def uninstall(project_path, docs_dir):
+def uninstall(project_path):
     """Remove great-docs from your project.
 
-    This command removes all great-docs assets and configuration:
+    This command removes the great-docs configuration and build directory:
 
     \b
-    • Deletes CSS, JavaScript, and asset files
-    • Removes great-docs entries from _quarto.yml
-    • Preserves your content files (*.qmd, reference/, etc.)
+    • Deletes great-docs.yml configuration file
+    • Removes great-docs/ build directory
 
-    Use this if you want to stop using great-docs or switch to a different
-    documentation system.
+    Your source files (user_guide/, README.md, etc.) are preserved.
 
     \b
     Examples:
       great-docs uninstall                  # Remove from current project
-      great-docs uninstall --docs-dir site  # Remove from 'site/' directory
     """
     try:
-        docs = GreatDocs(project_path=project_path, docs_dir=docs_dir)
+        docs = GreatDocs(project_path=project_path)
         docs.uninstall()
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
@@ -169,28 +156,23 @@ def uninstall(project_path, docs_dir):
 @click.option(
     "--project-path",
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
-    help="Path to your Quarto project root directory (default: current directory)",
+    help="Path to your project root directory (default: current directory)",
 )
-@click.option(
-    "--docs-dir",
-    type=str,
-    help="Path to documentation directory relative to project root (e.g., 'docs', 'site')",
-)
-def preview(project_path, docs_dir):
-    """Build and preview your documentation locally.
+def preview(project_path):
+    """Preview your documentation locally.
 
-    This command builds your docs and starts a local server with live reload.
-    Open the displayed URL in your browser to preview your site.
+    Opens the built documentation site in your default browser. If the site
+    hasn't been built yet, it will build it first.
 
-    Press Ctrl+C to stop the server.
+    The site is served from great-docs/_site/. Use 'great-docs build' to
+    rebuild if you've made changes.
 
     \b
     Examples:
-      great-docs preview                    # Build and start preview server
-      great-docs preview --docs-dir site    # Preview from 'site/' directory
+      great-docs preview                    # Preview the built site
     """
     try:
-        docs = GreatDocs(project_path=project_path, docs_dir=docs_dir)
+        docs = GreatDocs(project_path=project_path)
         docs.preview()
     except KeyboardInterrupt:
         click.echo("\n👋 Server stopped")
@@ -416,12 +398,6 @@ cli.add_command(scan)
     help="Path to your project root directory (default: current directory)",
 )
 @click.option(
-    "--docs-dir",
-    type=str,
-    default="docs",
-    help="Path to documentation directory relative to project root (default: docs)",
-)
-@click.option(
     "--main-branch",
     type=str,
     default="main",
@@ -438,7 +414,7 @@ cli.add_command(scan)
     is_flag=True,
     help="Overwrite existing workflow file without prompting",
 )
-def setup_github_pages(project_path, docs_dir, main_branch, python_version, force):
+def setup_github_pages(project_path, main_branch, python_version, force):
     """Set up automatic deployment to GitHub Pages.
 
     This command creates a GitHub Actions workflow that automatically builds
@@ -497,12 +473,11 @@ def setup_github_pages(project_path, docs_dir, main_branch, python_version, forc
             template_file = files("great_docs").joinpath("assets/github-workflow-template.yml")
             template_content = template_file.read_text()
 
-        # Replace placeholders
-        workflow_content = template_content.format(
-            main_branch=main_branch,
-            python_version=python_version,
-            docs_dir=docs_dir,
-        )
+        # Replace placeholders (using replace() to handle linter-formatted templates)
+        workflow_content = template_content.replace("{ main_branch }", main_branch)
+        workflow_content = workflow_content.replace("{main_branch}", main_branch)
+        workflow_content = workflow_content.replace("{ python_version }", python_version)
+        workflow_content = workflow_content.replace("{python_version}", python_version)
 
         # Write workflow file
         workflow_file.write_text(workflow_content)
@@ -538,11 +513,6 @@ cli.add_command(setup_github_pages)
     help="Path to your project root directory (default: current directory)",
 )
 @click.option(
-    "--docs-dir",
-    type=str,
-    help="Path to documentation directory relative to project root",
-)
-@click.option(
     "--source-only",
     is_flag=True,
     help="Only check links in Python source files",
@@ -575,9 +545,7 @@ cli.add_command(setup_github_pages)
     is_flag=True,
     help="Output results as JSON",
 )
-def check_links(
-    project_path, docs_dir, source_only, docs_only, timeout, ignore, verbose, json_output
-):
+def check_links(project_path, source_only, docs_only, timeout, ignore, verbose, json_output):
     """Check for broken links in source code and documentation.
 
     This command scans Python source files and documentation (`.qmd`, `.md`)
@@ -603,7 +571,7 @@ def check_links(
     import json as json_module
 
     try:
-        docs = GreatDocs(project_path=project_path, docs_dir=docs_dir)
+        docs = GreatDocs(project_path=project_path)
 
         # Determine what to scan
         include_source = not docs_only

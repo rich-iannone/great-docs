@@ -34,7 +34,7 @@ Navigate to your Python project and run:
 great-docs init
 ```
 
-This auto-detects your package, creates configuration, and sets up your docs site.
+This auto-detects your package and creates a `great-docs.yml` configuration file with your API structure.
 
 ### Build
 
@@ -42,7 +42,7 @@ This auto-detects your package, creates configuration, and sets up your docs sit
 great-docs build
 ```
 
-Your documentation site is ready in `docs/_site/`.
+This creates the `great-docs/` directory with all assets and builds your site to `great-docs/_site/`.
 
 ### Preview
 
@@ -50,7 +50,7 @@ Your documentation site is ready in `docs/_site/`.
 great-docs preview
 ```
 
-Opens a local server with live reload for development.
+Opens the built site in your browser.
 
 ### Deploy
 

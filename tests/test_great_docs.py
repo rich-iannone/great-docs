@@ -6,50 +6,59 @@ from great_docs import GreatDocs, Config, load_config, create_default_config
 
 def test_great_docs_init():
     """Test GreatDocs initialization."""
-    docs = GreatDocs(docs_dir=".")
+    docs = GreatDocs()
     assert docs.project_root == Path.cwd()
 
 
 def test_great_docs_init_with_path():
     """Test GreatDocs initialization with custom path."""
     with tempfile.TemporaryDirectory() as tmp_dir:
-        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+        docs = GreatDocs(project_path=tmp_dir)
         assert docs.project_root == Path(tmp_dir)
 
 
 def test_install_creates_files():
     """Test that install creates the expected files."""
     with tempfile.TemporaryDirectory() as tmp_dir:
-        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
-        docs.install(force=True, skip_quartodoc=True)
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.install(force=True)
 
-        # Check that files were created
+        # Check that config file was created
         project_path = Path(tmp_dir)
-        assert (project_path / "scripts" / "post-render.py").exists()
-        assert (project_path / "great-docs.css").exists()
-        assert (project_path / "_quarto.yml").exists()
+        assert (project_path / "great-docs.yml").exists()
+
+        # Check that .gitignore was updated (or created)
+        gitignore_path = project_path / ".gitignore"
+        if gitignore_path.exists():
+            content = gitignore_path.read_text()
+            assert "great-docs/" in content
 
 
 def test_uninstall_removes_files():
     """Test that uninstall removes the docs files."""
     with tempfile.TemporaryDirectory() as tmp_dir:
-        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+        docs = GreatDocs(project_path=tmp_dir)
 
         # Install first
-        docs.install(force=True, skip_quartodoc=True)
+        docs.install(force=True)
 
         project_path = Path(tmp_dir)
-        assert (project_path / "scripts" / "post-render.py").exists()
-        assert (project_path / "great-docs.css").exists()
+        assert (project_path / "great-docs.yml").exists()
 
         # Then uninstall
         docs.uninstall()
+
+        # Check that config was removed
+        assert not (project_path / "great-docs.yml").exists()
+
+        # Check that great-docs directory was removed if it existed
+        assert not (project_path / "great-docs").exists()
 
 
 def test_parse_package_exports():
     """Test parsing __all__ from __init__.py."""
     # Test on great-docs's own __init__.py
-    docs = GreatDocs(docs_dir=".")
+    docs = GreatDocs()
     exports = docs._parse_package_exports("great_docs")
 
     assert exports is not None
@@ -59,7 +68,7 @@ def test_parse_package_exports():
 
 def test_create_quartodoc_sections():
     """Test auto-generation of quartodoc sections."""
-    docs = GreatDocs(docs_dir=".")
+    docs = GreatDocs()
     sections = docs._create_quartodoc_sections("great_docs")
 
     assert sections is not None
@@ -73,7 +82,7 @@ def test_create_quartodoc_sections():
 def test_detect_package_name_from_pyproject():
     """Test package name detection from pyproject.toml."""
     # Test on great-docs's own pyproject.toml
-    docs = GreatDocs(docs_dir=".")
+    docs = GreatDocs()
     package_name = docs._detect_package_name()
 
     assert package_name == "great-docs"
@@ -81,7 +90,7 @@ def test_detect_package_name_from_pyproject():
 
 def test_find_package_init():
     """Test finding __init__.py in standard location."""
-    docs = GreatDocs(docs_dir=".")
+    docs = GreatDocs()
     init_file = docs._find_package_init("great_docs")
 
     assert init_file is not None
@@ -102,7 +111,7 @@ def test_find_package_init_with_nested_structure():
         init_file = package_dir / "__init__.py"
         init_file.write_text('__version__ = "1.0.0"\n__all__ = ["MyClass"]')
 
-        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+        docs = GreatDocs(project_path=tmp_dir)
         found_init = docs._find_package_init("mypackage")
 
         assert found_init is not None
@@ -155,7 +164,7 @@ def some_function():
         # Add temp dir to sys.path so griffe can find the package
         sys.path.insert(0, tmp_dir)
         try:
-            docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+            docs = GreatDocs(project_path=tmp_dir)
             sections = docs._create_quartodoc_sections("testpkg")
 
             assert sections is not None
@@ -238,7 +247,7 @@ def some_function():
 '''
         (package_dir / "__init__.py").write_text(init_content)
 
-        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+        docs = GreatDocs(project_path=tmp_dir)
         exports = docs._parse_package_exports("testpkg_exclude")
 
         # Should have filtered out Node and Edge
@@ -296,8 +305,6 @@ def test_setup_github_pages_custom_options():
             [
                 "--project-path",
                 tmp_dir,
-                "--docs-dir",
-                "site",
                 "--main-branch",
                 "develop",
                 "--python-version",
@@ -338,7 +345,7 @@ def test_setup_github_pages_overwrite_protection():
 def test_generate_llms_txt():
     """Test generation of llms.txt file."""
     with tempfile.TemporaryDirectory() as tmp_dir:
-        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+        docs = GreatDocs(project_path=tmp_dir)
 
         # Create a pyproject.toml with package info
         pyproject = Path(tmp_dir) / "pyproject.toml"
@@ -348,8 +355,10 @@ name = "test-package"
 description = "A test package"
 """)
 
-        # Create a minimal _quarto.yml with quartodoc config
-        quarto_yml = Path(tmp_dir) / "_quarto.yml"
+        # Create great-docs directory and _quarto.yml with quartodoc config
+        great_docs_dir = Path(tmp_dir) / "great-docs"
+        great_docs_dir.mkdir()
+        quarto_yml = great_docs_dir / "_quarto.yml"
         quarto_yml.write_text("""
 quartodoc:
   package: test_package
@@ -367,8 +376,8 @@ quartodoc:
         # Generate llms.txt
         docs._generate_llms_txt()
 
-        # Check the file was created
-        llms_txt = Path(tmp_dir) / "llms.txt"
+        # Check the file was created in great-docs directory
+        llms_txt = great_docs_dir / "llms.txt"
         assert llms_txt.exists()
 
         # Check content structure
@@ -388,10 +397,12 @@ quartodoc:
 def test_generate_llms_txt_with_site_url():
     """Test llms.txt generation with site URL."""
     with tempfile.TemporaryDirectory() as tmp_dir:
-        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+        docs = GreatDocs(project_path=tmp_dir)
 
-        # Create a minimal _quarto.yml with quartodoc config and site URL
-        quarto_yml = Path(tmp_dir) / "_quarto.yml"
+        # Create great-docs directory and _quarto.yml with quartodoc config and site URL
+        great_docs_dir = Path(tmp_dir) / "great-docs"
+        great_docs_dir.mkdir()
+        quarto_yml = great_docs_dir / "_quarto.yml"
         quarto_yml.write_text("""
 website:
   site-url: https://example.com/docs
@@ -406,8 +417,8 @@ quartodoc:
         # Generate llms.txt
         docs._generate_llms_txt()
 
-        # Check the file was created with absolute URLs
-        llms_txt = Path(tmp_dir) / "llms.txt"
+        # Check the file was created with absolute URLs in great-docs directory
+        llms_txt = great_docs_dir / "llms.txt"
         content = llms_txt.read_text()
         assert "https://example.com/docs/reference/foo.html" in content
 
@@ -415,7 +426,7 @@ quartodoc:
 def test_get_github_repo_info():
     """Test GitHub repository info extraction from pyproject.toml."""
     # Test on great-docs's own pyproject.toml
-    docs = GreatDocs(docs_dir=".")
+    docs = GreatDocs()
     owner, repo, base_url = docs._get_github_repo_info()
 
     assert owner == "rich-iannone"
@@ -434,7 +445,7 @@ name = "test-package"
 version = "0.1.0"
 """)
 
-        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+        docs = GreatDocs(project_path=tmp_dir)
         owner, repo, base_url = docs._get_github_repo_info()
 
         assert owner is None
@@ -444,7 +455,7 @@ version = "0.1.0"
 
 def test_get_source_location():
     """Test source location detection for classes and methods."""
-    docs = GreatDocs(docs_dir=".")
+    docs = GreatDocs()
     source_loc = docs._get_source_location("great_docs", "GreatDocs")
 
     assert source_loc is not None
@@ -458,7 +469,7 @@ def test_get_source_location():
 
 def test_get_source_location_method():
     """Test source location detection for methods."""
-    docs = GreatDocs(docs_dir=".")
+    docs = GreatDocs()
     source_loc = docs._get_source_location("great_docs", "GreatDocs.install")
 
     assert source_loc is not None
@@ -469,7 +480,7 @@ def test_get_source_location_method():
 
 def test_get_source_location_not_found():
     """Test source location returns None for non-existent items."""
-    docs = GreatDocs(docs_dir=".")
+    docs = GreatDocs()
     source_loc = docs._get_source_location("great_docs", "NonExistentClass")
 
     assert source_loc is None
@@ -477,7 +488,7 @@ def test_get_source_location_not_found():
 
 def test_build_github_source_url():
     """Test GitHub source URL construction."""
-    docs = GreatDocs(docs_dir=".")
+    docs = GreatDocs()
 
     source_loc = {
         "file": "/path/to/great_docs/core.py",
@@ -495,7 +506,7 @@ def test_build_github_source_url():
 
 def test_build_github_source_url_single_line():
     """Test GitHub source URL with single line."""
-    docs = GreatDocs(docs_dir=".")
+    docs = GreatDocs()
 
     source_loc = {
         "file": "/path/to/great_docs/core.py",
@@ -522,7 +533,7 @@ name = "test-package"
 version = "0.1.0"
 """)
 
-        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+        docs = GreatDocs(project_path=tmp_dir)
         metadata = docs._get_package_metadata()
 
         # Defaults should be: enabled=True, branch=None, path=None, placement="usage"
@@ -553,7 +564,7 @@ source:
   placement: title
 """)
 
-        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+        docs = GreatDocs(project_path=tmp_dir)
         metadata = docs._get_package_metadata()
 
         assert metadata.get("source_link_enabled") is False
@@ -571,7 +582,7 @@ def test_check_links_extracts_urls():
     """Test that check_links extracts URLs from files."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         # Create a docs directory with a file containing URLs
-        docs_dir = Path(tmp_dir) / "docs"
+        docs_dir = Path(tmp_dir) / "user_guide"
         docs_dir.mkdir()
 
         test_md = docs_dir / "test.md"
@@ -586,7 +597,7 @@ Also see https://httpbin.org/status/404 for errors.
         quarto_yml = docs_dir / "_quarto.yml"
         quarto_yml.write_text("project:\n  type: website\n")
 
-        docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+        docs = GreatDocs(project_path=tmp_dir)
         results = docs.check_links(
             include_source=False,
             include_docs=True,
@@ -602,7 +613,7 @@ Also see https://httpbin.org/status/404 for errors.
 def test_check_links_ignore_patterns():
     """Test that ignore patterns work correctly."""
     with tempfile.TemporaryDirectory() as tmp_dir:
-        docs_dir = Path(tmp_dir) / "docs"
+        docs_dir = Path(tmp_dir) / "user_guide"
         docs_dir.mkdir()
 
         test_md = docs_dir / "test.md"
@@ -617,7 +628,7 @@ https://example.com/page
         quarto_yml = docs_dir / "_quarto.yml"
         quarto_yml.write_text("project:\n  type: website\n")
 
-        docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+        docs = GreatDocs(project_path=tmp_dir)
         results = docs.check_links(
             include_source=False,
             include_docs=True,
@@ -634,7 +645,7 @@ https://example.com/page
 def test_check_links_url_cleaning():
     """Test that URLs are properly cleaned of trailing punctuation."""
     with tempfile.TemporaryDirectory() as tmp_dir:
-        docs_dir = Path(tmp_dir) / "docs"
+        docs_dir = Path(tmp_dir) / "user_guide"
         docs_dir.mkdir()
 
         test_md = docs_dir / "test.md"
@@ -647,7 +658,7 @@ Visit https://example.com/test!
         quarto_yml = docs_dir / "_quarto.yml"
         quarto_yml.write_text("project:\n  type: website\n")
 
-        docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+        docs = GreatDocs(project_path=tmp_dir)
         results = docs.check_links(
             include_source=False,
             include_docs=True,
@@ -665,7 +676,7 @@ Visit https://example.com/test!
 def test_check_links_returns_correct_structure():
     """Test that check_links returns the expected result structure."""
     with tempfile.TemporaryDirectory() as tmp_dir:
-        docs_dir = Path(tmp_dir) / "docs"
+        docs_dir = Path(tmp_dir) / "user_guide"
         docs_dir.mkdir()
 
         test_md = docs_dir / "test.md"
@@ -674,7 +685,7 @@ def test_check_links_returns_correct_structure():
         quarto_yml = docs_dir / "_quarto.yml"
         quarto_yml.write_text("project:\n  type: website\n")
 
-        docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+        docs = GreatDocs(project_path=tmp_dir)
         results = docs.check_links(include_source=False, include_docs=True)
 
         # Check result structure
@@ -890,7 +901,7 @@ def my_function(x, y):
 
         sys.path.insert(0, tmp_dir)
         try:
-            docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+            docs = GreatDocs(project_path=tmp_dir)
             style = docs._detect_docstring_style("numpypkg")
             assert style == "numpy"
         finally:
@@ -946,7 +957,7 @@ class MyClass:
 
         sys.path.insert(0, tmp_dir)
         try:
-            docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+            docs = GreatDocs(project_path=tmp_dir)
             style = docs._detect_docstring_style("googlepkg")
             assert style == "google"
         finally:
@@ -983,7 +994,7 @@ def my_function(x, y):
 
         sys.path.insert(0, tmp_dir)
         try:
-            docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+            docs = GreatDocs(project_path=tmp_dir)
             style = docs._detect_docstring_style("sphinxpkg")
             assert style == "sphinx"
         finally:
@@ -1010,7 +1021,7 @@ def my_function(x, y):
 
         sys.path.insert(0, tmp_dir)
         try:
-            docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+            docs = GreatDocs(project_path=tmp_dir)
             style = docs._detect_docstring_style("nodocspkg")
             assert style == "numpy"  # Default when no docstrings found
         finally:
@@ -1042,7 +1053,7 @@ def test_config_parser_property():
 def test_build_sections_from_reference_config():
     """Test building sections from explicit reference config."""
     with tempfile.TemporaryDirectory() as tmp_dir:
-        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+        docs = GreatDocs(project_path=tmp_dir)
 
         # Test simple string contents
         reference_config = [
@@ -1065,7 +1076,7 @@ def test_build_sections_from_reference_config():
 def test_build_sections_from_reference_config_with_members():
     """Test building sections with members: false config."""
     with tempfile.TemporaryDirectory() as tmp_dir:
-        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+        docs = GreatDocs(project_path=tmp_dir)
 
         reference_config = [
             {
@@ -1089,7 +1100,7 @@ def test_build_sections_from_reference_config_with_members():
 def test_build_sections_from_reference_config_empty():
     """Test that empty reference config returns None."""
     with tempfile.TemporaryDirectory() as tmp_dir:
-        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+        docs = GreatDocs(project_path=tmp_dir)
 
         assert docs._build_sections_from_reference_config([]) is None
         assert docs._build_sections_from_reference_config(None) is None
@@ -1120,7 +1131,7 @@ reference:
 
         sys.path.insert(0, tmp_dir)
         try:
-            docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+            docs = GreatDocs(project_path=tmp_dir)
 
             # The reference config should be loaded
             assert docs._config.reference is not None
@@ -1144,7 +1155,7 @@ def test_get_quarto_env_returns_current_python():
     import sys
 
     with tempfile.TemporaryDirectory() as tmp_dir:
-        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+        docs = GreatDocs(project_path=tmp_dir)
         env = docs._get_quarto_env()
 
         assert "QUARTO_PYTHON" in env
@@ -1171,7 +1182,7 @@ def test_get_quarto_env_detects_venv():
         fake_python = venv_dir / "python"
         fake_python.write_text("#!/bin/bash\n# fake python")
 
-        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+        docs = GreatDocs(project_path=tmp_dir)
         env = docs._get_quarto_env()
 
         assert "QUARTO_PYTHON" in env
@@ -1183,7 +1194,7 @@ def test_get_quarto_env_preserves_existing_env():
     import os
 
     with tempfile.TemporaryDirectory() as tmp_dir:
-        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+        docs = GreatDocs(project_path=tmp_dir)
         env = docs._get_quarto_env()
 
         # Should contain existing env vars like PATH
@@ -1217,7 +1228,7 @@ class MyClass:
 
         sys.path.insert(0, tmp_dir)
         try:
-            docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+            docs = GreatDocs(project_path=tmp_dir)
             result = docs._detect_dynamic_mode("simple_pkg")
             # Should return True for a simple package
             assert result is True
@@ -1228,7 +1239,7 @@ class MyClass:
 def test_detect_dynamic_mode_returns_true_with_no_package():
     """Test that _detect_dynamic_mode returns True when package name is empty."""
     with tempfile.TemporaryDirectory() as tmp_dir:
-        docs = GreatDocs(project_path=tmp_dir, docs_dir=".")
+        docs = GreatDocs(project_path=tmp_dir)
         result = docs._detect_dynamic_mode("")
         assert result is True
 

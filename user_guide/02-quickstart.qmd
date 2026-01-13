@@ -17,31 +17,38 @@ great-docs init
 
 Great Docs will automatically:
 
-1. **Detect your docs directory** – Looks for existing `docs/`, `site/`, or `documentation/` folders
-2. **Find your package** – Auto-detects your package name from `pyproject.toml` or directory structure
-3. **Discover your API** – Finds all public classes, functions, and methods
-4. **Create configuration** – Generates `_quarto.yml` with API sections
-5. **Create landing page** – Converts your `README.md` to `index.qmd`
-6. **Install assets** – Copies CSS, JavaScript, and post-processing scripts
+1. **Find your package** – Auto-detects your package name from `pyproject.toml` or directory structure
+2. **Discover your API** – Finds all public classes, functions, and methods
+3. **Create configuration** – Generates `great-docs.yml` with your API structure
+4. **Update .gitignore** – Optionally adds `great-docs/` to exclude build artifacts
 
 You'll see output like this:
 
 ```{.default filename="Terminal output"}
-Installing great-docs...
-Using directory: docs
-Copied docs/scripts/post-render.py
-Copied docs/great-docs.css
-Copied docs/github-widget.js
-Detected package: my_package
+Initializing great-docs...
+Detecting docstring style...
+Detected numpy docstring style
+Found package __init__.py at: my_package/__init__.py
 Discovered 15 public names
-  MyClass: class with 8 methods
+Auto-excluding 3 item(s): cli, main, version
+  MyClass: class with 8 public methods
   helper_function: function
   ...
-Created docs/_quarto.yml
-Created docs/index.qmd
+Generated 2 section(s) from reference config
+Created /path/to/project/great-docs.yml
 
-Great Docs installation complete!
+The great-docs/ directory is ephemeral and should not be committed to git.
+Add 'great-docs/' to .gitignore? [Y/n]:
+✅ Updated .gitignore to exclude great-docs/ directory
+
+✅ Great Docs initialization complete!
 ```
+
+::: {.callout-note}
+## Configuration File
+
+The `great-docs.yml` file contains your API structure and is **committed to git**. The `great-docs/` build directory is **ephemeral** and should be gitignored.
+:::
 
 ## Build Your Documentation
 
@@ -53,14 +60,23 @@ great-docs build
 
 This single command:
 
-1. Syncs your landing page with `README.md`
-2. Refreshes the API configuration (discovers new exports)
-3. Generates `llms.txt` and `llms-full.txt` for AI documentation indexing
-4. Creates source links JSON for GitHub integration
-5. Runs `quartodoc build` to generate API reference pages
-6. Runs `quarto render` to build the HTML site
+1. Creates the `great-docs/` directory with all assets (CSS, JS, etc.)
+2. Copies your configuration from `great-docs.yml`
+3. Creates landing page from your `README.md`
+4. Discovers and processes CLI documentation (if present)
+5. Copies user guide files from `user_guide/` directory (if present)
+6. Generates `llms.txt` and `llms-full.txt` for AI documentation indexing
+7. Creates source links JSON for GitHub integration
+8. Runs `quartodoc build` to generate API reference pages
+9. Runs `quarto render` to build the HTML site
 
-The built site is in `docs/_site/`.
+The built site is in `great-docs/_site/`.
+
+::: {.callout-tip}
+## Ephemeral Build Directory
+
+The `great-docs/` directory is created fresh on each build. You can safely delete it between builds—it will be recreated from `great-docs.yml` and your source files.
+:::
 
 ## Preview Locally
 
@@ -74,12 +90,13 @@ This starts a local server and opens your browser. Changes to your documentation
 
 ## Project Structure
 
-After initialization, your project will have:
+After initialization and your first build, your project will have:
 
 ```{.default filename="Project structure"}
 your-project/
-├── docs/
-│   ├── _quarto.yml          # Quarto configuration
+├── great-docs.yml           # Configuration (committed to git)
+├── great-docs/              # Build directory (gitignored, ephemeral)
+│   ├── _quarto.yml          # Generated Quarto config
 │   ├── index.qmd            # Landing page (from README.md)
 │   ├── great-docs.css       # Styling
 │   ├── github-widget.js     # GitHub stars widget
@@ -91,42 +108,45 @@ your-project/
 │   │   ├── index.qmd
 │   │   ├── MyClass.qmd
 │   │   └── ...
-│   └── scripts/
-│       └── post-render.py   # HTML post-processing
+│   ├── user-guide/          # Copied from user_guide/
+│   ├── scripts/
+│   │   └── post-render.py   # HTML post-processing
+│   └── _site/               # Built HTML site
+│       ├── index.html
+│       └── ...
+├── user_guide/              # Your narrative docs (optional)
+│   ├── 01-installation.qmd
+│   └── ...
 ├── pyproject.toml
 ├── README.md
 └── your_package/
     └── ...
 ```
 
+::: {.callout-important}
+## What to Commit
+
+- ✅ `great-docs.yml` – Your configuration
+- ✅ `user_guide/` – Your narrative documentation
+- ✅ `README.md` – Your project readme
+- ❌ `great-docs/` – Ephemeral build directory (gitignored)
+:::
+
 ## Command Options
 
-### Specifying Directories
+### Initialize Options
 
 ```{.bash filename="Terminal"}
-# Initialize in a specific docs directory
-great-docs init --docs-dir site
-
 # Initialize a different project
 great-docs init --project-path /path/to/project
 
-# Combine both
-great-docs init --project-path /path/to/project --docs-dir docs
-```
-
-### Force Overwrite
-
-```{.bash filename="Terminal"}
-# Overwrite existing files without prompting
+# Overwrite existing great-docs.yml without prompting
 great-docs init --force
 ```
 
 ### Build Options
 
 ```{.bash filename="Terminal"}
-# Build without refreshing API config (faster when API unchanged)
-great-docs build --no-refresh
-
 # Build with file watching (auto-rebuild on changes)
 great-docs build --watch
 ```
@@ -145,9 +165,14 @@ docs.install()
 # Build documentation
 docs.build()
 
-# Or with specific paths
-docs = GreatDocs(project_path="/path/to/project", docs_dir="docs")
+# Preview documentation
+docs.preview()
+
+# Or initialize for a specific project
+docs = GreatDocs(project_path="/path/to/project")
 docs.install()
+docs.build()
+```
 docs.build()
 ```
 

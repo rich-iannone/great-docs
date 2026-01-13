@@ -17,7 +17,7 @@ class TestURLExtraction:
     def test_extracts_http_urls(self):
         """Test extraction of http:// URLs."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -26,7 +26,7 @@ class TestURLExtraction:
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -39,7 +39,7 @@ class TestURLExtraction:
     def test_extracts_https_urls(self):
         """Test extraction of https:// URLs."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -48,7 +48,7 @@ class TestURLExtraction:
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -61,7 +61,7 @@ class TestURLExtraction:
     def test_extracts_urls_from_qmd_files(self):
         """Test URL extraction from .qmd files."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_qmd = docs_dir / "test.qmd"
@@ -75,7 +75,7 @@ Check https://example.com/page
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -99,12 +99,12 @@ Check https://example.com/page
             pyproject.write_text('[project]\nname = "mypackage"\n')
 
             # Create docs dir
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=True,
                 include_docs=False,
@@ -117,7 +117,7 @@ Check https://example.com/page
     def test_extracts_multiple_urls_from_same_file(self):
         """Test extraction of multiple URLs from a single file."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -130,7 +130,7 @@ https://example.com/three
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -142,7 +142,7 @@ https://example.com/three
     def test_deduplicates_urls_across_files(self):
         """Test that duplicate URLs are only checked once."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             # Same URL in two files
@@ -155,7 +155,7 @@ https://example.com/three
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -168,7 +168,7 @@ https://example.com/three
     def test_tracks_url_file_locations(self):
         """Test that by_file tracks which URLs are in which files."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -177,15 +177,15 @@ https://example.com/three
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
                 ignore_patterns=["example.com"],
             )
 
-            assert "docs/test.md" in results["by_file"]
-            assert "https://example.com/page" in results["by_file"]["docs/test.md"]
+            assert "user_guide/test.md" in results["by_file"]
+            assert "https://example.com/page" in results["by_file"]["user_guide/test.md"]
 
 
 # ============================================================================
@@ -199,7 +199,7 @@ class TestURLCleaning:
     def test_removes_trailing_period(self):
         """Test removal of trailing period from URLs."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -208,7 +208,7 @@ class TestURLCleaning:
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -221,7 +221,7 @@ class TestURLCleaning:
     def test_removes_trailing_comma(self):
         """Test removal of trailing comma from URLs."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -230,7 +230,7 @@ class TestURLCleaning:
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -243,7 +243,7 @@ class TestURLCleaning:
     def test_removes_trailing_exclamation(self):
         """Test removal of trailing exclamation mark from URLs."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -252,7 +252,7 @@ class TestURLCleaning:
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -265,7 +265,7 @@ class TestURLCleaning:
     def test_handles_unbalanced_parentheses(self):
         """Test handling of URLs with unbalanced trailing parentheses."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -274,7 +274,7 @@ class TestURLCleaning:
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -287,7 +287,7 @@ class TestURLCleaning:
     def test_preserves_balanced_parentheses_in_url(self):
         """Test that balanced parentheses in URLs are preserved."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             # Wikipedia-style URL with parentheses
@@ -297,7 +297,7 @@ class TestURLCleaning:
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -331,12 +331,12 @@ url = f"https://github.com/{username}"
             pyproject = Path(tmp_dir) / "pyproject.toml"
             pyproject.write_text('[project]\nname = "mypackage"\n')
 
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=True,
                 include_docs=False,
@@ -362,12 +362,12 @@ url = f"https://github.com/{owner}/{repo}/blob/{branch}/{path}"
             pyproject = Path(tmp_dir) / "pyproject.toml"
             pyproject.write_text('[project]\nname = "mypackage"\n')
 
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=True,
                 include_docs=False,
@@ -390,12 +390,12 @@ url = f"https://api.example.com/{self.endpoint}"
             pyproject = Path(tmp_dir) / "pyproject.toml"
             pyproject.write_text('[project]\nname = "mypackage"\n')
 
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=True,
                 include_docs=False,
@@ -422,12 +422,12 @@ docs = "https://example.com/docs"
             pyproject = Path(tmp_dir) / "pyproject.toml"
             pyproject.write_text('[project]\nname = "mypackage"\n')
 
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=True,
                 include_docs=False,
@@ -449,7 +449,7 @@ class TestIgnorePatterns:
     def test_ignores_literal_string_pattern(self):
         """Test ignoring URLs matching a literal string."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -458,7 +458,7 @@ class TestIgnorePatterns:
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -471,7 +471,7 @@ class TestIgnorePatterns:
     def test_ignores_regex_pattern(self):
         """Test ignoring URLs matching a regex pattern."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -484,7 +484,7 @@ https://example3.com/page
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -496,7 +496,7 @@ https://example3.com/page
     def test_ignores_multiple_patterns(self):
         """Test ignoring URLs matching any of multiple patterns."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -509,7 +509,7 @@ https://example.com/page
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -523,7 +523,7 @@ https://example.com/page
     def test_case_insensitive_ignore(self):
         """Test that ignore patterns are case-insensitive."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -532,7 +532,7 @@ https://example.com/page
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -544,7 +544,7 @@ https://example.com/page
     def test_ignores_git_urls_with_branch(self):
         """Test that .git@branch URLs are ignored."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -556,7 +556,7 @@ pip install git+https://github.com/user/repo.git@v1.0.0
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -568,7 +568,7 @@ pip install git+https://github.com/user/repo.git@v1.0.0
     def test_ignores_placeholder_urls_with_brackets(self):
         """Test that URLs with [placeholder] brackets are ignored."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -577,7 +577,7 @@ pip install git+https://github.com/user/repo.git@v1.0.0
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -589,7 +589,7 @@ pip install git+https://github.com/user/repo.git@v1.0.0
     def test_invalid_regex_treated_as_literal(self):
         """Test that invalid regex patterns are treated as literal strings."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -598,7 +598,7 @@ pip install git+https://github.com/user/repo.git@v1.0.0
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             # [value] is invalid regex (unclosed bracket), should be escaped
             results = docs.check_links(
                 include_source=False,
@@ -621,7 +621,7 @@ class TestGdNoLinkDirective:
     def test_excludes_url_with_gd_no_link_directive(self):
         """Test that URLs marked with {.gd-no-link} are excluded from checking."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_qmd = docs_dir / "test.qmd"
@@ -637,7 +637,7 @@ Real URL: https://real.example.com
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -651,7 +651,7 @@ Real URL: https://real.example.com
     def test_excludes_https_url_with_gd_no_link(self):
         """Test that https:// URLs with {.gd-no-link} are also excluded."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_qmd = docs_dir / "test.qmd"
@@ -660,7 +660,7 @@ Real URL: https://real.example.com
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -671,7 +671,7 @@ Real URL: https://real.example.com
     def test_gd_no_link_only_works_in_qmd_files(self):
         """Test that {.gd-no-link} is only processed in .qmd files."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             # In .md files, {.gd-no-link} will NOT exclude URLs via directive,
@@ -683,7 +683,7 @@ Real URL: https://real.example.com
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -698,7 +698,7 @@ Real URL: https://real.example.com
     def test_multiple_gd_no_link_urls_in_same_file(self):
         """Test that multiple URLs with {.gd-no-link} are all excluded."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_qmd = docs_dir / "test.qmd"
@@ -714,7 +714,7 @@ title: "Test"
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -726,7 +726,7 @@ title: "Test"
     def test_gd_no_link_with_trailing_text(self):
         """Test {.gd-no-link} works when followed by other text."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_qmd = docs_dir / "test.qmd"
@@ -735,7 +735,7 @@ title: "Test"
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -746,7 +746,7 @@ title: "Test"
     def test_gd_no_link_in_markdown_link_syntax(self):
         """Test {.gd-no-link} excludes specific URLs, not all occurrences globally."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             # Use different URLs to verify that {.gd-no-link} only excludes
@@ -761,7 +761,7 @@ Real link: http://real-example.com
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -789,7 +789,7 @@ class TestHTTPStatus:
         mock_head.return_value = mock_response
 
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -798,7 +798,7 @@ class TestHTTPStatus:
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -816,7 +816,7 @@ class TestHTTPStatus:
         mock_head.return_value = mock_response
 
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -825,7 +825,7 @@ class TestHTTPStatus:
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -845,7 +845,7 @@ class TestHTTPStatus:
         mock_head.return_value = mock_response
 
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -854,7 +854,7 @@ class TestHTTPStatus:
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -871,7 +871,7 @@ class TestHTTPStatus:
         mock_head.return_value = mock_response
 
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -880,7 +880,7 @@ class TestHTTPStatus:
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -898,7 +898,7 @@ class TestHTTPStatus:
         mock_head.return_value = mock_response
 
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -907,7 +907,7 @@ class TestHTTPStatus:
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -931,7 +931,7 @@ class TestHTTPStatus:
         mock_get.return_value = mock_get_response
 
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -940,7 +940,7 @@ class TestHTTPStatus:
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -967,7 +967,7 @@ class TestErrorHandling:
         mock_head.side_effect = requests.exceptions.Timeout()
 
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -976,7 +976,7 @@ class TestErrorHandling:
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -995,7 +995,7 @@ class TestErrorHandling:
         mock_head.side_effect = requests.exceptions.ConnectionError()
 
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -1004,7 +1004,7 @@ class TestErrorHandling:
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -1021,7 +1021,7 @@ class TestErrorHandling:
         mock_head.side_effect = requests.exceptions.SSLError("Certificate verify failed")
 
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -1030,7 +1030,7 @@ class TestErrorHandling:
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -1042,7 +1042,7 @@ class TestErrorHandling:
     def test_handles_unreadable_file(self):
         """Test handling of files that can't be read."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             # Create a valid file
@@ -1052,7 +1052,7 @@ class TestErrorHandling:
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             # Should complete without error even if some files are problematic
             results = docs.check_links(
                 include_source=False,
@@ -1085,7 +1085,7 @@ class TestFileFiltering:
             pyproject.write_text('[project]\nname = "mypackage"\n')
 
             # Create docs
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -1094,7 +1094,7 @@ class TestFileFiltering:
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=True,
                 include_docs=False,
@@ -1119,7 +1119,7 @@ class TestFileFiltering:
             pyproject.write_text('[project]\nname = "mypackage"\n')
 
             # Create docs
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -1128,7 +1128,7 @@ class TestFileFiltering:
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -1147,13 +1147,13 @@ class TestFileFiltering:
             readme.write_text("https://readme.example.com/page")
 
             # Create docs
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -1175,13 +1175,13 @@ class TestResultStructure:
     def test_returns_all_required_keys(self):
         """Test that results contain all required keys."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(include_source=False, include_docs=True)
 
             required_keys = ["total", "ok", "redirects", "broken", "skipped", "by_file"]
@@ -1191,7 +1191,7 @@ class TestResultStructure:
     def test_broken_items_have_required_fields(self):
         """Test that broken link entries have all required fields."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -1201,7 +1201,7 @@ class TestResultStructure:
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -1224,7 +1224,7 @@ class TestResultStructure:
         mock_head.return_value = mock_response
 
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -1233,7 +1233,7 @@ class TestResultStructure:
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -1249,7 +1249,7 @@ class TestResultStructure:
     def test_total_equals_sum_of_categories_plus_skipped(self):
         """Test that total count is consistent with categorized counts."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            docs_dir = Path(tmp_dir) / "docs"
+            docs_dir = Path(tmp_dir) / "user_guide"
             docs_dir.mkdir()
 
             test_md = docs_dir / "test.md"
@@ -1261,7 +1261,7 @@ https://example.com/also-skip
             quarto_yml = docs_dir / "_quarto.yml"
             quarto_yml.write_text("project:\n  type: website\n")
 
-            docs = GreatDocs(project_path=tmp_dir, docs_dir="docs")
+            docs = GreatDocs(project_path=tmp_dir)
             results = docs.check_links(
                 include_source=False,
                 include_docs=True,
@@ -1317,8 +1317,9 @@ class TestCLIIntegration:
         with runner.isolated_filesystem():
             # Create minimal project structure
             Path("docs").mkdir()
+            Path("user_guide").mkdir()
             Path("docs/_quarto.yml").write_text("project:\n  type: website\n")
-            Path("docs/test.md").write_text(
+            Path("user_guide/test.md").write_text(
                 "https://this-url-definitely-does-not-exist-xyz123.com/"
             )
 
@@ -1336,8 +1337,9 @@ class TestCLIIntegration:
         with runner.isolated_filesystem():
             # Create minimal project with no URLs
             Path("docs").mkdir()
+            Path("user_guide").mkdir()
             Path("docs/_quarto.yml").write_text("project:\n  type: website\n")
-            Path("docs/test.md").write_text("No URLs here")
+            Path("user_guide/test.md").write_text("No URLs here")
 
             result = runner.invoke(cli, ["check-links", "--docs-only"])
 
@@ -1352,11 +1354,12 @@ class TestCLIIntegration:
         runner = CliRunner()
         with runner.isolated_filesystem():
             Path("docs").mkdir()
+            Path("user_guide").mkdir()
             Path("docs/_quarto.yml").write_text("project:\n  type: website\n")
-            Path("docs/test.md").write_text("https://localhost:8000/test")
+            Path("user_guide/test.md").write_text("https://localhost:8000/test")
 
             result = runner.invoke(
-                cli, ["check-links", "--docs-only", "--json-output", "--docs-dir", "docs"]
+                cli, ["check-links", "--docs-only", "--json-output"]
             )
 
             # Find the JSON in the output (skip any prefix messages)
@@ -1386,8 +1389,9 @@ class TestCLIIntegration:
         runner = CliRunner()
         with runner.isolated_filesystem():
             Path("docs").mkdir()
+            Path("user_guide").mkdir()
             Path("docs/_quarto.yml").write_text("project:\n  type: website\n")
-            Path("docs/test.md").write_text("https://localhost:8000/test")
+            Path("user_guide/test.md").write_text("https://localhost:8000/test")
 
             result = runner.invoke(cli, ["check-links", "--docs-only", "--verbose"])
 
@@ -1402,8 +1406,9 @@ class TestCLIIntegration:
         runner = CliRunner()
         with runner.isolated_filesystem():
             Path("docs").mkdir()
+            Path("user_guide").mkdir()
             Path("docs/_quarto.yml").write_text("project:\n  type: website\n")
-            Path("docs/test.md").write_text("""
+            Path("user_guide/test.md").write_text("""
 https://skip1.example.com/
 https://skip2.example.com/
 """)

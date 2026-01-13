@@ -2848,54 +2848,6 @@ class GreatDocs:
             print("Warning: griffe not available for directive extraction")
             return {}
 
-    def _get_family_config(self) -> dict:
-        """
-        Get family configuration (deprecated - now uses reference config).
-
-        Returns
-        -------
-        dict
-            Empty dict - family config is no longer used.
-        """
-        return {}
-
-    def _auto_title(self, family_name: str) -> str:
-        """
-        Generate a display title from a family name.
-
-        Converts kebab-case or snake_case to Title Case.
-
-        Parameters
-        ----------
-        family_name
-            The family name (e.g., "family-name" or "family_name").
-
-        Returns
-        -------
-        str
-            Title-cased name (e.g., "Family Name").
-        """
-        # Replace hyphens and underscores with spaces, then title case
-        return family_name.replace("-", " ").replace("_", " ").title()
-
-    def _normalize_family_key(self, family_name: str) -> str:
-        """
-        Normalize a family name to a configuration key.
-
-        Converts "Family Name" -> "family-name" for config lookup.
-
-        Parameters
-        ----------
-        family_name
-            The family name as written in the docstring.
-
-        Returns
-        -------
-        str
-            Normalized key for configuration lookup.
-        """
-        return family_name.lower().replace(" ", "-").replace("_", "-")
-
     def _build_sections_from_reference_config(
         self, reference_config: list[dict]
     ) -> list[dict] | None:

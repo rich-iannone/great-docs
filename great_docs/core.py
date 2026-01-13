@@ -1036,6 +1036,7 @@ class GreatDocs:
         title = cmd_info["full_path"] if not is_main else cmd_info["name"]
         lines.append("---")
         lines.append(f'title: "{title}"')
+        lines.append("sidebar: cli-reference")
         lines.append("---")
         lines.append("")
 
@@ -4323,6 +4324,24 @@ toc: false
             )
             if not has_early_theme:
                 config["format"]["html"]["include-in-header"].append(early_theme_script)
+
+        # Add reference switcher script (if CLI is enabled)
+        cli_enabled = metadata.get("cli_enabled", False)
+        if cli_enabled:
+            if "include-after-body" not in config["format"]["html"]:
+                config["format"]["html"]["include-after-body"] = []
+            elif isinstance(config["format"]["html"]["include-after-body"], str):
+                config["format"]["html"]["include-after-body"] = [
+                    config["format"]["html"]["include-after-body"]
+                ]
+
+            ref_switcher_script_entry = {"text": '<script src="reference-switcher.js"></script>'}
+            has_ref_switcher = any(
+                "reference-switcher" in str(item)
+                for item in config["format"]["html"]["include-after-body"]
+            )
+            if not has_ref_switcher:
+                config["format"]["html"]["include-after-body"].append(ref_switcher_script_entry)
 
         # Add sidebar navigation for reference pages
         if "sidebar" not in config["website"]:

@@ -147,18 +147,5 @@ __marimo__/
 /*.md
 !README.md
 
-# Quartodoc and great-docs generated files in docs/
-docs/_site/
-docs/objects.json
-docs/_source_links.json
-docs/llms.txt
-docs/llms-full.txt
-docs/great-docs.css
-docs/github-widget.js
-docs/scripts/
-docs/reference/
-docs/index.qmd
-docs/license.qmd
-docs/citation.qmd
-docs/code-of-conduct.qmd
-docs/contributing.qmd
+# Great Docs build directory (ephemeral, do not commit)
+great-docs/

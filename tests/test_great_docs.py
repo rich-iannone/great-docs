@@ -1280,3 +1280,142 @@ def test_config_dynamic_property_default():
         config = Config(config_dir)
         # Default should be True
         assert config.dynamic is True
+
+
+def test_citation_year_from_date_released():
+    """Test that citation year is parsed from date-released field."""
+    import yaml
+    from datetime import datetime
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create a minimal pyproject.toml
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test-package"\nversion = "0.1.0"')
+
+        # Create CITATION.cff with date-released
+        citation_cff = project_path / "CITATION.cff"
+        citation_data = {
+            "cff-version": "1.2.0",
+            "title": "Test Package",
+            "authors": [{"given-names": "John", "family-names": "Doe"}],
+            "version": "0.1.0",
+            "date-released": "2023-05-15",
+            "url": "https://example.com",
+        }
+        citation_cff.write_text(yaml.dump(citation_data))
+
+        # Create README.md
+        readme = project_path / "README.md"
+        readme.write_text("# Test Package\n\nA test package.")
+
+        # Create great-docs directory
+        docs_dir = project_path / "great-docs"
+        docs_dir.mkdir(parents=True, exist_ok=True)
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs._create_index_from_readme()
+
+        # Check that citation.qmd was created
+        citation_qmd = docs_dir / "citation.qmd"
+        assert citation_qmd.exists()
+
+        content = citation_qmd.read_text()
+        # Check that 2023 appears in the citation (from date-released)
+        assert "2023" in content
+        assert "year = {2023}" in content
+
+
+def test_citation_year_defaults_to_current():
+    """Test that citation year defaults to current year when date-released is missing."""
+    import yaml
+    from datetime import datetime
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create a minimal pyproject.toml
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test-package"\nversion = "0.1.0"')
+
+        # Create CITATION.cff WITHOUT date-released
+        citation_cff = project_path / "CITATION.cff"
+        citation_data = {
+            "cff-version": "1.2.0",
+            "title": "Test Package",
+            "authors": [{"given-names": "Jane", "family-names": "Smith"}],
+            "version": "0.2.0",
+            "url": "https://example.com",
+        }
+        citation_cff.write_text(yaml.dump(citation_data))
+
+        # Create README.md
+        readme = project_path / "README.md"
+        readme.write_text("# Test Package\n\nA test package.")
+
+        # Create great-docs directory
+        docs_dir = project_path / "great-docs"
+        docs_dir.mkdir(parents=True, exist_ok=True)
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs._create_index_from_readme()
+
+        # Check that citation.qmd was created
+        citation_qmd = docs_dir / "citation.qmd"
+        assert citation_qmd.exists()
+
+        content = citation_qmd.read_text()
+        # Check that current year appears in the citation
+        current_year = str(datetime.now().year)
+        assert current_year in content
+        assert f"year = {{{current_year}}}" in content
+
+
+def test_citation_year_handles_invalid_date():
+    """Test that citation year falls back to current year for invalid dates."""
+    import yaml
+    from datetime import datetime
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create a minimal pyproject.toml
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test-package"\nversion = "0.1.0"')
+
+        # Create CITATION.cff with invalid date-released
+        citation_cff = project_path / "CITATION.cff"
+        citation_data = {
+            "cff-version": "1.2.0",
+            "title": "Test Package",
+            "authors": [{"given-names": "Bob", "family-names": "Johnson"}],
+            "version": "0.3.0",
+            "date-released": "invalid-date-format",
+            "url": "https://example.com",
+        }
+        citation_cff.write_text(yaml.dump(citation_data))
+
+        # Create README.md
+        readme = project_path / "README.md"
+        readme.write_text("# Test Package\n\nA test package.")
+
+        # Create great-docs directory
+        docs_dir = project_path / "great-docs"
+        docs_dir.mkdir(parents=True, exist_ok=True)
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs._create_index_from_readme()
+
+        # Check that citation.qmd was created
+        citation_qmd = docs_dir / "citation.qmd"
+        assert citation_qmd.exists()
+
+        content = citation_qmd.read_text()
+        # Check that current year appears (fallback from invalid date)
+        current_year = str(datetime.now().year)
+        assert current_year in content
+        assert f"year = {{{current_year}}}" in content
+        current_year = str(datetime.now().year)
+        assert current_year in content
+        assert f"year = {{{current_year}}}" in content

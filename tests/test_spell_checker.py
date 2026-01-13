@@ -27,7 +27,7 @@ All words here should be recognized.
 """)
 
             # Use docs_dir="docs" to bypass interactive prompt
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
             results = gd.spell_check()
 
             # Should have no misspellings
@@ -49,7 +49,7 @@ title: "Test Document"
 This documment has mispelled words.
 """)
 
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
             results = gd.spell_check()
 
             # Should detect misspellings
@@ -80,7 +80,7 @@ def myfunc_xyzzy():
 The code above demonstrates something.
 """)
 
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
             results = gd.spell_check()
 
             # Code block content should be skipped, so no misspellings
@@ -103,7 +103,7 @@ Use the `xyzzyfunction` method to do something.
 The `qwertyvar` variable holds the value.
 """)
 
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
             results = gd.spell_check()
 
             # Inline code should be skipped
@@ -126,7 +126,7 @@ Visit https://example.com/qwertypath for more info.
 Also see http://somesite.org/asdfghjkl.
 """)
 
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
             results = gd.spell_check()
 
             # URLs should be skipped
@@ -150,7 +150,7 @@ custom_field: "qazwsxedc"
 This is the actual content with correct spelling.
 """)
 
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
             results = gd.spell_check()
 
             # YAML frontmatter should be skipped
@@ -174,7 +174,7 @@ title: "HTML"
 </div>
 """)
 
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
             results = gd.spell_check()
 
             # HTML attributes should be skipped
@@ -198,7 +198,7 @@ It uses JSON and YAML configuration files.
 The API documentation is generated with quartodoc.
 """)
 
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
             results = gd.spell_check()
 
             # Technical terms should be recognized
@@ -221,7 +221,7 @@ The xyzzyword is used here.
 Also qwertyterm appears.
 """)
 
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
 
             # Without custom dictionary, should find misspellings
             results_without = gd.spell_check()
@@ -256,7 +256,7 @@ Content here.
 {{< include _qwertyfile.qmd >}}
 """)
 
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
             results = gd.spell_check()
 
             # Directives should be skipped
@@ -292,7 +292,7 @@ title: "File Three"
 This file also has correct words.
 """)
 
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
             results = gd.spell_check()
 
             # Should find misspelling in file2
@@ -316,7 +316,7 @@ title: "Suggestions"
 This has a documment here.
 """)
 
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
             results = gd.spell_check()
 
             # Should have suggestions
@@ -340,7 +340,7 @@ title: "Verbose Test"
 This is a test.
 """)
 
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
             results = gd.spell_check(verbose=True)
 
             # Should complete without error
@@ -363,7 +363,7 @@ title: "Emails"
 Contact us at support@example.com or info@test.com.
 """)
 
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
             results = gd.spell_check()
 
             # Email addresses should be skipped
@@ -387,7 +387,7 @@ Edit the file at /path/to/xyzzyfile.py.
 Also check ./qwertydir/asdffile.qmd.
 """)
 
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
             results = gd.spell_check()
 
             # File paths should be skipped
@@ -401,7 +401,7 @@ Also check ./qwertydir/asdffile.qmd.
             user_guide_dir = project_path / "user_guide"
             user_guide_dir.mkdir()
 
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
             results = gd.spell_check()
 
             # Should handle gracefully
@@ -579,7 +579,7 @@ class TestSpellCheckEdgeCases:
             test_file = user_guide_dir / "empty.qmd"
             test_file.write_text("")
 
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
             results = gd.spell_check()
 
             assert len(results["misspelled"]) == 0
@@ -599,7 +599,7 @@ qwertyvar = 123
 ```
 """)
 
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
             results = gd.spell_check()
 
             assert len(results["misspelled"]) == 0
@@ -628,7 +628,7 @@ More text here.
 :::
 """)
 
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
             results = gd.spell_check()
 
             assert len(results["misspelled"]) == 0
@@ -651,7 +651,7 @@ Also: colons, semicolons; and other punctuation!
 Numbers like 123 and 45.67 should be ignored.
 """)
 
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
             results = gd.spell_check()
 
             assert len(results["misspelled"]) == 0
@@ -673,7 +673,7 @@ CamelCase words like GreatDocs should be handled.
 Also UPPERCASE and lowercase work too.
 """)
 
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
             results = gd.spell_check(custom_dictionary=["GreatDocs", "CamelCase"])
 
             # Check that basic words are recognized
@@ -700,7 +700,7 @@ $$
 $$
 """)
 
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
             results = gd.spell_check()
 
             # LaTeX should be skipped
@@ -722,7 +722,7 @@ title: "Links"
 Check out [this documment](https://example.com/xyzzy).
 """)
 
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
             results = gd.spell_check()
 
             # "documment" in link text should be flagged
@@ -749,7 +749,7 @@ title: "Chapter 1"
 This has a mispeling.
 """)
 
-            gd = GreatDocs(project_path=project_path, docs_dir="docs")
+            gd = GreatDocs(project_path=project_path)
             results = gd.spell_check()
 
             # Should scan subdirectory

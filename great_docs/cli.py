@@ -473,11 +473,11 @@ def setup_github_pages(project_path, main_branch, python_version, force):
             template_file = files("great_docs").joinpath("assets/github-workflow-template.yml")
             template_content = template_file.read_text()
 
-        # Replace placeholders
-        workflow_content = template_content.format(
-            main_branch=main_branch,
-            python_version=python_version,
-        )
+        # Replace placeholders (using replace() to handle linter-formatted templates)
+        workflow_content = template_content.replace("{ main_branch }", main_branch)
+        workflow_content = workflow_content.replace("{main_branch}", main_branch)
+        workflow_content = workflow_content.replace("{ python_version }", python_version)
+        workflow_content = workflow_content.replace("{python_version}", python_version)
 
         # Write workflow file
         workflow_file.write_text(workflow_content)

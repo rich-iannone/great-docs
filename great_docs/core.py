@@ -681,7 +681,16 @@ class GreatDocs:
 
         # Look for repository URL in various common key names
         repo_url = None
-        for key in ["Repository", "repository", "Source", "source", "GitHub", "github"]:
+        for key in [
+            "Repository",
+            "repository",
+            "Source",
+            "source",
+            "GitHub",
+            "github",
+            "Homepage",
+            "homepage",
+        ]:
             if key in urls:
                 repo_url = urls[key]
                 break

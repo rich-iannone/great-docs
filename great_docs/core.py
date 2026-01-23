@@ -3065,6 +3065,107 @@ class GreatDocs:
         print("No reference config found, using auto-discovery")
         return self._create_quartodoc_sections(package_name)
 
+    def _extract_authors_from_pyproject(self) -> list[dict[str, str]]:
+        """
+        Extract author information from pyproject.toml.
+
+        Reads authors and maintainers from pyproject.toml and combines them
+        into a list suitable for the great-docs.yml authors section.
+
+        Returns
+        -------
+        list[dict[str, str]]
+            List of author dictionaries with name, email, and role fields.
+        """
+        package_root = self._find_package_root()
+        pyproject_path = package_root / "pyproject.toml"
+
+        if not pyproject_path.exists():
+            return []
+
+        try:
+            import tomllib
+
+            with open(pyproject_path, "rb") as f:
+                data = tomllib.load(f)
+                project = data.get("project", {})
+
+            authors_list = project.get("authors", [])
+            maintainers_list = project.get("maintainers", [])
+
+            # Track seen names to avoid duplicates
+            seen_names: set[str] = set()
+            result: list[dict[str, str]] = []
+
+            # Process maintainers first (they get "Maintainer" role)
+            for maintainer in maintainers_list:
+                if isinstance(maintainer, dict):
+                    name = maintainer.get("name", "")
+                    email = maintainer.get("email", "")
+                    if name and name not in seen_names:
+                        seen_names.add(name)
+                        author_entry: dict[str, str] = {"name": name, "role": "Maintainer"}
+                        if email:
+                            author_entry["email"] = email
+                        result.append(author_entry)
+
+            # Process authors (they get "Author" role, unless already added as maintainer)
+            for author in authors_list:
+                if isinstance(author, dict):
+                    name = author.get("name", "")
+                    email = author.get("email", "")
+                    if name and name not in seen_names:
+                        seen_names.add(name)
+                        author_entry = {"name": name, "role": "Author"}
+                        if email:
+                            author_entry["email"] = email
+                        result.append(author_entry)
+
+            return result
+
+        except Exception:
+            return []
+
+    def _format_authors_yaml(self, authors: list[dict[str, str]]) -> str:
+        """
+        Format authors list as YAML for great-docs.yml.
+
+        Parameters
+        ----------
+        authors
+            List of author dictionaries from _extract_authors_from_pyproject.
+
+        Returns
+        -------
+        str
+            YAML-formatted authors section, or empty string if no authors.
+        """
+        if not authors:
+            return ""
+
+        lines = [
+            "# Author Information",
+            "# ------------------",
+            "# Author metadata for display in the landing page sidebar",
+            "# You can add additional fields: github, orcid, affiliation, homepage",
+            "authors:",
+        ]
+
+        for author in authors:
+            lines.append(f"  - name: {author['name']}")
+            if "role" in author:
+                lines.append(f"    role: {author['role']}")
+            # Add commented placeholders for optional fields
+            lines.append("    # affiliation: ")
+            if "email" in author:
+                lines.append(f"    email: {author['email']}")
+            else:
+                lines.append("    # email: ")
+            lines.append("    # github: ")
+            lines.append("    # orcid: ")
+
+        return "\n".join(lines)
+
     def _generate_initial_config(self, force: bool = False) -> bool:
         """
         Generate an initial great-docs.yml with discovered exports.
@@ -3162,6 +3263,14 @@ class GreatDocs:
             YAML content for a minimal configuration file.
         """
         dynamic_str = "true" if dynamic else "false"
+
+        # Extract authors from pyproject.toml
+        authors = self._extract_authors_from_pyproject()
+        authors_yaml = self._format_authors_yaml(authors)
+
+        # Build the config with optional authors section
+        authors_section = f"\n{authors_yaml}\n" if authors_yaml else ""
+
         return f"""# Great Docs Configuration
 # See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html
 
@@ -3188,7 +3297,7 @@ dynamic: {dynamic_str}
 # exclude:
 #   - InternalClass
 #   - helper_function
-
+{authors_section}
 # Site Settings
 # -------------
 # site:
@@ -3196,6 +3305,14 @@ dynamic: {dynamic_str}
 #   toc: true                  # Show table of contents (default: true)
 #   toc-depth: 2               # TOC heading depth (default: 2)
 #   toc-title: On this page    # TOC title (default: "On this page")
+
+# Jupyter Kernel
+# --------------
+# Jupyter kernel to use for executing code cells in .qmd files.
+# This is set at the project level so it applies to all pages, including
+# auto-generated API reference pages. Can be overridden in individual .qmd
+# file frontmatter if needed for special cases.
+# jupyter: python3             # Default: python3
 
 # API Reference Structure
 # -----------------------
@@ -3244,6 +3361,11 @@ dynamic: {dynamic_str}
             YAML content for the configuration file.
         """
         dynamic_str = "true" if dynamic else "false"
+
+        # Extract authors from pyproject.toml
+        authors = self._extract_authors_from_pyproject()
+        authors_yaml = self._format_authors_yaml(authors)
+
         lines = [
             "# Great Docs Configuration",
             "# See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html",
@@ -3273,6 +3395,11 @@ dynamic: {dynamic_str}
             "#   - helper_function",
             "",
         ]
+
+        # Add authors section if we found any
+        if authors_yaml:
+            lines.append(authors_yaml)
+            lines.append("")
 
         # Add reference section
         lines.extend(
@@ -3360,6 +3487,14 @@ dynamic: {dynamic_str}
                 "#   toc: true                  # Show table of contents (default: true)",
                 "#   toc-depth: 2               # TOC heading depth (default: 2)",
                 "#   toc-title: On this page    # TOC title",
+                "",
+                "# Jupyter Kernel",
+                "# --------------",
+                "# Jupyter kernel to use for executing code cells in .qmd files.",
+                "# This is set at the project level so it applies to all pages, including",
+                "# auto-generated API reference pages. Can be overridden in individual .qmd",
+                "# file frontmatter if needed for special cases.",
+                "# jupyter: python3             # Default: python3",
                 "",
                 "# CLI Documentation",
                 "# -----------------",

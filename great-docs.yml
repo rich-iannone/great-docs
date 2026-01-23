@@ -65,6 +65,14 @@ authors:
 #   toc-depth: 2
 #   toc-title: On this page
 
+# Jupyter Kernel
+# --------------
+# Jupyter kernel to use for executing code cells in .qmd files.
+# This is set at the project level so it applies to all pages, including
+# auto-generated API reference pages. Can be overridden in individual .qmd
+# file frontmatter if needed for special cases.
+# jupyter: python3             # Default: python3
+
 # API Reference Structure
 # -----------------------
 # Explicit control over API reference organization

@@ -12,6 +12,8 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "parser": "numpy",  # "numpy" (default), "google", or "sphinx"
     # Dynamic introspection mode for quartodoc
     "dynamic": True,  # True (default) or False for packages with cyclic aliases
+    # Jupyter kernel for executing code cells
+    "jupyter": "python3",  # Default kernel for Quarto computations
     # API discovery settings
     "exclude": [],
     # GitHub integration
@@ -245,6 +247,11 @@ class Config:
         """Get the site settings (forwarded to _quarto.yml format.html)."""
         return self.get("site", {})
 
+    @property
+    def jupyter(self) -> str:
+        """Get the Jupyter kernel for executing code cells."""
+        return self.get("jupyter", "python3")
+
     def exists(self) -> bool:
         """Check if the configuration file exists."""
         return self.config_path.exists()
@@ -361,6 +368,14 @@ def create_default_config() -> str:
 #   toc: true                  # Show table of contents (default: true)
 #   toc-depth: 2               # TOC heading depth (default: 2)
 #   toc-title: On this page    # TOC title (default: "On this page")
+
+# Jupyter Kernel
+# --------------
+# Jupyter kernel to use for executing code cells in .qmd files.
+# This is set at the project level so it applies to all pages, including
+# auto-generated API reference pages. Can be overridden in individual .qmd
+# file frontmatter if needed for special cases.
+# jupyter: python3             # Default: python3
 
 # API Reference Structure
 # -----------------------

@@ -3978,6 +3978,12 @@ toc: false
             # Always explicitly set parser for clarity
             quartodoc_config["parser"] = "numpy"
 
+        # Get jupyter kernel from great-docs.yml config (defaults to python3)
+        jupyter_kernel = self._config.jupyter
+        if jupyter_kernel:
+            config["jupyter"] = jupyter_kernel
+            print(f"Using '{jupyter_kernel}' Jupyter kernel")
+
         # Add sections if we found them
         if sections:
             quartodoc_config["sections"] = sections
@@ -4043,6 +4049,11 @@ toc: false
 
         dynamic = self._config.dynamic
         config["quartodoc"]["dynamic"] = dynamic
+
+        # Update jupyter kernel from great-docs.yml config
+        jupyter_kernel = self._config.jupyter
+        if jupyter_kernel:
+            config["jupyter"] = jupyter_kernel
 
         if sections:
             config["quartodoc"]["sections"] = sections

@@ -1419,3 +1419,167 @@ def test_citation_year_handles_invalid_date():
         current_year = str(datetime.now().year)
         assert current_year in content
         assert f"year = {{{current_year}}}" in content
+
+
+# --- Author Extraction Tests ---
+
+
+def test_extract_authors_from_pyproject_with_authors():
+    """Test extracting authors from pyproject.toml with authors field."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create pyproject.toml with authors
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text("""[project]
+name = "test-package"
+version = "0.1.0"
+authors = [
+    {name = "Alice Smith", email = "alice@example.com"},
+    {name = "Bob Jones", email = "bob@example.com"}
+]
+""")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        authors = docs._extract_authors_from_pyproject()
+
+        assert len(authors) == 2
+        assert authors[0]["name"] == "Alice Smith"
+        assert authors[0]["role"] == "Author"
+        assert authors[0]["email"] == "alice@example.com"
+        assert authors[1]["name"] == "Bob Jones"
+
+
+def test_extract_authors_from_pyproject_with_maintainers():
+    """Test extracting authors from pyproject.toml with maintainers field."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create pyproject.toml with maintainers
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text("""[project]
+name = "test-package"
+version = "0.1.0"
+maintainers = [
+    {name = "Carol White", email = "carol@example.com"}
+]
+""")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        authors = docs._extract_authors_from_pyproject()
+
+        assert len(authors) == 1
+        assert authors[0]["name"] == "Carol White"
+        assert authors[0]["role"] == "Maintainer"
+        assert authors[0]["email"] == "carol@example.com"
+
+
+def test_extract_authors_from_pyproject_deduplicates():
+    """Test that authors appearing in both authors and maintainers are deduplicated."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create pyproject.toml with same person as author and maintainer
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text("""[project]
+name = "test-package"
+version = "0.1.0"
+authors = [
+    {name = "Rich Iannone", email = "rich@example.com"}
+]
+maintainers = [
+    {name = "Rich Iannone", email = "rich@example.com"}
+]
+""")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        authors = docs._extract_authors_from_pyproject()
+
+        # Should only have one entry, with Maintainer role (maintainers processed first)
+        assert len(authors) == 1
+        assert authors[0]["name"] == "Rich Iannone"
+        assert authors[0]["role"] == "Maintainer"
+
+
+def test_extract_authors_from_pyproject_no_authors():
+    """Test extracting authors when pyproject.toml has no authors."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create pyproject.toml without authors
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text("""[project]
+name = "test-package"
+version = "0.1.0"
+""")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        authors = docs._extract_authors_from_pyproject()
+
+        assert authors == []
+
+
+def test_extract_authors_from_pyproject_no_file():
+    """Test extracting authors when pyproject.toml doesn't exist."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs = GreatDocs(project_path=tmp_dir)
+        authors = docs._extract_authors_from_pyproject()
+
+        assert authors == []
+
+
+def test_format_authors_yaml_basic():
+    """Test formatting authors as YAML."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create minimal pyproject.toml
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        authors = [{"name": "Test Author", "role": "Maintainer", "email": "test@example.com"}]
+        yaml_output = docs._format_authors_yaml(authors)
+
+        assert "# Author Information" in yaml_output
+        assert "authors:" in yaml_output
+        assert "- name: Test Author" in yaml_output
+        assert "role: Maintainer" in yaml_output
+        assert "email: test@example.com" in yaml_output
+        assert "# github:" in yaml_output
+        assert "# orcid:" in yaml_output
+
+
+def test_format_authors_yaml_empty():
+    """Test formatting empty authors list."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create minimal pyproject.toml
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        docs = GreatDocs(project_path=tmp_dir)
+        yaml_output = docs._format_authors_yaml([])
+
+        assert yaml_output == ""
+
+
+def test_format_authors_yaml_no_email():
+    """Test formatting authors without email."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create minimal pyproject.toml
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        authors = [{"name": "No Email Author", "role": "Author"}]
+        yaml_output = docs._format_authors_yaml(authors)
+
+        assert "- name: No Email Author" in yaml_output
+        assert "role: Author" in yaml_output
+        assert "# email:" in yaml_output  # Should be commented out placeholder

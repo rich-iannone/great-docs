@@ -77,26 +77,24 @@ jobs:
 
       # Start deployment
       - name: Configure pull release name
-        if: ${{{{ github.event_name == 'pull_request' }}}}
+        if: ${{ github.event_name == 'pull_request' }}
         run: |
-          echo "RELEASE_NAME=pr-${{PR_NUMBER}}" >> $GITHUB_ENV
-        env:
-          PR_NUMBER: ${{{{ github.event.number }}}}
+          echo "RELEASE_NAME=pr-${{ github.event.number }}" >> $GITHUB_ENV
 
       - name: Configure branch release name
-        if: ${{{{ github.event_name != 'pull_request' }}}}
+        if: ${{ github.event_name != 'pull_request' }}
         run: |
           # use branch name, but replace slashes. E.g. feat/a -> feat-a
-          echo "RELEASE_NAME=${{GITHUB_REF_NAME/\//-}}" >> $GITHUB_ENV
+          echo "RELEASE_NAME=${GITHUB_REF_NAME//\//-}" >> $GITHUB_ENV
 
       # Deploy
       - name: Create Github Deployment
         uses: bobheadxi/deployments@v1
         id: deployment
-        if: ${{{{ !github.event.pull_request.head.repo.fork }}}}
+        if: ${{ !github.event.pull_request.head.repo.fork }}
         with:
           step: start
-          token: ${{{{ secrets.GITHUB_TOKEN }}}}
-          env: ${{{{ env.RELEASE_NAME }}}}
-          ref: ${{{{ github.head_ref }}}}
-          logs: "https://github.com/${{{{ github.repository }}}}/actions/runs/${{{{ github.run_id }}}}"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          env: ${{ env.RELEASE_NAME }}
+          ref: ${{ github.head_ref }}
+          logs: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

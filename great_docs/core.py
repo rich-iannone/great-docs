@@ -3312,7 +3312,7 @@ dynamic: {dynamic_str}
 # This is set at the project level so it applies to all pages, including
 # auto-generated API reference pages. Can be overridden in individual .qmd
 # file frontmatter if needed for special cases.
-# jupyter: python3             # Default: python3
+jupyter: python3
 
 # API Reference Structure
 # -----------------------
@@ -3494,7 +3494,7 @@ dynamic: {dynamic_str}
                 "# This is set at the project level so it applies to all pages, including",
                 "# auto-generated API reference pages. Can be overridden in individual .qmd",
                 "# file frontmatter if needed for special cases.",
-                "# jupyter: python3             # Default: python3",
+                "jupyter: python3",
                 "",
                 "# CLI Documentation",
                 "# -----------------",

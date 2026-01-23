@@ -271,6 +271,28 @@ a.sidebar-item-text.sidebar-link.text-start > span {
     color: rgb(48, 48, 48);
 }
 
+/* Footer alignment - add left margin to match content area on large viewports */
+@media (min-width: 992px) {
+    .nav-footer {
+        padding-left: calc((100vw - 900px) / 2);
+        padding-right: calc((100vw - 900px) / 2);
+    }
+}
+
+@media (min-width: 1200px) {
+    .nav-footer {
+        padding-left: calc((100vw - 1100px) / 2);
+        padding-right: calc((100vw - 1100px) / 2);
+    }
+}
+
+@media (min-width: 1400px) {
+    .nav-footer {
+        padding-left: calc((100vw - 1300px) / 2);
+        padding-right: calc((100vw - 1300px) / 2);
+    }
+}
+
 /* Source link styling */
 .source-link {
     font-size: 12px;

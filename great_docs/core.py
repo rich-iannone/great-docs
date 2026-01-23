@@ -4510,24 +4510,41 @@ toc: false
                 }
             ]
 
-        # Add page footer with copyright notice if not present
+        # Add page footer with "Developed by" notice (pkgdown style) if not present
         if "page-footer" not in config["website"]:
-            import datetime
-
-            current_year = datetime.datetime.now().year
             metadata = self._get_package_metadata()
 
-            # Get author name from metadata
-            author_name = None
-            if metadata.get("authors"):
-                first_author = metadata["authors"][0]
-                if isinstance(first_author, dict):
-                    author_name = first_author.get("name")
-                elif isinstance(first_author, str):
-                    author_name = first_author
+            # Collect all author/maintainer names from pyproject.toml
+            author_names = []
+            for author in metadata.get("authors", []):
+                if isinstance(author, dict) and author.get("name"):
+                    author_names.append(author["name"])
+                elif isinstance(author, str):
+                    author_names.append(author)
 
-            if author_name:
-                config["website"]["page-footer"] = {"left": f"&copy; {current_year} {author_name}"}
+            for maintainer in metadata.get("maintainers", []):
+                if isinstance(maintainer, dict) and maintainer.get("name"):
+                    name = maintainer["name"]
+                    if name not in author_names:
+                        author_names.append(name)
+                elif isinstance(maintainer, str) and maintainer not in author_names:
+                    author_names.append(maintainer)
+
+            # Also check rich_authors from great-docs.yml (may have more detail)
+            for author in metadata.get("rich_authors", []):
+                if isinstance(author, dict) and author.get("name"):
+                    name = author["name"]
+                    if name not in author_names:
+                        author_names.append(name)
+                    # Add affiliation if present and not already in list
+                    affiliation = author.get("affiliation")
+                    if affiliation and affiliation not in author_names:
+                        author_names.append(affiliation)
+
+            if author_names:
+                # Format as "Developed by Name1, Name2, Name3."
+                developed_by = "Developed by " + ", ".join(author_names) + "."
+                config["website"]["page-footer"] = {"left": developed_by}
 
         # Write back to file
         self._write_quarto_yml(quarto_yml, config)

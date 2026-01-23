@@ -708,7 +708,10 @@ class GreatDocs:
 
         if match:
             owner = match.group(1)
-            repo = match.group(2).rstrip(".git")
+            repo = match.group(2)
+            # Remove .git suffix if present (use removesuffix, not rstrip which removes characters)
+            if repo.endswith(".git"):
+                repo = repo[:-4]
             base_url = f"https://github.com/{owner}/{repo}"
             return owner, repo, base_url
 

@@ -838,6 +838,52 @@ source:
         assert config.get("source.nonexistent", "default") == "default"
 
 
+def test_config_funding_property():
+    """Test the funding property in configuration."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        config_file = Path(tmp_dir) / "great-docs.yml"
+        config_file.write_text("""
+funding:
+  name: "Posit Software, PBC"
+  roles:
+    - Copyright holder
+    - funder
+  ror: https://ror.org/03wc8by49
+""")
+
+        config = Config(Path(tmp_dir))
+
+        assert config.funding is not None
+        assert config.funding["name"] == "Posit Software, PBC"
+        assert config.funding["roles"] == ["Copyright holder", "funder"]
+        assert config.funding["ror"] == "https://ror.org/03wc8by49"
+
+
+def test_config_funding_property_none_when_not_set():
+    """Test funding property returns None when not configured."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        config = Config(Path(tmp_dir))
+        assert config.funding is None
+
+
+def test_config_funding_without_ror():
+    """Test funding configuration without ROR link."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        config_file = Path(tmp_dir) / "great-docs.yml"
+        config_file.write_text("""
+funding:
+  name: "Example Corp"
+  roles:
+    - Copyright holder
+""")
+
+        config = Config(Path(tmp_dir))
+
+        assert config.funding is not None
+        assert config.funding["name"] == "Example Corp"
+        assert config.funding.get("ror") is None
+
+
 def test_load_config_function():
     """Test the load_config helper function."""
     with tempfile.TemporaryDirectory() as tmp_dir:

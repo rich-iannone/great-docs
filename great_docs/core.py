@@ -3985,7 +3985,7 @@ title: "Code of Conduct"
 
                     if homepage:
                         icon_links.append(
-                            f'<a href="{homepage}" title="Homepage"><i class="bi bi-house-fill"></i></a>'
+                            f'<a href="{homepage}" title="Website"><i class="bi bi-globe"></i></a>'
                         )
 
                     if orcid:

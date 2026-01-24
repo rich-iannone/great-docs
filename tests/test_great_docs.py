@@ -1629,3 +1629,195 @@ def test_format_authors_yaml_no_email():
         assert "- name: No Email Author" in yaml_output
         assert "role: Author" in yaml_output
         assert "# email:" in yaml_output  # Should be commented out placeholder
+
+
+# ============================================================================
+# User Guide URL Stripping Tests
+# ============================================================================
+
+
+def test_strip_numeric_prefix_single_digit():
+    """Test stripping single-digit numeric prefix like 1-, 2-, etc."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pyproject = Path(tmp_dir) / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        assert docs._strip_numeric_prefix("1-getting-started.qmd") == "getting-started.qmd"
+        assert docs._strip_numeric_prefix("2-configuration.qmd") == "configuration.qmd"
+        assert docs._strip_numeric_prefix("9-advanced.qmd") == "advanced.qmd"
+
+
+def test_strip_numeric_prefix_two_digit():
+    """Test stripping two-digit numeric prefix like 00-, 01-, etc."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pyproject = Path(tmp_dir) / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        assert docs._strip_numeric_prefix("00-introduction.qmd") == "introduction.qmd"
+        assert docs._strip_numeric_prefix("01-installation.qmd") == "installation.qmd"
+        assert docs._strip_numeric_prefix("09-conclusion.qmd") == "conclusion.qmd"
+        assert docs._strip_numeric_prefix("10-appendix.qmd") == "appendix.qmd"
+        assert docs._strip_numeric_prefix("99-final.qmd") == "final.qmd"
+
+
+def test_strip_numeric_prefix_three_digit():
+    """Test stripping three-digit numeric prefix like 001-, 010-, etc."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pyproject = Path(tmp_dir) / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        assert docs._strip_numeric_prefix("001-overview.qmd") == "overview.qmd"
+        assert docs._strip_numeric_prefix("010-details.qmd") == "details.qmd"
+        assert docs._strip_numeric_prefix("0100-reference.qmd") == "reference.qmd"
+
+
+def test_strip_numeric_prefix_underscore():
+    """Test stripping numeric prefix with underscore separator."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pyproject = Path(tmp_dir) / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        assert docs._strip_numeric_prefix("01_introduction.qmd") == "introduction.qmd"
+        assert docs._strip_numeric_prefix("1_getting_started.qmd") == "getting_started.qmd"
+
+
+def test_strip_numeric_prefix_no_prefix():
+    """Test that filenames without numeric prefix are unchanged."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pyproject = Path(tmp_dir) / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        assert docs._strip_numeric_prefix("introduction.qmd") == "introduction.qmd"
+        assert docs._strip_numeric_prefix("index.qmd") == "index.qmd"
+        assert docs._strip_numeric_prefix("getting-started.qmd") == "getting-started.qmd"
+
+
+def test_strip_numeric_prefix_preserves_internal_numbers():
+    """Test that numbers within filename are preserved."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pyproject = Path(tmp_dir) / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        assert docs._strip_numeric_prefix("01-python3-setup.qmd") == "python3-setup.qmd"
+        assert docs._strip_numeric_prefix("02-chapter-10.qmd") == "chapter-10.qmd"
+
+
+def test_user_guide_files_renamed_on_copy():
+    """Test that user guide files are renamed when copied to docs directory."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create minimal pyproject.toml
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        # Create user_guide directory with numbered files
+        user_guide = project_path / "user_guide"
+        user_guide.mkdir()
+
+        (user_guide / "00-introduction.qmd").write_text("""---
+title: Introduction
+guide-section: Getting Started
+---
+# Introduction
+""")
+        (user_guide / "01-installation.qmd").write_text("""---
+title: Installation
+guide-section: Getting Started
+---
+# Installation
+""")
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        # Process the user guide
+        user_guide_info = docs._discover_user_guide()
+        assert user_guide_info is not None
+
+        copied_files = docs._copy_user_guide_to_docs(user_guide_info)
+
+        # Check that files were copied with clean names
+        assert "user-guide/introduction.qmd" in copied_files
+        assert "user-guide/installation.qmd" in copied_files
+
+        # Check files exist with clean names
+        docs_user_guide = docs.project_path / "user-guide"
+        assert (docs_user_guide / "introduction.qmd").exists()
+        assert (docs_user_guide / "installation.qmd").exists()
+
+        # Check numbered versions do NOT exist
+        assert not (docs_user_guide / "00-introduction.qmd").exists()
+        assert not (docs_user_guide / "01-installation.qmd").exists()
+
+
+def test_user_guide_sidebar_uses_clean_urls():
+    """Test that the generated sidebar uses clean URLs without numeric prefixes."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create minimal pyproject.toml
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        # Create user_guide directory with numbered files
+        user_guide = project_path / "user_guide"
+        user_guide.mkdir()
+
+        (user_guide / "00-introduction.qmd").write_text("""---
+title: Introduction
+guide-section: Getting Started
+---
+# Introduction
+""")
+        (user_guide / "01-installation.qmd").write_text("""---
+title: Installation
+guide-section: Getting Started
+---
+# Installation
+""")
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        # Discover and generate sidebar
+        user_guide_info = docs._discover_user_guide()
+        assert user_guide_info is not None
+
+        sidebar_config = docs._generate_user_guide_sidebar(user_guide_info)
+
+        # Check sidebar structure
+        assert sidebar_config["id"] == "user-guide"
+        assert sidebar_config["title"] == "User Guide"
+
+        # Find the contents and verify clean URLs
+        contents = sidebar_config["contents"]
+        assert len(contents) > 0
+
+        # Flatten all hrefs from sections
+        all_hrefs = []
+        for item in contents:
+            if isinstance(item, dict) and "contents" in item:
+                for sub_item in item["contents"]:
+                    if isinstance(sub_item, str):
+                        all_hrefs.append(sub_item)
+                    elif isinstance(sub_item, dict):
+                        all_hrefs.append(sub_item.get("href", ""))
+            elif isinstance(item, str):
+                all_hrefs.append(item)
+
+        # Verify clean URLs (no numeric prefixes)
+        assert "user-guide/introduction.qmd" in all_hrefs
+        assert "user-guide/installation.qmd" in all_hrefs
+        assert "user-guide/00-introduction.qmd" not in all_hrefs
+        assert "user-guide/01-installation.qmd" not in all_hrefs

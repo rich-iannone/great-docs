@@ -3163,6 +3163,7 @@ class GreatDocs:
                 lines.append("    # email: ")
             lines.append("    # github: ")
             lines.append("    # orcid: ")
+            lines.append("    # homepage: ")
 
         return "\n".join(lines)
 
@@ -4514,8 +4515,16 @@ toc: false
         if "page-footer" not in config["website"]:
             metadata = self._get_package_metadata()
 
+            # Build a dict of author name -> homepage URL from rich_authors
+            author_homepages: dict[str, str] = {}
+            for author in metadata.get("rich_authors", []):
+                if isinstance(author, dict) and author.get("name"):
+                    homepage = author.get("homepage", "")
+                    if homepage:
+                        author_homepages[author["name"]] = homepage
+
             # Collect all author/maintainer names from pyproject.toml
-            author_names = []
+            author_names: list[str] = []
             for author in metadata.get("authors", []):
                 if isinstance(author, dict) and author.get("name"):
                     author_names.append(author["name"])
@@ -4538,8 +4547,27 @@ toc: false
                         author_names.append(name)
 
             if author_names:
-                # Format as "Developed by Name1, Name2, Name3."
-                developed_by = "Developed by " + ", ".join(author_names) + "."
+                # Format names, making them links if they have a homepage
+                formatted_names: list[str] = []
+                for name in author_names:
+                    if name in author_homepages:
+                        formatted_names.append(f'<a href="{author_homepages[name]}">{name}</a>')
+                    else:
+                        formatted_names.append(name)
+
+                # Format as "Developed by Name1 and Name2." or "Developed by Name1, Name2, and Name3."
+                if len(formatted_names) == 1:
+                    developed_by = f"Developed by {formatted_names[0]}."
+                elif len(formatted_names) == 2:
+                    developed_by = f"Developed by {formatted_names[0]} and {formatted_names[1]}."
+                else:
+                    developed_by = (
+                        "Developed by "
+                        + ", ".join(formatted_names[:-1])
+                        + ", and "
+                        + formatted_names[-1]
+                        + "."
+                    )
                 config["website"]["page-footer"] = {"left": developed_by}
 
         # Write back to file

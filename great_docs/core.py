@@ -3681,7 +3681,7 @@ title: "License"
         if citation_path.exists():
             citation_qmd = self.project_path / "citation.qmd"
 
-            # Get metadata first to access rich_authors
+            # Get metadata first to access rich_authors and repo info
             metadata = self._get_package_metadata()
 
             # Parse CITATION.cff for structured data
@@ -3689,6 +3689,22 @@ title: "License"
 
             with open(citation_path, "r", encoding="utf-8") as f:
                 citation_data = yaml.safe_load(f)
+
+            # Get package name for intro paragraph
+            package_name = metadata.get("name", "this package")
+
+            # Build GitHub link to CITATION.cff if repo URL is available
+            repo_url = citation_data.get("repository-code") or citation_data.get("url")
+            citation_file_link = ""
+            if repo_url:
+                # Ensure URL doesn't end with trailing slash
+                repo_url = repo_url.rstrip("/")
+                citation_file_link = f"{repo_url}/blob/main/CITATION.cff"
+
+            # Build intro paragraph
+            intro_paragraph = f"""
+To cite {package_name} in publications, please use the following citation.
+"""
 
             # Build Authors section
             authors_section = "## Authors\n\n"
@@ -3710,41 +3726,56 @@ title: "License"
 
             # Build Citation section with text and BibTeX
             citation_section = "## Citation\n\n"
-            citation_section += "**Source:** `CITATION.cff`\n\n"
+
+            # Add link to CITATION.cff on GitHub if available
+            if citation_file_link:
+                citation_section += f"**Source:** [`CITATION.cff`]({citation_file_link})\n\n"
+            else:
+                citation_section += "**Source:** `CITATION.cff`\n\n"
+
+            # Parse year from date-released field or use current year (used in multiple places)
+            from datetime import datetime
+
+            year = datetime.now().year
+            if citation_data.get("date-released"):
+                try:
+                    date_released = citation_data["date-released"]
+                    if isinstance(date_released, str):
+                        year = datetime.fromisoformat(date_released).year
+                    elif hasattr(date_released, "year"):
+                        year = date_released.year
+                except (ValueError, AttributeError):
+                    pass  # Keep current year as fallback
 
             # Generate text citation
             if citation_data.get("authors"):
-                author_names = []
-                for author in citation_data["authors"]:
+                # For text citation, use "et al." if more than 2 authors
+                author_list = citation_data["authors"]
+                if len(author_list) == 1:
+                    author = author_list[0]
                     family = author.get("family-names", "")
                     given = author.get("given-names", "")
                     initial = given[0] if given else ""
-                    author_names.append(f"{family} {initial}" if initial else family)
-
-                authors_str = ", ".join(author_names)
-                title = citation_data.get("title", "")
-                version = citation_data.get("version", "")
-                url = citation_data.get("url", "")
-
-                # Parse year from date-released field or use current year
-                from datetime import datetime
-
-                year = datetime.now().year
-                if citation_data.get("date-released"):
-                    try:
-                        date_released = citation_data["date-released"]
-                        if isinstance(date_released, str):
-                            year = datetime.fromisoformat(date_released).year
-                        elif hasattr(date_released, "year"):
-                            year = date_released.year
-                    except (ValueError, AttributeError):
-                        pass  # Keep current year as fallback
-
-                citation_section += (
-                    f"{authors_str} ({year}). {title} Python package version {version}, {url}.\n\n"
-                )
+                    authors_str = f"{family} {initial}" if initial else family
+                elif len(author_list) == 2:
+                    author_names = []
+                    for author in author_list:
+                        family = author.get("family-names", "")
+                        given = author.get("given-names", "")
+                        initial = given[0] if given else ""
+                        author_names.append(f"{family} {initial}" if initial else family)
+                    authors_str = " and ".join(author_names)
+                else:
+                    # More than 2 authors: use first author et al.
+                    author = author_list[0]
+                    family = author.get("family-names", "")
+                    given = author.get("given-names", "")
+                    initial = given[0] if given else ""
+                    first_author = f"{family} {initial}" if initial else family
+                    authors_str = f"{first_author} et al."
 
             # Generate BibTeX
+            citation_section += "### BibTeX\n\n"
             citation_section += "```bibtex\n"
             citation_section += "@Manual{,\n"
 
@@ -3760,20 +3791,6 @@ title: "License"
                     author_names.append(full_name)
                 citation_section += f"  author = {{{' and '.join(author_names)}}},\n"
 
-            # Parse year from date-released or use current year
-            from datetime import datetime
-
-            year = datetime.now().year
-            if citation_data.get("date-released"):
-                try:
-                    date_released = citation_data["date-released"]
-                    if isinstance(date_released, str):
-                        year = datetime.fromisoformat(date_released).year
-                    elif hasattr(date_released, "year"):
-                        year = date_released.year
-                except (ValueError, AttributeError):
-                    pass  # Keep current year as fallback
-
             citation_section += f"  year = {{{year}}},\n"
 
             if citation_data.get("version"):
@@ -3784,11 +3801,73 @@ title: "License"
             if citation_data.get("url"):
                 citation_section += f"  url = {{{citation_data['url']}}},\n"
 
-            citation_section += "}\n```\n"
+            citation_section += "}\n```\n\n"
+
+            # Generate APA format
+            citation_section += "### APA\n\n"
+            if citation_data.get("authors"):
+                # APA format: Author, A. A., Author, B. B., & Author, C. C. (Year).
+                author_list = citation_data["authors"]
+                apa_authors = []
+                for author in author_list:
+                    family = author.get("family-names", "")
+                    given = author.get("given-names", "")
+                    # Get initials from given names
+                    initials = (
+                        ". ".join([name[0] for name in given.split() if name]) + "."
+                        if given
+                        else ""
+                    )
+                    apa_authors.append(f"{family}, {initials}" if initials else family)
+
+                if len(apa_authors) == 1:
+                    apa_authors_str = apa_authors[0]
+                elif len(apa_authors) == 2:
+                    apa_authors_str = f"{apa_authors[0]} & {apa_authors[1]}"
+                else:
+                    # For 3+ authors, use commas and & before last
+                    apa_authors_str = ", ".join(apa_authors[:-1]) + ", & " + apa_authors[-1]
+
+                title = citation_data.get("title", "")
+                version = citation_data.get("version", "")
+                url = citation_data.get("url", "")
+
+                # APA software citation format
+                citation_section += f"{apa_authors_str} ({year}). *{title}* (Version {version}) [Computer software]. {url}\n\n"
+
+            # Generate RIS format (for reference managers like Zotero, Mendeley, EndNote)
+            citation_section += "### RIS\n\n"
+            citation_section += "```ris\n"
+            citation_section += "TY  - COMP\n"  # Type: Computer Program
+
+            if citation_data.get("title"):
+                citation_section += f"TI  - {citation_data['title']}\n"
+
+            if citation_data.get("authors"):
+                for author in citation_data["authors"]:
+                    given = author.get("given-names", "")
+                    family = author.get("family-names", "")
+                    # RIS format: AU  - Last, First
+                    citation_section += f"AU  - {family}, {given}\n"
+
+            citation_section += f"PY  - {year}\n"
+
+            if citation_data.get("version"):
+                citation_section += f"VL  - {citation_data['version']}\n"
+
+            if citation_data.get("url"):
+                citation_section += f"UR  - {citation_data['url']}\n"
+
+            if citation_data.get("abstract"):
+                citation_section += f"AB  - {citation_data['abstract']}\n"
+
+            citation_section += "ER  - \n"
+            citation_section += "```\n"
 
             citation_qmd_content = f"""---
 title: "Authors and Citation"
 ---
+{intro_paragraph}
 
 {authors_section}
 

@@ -56,6 +56,17 @@ authors:
     email: tomasz@posit.co
     github: t-kalinowski
 
+# Funding / Copyright Holder
+# --------------------------
+# Credit the organization that funds or holds copyright for this package.
+funding:
+  name: Posit Software, PBC
+  roles:
+    - Copyright holder
+    - funder
+  homepage: https://posit.co
+  ror: https://ror.org/03wc8by49
+
 # Site Settings
 # -------------
 # These settings are forwarded to _quarto.yml (format.html section)

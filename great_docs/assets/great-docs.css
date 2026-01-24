@@ -293,6 +293,18 @@ a.sidebar-item-text.sidebar-link.text-start > span {
     }
 }
 
+/* Footer author links styling */
+.nav-footer-left a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-thickness: 1px;
+}
+
+.nav-footer-left a:hover {
+    text-decoration-thickness: 2px;
+}
+
 /* Source link styling */
 .source-link {
     font-size: 12px;

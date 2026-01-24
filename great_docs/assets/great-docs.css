@@ -277,6 +277,11 @@ a.sidebar-item-text.sidebar-link.text-start > span {
         padding-left: calc((100vw - 900px) / 2);
         padding-right: calc((100vw - 900px) / 2);
     }
+
+    .nav-footer-left {
+        margin-left: 1rem;
+        margin-top: 0.5rem;
+    }
 }
 
 @media (min-width: 1200px) {

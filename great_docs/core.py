@@ -4536,10 +4536,6 @@ toc: false
                     name = author["name"]
                     if name not in author_names:
                         author_names.append(name)
-                    # Add affiliation if present and not already in list
-                    affiliation = author.get("affiliation")
-                    if affiliation and affiliation not in author_names:
-                        author_names.append(affiliation)
 
             if author_names:
                 # Format as "Developed by Name1, Name2, Name3."

@@ -1950,3 +1950,17 @@ html:not(.theme-loaded) *::before,
 html:not(.theme-loaded) *::after {
     transition: none !important;
 }
+
+/* Home page layout: widen main content since there's no left sidebar */
+/* On home page, expand content to use the space normally reserved for left sidebar */
+@media (min-width: 992px) {
+    body[data-page="index"] #quarto-document-content > section:not(.column-margin) {
+        grid-column: page-start-inset / body-content-end !important;
+    }
+
+    /* Keep the column-margin where it should be */
+    body[data-page="index"] .column-margin {
+        grid-column: body-end / page-end !important;
+    }
+}
+

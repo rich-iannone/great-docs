@@ -15,8 +15,26 @@
         html.setAttribute('data-bs-theme', 'light');
     }
 
+    // Detect page type from URL for page-specific styling
+    var path = window.location.pathname;
+    var pageName = path.endsWith('/') || path.endsWith('/index.html') || path === '/' ? 'index' : null;
+    if (!pageName) {
+        var filename = path.split('/').pop().replace('.html', '');
+        if (filename === 'index' || filename === '') {
+            pageName = 'index';
+        }
+    }
+
+    // Set page identifier on body when DOM is ready
+    function setPageIdentifier() {
+        if (pageName && document.body) {
+            document.body.setAttribute('data-page', pageName);
+        }
+    }
+
     // Reveal page once DOM is ready and styles are applied
     function revealPage() {
+        setPageIdentifier();
         // Small delay to ensure CSS is processed
         requestAnimationFrame(function() {
             html.classList.remove('theme-loading');

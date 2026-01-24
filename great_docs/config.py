@@ -40,6 +40,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "dark_mode_toggle": True,
     # Authors (rich author metadata)
     "authors": [],
+    # Funding organization (copyright holder, funder)
+    # Example: {"name": "Posit Software, PBC", "roles": ["Copyright holder", "funder"], "ror": "https://ror.org/03wc8by49"}
+    "funding": None,
     # Site settings (forwarded to _quarto.yml format.html)
     "site": {
         "theme": "flatly",
@@ -241,6 +244,16 @@ class Config:
     def authors(self) -> list[dict[str, Any]]:
         """Get the rich author metadata."""
         return self.get("authors", [])
+
+    @property
+    def funding(self) -> dict[str, Any] | None:
+        """
+        Get the funding organization metadata.
+
+        Returns a dict with keys: name, roles (list), ror (ROR URL).
+        Example: {"name": "Posit Software, PBC", "roles": ["Copyright holder", "funder"], "ror": "https://ror.org/03wc8by49"}
+        """
+        return self.get("funding")
 
     @property
     def site(self) -> dict[str, Any]:

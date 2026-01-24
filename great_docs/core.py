@@ -103,8 +103,8 @@ class GreatDocs:
         # Create index.qmd from README.md or user_guide files
         self._create_index_from_readme()
 
-        # Copy user guide files if they exist in project root
-        self._copy_user_guide_files()
+        # Note: User guide files are copied by _process_user_guide() during build
+        # which handles stripping numeric prefixes for clean URLs
 
         # Create _quarto.yml configuration
         self._update_quarto_config()
@@ -1143,9 +1143,9 @@ class GreatDocs:
         """
         Discover user guide content from the user_guide directory.
 
-        Looks for a `user_guide/` directory in the project root and discovers
-        all .qmd files within it. Files are sorted by filename to support
-        ordering via prefixes like `00-intro.qmd`, `01-installation.qmd`.
+        Looks for a `user_guide/` directory in the project root and discovers all .qmd files within
+        it. Files are sorted by filename to support ordering via prefixes like `00-intro.qmd`,
+        `01-installation.qmd`.
 
         Returns
         -------
@@ -1261,12 +1261,38 @@ class GreatDocs:
             "frontmatter": frontmatter,
         }
 
+    def _strip_numeric_prefix(self, filename: str) -> str:
+        """
+        Strip numeric ordering prefix from a filename.
+
+        Handles common patterns like:
+
+        - 00-introduction.qmd -> introduction.qmd
+        - 01-installation.qmd -> installation.qmd
+        - 1-getting-started.qmd -> getting-started.qmd
+        - 0001-overview.qmd -> overview.qmd
+
+        Parameters
+        ----------
+        filename
+            The filename to process.
+
+        Returns
+        -------
+        str
+            The filename with numeric prefix stripped, or unchanged if no prefix.
+        """
+        # Pattern matches: digits followed by a hyphen or underscore at the start
+        # e.g., "00-", "01-", "1-", "0001-", "00_", etc.
+        pattern = r"^\d+-|^\d+_"
+        return re.sub(pattern, "", filename)
+
     def _copy_user_guide_to_docs(self, user_guide_info: dict) -> list[str]:
         """
         Copy user guide files from project root to docs directory.
 
-        Adds `bread-crumbs: false` to the frontmatter of each file to disable
-        breadcrumb navigation on user guide pages.
+        Adds `bread-crumbs: false` to the frontmatter of each file to disable breadcrumb navigation
+        on user guide pages.
 
         Parameters
         ----------
@@ -1287,7 +1313,7 @@ class GreatDocs:
 
         copied_files = []
 
-        # Copy all .qmd files, adding bread-crumbs: false to frontmatter
+        # Copy all .qmd files, renaming to strip numeric prefix for cleaner URLs
         for file_info in user_guide_info["files"]:
             src_path = file_info["path"]
 
@@ -1297,7 +1323,12 @@ class GreatDocs:
             except ValueError:
                 rel_path = Path(src_path.name)
 
-            dst_path = target_dir / rel_path
+            # Strip numeric prefix from filename for cleaner URLs
+            # e.g., "00-introduction.qmd" -> "introduction.qmd"
+            clean_filename = self._strip_numeric_prefix(rel_path.name)
+            clean_rel_path = rel_path.parent / clean_filename
+
+            dst_path = target_dir / clean_rel_path
             dst_path.parent.mkdir(parents=True, exist_ok=True)
 
             # Read the source file and modify frontmatter
@@ -1307,11 +1338,11 @@ class GreatDocs:
             # Add bread-crumbs: false to frontmatter
             content = self._add_frontmatter_option(content, "bread-crumbs", False)
 
-            # Write to destination
+            # Write to destination with clean filename
             with open(dst_path, "w", encoding="utf-8") as f:
                 f.write(content)
 
-            copied_files.append(f"user-guide/{rel_path}")
+            copied_files.append(f"user-guide/{clean_rel_path}")
 
         # Also copy any asset directories (directories without .qmd files)
         for item in source_dir.iterdir():
@@ -1395,6 +1426,13 @@ class GreatDocs:
 
         contents = []
 
+        # Helper to get clean href (strips numeric prefix for cleaner URLs)
+        def get_clean_href(file_info: dict) -> str:
+            rel_path = file_info["path"].relative_to(source_dir)
+            clean_filename = self._strip_numeric_prefix(rel_path.name)
+            clean_rel_path = rel_path.parent / clean_filename
+            return f"user-guide/{clean_rel_path}"
+
         # If we have sections, organize by section
         if sections:
             # Track which files have been assigned to sections
@@ -1413,8 +1451,7 @@ class GreatDocs:
                 section_contents = []
 
                 for file_info in section_files:
-                    rel_path = file_info["path"].relative_to(source_dir)
-                    href = f"user-guide/{rel_path}"
+                    href = get_clean_href(file_info)
                     assigned_files.add(file_info["path"])
 
                     # Use custom text for index.qmd if it has a title
@@ -1439,8 +1476,7 @@ class GreatDocs:
             unsectioned = []
             for file_info in files_info:
                 if file_info["path"] not in assigned_files:
-                    rel_path = file_info["path"].relative_to(source_dir)
-                    unsectioned.append(f"user-guide/{rel_path}")
+                    unsectioned.append(get_clean_href(file_info))
 
             if unsectioned:
                 contents.extend(unsectioned)
@@ -1448,8 +1484,7 @@ class GreatDocs:
         else:
             # No sections, just list files in order
             for file_info in files_info:
-                rel_path = file_info["path"].relative_to(source_dir)
-                contents.append(f"user-guide/{rel_path}")
+                contents.append(get_clean_href(file_info))
 
         return {
             "id": "user-guide",
@@ -1508,14 +1543,16 @@ class GreatDocs:
                             insert_idx = i
                             break
 
-                    # Determine the href for User Guide
+                    # Determine the href for User Guide (with clean filename)
                     if user_guide_info.get("has_index"):
                         user_guide_href = "user-guide/index.qmd"
                     else:
-                        # Use the first file
+                        # Use the first file with clean filename
                         first_file = user_guide_info["files"][0]
                         rel_path = first_file["path"].relative_to(user_guide_info["source_dir"])
-                        user_guide_href = f"user-guide/{rel_path}"
+                        clean_filename = self._strip_numeric_prefix(rel_path.name)
+                        clean_rel_path = rel_path.parent / clean_filename
+                        user_guide_href = f"user-guide/{clean_rel_path}"
 
                     navbar["left"].insert(
                         insert_idx,

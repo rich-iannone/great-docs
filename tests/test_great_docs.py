@@ -1821,3 +1821,202 @@ guide-section: Getting Started
         assert "user-guide/installation.qmd" in all_hrefs
         assert "user-guide/00-introduction.qmd" not in all_hrefs
         assert "user-guide/01-installation.qmd" not in all_hrefs
+
+
+def test_copy_assets_basic():
+    """Test that assets directory is copied to docs directory."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create minimal pyproject.toml
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        # Create assets directory with files
+        assets = project_path / "assets"
+        assets.mkdir()
+
+        (assets / "image.png").write_text("fake png content")
+        (assets / "style.css").write_text("body { color: red; }")
+        (assets / "data.json").write_text('{"key": "value"}')
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        # Copy assets
+        result = docs._copy_assets()
+
+        # Check that method returns True
+        assert result is True
+
+        # Check that files were copied
+        docs_assets = docs.project_path / "assets"
+        assert docs_assets.exists()
+        assert (docs_assets / "image.png").exists()
+        assert (docs_assets / "style.css").exists()
+        assert (docs_assets / "data.json").exists()
+
+        # Verify content
+        assert (docs_assets / "image.png").read_text() == "fake png content"
+        assert (docs_assets / "style.css").read_text() == "body { color: red; }"
+        assert (docs_assets / "data.json").read_text() == '{"key": "value"}'
+
+
+def test_copy_assets_nested_directories():
+    """Test that nested asset directories are copied correctly."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create minimal pyproject.toml
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        # Create assets directory with nested structure
+        assets = project_path / "assets"
+        (assets / "images" / "icons").mkdir(parents=True)
+        (assets / "css").mkdir()
+        (assets / "js").mkdir()
+
+        (assets / "images" / "logo.png").write_text("logo")
+        (assets / "images" / "icons" / "star.svg").write_text("<svg>star</svg>")
+        (assets / "css" / "theme.css").write_text("/* theme */")
+        (assets / "js" / "app.js").write_text("console.log('app');")
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        # Copy assets
+        result = docs._copy_assets()
+
+        assert result is True
+
+        # Check nested structure was preserved
+        docs_assets = docs.project_path / "assets"
+        assert (docs_assets / "images" / "logo.png").exists()
+        assert (docs_assets / "images" / "icons" / "star.svg").exists()
+        assert (docs_assets / "css" / "theme.css").exists()
+        assert (docs_assets / "js" / "app.js").exists()
+
+        # Verify content
+        assert (docs_assets / "images" / "icons" / "star.svg").read_text() == "<svg>star</svg>"
+
+
+def test_copy_assets_no_directory():
+    """Test that _copy_assets returns False when no assets directory exists."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create minimal pyproject.toml
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        # Try to copy assets when none exist
+        result = docs._copy_assets()
+
+        # Should return False
+        assert result is False
+
+        # Assets directory should not exist in docs
+        docs_assets = docs.project_path / "assets"
+        assert not docs_assets.exists()
+
+
+def test_copy_assets_replaces_existing():
+    """Test that copying assets replaces existing assets directory."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create minimal pyproject.toml
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        # Create assets directory
+        assets = project_path / "assets"
+        assets.mkdir()
+        (assets / "new_file.txt").write_text("new content")
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        # Create existing assets in docs directory
+        docs_assets = docs.project_path / "assets"
+        docs_assets.mkdir(parents=True)
+        (docs_assets / "old_file.txt").write_text("old content")
+
+        # Copy assets
+        result = docs._copy_assets()
+
+        assert result is True
+
+        # Check that old file was removed and new file exists
+        assert not (docs_assets / "old_file.txt").exists()
+        assert (docs_assets / "new_file.txt").exists()
+        assert (docs_assets / "new_file.txt").read_text() == "new content"
+
+
+def test_assets_added_to_quarto_config():
+    """Test that assets directory is added to Quarto config resources."""
+    import yaml
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create minimal pyproject.toml
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        # Create assets directory
+        assets = project_path / "assets"
+        assets.mkdir()
+        (assets / "test.txt").write_text("test")
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        # Copy assets first
+        docs._copy_assets()
+
+        # Update Quarto config
+        docs._update_quarto_config()
+
+        # Read the generated _quarto.yml
+        quarto_yml = docs.project_path / "_quarto.yml"
+        assert quarto_yml.exists()
+
+        with open(quarto_yml, "r") as f:
+            config = yaml.safe_load(f)
+
+        # Check that assets/** is in resources
+        assert "project" in config
+        assert "resources" in config["project"]
+        assert "assets/**" in config["project"]["resources"]
+
+
+def test_assets_not_added_to_quarto_config_when_missing():
+    """Test that assets/** is not added to Quarto config when assets don't exist."""
+    import yaml
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create minimal pyproject.toml
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        # Create great-docs directory (required for _quarto.yml)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+
+        # Update Quarto config without assets
+        docs._update_quarto_config()
+
+        # Read the generated _quarto.yml
+        quarto_yml = docs.project_path / "_quarto.yml"
+        assert quarto_yml.exists()
+
+        with open(quarto_yml, "r") as f:
+            config = yaml.safe_load(f)
+
+        # Check that assets/** is NOT in resources
+        assert "project" in config
+        assert "resources" in config["project"]
+        assert "assets/**" not in config["project"]["resources"]

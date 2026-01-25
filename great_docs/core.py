@@ -135,6 +135,39 @@ class GreatDocs:
                 for file_path in source_user_guide.glob(pattern):
                     shutil.copy2(file_path, dest_user_guide / file_path.name)
 
+    def _copy_assets(self) -> bool:
+        """
+        Copy assets directory from project root to build directory.
+
+        Looks for assets/ directory in project root and copies all contents
+        to great-docs/assets/ directory. This allows pages to reference assets
+        at a predictable path (e.g., assets/image.png).
+
+        Returns
+        -------
+        bool
+            True if assets were copied, False if no assets directory found.
+        """
+        source_assets = self.project_root / "assets"
+
+        if not source_assets.exists() or not source_assets.is_dir():
+            return False
+
+        dest_assets = self.project_path / "assets"
+
+        # Remove existing assets directory to ensure clean copy
+        if dest_assets.exists():
+            shutil.rmtree(dest_assets)
+
+        # Copy entire assets directory
+        shutil.copytree(source_assets, dest_assets)
+
+        # Count files for reporting
+        file_count = sum(1 for _ in dest_assets.rglob("*") if _.is_file())
+        print(f"\n📦 Copied {file_count} asset file(s) to docs/assets/")
+
+        return True
+
     def install(self, force: bool = False) -> None:
         """
         Initialize great-docs in your project.
@@ -4509,6 +4542,12 @@ toc: false
             if js_file not in config["project"]["resources"]:
                 config["project"]["resources"].append(js_file)
 
+        # Add assets directory to resources if it exists
+        assets_dir = self.project_path / "assets"
+        if assets_dir.exists() and assets_dir.is_dir():
+            if "assets/**" not in config["project"]["resources"]:
+                config["project"]["resources"].append("assets/**")
+
         # Add CSS file
         if "css" not in config["format"]["html"]:
             config["format"]["html"]["css"] = []
@@ -5470,6 +5509,15 @@ toc: false
                 self._process_user_guide()
             except Exception as e:
                 print(f"   ⚠️  Error processing User Guide: {e}")
+                import traceback
+
+                traceback.print_exc()
+
+            # Step 0.95: Copy assets directory if present
+            try:
+                self._copy_assets()
+            except Exception as e:
+                print(f"   ⚠️  Error copying assets: {e}")
                 import traceback
 
                 traceback.print_exc()

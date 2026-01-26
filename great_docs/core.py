@@ -5515,7 +5515,10 @@ toc: false
 
             # Step 0.95: Copy assets directory if present
             try:
-                self._copy_assets()
+                assets_copied = self._copy_assets()
+                # Update Quarto config to include assets in resources if they were copied
+                if assets_copied:
+                    self._update_quarto_config()
             except Exception as e:
                 print(f"   ⚠️  Error copying assets: {e}")
                 import traceback

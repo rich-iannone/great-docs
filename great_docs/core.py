@@ -164,7 +164,7 @@ class GreatDocs:
 
         # Count files for reporting
         file_count = sum(1 for _ in dest_assets.rglob("*") if _.is_file())
-        print(f"\n📦 Copied {file_count} asset file(s) to docs/assets/")
+        print(f"\n📦 Copied {file_count} asset file(s) to great-docs/assets/")
 
         return True
 

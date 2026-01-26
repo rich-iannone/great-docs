@@ -2020,3 +2020,76 @@ def test_assets_not_added_to_quarto_config_when_missing():
         assert "project" in config
         assert "resources" in config["project"]
         assert "assets/**" not in config["project"]["resources"]
+
+
+def test_assets_added_to_config_after_copy():
+    """Test that _update_quarto_config() adds assets/** after copying assets."""
+    import yaml
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create minimal pyproject.toml
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        # Create assets directory
+        assets = project_path / "assets"
+        assets.mkdir()
+        (assets / "image.png").write_text("fake image")
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        # Create great-docs directory and initial config (simulating _prepare_build_directory)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+        docs._update_quarto_config()
+
+        # Read initial config - should NOT have assets/**
+        quarto_yml = docs.project_path / "_quarto.yml"
+        with open(quarto_yml, "r") as f:
+            initial_config = yaml.safe_load(f)
+
+        assert "assets/**" not in initial_config["project"]["resources"]
+
+        # Now copy assets and update config again (simulating build flow)
+        assets_copied = docs._copy_assets()
+        assert assets_copied is True
+
+        docs._update_quarto_config()
+
+        # Read updated config - should NOW have assets/**
+        with open(quarto_yml, "r") as f:
+            updated_config = yaml.safe_load(f)
+
+        assert "project" in updated_config
+        assert "resources" in updated_config["project"]
+        assert "assets/**" in updated_config["project"]["resources"]
+
+
+def test_assets_config_update_only_when_copied():
+    """Test that config is updated conditionally based on whether assets were copied."""
+    import yaml
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create minimal pyproject.toml
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        # Create great-docs directory and initial config
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+        docs._update_quarto_config()
+
+        # Try to copy assets when none exist - should return False
+        assets_copied = docs._copy_assets()
+        assert assets_copied is False
+
+        # Config should still not have assets/** since copy returned False
+        quarto_yml = docs.project_path / "_quarto.yml"
+        with open(quarto_yml, "r") as f:
+            config = yaml.safe_load(f)
+
+        assert "assets/**" not in config["project"]["resources"]

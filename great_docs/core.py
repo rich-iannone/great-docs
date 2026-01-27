@@ -4104,18 +4104,32 @@ title: "Code of Conduct"
                     homepage = author.get("homepage", "")
                     orcid = author.get("orcid", "")
 
-                    # Build author line with name
-                    author_parts = [f"**{name}**" if role else name]
+                    # Build author HTML
+                    author_html_parts = []
 
-                    # Add role/affiliation on separate lines if available
+                    # Name line
+                    name_html = (
+                        f'<span><p><strong style="padding-bottom: 4px;">{name}</strong></p></span>'
+                    )
+                    author_html_parts.append(name_html)
+
+                    # Role line (if available)
                     if role:
-                        author_parts.append(f"<br><small>{role}</small>")
-                    if affiliation:
-                        author_parts.append(
-                            f'<br><small style="margin-top: -0.15em; display: block;">{affiliation}</small>'
+                        role_html = (
+                            f'<span style="margin-top: -0.15em; display: block;">'
+                            f"<p><small>{role}</small></p></span>"
                         )
+                        author_html_parts.append(role_html)
 
-                    # Add icon links
+                    # Affiliation line (if available)
+                    if affiliation:
+                        affiliation_html = (
+                            f'<span><p><small style="margin-top: -0.15em; display: block;">'
+                            f"{affiliation}</small></p></span>"
+                        )
+                        author_html_parts.append(affiliation_html)
+
+                    # Icon links (if available)
                     icon_links = []
 
                     if email:
@@ -4147,19 +4161,20 @@ title: "Code of Conduct"
                         )
 
                     if icon_links:
-                        author_parts.append(
+                        icon_html = (
                             '<span style="margin-top: -0.15em; display: block;">'
                             + " ".join(icon_links)
                             + "</span>"
                         )
+                        author_html_parts.append(icon_html)
 
-                    # Wrap in <p> tag with padding for non-first authors
-                    author_content = " ".join(author_parts)
+                    # Wrap entire author in <div> tag with padding for non-first authors
+                    author_div_content = "".join(author_html_parts)
                     if idx == 0:
-                        margin_sections.append(f"<p>{author_content}</p>")
+                        margin_sections.append(f"<div>{author_div_content}</div>")
                     else:
                         margin_sections.append(
-                            f'<p style="padding-top: 10px;">{author_content}</p>'
+                            f'<div style="padding-top: 10px;">{author_div_content}</div>'
                         )
 
         # Funding section (similar to Developers but for organizations)

@@ -4624,9 +4624,14 @@ toc: false
 
         # Set title to package name if not already set
         if "title" not in config["website"]:
-            package_name = self._detect_package_name()
-            if package_name:
-                config["website"]["title"] = package_name.title()
+            # Use display_name from config if available, otherwise use package name as-is
+            display_name = self._config.display_name
+            if display_name:
+                config["website"]["title"] = display_name
+            else:
+                package_name = self._detect_package_name()
+                if package_name:
+                    config["website"]["title"] = package_name
 
         # Get GitHub info and style preference
         owner, repo, repo_url = self._get_github_repo_info()

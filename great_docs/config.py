@@ -8,6 +8,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
     # Module name (importable name, if different from project name)
     # e.g., project 'py-yaml12' might have module 'yaml12'
     "module": None,
+    # Display name for the site (used in navbar/title)
+    # If not provided, uses the package name as-is
+    "display_name": None,
     # Docstring parser format
     "parser": "numpy",  # "numpy" (default), "google", or "sphinx"
     # Dynamic introspection mode for quartodoc
@@ -236,6 +239,16 @@ class Config:
         return self.get("module")
 
     @property
+    def display_name(self) -> str | None:
+        """
+        Get the display name for the site.
+
+        Use this to customize how the package name appears in the navbar/title,
+        e.g., 'Great Docs' instead of 'great_docs' or 'great-docs'.
+        """
+        return self.get("display_name")
+
+    @property
     def reference(self) -> list[dict[str, Any]]:
         """Get the API reference configuration (explicit section ordering)."""
         return self.get("reference", [])
@@ -309,6 +322,13 @@ def create_default_config() -> str:
     """
     return """# Great Docs Configuration
 # See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html
+
+# Display Name
+# ------------
+# Custom display name for your package in the site navbar/title.
+# If not provided, uses the actual package name (e.g., 'my_package' or 'my-package').
+# Use this to provide a marketing/presentation name (e.g., 'My Package').
+# display_name: My Package
 
 # Docstring Parser
 # ----------------

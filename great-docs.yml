@@ -22,6 +22,13 @@ github_style: widget
 #   path: src/package          # Custom source path for monorepos (default: auto-detect)
 #   placement: usage           # Where to place the link: "usage" (default) or "title"
 
+# Display Name
+# ------------
+# Custom display name for your package in the site navbar/title.
+# If not provided, uses the actual package name (e.g., 'my_package' or 'my-package').
+# Use this to provide a marketing/presentation name (e.g., 'My Package').
+display_name: Great Docs
+
 # Sidebar Filter
 # --------------
 sidebar_filter:

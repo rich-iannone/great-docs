@@ -4187,15 +4187,25 @@ title: "Code of Conduct"
             homepage = funding.get("homepage", "")
             ror_url = funding.get("ror", "")
 
-            # Build funder entry similar to author format
-            funder_parts = [f"**{funder_name}**"]
+            # Build funder HTML
+            funder_html_parts = []
 
-            # Add roles on separate line if available
+            # Name line
+            name_html = (
+                f'<span><p><strong style="padding-bottom: 4px;">{funder_name}</strong></p></span>'
+            )
+            funder_html_parts.append(name_html)
+
+            # Roles line (if available)
             if roles:
                 roles_text = ", ".join(roles)
-                funder_parts.append(f"<br><small>{roles_text}</small>")
+                roles_html = (
+                    f'<span style="margin-top: -0.15em; display: block;">'
+                    f"<p><small>{roles_text}</small></p></span>"
+                )
+                funder_html_parts.append(roles_html)
 
-            # Add icon links (homepage first, then ROR)
+            # Icon links (if available)
             icon_links = []
 
             if homepage:
@@ -4204,7 +4214,7 @@ title: "Code of Conduct"
                 )
 
             if ror_url:
-                # ROR icon - use inline SVG styled to match Bootstrap Icons
+                # ROR icon (use inline SVG styled to match Bootstrap Icons)
                 ror_icon = (
                     '<svg class="ror-sidebar-icon" viewBox="0 0 164 118" '
                     'xmlns="http://www.w3.org/2000/svg" '
@@ -4222,14 +4232,16 @@ title: "Code of Conduct"
                 )
 
             if icon_links:
-                funder_parts.append(
+                icon_html = (
                     '<span style="margin-top: -0.15em; display: block;">'
                     + " ".join(icon_links)
                     + "</span>"
                 )
+                funder_html_parts.append(icon_html)
 
-            funder_content = " ".join(funder_parts)
-            margin_sections.append(f"<p>{funder_content}</p>")
+            # Wrap entire funding entry in <div> tag
+            funder_div_content = "".join(funder_html_parts)
+            margin_sections.append(f"<div>{funder_div_content}</div>")
 
         # Meta section (Python version and extras)
         meta_items = []

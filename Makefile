@@ -13,6 +13,13 @@ help: ## Show this help message
 test: ## Run tests with pytest
 	@$(PYTHON) -m pytest tests/ -v
 
+.PHONY: test-integration
+test-integration: ## Run integration tests with external packages
+	@$(PYTHON) -m pytest tests/test_integration.py -v
+
+.PHONY: test-all
+test-all: test test-integration ## Run all tests including integration tests
+
 .PHONY: test-coverage
 test-coverage: ## Run tests with coverage report
 	@$(PYTHON) -m pytest \

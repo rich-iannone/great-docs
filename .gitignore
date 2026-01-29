@@ -149,3 +149,6 @@ __marimo__/
 
 # Great Docs build directory (ephemeral, do not commit)
 great-docs/
+
+# Integration test packages (external repos for testing)
+test-packages/*/

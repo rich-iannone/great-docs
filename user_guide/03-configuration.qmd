@@ -22,6 +22,46 @@ To generate a starter configuration file with all options documented:
 great-docs config
 ```
 
+## Display Name
+
+By default, Great Docs uses your package name exactly as-is for the site title and navbar. For packages with technical names like `my_package` or `my-package`, you might want a more polished presentation name.
+
+### Setting a Display Name
+
+Use the `display_name` field to specify how your package name appears in the site:
+
+```{.yaml filename="great-docs.yml"}
+display_name: My Package
+```
+
+This will display `My Package` in the navbar instead of the actual package name.
+
+### When to Use It
+
+Common use cases for `display_name`:
+
+- **Branding**: Convert technical names to marketing names
+  - `weathervault` -> `WeatherVault`
+  - `great_docs` -> `Great Docs`
+
+- **Readability**: Add spaces and capitalization
+  - `my_awesome_lib` -> `My Awesome Lib`
+  - `data-processor` -> `Data Processor`
+
+- **Product names**: Use your product's official name
+  - `ml_toolkit` -> `ML Toolkit Pro`
+
+### Default Behavior
+
+If you don't specify `display_name`:
+
+- the site title will be your actual package name
+- no automatic title-casing or transformation is applied
+- `great_docs` stays as `great_docs`, not `Great Docs`
+- `my-package` stays as `my-package`, not `My Package`
+
+This ensures predictable behavior and respects your package's actual naming.
+
 ## API Discovery Settings
 
 ### Excluding Items
@@ -303,6 +343,9 @@ If no `reference` config is provided, Great Docs auto-generates sections from di
 Here's a comprehensive configuration demonstrating all available options:
 
 ```{.yaml filename="great-docs.yml"}
+# Display Name
+display_name: My Package  # Custom display name for navbar/title
+
 # Docstring Parser
 parser: numpy  # Auto-detected: numpy, google, or sphinx
 

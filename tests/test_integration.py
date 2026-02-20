@@ -1,3 +1,4 @@
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -7,9 +8,33 @@ import pytest
 # Path to the test-packages directory
 TEST_PACKAGES_DIR = Path(__file__).parent.parent / "test-packages"
 
+
+# Find the great-docs executable - prefer .venv if it exists
+def _find_great_docs_executable():
+    """Find the great-docs executable in .venv or system PATH."""
+    venv_executable = Path(__file__).parent.parent / ".venv" / "bin" / "great-docs"
+    if venv_executable.exists():
+        return str(venv_executable)
+
+    # Fallback to shutil.which
+    system_executable = shutil.which("great-docs")
+    if system_executable:
+        return system_executable
+
+    # Last resort: try running as module
+    return None
+
+
+GREAT_DOCS_CMD = _find_great_docs_executable()
+
 # List of test packages - each should be a subdirectory in test-packages/
 # Only test packages that actually exist
-TEST_PACKAGES = [pkg for pkg in ["py-shiny"] if (TEST_PACKAGES_DIR / pkg).exists()]
+# Listed in order of preference: smaller/faster packages first
+TEST_PACKAGES = [
+    pkg
+    for pkg in ["python-dateutil", "time-machine", "py-shiny"]
+    if (TEST_PACKAGES_DIR / pkg).exists()
+]
 
 
 @pytest.mark.skipif(
@@ -39,8 +64,6 @@ def test_external_package_init_and_build(package_name):
     build_dir = package_dir / "great-docs"
 
     if build_dir.exists():
-        import shutil
-
         shutil.rmtree(build_dir)
 
     # Step 1: Run great-docs init
@@ -48,12 +71,19 @@ def test_external_package_init_and_build(package_name):
     print(f"Testing {package_name}: Running great-docs init")
     print(f"{'=' * 60}")
 
+    if GREAT_DOCS_CMD:
+        cmd = [GREAT_DOCS_CMD, "init", "--force"]
+    else:
+        # Fallback to module execution
+        cmd = [sys.executable, "-m", "great_docs.cli", "init", "--force"]
+
     init_result = subprocess.run(
-        [sys.executable, "-m", "great_docs.cli", "init", "--force"],
+        cmd,
         cwd=package_dir,
         capture_output=True,
         text=True,
         timeout=60,
+        input="",  # Provide empty input instead of DEVNULL
     )
 
     print(f"STDOUT:\n{init_result.stdout}")
@@ -74,12 +104,18 @@ def test_external_package_init_and_build(package_name):
     print(f"Testing {package_name}: Running great-docs build")
     print(f"{'=' * 60}")
 
+    if GREAT_DOCS_CMD:
+        cmd = [GREAT_DOCS_CMD, "build"]
+    else:
+        cmd = [sys.executable, "-m", "great_docs.cli", "build"]
+
     build_result = subprocess.run(
-        [sys.executable, "-m", "great_docs.cli", "build"],
+        cmd,
         cwd=package_dir,
         capture_output=True,
         text=True,
         timeout=300,  # 5 minutes timeout for build
+        input="",  # Provide empty input instead of DEVNULL
     )
 
     print(f"STDOUT:\n{build_result.stdout}")

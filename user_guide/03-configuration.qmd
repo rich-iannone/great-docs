@@ -293,7 +293,7 @@ user_guide: docs/guides
 
 The path is relative to the project root. If both the config option and a `user_guide/` directory exist, the config option takes precedence.
 
-See [User Guides](06-user-guides.qmd) for details on writing and organizing User Guide content.
+See [User Guides](user-guides.qmd) for details on writing and organizing User Guide content.
 
 ## CLI Documentation
 
@@ -313,7 +313,7 @@ cli:
   name: cli                # Name of the Click command object
 ```
 
-See [CLI Documentation](05-cli-documentation.qmd) for details.
+See [CLI Documentation](cli-documentation.qmd) for details.
 
 ## Author Information
 
@@ -474,5 +474,5 @@ Great Docs generates and maintains a `_quarto.yml` file in your docs directory. 
 
 ## Next Steps
 
-- **[API Documentation](04-api-documentation.qmd)** – Learn how API discovery and organization works
-- **[CLI Documentation](05-cli-documentation.qmd)** – Document your Click CLI
+- **[API Documentation](api-documentation.qmd)** – Learn how API discovery and organization works
+- **[CLI Documentation](cli-documentation.qmd)** – Document your Click CLI

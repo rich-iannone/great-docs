@@ -2093,3 +2093,233 @@ def test_assets_config_update_only_when_copied():
             config = yaml.safe_load(f)
 
         assert "assets/**" not in config["project"]["resources"]
+
+
+# =============================================================================
+# User Guide Config Path Tests
+# =============================================================================
+
+
+def test_user_guide_config_option_overrides_default_dir():
+    """Test that user_guide config option takes precedence over user_guide/ directory."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create minimal pyproject.toml
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        # Create conventional user_guide/ directory with a file
+        conventional_dir = project_path / "user_guide"
+        conventional_dir.mkdir()
+        (conventional_dir / "00-from-default.qmd").write_text(
+            "---\ntitle: From Default\n---\n# Default\n"
+        )
+
+        # Create custom directory with a different file
+        custom_dir = project_path / "docs" / "guides"
+        custom_dir.mkdir(parents=True)
+        (custom_dir / "00-from-custom.qmd").write_text("---\ntitle: From Custom\n---\n# Custom\n")
+
+        # Configure great-docs.yml to use the custom path
+        config_path = project_path / "great-docs.yml"
+        config_path.write_text("user_guide: docs/guides\n")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        user_guide_info = docs._discover_user_guide()
+
+        assert user_guide_info is not None
+        assert len(user_guide_info["files"]) == 1
+        assert user_guide_info["files"][0]["title"] == "From Custom"
+        assert user_guide_info["source_dir"] == custom_dir
+
+
+def test_user_guide_config_option_custom_directory():
+    """Test that user_guide config option works with a subdirectory path."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        # Create a nested custom directory
+        custom_dir = project_path / "content" / "user-docs"
+        custom_dir.mkdir(parents=True)
+        (custom_dir / "intro.qmd").write_text("---\ntitle: Intro\n---\n# Intro\n")
+
+        config_path = project_path / "great-docs.yml"
+        config_path.write_text("user_guide: content/user-docs\n")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        user_guide_info = docs._discover_user_guide()
+
+        assert user_guide_info is not None
+        assert len(user_guide_info["files"]) == 1
+        assert user_guide_info["source_dir"] == custom_dir
+
+
+def test_user_guide_config_option_nonexistent_dir(capsys):
+    """Test warning when user_guide config points to a nonexistent directory."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        config_path = project_path / "great-docs.yml"
+        config_path.write_text("user_guide: nonexistent/dir\n")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        result = docs._discover_user_guide()
+
+        assert result is None
+        captured = capsys.readouterr()
+        assert "does not exist" in captured.out
+
+
+def test_user_guide_warns_on_empty_directory(capsys):
+    """Test warning when user guide directory is empty."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        # Create empty user_guide directory
+        empty_dir = project_path / "user_guide"
+        empty_dir.mkdir()
+
+        docs = GreatDocs(project_path=tmp_dir)
+        result = docs._discover_user_guide()
+
+        assert result is None
+        captured = capsys.readouterr()
+        assert "is empty" in captured.out
+
+
+def test_user_guide_warns_on_no_qmd_files(capsys):
+    """Test warning when user guide directory has no .qmd files."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        # Create user_guide directory with only non-.qmd files
+        ug_dir = project_path / "user_guide"
+        ug_dir.mkdir()
+        (ug_dir / "notes.txt").write_text("just a text file")
+        (ug_dir / "readme.md").write_text("# readme")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        result = docs._discover_user_guide()
+
+        assert result is None
+        captured = capsys.readouterr()
+        assert "contains no .qmd files" in captured.out
+
+
+def test_user_guide_config_warns_when_both_exist(capsys):
+    """Test warning when both config option and conventional directory exist."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        # Create conventional user_guide/ directory
+        conventional_dir = project_path / "user_guide"
+        conventional_dir.mkdir()
+        (conventional_dir / "default.qmd").write_text("---\ntitle: Default\n---\n# Default\n")
+
+        # Create custom directory
+        custom_dir = project_path / "my_guides"
+        custom_dir.mkdir()
+        (custom_dir / "custom.qmd").write_text("---\ntitle: Custom\n---\n# Custom\n")
+
+        config_path = project_path / "great-docs.yml"
+        config_path.write_text("user_guide: my_guides\n")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        user_guide_info = docs._discover_user_guide()
+
+        assert user_guide_info is not None
+        # Config option should win
+        assert user_guide_info["source_dir"] == custom_dir
+
+        captured = capsys.readouterr()
+        assert "using configured path" in captured.out
+
+
+def test_user_guide_fallback_without_config():
+    """Test that default user_guide/ directory is used when no config option is set."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        # Create conventional user_guide/ directory
+        ug_dir = project_path / "user_guide"
+        ug_dir.mkdir()
+        (ug_dir / "intro.qmd").write_text("---\ntitle: Intro\n---\n# Intro\n")
+
+        # No great-docs.yml or one without user_guide key
+        config_path = project_path / "great-docs.yml"
+        config_path.write_text("display_name: Test\n")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        user_guide_info = docs._discover_user_guide()
+
+        assert user_guide_info is not None
+        assert user_guide_info["source_dir"] == ug_dir
+
+
+def test_user_guide_config_empty_dir_warns(capsys):
+    """Test warning when user_guide config points to an empty directory."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        empty_dir = project_path / "empty_guides"
+        empty_dir.mkdir()
+
+        config_path = project_path / "great-docs.yml"
+        config_path.write_text("user_guide: empty_guides\n")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        result = docs._discover_user_guide()
+
+        assert result is None
+        captured = capsys.readouterr()
+        assert "is empty" in captured.out
+
+
+def test_copy_user_guide_files_uses_config():
+    """Test that _copy_user_guide_files respects the user_guide config option."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        # Create custom directory with files
+        custom_dir = project_path / "my_docs"
+        custom_dir.mkdir()
+        (custom_dir / "guide.qmd").write_text("---\ntitle: Guide\n---\n# Guide\n")
+        (custom_dir / "guide.md").write_text("# Guide MD\n")
+
+        config_path = project_path / "great-docs.yml"
+        config_path.write_text("user_guide: my_docs\n")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+
+        docs._copy_user_guide_files()
+
+        dest = docs.project_path / "user-guide"
+        assert dest.exists()
+        assert (dest / "guide.qmd").exists()
+        assert (dest / "guide.md").exists()

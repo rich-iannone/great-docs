@@ -46,11 +46,31 @@ cd test-packages
 
 ## Current Test Packages
 
-### py-shiny
+### Small Packages (Fast Builds)
+
+#### python-dateutil
+
+- **Repository**: https://github.com/dateutil/dateutil
+- **Purpose**: Extensions to the standard Python datetime module
+- **Setup**: Included in `setup-test-packages.sh`
+- **Build time**: ~30 seconds
+
+#### time-machine
+
+- **Repository**: https://github.com/adamchainz/time-machine
+- **Purpose**: Time mocking library
+- **Setup**: Included in `setup-test-packages.sh`
+- **Build time**: ~15 seconds
+
+### Medium/Large Packages
+
+#### py-shiny
 
 - **Repository**: https://github.com/posit-dev/py-shiny
-- **Purpose**: Test framework for reactive web apps
-- **Setup**: `git clone https://github.com/posit-dev/py-shiny`
+- **Purpose**: Framework for reactive web apps
+- **Setup**: Included in `setup-test-packages.sh`
+- **Build time**: ~2-5 minutes
+- **Note**: Large package, good for comprehensive testing
 
 ## Notes
 

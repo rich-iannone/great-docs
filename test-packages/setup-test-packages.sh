@@ -36,7 +36,16 @@ setup_repo() {
     echo ""
 }
 
-# Setup py-shiny
+# Small/simple packages for quick testing
+echo "Small packages (fast builds):"
+echo "=============================="
+setup_repo "https://github.com/dateutil/dateutil" "python-dateutil"
+setup_repo "https://github.com/adamchainz/time-machine" "time-machine"
+
+echo ""
+echo "Medium packages:"
+echo "================"
+# Setup py-shiny (large package, slower builds)
 setup_repo "https://github.com/posit-dev/py-shiny" "py-shiny"
 
 # Add more test packages here as needed

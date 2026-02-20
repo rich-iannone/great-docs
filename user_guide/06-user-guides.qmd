@@ -199,7 +199,7 @@ Reference them in your content using standard Markdown image syntax. The alt tex
 Link freely between pages to help readers navigate related content. For other User Guide pages, use relative paths:
 
 ```markdown
-See the [Installation](01-installation.qmd) guide for details.
+See the [Installation](installation.qmd) guide for details.
 ```
 
 To link to API reference pages, use a relative path that goes up one directory level first:
@@ -299,4 +299,4 @@ Group related content into sections that make sense for your users. A common pat
 
 ## Next Steps
 
-- **[Deployment](06-deployment.qmd)** – Publish your documentation to GitHub Pages
+- **[Deployment](deployment.qmd)** – Publish your documentation to GitHub Pages

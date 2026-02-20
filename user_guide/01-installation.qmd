@@ -123,4 +123,4 @@ Great Docs automatically installs these dependencies:
 
 ## Next Steps
 
-Now that Great Docs is installed, let's create your first documentation site in the [Quick Start](01-quickstart.qmd) guide.
+Now that Great Docs is installed, let's create your first documentation site in the [Quick Start](quickstart.qmd) guide.

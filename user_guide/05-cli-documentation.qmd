@@ -229,5 +229,5 @@ If commands show minimal help:
 
 ## Next Steps
 
-- **[User Guides](05-user-guides.qmd)** – Add narrative documentation
-- **[Deployment](06-deployment.qmd)** – Publish to GitHub Pages
+- **[User Guides](user-guides.qmd)** – Add narrative documentation
+- **[Deployment](deployment.qmd)** – Publish to GitHub Pages

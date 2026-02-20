@@ -186,6 +186,33 @@ def my_function(x, y):
 
 :::
 
+## Dynamic Introspection
+
+Great Docs uses [quartodoc](https://machow.github.io/quartodoc/) to generate API reference pages. By default, quartodoc uses **dynamic introspection** (importing your package at runtime), which produces the most accurate documentation for complex packages with re-exports and aliases.
+
+```{.yaml filename="great-docs.yml"}
+dynamic: true   # Default: true
+```
+
+Some packages have internal attributes that cause errors during dynamic introspection. If this happens, Great Docs will **automatically retry the build with static analysis** (`dynamic: false`). You'll see a message like:
+
+```
+⚠️  quartodoc build failed with dynamic introspection.
+   Retrying with static analysis (dynamic: false)...
+```
+
+To skip the retry and always use static analysis, set it explicitly:
+
+```{.yaml filename="great-docs.yml"}
+dynamic: false
+```
+
+### When to Set `dynamic: false`
+
+- Your package has cyclic aliases or complex re-export patterns
+- The build fails with `AttributeError` during introspection
+- You're documenting a compiled extension (PyO3/Rust/Cython)
+
 ## GitHub Integration
 
 ### GitHub Link Style

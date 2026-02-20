@@ -17,7 +17,7 @@ great-docs init
 
 Great Docs will automatically:
 
-1. **Find your package** – Auto-detects your package name from `pyproject.toml` or directory structure
+1. **Find your package** – Auto-detects your package name from `pyproject.toml`, `setup.cfg`, `setup.py`, or directory structure
 2. **Discover your API** – Finds all public classes, functions, and methods
 3. **Create configuration** – Generates `great-docs.yml` with your API structure
 4. **Update .gitignore** – Optionally adds `great-docs/` to exclude build artifacts

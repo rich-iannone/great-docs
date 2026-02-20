@@ -5546,17 +5546,50 @@ toc: false
         import subprocess
         import sys
         import threading
-        import time
 
-        def show_progress(stop_event, message):
-            """Show a simple spinner while command is running."""
-            spinner = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
-            idx = 0
-            while not stop_event.is_set():
-                print(f"\r{message} {spinner[idx % len(spinner)]}", end="", flush=True)
-                idx += 1
-                time.sleep(0.1)
-            print(f"\r{message} ", end="", flush=True)
+        def run_streaming(cmd, env=None, prefix="   "):
+            """Run a subprocess and stream its output in real time.
+
+            Returns a result-like object with returncode and captured stderr.
+            """
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                env=env,
+                bufsize=1,  # Line-buffered
+            )
+
+            stderr_lines = []
+
+            def read_stderr():
+                for line in process.stderr:
+                    stderr_lines.append(line)
+                    stripped = line.rstrip()
+                    if stripped:
+                        print(f"{prefix}{stripped}", flush=True)
+
+            stderr_thread = threading.Thread(target=read_stderr, daemon=True)
+            stderr_thread.start()
+
+            # Stream stdout line by line
+            for line in process.stdout:
+                stripped = line.rstrip()
+                if stripped:
+                    print(f"{prefix}{stripped}", flush=True)
+
+            process.wait()
+            stderr_thread.join(timeout=5)
+
+            class Result:
+                pass
+
+            r = Result()
+            r.returncode = process.returncode
+            r.stderr = "".join(stderr_lines)
+            r.stdout = ""  # Already streamed
+            return r
 
         print("Building documentation with great-docs...")
 
@@ -5628,25 +5661,14 @@ toc: false
             # This ensures it uses the same Python environment as great-docs
             print("\n📚 Step 1: Generating API reference with quartodoc...")
 
-            stop_event = threading.Event()
-            progress_thread = threading.Thread(
-                target=show_progress, args=(stop_event, "   Processing")
-            )
-            progress_thread.start()
-
             # Get environment with PYTHONPATH set to include the package root
             # This ensures griffe/quartodoc can find the package even if not installed
             quartodoc_env = self._get_quarto_env()
 
-            result = subprocess.run(
+            result = run_streaming(
                 [sys.executable, "-m", "quartodoc", "build"],
-                capture_output=True,
-                text=True,
                 env=quartodoc_env,
             )
-
-            stop_event.set()
-            progress_thread.join()
 
             if result.returncode != 0:
                 # Check if quartodoc is not installed
@@ -5675,21 +5697,10 @@ toc: false
                         with open(quarto_yml, "w") as f:
                             yaml.dump(qconfig, f, default_flow_style=False, sort_keys=False)
 
-                    stop_event2 = threading.Event()
-                    progress_thread2 = threading.Thread(
-                        target=show_progress, args=(stop_event2, "   Processing")
-                    )
-                    progress_thread2.start()
-
-                    result = subprocess.run(
+                    result = run_streaming(
                         [sys.executable, "-m", "quartodoc", "build"],
-                        capture_output=True,
-                        text=True,
                         env=quartodoc_env,
                     )
-
-                    stop_event2.set()
-                    progress_thread2.join()
 
                     if result.returncode != 0:
                         print("\n❌ quartodoc build failed (static mode):")
@@ -5719,18 +5730,10 @@ toc: false
             else:
                 print("\n🔨 Step 2: Building site with Quarto...")
 
-                stop_event = threading.Event()
-                progress_thread = threading.Thread(
-                    target=show_progress, args=(stop_event, "   Rendering")
+                result = run_streaming(
+                    ["quarto", "render"],
+                    env=quarto_env,
                 )
-                progress_thread.start()
-
-                result = subprocess.run(
-                    ["quarto", "render"], capture_output=True, text=True, env=quarto_env
-                )
-
-                stop_event.set()
-                progress_thread.join()
 
                 if result.returncode != 0:
                     print("\n❌ quarto render failed:")

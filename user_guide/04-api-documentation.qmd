@@ -237,5 +237,5 @@ great-docs build --no-refresh
 
 ## Next Steps
 
-- **[CLI Documentation](04-cli-documentation.qmd)** – Document your Click CLI
-- **[User Guides](05-user-guides.qmd)** – Add narrative documentation
+- **[CLI Documentation](cli-documentation.qmd)** – Document your Click CLI
+- **[User Guides](user-guides.qmd)** – Add narrative documentation

@@ -118,13 +118,21 @@ class GreatDocs:
         """
         Copy user guide files from project root to build directory.
 
-        Looks for user_guide/ directory in project root and copies
-        .qmd and .md files to great-docs/user-guide/ directory.
+        Resolves the source directory using the same logic as `_discover_user_guide`:
+        the `user_guide` config option takes precedence, then `user_guide/` and
+        `user-guide/` conventional directories are checked.
+
+        Copies .qmd and .md files to great-docs/user-guide/ directory.
         """
-        source_user_guide = self.project_root / "user_guide"
-        if not source_user_guide.exists():
-            # Also check for 'user-guide' with hyphen
-            source_user_guide = self.project_root / "user-guide"
+        configured_path = self._config.user_guide
+
+        if configured_path is not None:
+            source_user_guide = self.project_root / configured_path
+        else:
+            source_user_guide = self.project_root / "user_guide"
+            if not source_user_guide.exists():
+                # Also check for 'user-guide' with hyphen
+                source_user_guide = self.project_root / "user-guide"
 
         if source_user_guide.exists() and source_user_guide.is_dir():
             dest_user_guide = self.project_path / "user-guide"
@@ -1180,6 +1188,14 @@ class GreatDocs:
         it. Files are sorted by filename to support ordering via prefixes like `00-intro.qmd`,
         `01-installation.qmd`.
 
+        The source directory is resolved in the following order:
+
+        1. If `user_guide` is set in great-docs.yml, that path is used (relative to project root).
+        2. Otherwise, looks for `user_guide/` then `user-guide/` in the project root.
+
+        If the `user_guide` config option is set and a `user_guide/` directory also exists,
+        the config option takes precedence and the conventional directory is ignored.
+
         Returns
         -------
         dict | None
@@ -1190,15 +1206,46 @@ class GreatDocs:
                 "has_index": bool
             }
         """
-        # Look for user_guide directory in project root (not docs dir)
-        user_guide_dir = self._find_package_root() / "user_guide"
+        package_root = self._find_package_root()
+        configured_path = self._config.user_guide
 
-        if not user_guide_dir.exists() or not user_guide_dir.is_dir():
-            return None
+        if configured_path is not None:
+            # Config option takes precedence
+            user_guide_dir = package_root / configured_path
+
+            # Warn if the conventional directory also exists but is being ignored
+            conventional_dir = package_root / "user_guide"
+            if conventional_dir.exists() and conventional_dir.is_dir():
+                if user_guide_dir.resolve() != conventional_dir.resolve():
+                    print(
+                        f"   ⚠️  Both 'user_guide' config option ('{configured_path}') and "
+                        f"'user_guide/' directory exist; using configured path"
+                    )
+
+            if not user_guide_dir.exists() or not user_guide_dir.is_dir():
+                print(
+                    f"   ⚠️  User guide directory '{configured_path}' "
+                    f"specified in great-docs.yml does not exist"
+                )
+                return None
+        else:
+            # Fall back to conventional directory names
+            user_guide_dir = package_root / "user_guide"
+            if not user_guide_dir.exists() or not user_guide_dir.is_dir():
+                # Also check for 'user-guide' with hyphen
+                user_guide_dir = package_root / "user-guide"
+            if not user_guide_dir.exists() or not user_guide_dir.is_dir():
+                return None
 
         # Find all .qmd files (not in subdirectories that are likely asset folders)
         qmd_files = []
-        for item in user_guide_dir.iterdir():
+        # Check if directory is completely empty
+        dir_contents = list(user_guide_dir.iterdir())
+        if not dir_contents:
+            print(f"   ⚠️  User guide directory '{user_guide_dir}' is empty")
+            return None
+
+        for item in dir_contents:
             if item.is_file() and item.suffix == ".qmd":
                 qmd_files.append(item)
             elif item.is_dir():
@@ -1208,6 +1255,7 @@ class GreatDocs:
                         qmd_files.append(subitem)
 
         if not qmd_files:
+            print(f"   ⚠️  User guide directory '{user_guide_dir}' contains no .qmd files")
             return None
 
         # Sort files by name to respect ordering prefixes

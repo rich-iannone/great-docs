@@ -53,6 +53,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "toc-depth": 2,
         "toc-title": "On this page",
     },
+    # User Guide directory
+    # If not provided, looks for user_guide/ in project root
+    "user_guide": None,
     # API Reference configuration (explicit section ordering)
     # If not provided, auto-generates sections from discovered exports
     "reference": [],
@@ -249,6 +252,11 @@ class Config:
         return self.get("display_name")
 
     @property
+    def user_guide(self) -> str | None:
+        """Get the custom user guide directory path."""
+        return self.get("user_guide")
+
+    @property
     def reference(self) -> list[dict[str, Any]]:
         """Get the API reference configuration (explicit section ordering)."""
         return self.get("reference", [])
@@ -380,6 +388,12 @@ def create_default_config() -> str:
 # ----------------
 # Enable/disable the dark mode toggle in navbar (default: true)
 # dark_mode_toggle: true
+
+# User Guide Directory
+# --------------------
+# Custom directory for User Guide .qmd files (relative to project root).
+# If not provided, looks for user_guide/ in the project root.
+# user_guide: docs/guides
 
 # Author Information
 # ------------------

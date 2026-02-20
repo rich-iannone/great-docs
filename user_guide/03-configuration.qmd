@@ -256,6 +256,18 @@ When enabled, the toggle appears in the navbar and:
 - Persists the user's choice in local storage
 - Provides instant switching without page reload
 
+## User Guide Directory
+
+By default, Great Docs looks for a `user_guide/` directory in your project root. To use a different location:
+
+```{.yaml filename="great-docs.yml"}
+user_guide: docs/guides
+```
+
+The path is relative to the project root. If both the config option and a `user_guide/` directory exist, the config option takes precedence.
+
+See [User Guides](06-user-guides.qmd) for details on writing and organizing User Guide content.
+
 ## CLI Documentation
 
 Enable automatic CLI documentation for Click-based CLIs:
@@ -369,6 +381,9 @@ sidebar_filter:
 
 # Dark Mode
 dark_mode_toggle: true
+
+# User Guide Directory
+# user_guide: docs/guides
 
 # CLI Documentation
 cli:

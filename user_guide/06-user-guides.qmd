@@ -41,6 +41,8 @@ your-project/
 └── your_package/
 ```
 
+The `user_guide/` directory is the default location. You can use a [custom directory](#custom-user-guide-directory) by setting `user_guide` in `great-docs.yml`.
+
 ## Page Ordering
 
 Files are sorted alphabetically by filename. Use numeric prefixes to control order:
@@ -242,11 +244,43 @@ user_guide/
 └── 07-deployment.qmd        # Deployment
 ```
 
+## Custom User Guide Directory
+
+By default, Great Docs looks for a `user_guide/` directory in your project root. If you need your User Guide source files in a different location (e.g., inside a `docs/` folder or a monorepo subdirectory), you can specify a custom path in `great-docs.yml`:
+
+```{.yaml filename="great-docs.yml"}
+user_guide: docs/guides
+```
+
+The path is relative to the project root. Any directory structure works, including nested paths:
+
+```{.yaml filename="great-docs.yml"}
+user_guide: content/user-docs
+```
+
+### Precedence Rules
+
+If both a `user_guide` config option **and** a conventional `user_guide/` directory exist, the config option takes precedence and the `user_guide/` directory is ignored. Great Docs will print a warning to let you know:
+
+```
+⚠️  Both 'user_guide' config option ('docs/guides') and 'user_guide/' directory exist; using configured path
+```
+
+### Warnings
+
+Great Docs warns you if the resolved directory:
+
+- **Doesn't exist** — the path specified in `user_guide` couldn't be found
+- **Is empty** — the directory exists but contains no files at all
+- **Has no `.qmd` files** — the directory exists but doesn't contain any Quarto Markdown files
+
+In all three cases, the User Guide is skipped and processing continues normally.
+
 ## Tips
 
-### Keep Source in Project Root
+### Keep Source Separate from Output
 
-The `user_guide/` directory should be in your project root. Great Docs copies files to `great-docs/user-guide/` during each build, keeping your source separate from generated output.
+Whether you use the default `user_guide/` directory or a custom path, Great Docs copies files to `great-docs/user-guide/` during each build, keeping your source separate from generated output.
 
 ### Use Descriptive Titles
 

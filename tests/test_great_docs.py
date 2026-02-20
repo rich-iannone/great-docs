@@ -2323,3 +2323,339 @@ def test_copy_user_guide_files_uses_config():
         assert dest.exists()
         assert (dest / "guide.qmd").exists()
         assert (dest / "guide.md").exists()
+
+
+# =========================================================================
+# Landing Page Generation Tests
+# =========================================================================
+
+
+def test_landing_page_generated_when_no_readme():
+    """Test that a landing page is auto-generated when no README/index files exist."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text(
+            '[project]\nname = "my-package"\nversion = "1.0"\ndescription = "A great package"\n'
+        )
+
+        config_path = project_path / "great-docs.yml"
+        config_path.write_text("")
+
+        pkg_dir = project_path / "my_package"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text("")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+        docs._create_index_from_readme()
+
+        index_qmd = docs.project_path / "index.qmd"
+        assert index_qmd.exists()
+
+        content = index_qmd.read_text()
+        assert "my-package" in content
+        assert "A great package" in content
+        assert "pip install my-package" in content
+        assert "API Reference" in content
+
+
+def test_landing_page_includes_description_from_pyproject():
+    """Test that the landing page uses the description from pyproject.toml."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text(
+            '[project]\nname = "fancy-lib"\nversion = "2.0"\n'
+            'description = "Fancy library for doing fancy things"\n'
+        )
+
+        config_path = project_path / "great-docs.yml"
+        config_path.write_text("")
+
+        pkg_dir = project_path / "fancy_lib"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text("")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        metadata = docs._get_package_metadata()
+
+        content = docs._generate_landing_page_content(metadata)
+        assert "## fancy-lib" in content
+        assert "Fancy library for doing fancy things" in content
+        assert "pip install fancy-lib" in content
+
+
+def test_landing_page_metadata_fallback_to_setup_cfg():
+    """Test that metadata falls back to setup.cfg when pyproject.toml lacks [project]."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # pyproject.toml without [project] section
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text("[build-system]\nrequires = ['setuptools']\n")
+
+        setup_cfg = project_path / "setup.cfg"
+        setup_cfg.write_text(
+            "[metadata]\n"
+            "name = my-tool\n"
+            "description = A CLI tool for developers\n"
+            "author = Jane Doe\n"
+            "author_email = jane@example.com\n"
+            "license = MIT\n"
+            "url = https://github.com/jane/my-tool\n"
+            "project_urls =\n"
+            "    Documentation = https://my-tool.readthedocs.io\n"
+            "    Source = https://github.com/jane/my-tool\n"
+            "\n[options]\n"
+            "python_requires = >=3.8\n"
+        )
+
+        config_path = project_path / "great-docs.yml"
+        config_path.write_text("")
+
+        pkg_dir = project_path / "my_tool"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text("")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        metadata = docs._get_package_metadata()
+
+        assert metadata["description"] == "A CLI tool for developers"
+        assert metadata["license"] == "MIT"
+        assert metadata["requires_python"] == ">=3.8"
+        assert metadata["authors"] == [{"name": "Jane Doe", "email": "jane@example.com"}]
+        assert "Repository" in metadata["urls"]
+        assert "Source" in metadata["urls"]
+
+
+def test_landing_page_not_generated_when_readme_exists():
+    """Test that the landing page is NOT generated when README.md exists."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "1.0"\n')
+
+        readme = project_path / "README.md"
+        readme.write_text("# My Package\n\nThis is the readme.\n")
+
+        config_path = project_path / "great-docs.yml"
+        config_path.write_text("")
+
+        pkg_dir = project_path / "test"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text("")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+        docs._create_index_from_readme()
+
+        index_qmd = docs.project_path / "index.qmd"
+        assert index_qmd.exists()
+
+        content = index_qmd.read_text()
+        # Should use the README content, not the auto-generated landing page
+        assert "This is the readme" in content
+        assert "pip install" not in content
+
+
+def test_landing_page_has_sidebar_metadata():
+    """Test that the auto-generated landing page includes the sidebar."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text(
+            '[project]\nname = "sidebar-test"\nversion = "1.0"\n'
+            'description = "Test sidebar"\n'
+            'requires-python = ">=3.9"\n'
+        )
+
+        license_file = project_path / "LICENSE"
+        license_file.write_text("MIT License")
+
+        config_path = project_path / "great-docs.yml"
+        config_path.write_text("")
+
+        pkg_dir = project_path / "sidebar_test"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text("")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+        docs._create_index_from_readme()
+
+        index_qmd = docs.project_path / "index.qmd"
+        content = index_qmd.read_text()
+
+        # Should have sidebar with metadata
+        assert ".column-margin" in content
+        assert "View on PyPI" in content
+        assert "Full license" in content
+        assert ">=3.9" in content
+
+
+def test_landing_page_with_no_metadata():
+    """Test landing page generation when minimal metadata is available."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Only a package directory, no pyproject.toml or setup.cfg
+        pkg_dir = project_path / "minimal_pkg"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text("")
+
+        config_path = project_path / "great-docs.yml"
+        config_path.write_text("")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        metadata = docs._get_package_metadata()
+
+        content = docs._generate_landing_page_content(metadata)
+        assert "## minimal_pkg" in content
+        assert "pip install minimal_pkg" in content
+
+
+# =========================================================================
+# README.rst and Index Source Discovery Tests
+# =========================================================================
+
+
+def test_find_index_source_priority_order():
+    """Test that _find_index_source_file returns files in correct priority order."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "1.0"\n')
+        config_path = project_path / "great-docs.yml"
+        config_path.write_text("")
+
+        # Only README.rst → should find it
+        (project_path / "README.rst").write_text("Title\n=====\n")
+        docs = GreatDocs(project_path=tmp_dir)
+        source, warnings = docs._find_index_source_file()
+        assert source is not None
+        assert source.name == "README.rst"
+        assert len(warnings) == 0
+
+        # Add README.md → should prefer it over README.rst
+        (project_path / "README.md").write_text("# Title\n")
+        source, warnings = docs._find_index_source_file()
+        assert source.name == "README.md"
+        assert len(warnings) == 1
+        assert "README.rst" in warnings[0]
+
+        # Add index.md → should prefer it
+        (project_path / "index.md").write_text("# Index\n")
+        source, warnings = docs._find_index_source_file()
+        assert source.name == "index.md"
+
+        # Add index.qmd → should prefer it
+        (project_path / "index.qmd").write_text("---\ntitle: Index\n---\n")
+        source, warnings = docs._find_index_source_file()
+        assert source.name == "index.qmd"
+
+
+def test_find_index_source_no_files():
+    """Test that _find_index_source_file returns None when no source files exist."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+        config_path = project_path / "great-docs.yml"
+        config_path.write_text("")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        source, warnings = docs._find_index_source_file()
+        assert source is None
+        assert len(warnings) == 0
+
+
+def test_readme_rst_creates_index():
+    """Test that README.rst is converted and used for index.qmd."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "1.0"\n')
+        config_path = project_path / "great-docs.yml"
+        config_path.write_text("")
+
+        rst_content = "My Package\n==========\n\nThis is a great package.\n\nFeatures\n--------\n\n- Feature one\n- Feature two\n"
+        (project_path / "README.rst").write_text(rst_content)
+
+        pkg_dir = project_path / "test"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text("")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+        docs._create_index_from_readme()
+
+        index_qmd = docs.project_path / "index.qmd"
+        assert index_qmd.exists()
+
+        content = index_qmd.read_text()
+        # Pandoc converts RST headings to Markdown headings
+        # The heading adjustment then bumps them up one level
+        assert "My Package" in content
+        assert "great package" in content
+        assert "Feature one" in content
+
+
+def test_readme_rst_not_used_when_readme_md_exists():
+    """Test that README.md takes priority over README.rst."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "1.0"\n')
+        config_path = project_path / "great-docs.yml"
+        config_path.write_text("")
+
+        (project_path / "README.md").write_text("# Markdown README\n\nThis is the MD readme.\n")
+        (project_path / "README.rst").write_text(
+            "RST README\n==========\n\nThis is the RST readme.\n"
+        )
+
+        pkg_dir = project_path / "test"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text("")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+        docs._create_index_from_readme()
+
+        index_qmd = docs.project_path / "index.qmd"
+        content = index_qmd.read_text()
+        assert "Markdown README" in content
+        assert "RST readme" not in content
+
+
+def test_convert_rst_to_markdown():
+    """Test RST to Markdown conversion via pandoc."""
+    import shutil
+
+    # Skip if neither quarto nor pandoc is available
+    if not shutil.which("quarto") and not shutil.which("pandoc"):
+        import pytest
+
+        pytest.skip("quarto/pandoc not available")
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+        config_path = project_path / "great-docs.yml"
+        config_path.write_text("")
+
+        rst_file = project_path / "test.rst"
+        rst_file.write_text(
+            "Title\n=====\n\nParagraph text.\n\nSubtitle\n--------\n\n- Item 1\n- Item 2\n"
+        )
+
+        docs = GreatDocs(project_path=tmp_dir)
+        result = docs._convert_rst_to_markdown(rst_file)
+
+        # Should have Markdown headings
+        assert "# Title" in result
+        assert "## Subtitle" in result or "Subtitle" in result
+        assert "Paragraph text" in result
+        assert "Item 1" in result

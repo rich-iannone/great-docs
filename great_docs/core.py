@@ -627,6 +627,65 @@ class GreatDocs:
             except Exception:
                 pass
 
+        # Fall back to setup.cfg if pyproject.toml didn't provide key metadata
+        if not metadata.get("description"):
+            setup_cfg = package_root / "setup.cfg"
+            if setup_cfg.exists():
+                try:
+                    import configparser
+
+                    cfg = configparser.ConfigParser()
+                    cfg.read(setup_cfg, encoding="utf-8")
+
+                    if not metadata.get("description"):
+                        metadata["description"] = cfg.get("metadata", "description", fallback="")
+
+                    if not metadata.get("license"):
+                        metadata["license"] = cfg.get("metadata", "license", fallback="")
+
+                    if not metadata.get("requires_python"):
+                        metadata["requires_python"] = cfg.get(
+                            "options", "python_requires", fallback=""
+                        )
+
+                    if not metadata.get("authors"):
+                        author = cfg.get("metadata", "author", fallback="")
+                        author_email = cfg.get("metadata", "author_email", fallback="")
+                        if author:
+                            entry = {"name": author}
+                            if author_email:
+                                entry["email"] = author_email
+                            metadata["authors"] = [entry]
+
+                    if not metadata.get("maintainers"):
+                        maintainer = cfg.get("metadata", "maintainer", fallback="")
+                        maintainer_email = cfg.get("metadata", "maintainer_email", fallback="")
+                        if maintainer:
+                            entry = {"name": maintainer}
+                            if maintainer_email:
+                                entry["email"] = maintainer_email
+                            metadata["maintainers"] = [entry]
+
+                    if not metadata.get("urls"):
+                        urls = {}
+                        # Main url field
+                        url = cfg.get("metadata", "url", fallback="")
+                        if url:
+                            urls["Repository"] = url
+                        # project_urls is a multi-line value
+                        project_urls_raw = cfg.get("metadata", "project_urls", fallback="")
+                        if project_urls_raw:
+                            for line in project_urls_raw.strip().splitlines():
+                                line = line.strip()
+                                if "=" in line:
+                                    key, val = line.split("=", 1)
+                                    urls[key.strip()] = val.strip()
+                        if urls:
+                            metadata["urls"] = urls
+
+                except Exception:
+                    pass
+
         # Read Great Docs configuration from great-docs.yml
         # Reload config to ensure we have the latest
         self._config = Config(package_root)
@@ -3683,6 +3742,7 @@ jupyter: python3
         1. index.qmd in project root
         2. index.md in project root
         3. README.md in project root
+        4. README.rst in project root (converted to Markdown via pandoc)
 
         Returns
         -------
@@ -3693,43 +3753,138 @@ jupyter: python3
         package_root = self._find_package_root()
         warnings = []
 
-        index_qmd_root = package_root / "index.qmd"
-        index_md_root = package_root / "index.md"
-        readme_path = package_root / "README.md"
+        # Candidates in priority order
+        candidates = [
+            package_root / "index.qmd",
+            package_root / "index.md",
+            package_root / "README.md",
+            package_root / "README.rst",
+        ]
 
-        # Check which files exist
-        has_index_qmd = index_qmd_root.exists()
-        has_index_md = index_md_root.exists()
-        has_readme = readme_path.exists()
+        found = [c for c in candidates if c.exists()]
 
-        # Generate warnings for multiple source files
-        if has_index_qmd and (has_index_md or has_readme):
-            other_files = []
-            if has_index_md:
-                other_files.append("index.md")
-            if has_readme:
-                other_files.append("README.md")
+        if not found:
+            return None, warnings
+
+        winner = found[0]
+
+        # Warn if multiple candidates exist
+        if len(found) > 1:
+            others = ", ".join(f.name for f in found[1:])
             warnings.append(
-                f"⚠️  Multiple index source files detected. Using index.qmd "
-                f"(ignoring {', '.join(other_files)})"
+                f"⚠️  Multiple index source files detected. Using {winner.name} (ignoring {others})"
             )
-            return index_qmd_root, warnings
 
-        if has_index_md and has_readme:
-            warnings.append(
-                "⚠️  Multiple index source files detected. Using index.md (ignoring README.md)"
+        return winner, warnings
+
+    def _convert_rst_to_markdown(self, rst_path: Path) -> str:
+        """
+        Convert a reStructuredText file to Markdown using Quarto's bundled pandoc.
+
+        Falls back to the raw RST content if pandoc conversion fails.
+
+        Parameters
+        ----------
+        rst_path
+            Path to the ``.rst`` file.
+
+        Returns
+        -------
+        str
+            The converted Markdown content.
+        """
+        import shutil
+        import subprocess
+
+        # Try 'quarto pandoc' first (always available when quarto is installed),
+        # then fall back to standalone 'pandoc'
+        pandoc_cmd = None
+        if shutil.which("quarto"):
+            pandoc_cmd = ["quarto", "pandoc"]
+        elif shutil.which("pandoc"):
+            pandoc_cmd = ["pandoc"]
+
+        if pandoc_cmd is None:
+            print("   ⚠️  pandoc not found; using raw RST content for landing page")
+            return rst_path.read_text(encoding="utf-8")
+
+        try:
+            result = subprocess.run(
+                [*pandoc_cmd, str(rst_path), "-f", "rst", "-t", "markdown", "--wrap=none"],
+                capture_output=True,
+                text=True,
+                timeout=30,
             )
-            return index_md_root, warnings
+            if result.returncode == 0:
+                return result.stdout
+            else:
+                print(f"   ⚠️  pandoc conversion failed: {result.stderr.strip()}")
+                print("   Falling back to raw RST content")
+                return rst_path.read_text(encoding="utf-8")
+        except Exception as e:
+            print(f"   ⚠️  pandoc conversion error: {e}")
+            print("   Falling back to raw RST content")
+            return rst_path.read_text(encoding="utf-8")
 
-        # Return based on priority
-        if has_index_qmd:
-            return index_qmd_root, warnings
-        if has_index_md:
-            return index_md_root, warnings
-        if has_readme:
-            return readme_path, warnings
+    def _generate_landing_page_content(self, metadata: dict) -> str:
+        """
+        Generate landing page content from package metadata.
 
-        return None, warnings
+        When no README.md, index.md, or index.qmd is available, this method
+        creates a tasteful landing page drawn from package metadata including
+        the package name, description, installation instructions, and
+        navigation links to available documentation sections.
+
+        Parameters
+        ----------
+        metadata
+            Dictionary of package metadata from ``_get_package_metadata()``.
+
+        Returns
+        -------
+        str
+            The generated Markdown content for the landing page body (not
+            including YAML frontmatter or sidebar — those are added by the
+            caller).
+        """
+        package_name = self._detect_package_name() or "Package"
+        description = metadata.get("description", "")
+
+        lines = []
+        lines.append(f"## {package_name}")
+        lines.append("")
+
+        if description:
+            lines.append(description)
+            lines.append("")
+
+        # Installation section
+        install_name = package_name
+        lines.append("### Installation")
+        lines.append("")
+        lines.append("```bash")
+        lines.append(f"pip install {install_name}")
+        lines.append("```")
+        lines.append("")
+
+        # Get Started - link to available sections
+        nav_items = []
+
+        # API Reference is always generated by great-docs
+        nav_items.append("- [API Reference](reference/index.qmd) — Full API documentation")
+
+        # Check for User Guide (look at source directory since build hasn't run yet)
+        ug_source = self._discover_user_guide()
+        if ug_source:
+            nav_items.append("- [User Guide](user-guide/index.qmd) — Guides and tutorials")
+
+        if nav_items:
+            lines.append("### Get Started")
+            lines.append("")
+            lines.extend(nav_items)
+            lines.append("")
+
+        return "\n".join(lines) + "\n"
 
     def _create_index_from_readme(self, force_rebuild: bool = False) -> None:
         """
@@ -3739,8 +3894,10 @@ jupyter: python3
         1. index.qmd in project root
         2. index.md in project root
         3. README.md in project root
+        4. README.rst in project root (converted to Markdown via pandoc)
 
-        This mimics pkgdown's behavior of using the README as the homepage.
+        If none of these exist, a landing page is auto-generated from package
+        metadata (name, description, install command, navigation links).
         Includes a metadata sidebar with package information (license, authors, links, etc.)
 
         Parameters
@@ -3990,32 +4147,35 @@ title: "Authors and Citation"
             print(warning)
 
         if source_file is None:
-            print(
-                "No index source file found (index.qmd, index.md, or README.md), skipping index.qmd creation"
-            )
-            return
-
-        source_name = source_file.name
-        if force_rebuild:
-            print(f"Rebuilding index.qmd from {source_name}...")
+            print("No index source file found (index.qmd, index.md, README.md, or README.rst)")
+            print("Generating landing page from package metadata...")
+            readme_content = self._generate_landing_page_content(self._get_package_metadata())
         else:
-            print(f"Creating index.qmd from {source_name}...")
+            source_name = source_file.name
+            if force_rebuild:
+                print(f"Rebuilding index.qmd from {source_name}...")
+            else:
+                print(f"Creating index.qmd from {source_name}...")
 
-        # Read source content
-        with open(source_file, "r", encoding="utf-8") as f:
-            readme_content = f.read()
+            # Read source content
+            with open(source_file, "r", encoding="utf-8") as f:
+                readme_content = f.read()
 
-        # Adjust heading levels: bump all headings up by one level
-        # This prevents h1 from becoming paragraphs and keeps proper hierarchy
-        # Replace headings from highest to lowest level to avoid double-replacement
-        import re
+            # Convert RST to Markdown using Quarto's bundled pandoc
+            if source_file.suffix.lower() == ".rst":
+                readme_content = self._convert_rst_to_markdown(source_file)
 
-        readme_content = re.sub(r"^######\s+", r"####### ", readme_content, flags=re.MULTILINE)
-        readme_content = re.sub(r"^#####\s+", r"###### ", readme_content, flags=re.MULTILINE)
-        readme_content = re.sub(r"^####\s+", r"##### ", readme_content, flags=re.MULTILINE)
-        readme_content = re.sub(r"^###\s+", r"#### ", readme_content, flags=re.MULTILINE)
-        readme_content = re.sub(r"^##\s+", r"### ", readme_content, flags=re.MULTILINE)
-        readme_content = re.sub(r"^#\s+", r"## ", readme_content, flags=re.MULTILINE)
+            # Adjust heading levels: bump all headings up by one level
+            # This prevents h1 from becoming paragraphs and keeps proper hierarchy
+            # Replace headings from highest to lowest level to avoid double-replacement
+            import re
+
+            readme_content = re.sub(r"^######\s+", r"####### ", readme_content, flags=re.MULTILINE)
+            readme_content = re.sub(r"^#####\s+", r"###### ", readme_content, flags=re.MULTILINE)
+            readme_content = re.sub(r"^####\s+", r"##### ", readme_content, flags=re.MULTILINE)
+            readme_content = re.sub(r"^###\s+", r"#### ", readme_content, flags=re.MULTILINE)
+            readme_content = re.sub(r"^##\s+", r"### ", readme_content, flags=re.MULTILINE)
+            readme_content = re.sub(r"^#\s+", r"## ", readme_content, flags=re.MULTILINE)
 
         # Get package metadata for sidebar
         metadata = self._get_package_metadata()

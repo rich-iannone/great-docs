@@ -305,9 +305,25 @@ class GreatDocs:
             with open(pyproject_path, "rb") as f:
                 try:
                     data = tomllib.load(f)
-                    return data.get("project", {}).get("name")
+                    name = data.get("project", {}).get("name")
+                    if name:
+                        return name
                 except Exception:
-                    return None
+                    pass
+
+        # Look for setup.cfg
+        setup_cfg = self.project_root / "setup.cfg"
+        if setup_cfg.exists():
+            try:
+                import configparser
+
+                cfg = configparser.ConfigParser()
+                cfg.read(setup_cfg, encoding="utf-8")
+                name = cfg.get("metadata", "name", fallback=None)
+                if name:
+                    return name
+            except Exception:
+                pass
 
         # Look for setup.py
         setup_py = self.project_root / "setup.py"
@@ -4377,9 +4393,12 @@ toc: false
         package_name = self._detect_package_name()
 
         if not package_name:
-            response = input(
-                "\nCould not auto-detect package name. Enter package name for quartodoc (or press Enter to skip): "
-            ).strip()
+            try:
+                response = input(
+                    "\nCould not auto-detect package name. Enter package name for quartodoc (or press Enter to skip): "
+                ).strip()
+            except EOFError:
+                response = ""
             if not response:
                 print("Skipping quartodoc configuration")
                 return
@@ -5630,17 +5649,62 @@ toc: false
             progress_thread.join()
 
             if result.returncode != 0:
-                print("\n❌ quartodoc build failed:")
                 # Check if quartodoc is not installed
                 if "No module named quartodoc" in result.stderr:
+                    print("\n❌ quartodoc build failed:")
                     print("\n⚠️  quartodoc is not installed in your environment.")
                     print("\nTo fix this, install quartodoc:")
                     print(f"  {sys.executable} -m pip install quartodoc")
                     print("\nOr if using pip directly:")
                     print("  pip install quartodoc")
+                    sys.exit(1)
+
+                # If dynamic mode was used, retry with static mode
+                dynamic = self._config.dynamic
+                if dynamic:
+                    print("\n⚠️  quartodoc build failed with dynamic introspection.")
+                    print("   Retrying with static analysis (dynamic: false)...\n")
+
+                    # Update _quarto.yml to set dynamic: false
+                    quarto_yml = self.project_path / "_quarto.yml"
+                    with open(quarto_yml, "r") as f:
+                        qconfig = yaml.safe_load(f) or {}
+
+                    if "quartodoc" in qconfig:
+                        qconfig["quartodoc"]["dynamic"] = False
+                        with open(quarto_yml, "w") as f:
+                            yaml.dump(qconfig, f, default_flow_style=False, sort_keys=False)
+
+                    stop_event2 = threading.Event()
+                    progress_thread2 = threading.Thread(
+                        target=show_progress, args=(stop_event2, "   Processing")
+                    )
+                    progress_thread2.start()
+
+                    result = subprocess.run(
+                        [sys.executable, "-m", "quartodoc", "build"],
+                        capture_output=True,
+                        text=True,
+                        env=quartodoc_env,
+                    )
+
+                    stop_event2.set()
+                    progress_thread2.join()
+
+                    if result.returncode != 0:
+                        print("\n❌ quartodoc build failed (static mode):")
+                        print(result.stderr)
+                        sys.exit(1)
+                    else:
+                        print("\n✅ API reference generated (using static analysis)")
+                        print(
+                            "   Tip: Add 'dynamic: false' to great-docs.yml "
+                            "to skip the retry next time"
+                        )
                 else:
+                    print("\n❌ quartodoc build failed:")
                     print(result.stderr)
-                sys.exit(1)
+                    sys.exit(1)
             else:
                 print("\n✅ API reference generated")
 

@@ -1,0 +1,590 @@
+# pyright: reportPrivateUsage=false
+"""
+Tests for synthetic test packages.
+
+These tests exercise Great Docs against spec-driven synthetic packages that
+cover every feature dimension.  The tests are organized by assertion level:
+
+- **L0**: Package/module name detection (instant, no I/O)
+- **L1**: Export discovery + section structure (fast, griffe only)
+- **L2**: ``great-docs init`` / config generation (fast, file I/O)
+- **L3**: ``_quarto.yml`` + ``.qmd`` generation (medium)
+- **L4**: Full Quarto render to HTML (slow, nightly only)
+
+Run with:
+    pytest tests/test_synthetic.py -v
+    pytest tests/test_synthetic.py -v -k "L0"           # just detection
+    pytest tests/test_synthetic.py -v -k "gdtest_minimal"  # one package
+"""
+
+from __future__ import annotations
+
+import sys
+import textwrap
+from pathlib import Path
+
+import pytest
+
+from great_docs import GreatDocs
+
+# ── Setup: make test-packages/synthetic importable ───────────────────────────
+
+_SYNTHETIC_DIR = Path(__file__).resolve().parent.parent / "test-packages"
+if str(_SYNTHETIC_DIR) not in sys.path:
+    sys.path.insert(0, str(_SYNTHETIC_DIR))
+
+from synthetic.catalog import ALL_PACKAGES, get_spec  # noqa: E402
+from synthetic.generator import generate_package  # noqa: E402
+
+# ── Phase 1 packages (the initial 5 specs implemented) ───────────────────────
+
+PHASE1_PACKAGES = [
+    "gdtest_minimal",
+    "gdtest_src_layout",
+    "gdtest_big_class",
+    "gdtest_families",
+    "gdtest_kitchen_sink",
+]
+
+# Only parametrize over specs that actually exist on disk.
+# As more specs are added in later phases they'll automatically be picked up.
+_AVAILABLE_PACKAGES = []
+for _name in ALL_PACKAGES:
+    _spec_file = _SYNTHETIC_DIR / "synthetic" / "specs" / f"{_name}.py"
+    if _spec_file.exists():
+        _AVAILABLE_PACKAGES.append(_name)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Helpers
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def _make_package(pkg_name: str, tmp_path: Path) -> tuple[Path, dict]:
+    """Generate a synthetic package and return (pkg_dir, spec)."""
+    spec = get_spec(pkg_name)
+    pkg_dir = generate_package(spec, tmp_path)
+
+    # Add pkg_dir to sys.path so griffe/importlib can find the module
+    if str(pkg_dir) not in sys.path:
+        sys.path.insert(0, str(pkg_dir))
+
+    # For non-flat layouts, add the appropriate subfolder
+    for subdir_name in ("src", "python", "lib"):
+        sub = pkg_dir / subdir_name
+        if sub.is_dir() and str(sub) not in sys.path:
+            sys.path.insert(0, str(sub))
+
+    return pkg_dir, spec
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# L0: Package & Module Detection
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@pytest.mark.parametrize("pkg_name", _AVAILABLE_PACKAGES)
+def test_L0_package_name_detection(pkg_name: str, tmp_path: Path):
+    """GreatDocs correctly detects the project (PyPI) name."""
+    pkg_dir, spec = _make_package(pkg_name, tmp_path)
+    expected = spec.get("expected", {})
+    if "detected_name" not in expected:
+        pytest.skip("No 'detected_name' in spec expected outcomes")
+
+    docs = GreatDocs(project_path=str(pkg_dir))
+    detected = docs._detect_package_name()
+    assert detected == expected["detected_name"], (
+        f"Expected package name {expected['detected_name']!r}, got {detected!r}"
+    )
+
+
+@pytest.mark.parametrize("pkg_name", _AVAILABLE_PACKAGES)
+def test_L0_module_name_detection(pkg_name: str, tmp_path: Path):
+    """GreatDocs correctly detects the importable module name."""
+    pkg_dir, spec = _make_package(pkg_name, tmp_path)
+    expected = spec.get("expected", {})
+    if "detected_module" not in expected:
+        pytest.skip("No 'detected_module' in spec expected outcomes")
+
+    docs = GreatDocs(project_path=str(pkg_dir))
+    module_name = expected["detected_module"]
+
+    # Verify the module's __init__.py can be found
+    init_file = docs._find_package_init(module_name)
+    assert init_file is not None, f"Could not find __init__.py for module {module_name!r}"
+    assert init_file.exists()
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# L1: Export Discovery & Section Generation
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@pytest.mark.parametrize("pkg_name", _AVAILABLE_PACKAGES)
+def test_L1_export_discovery(pkg_name: str, tmp_path: Path):
+    """All expected exports are discovered."""
+    pkg_dir, spec = _make_package(pkg_name, tmp_path)
+    expected = spec.get("expected", {})
+    if "export_names" not in expected:
+        pytest.skip("No 'export_names' in spec expected outcomes")
+
+    docs = GreatDocs(project_path=str(pkg_dir))
+    module_name = expected.get("detected_module", pkg_name)
+    exports = docs._parse_package_exports(module_name)
+
+    # Packages without __all__ use griffe-based discovery
+    if exports is None:
+        exports = docs._discover_package_exports(module_name)
+
+    assert exports is not None, (
+        f"Neither _parse_package_exports nor _discover_package_exports found "
+        f"exports for {module_name!r}"
+    )
+
+    expected_names = set(expected["export_names"])
+    actual_names = set(exports)
+    assert expected_names <= actual_names, (
+        f"Missing exports: {expected_names - actual_names}\n"
+        f"  Expected: {sorted(expected_names)}\n"
+        f"  Got:      {sorted(actual_names)}"
+    )
+
+    if "num_exports" in expected:
+        assert len(exports) == expected["num_exports"], (
+            f"Expected {expected['num_exports']} exports, got {len(exports)}: {sorted(exports)}"
+        )
+
+
+@pytest.mark.parametrize("pkg_name", _AVAILABLE_PACKAGES)
+def test_L1_section_generation(pkg_name: str, tmp_path: Path):
+    """Quartodoc sections match expected structure."""
+    pkg_dir, spec = _make_package(pkg_name, tmp_path)
+    expected = spec.get("expected", {})
+    if "section_titles" not in expected:
+        pytest.skip("No 'section_titles' in spec expected outcomes")
+
+    # Explicit reference specs are tested separately with their own config
+    if expected.get("explicit_reference"):
+        pytest.skip("Explicit reference config tested in test_L2_explicit_reference_config")
+
+    docs = GreatDocs(project_path=str(pkg_dir))
+    module_name = expected.get("detected_module", pkg_name)
+    sections = docs._create_quartodoc_sections(module_name)
+
+    if sections is None:
+        pytest.skip(
+            f"Section generation returned None for {module_name!r} "
+            "(griffe cannot resolve all exports)"
+        )
+    assert len(sections) > 0, "No sections generated"
+
+    actual_titles = [s["title"] for s in sections]
+    for expected_title in expected["section_titles"]:
+        assert expected_title in actual_titles, (
+            f"Expected section title {expected_title!r} not found.\n"
+            f"  Actual titles: {actual_titles}"
+        )
+
+
+@pytest.mark.parametrize("pkg_name", _AVAILABLE_PACKAGES)
+def test_L1_big_class_method_section(pkg_name: str, tmp_path: Path):
+    """Classes with >5 methods get a separate method section."""
+    pkg_dir, spec = _make_package(pkg_name, tmp_path)
+    expected = spec.get("expected", {})
+    if "big_class_name" not in expected:
+        pytest.skip("No 'big_class_name' in spec expected outcomes")
+
+    docs = GreatDocs(project_path=str(pkg_dir))
+    module_name = expected.get("detected_module", pkg_name)
+    sections = docs._create_quartodoc_sections(module_name)
+    assert sections is not None
+
+    big_class = expected["big_class_name"]
+    method_section_title = f"{big_class} Methods"
+
+    # The class entry should have members: []
+    class_section = next((s for s in sections if s["title"] == "Classes"), None)
+    if class_section is None:
+        # In family-based sections, look for the class in any section
+        class_entry = None
+        for s in sections:
+            for c in s.get("contents", []):
+                if isinstance(c, dict) and c.get("name") == big_class:
+                    class_entry = c
+                    break
+        if class_entry is not None:
+            assert class_entry.get("members") == [], (
+                f"{big_class} should have members: [], got {class_entry}"
+            )
+    else:
+        class_entry = next(
+            (
+                c
+                for c in class_section["contents"]
+                if isinstance(c, dict) and c.get("name") == big_class
+            ),
+            None,
+        )
+        assert class_entry is not None, f"{big_class} not found in Classes section"
+        assert class_entry.get("members") == [], (
+            f"{big_class} should have members: [], got {class_entry}"
+        )
+
+    # There should be a separate method section
+    method_section = next((s for s in sections if s["title"] == method_section_title), None)
+    assert method_section is not None, (
+        f"No '{method_section_title}' section found. Sections: {[s['title'] for s in sections]}"
+    )
+
+    if "big_class_method_count" in expected:
+        assert len(method_section["contents"]) == expected["big_class_method_count"], (
+            f"Expected {expected['big_class_method_count']} methods, "
+            f"got {len(method_section['contents'])}: {method_section['contents']}"
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# L1: Docstring Parser Detection
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@pytest.mark.parametrize("pkg_name", _AVAILABLE_PACKAGES)
+def test_L1_docstring_parser_detection(pkg_name: str, tmp_path: Path):
+    """Docstring format is correctly auto-detected."""
+    pkg_dir, spec = _make_package(pkg_name, tmp_path)
+    expected = spec.get("expected", {})
+    if "detected_parser" not in expected:
+        pytest.skip("No 'detected_parser' in spec expected outcomes")
+
+    docs = GreatDocs(project_path=str(pkg_dir))
+    module_name = expected.get("detected_module", pkg_name)
+    init_file = docs._find_package_init(module_name)
+    assert init_file is not None
+
+    detected = docs._detect_docstring_style(module_name)
+    assert detected == expected["detected_parser"], (
+        f"Expected parser {expected['detected_parser']!r}, got {detected!r}"
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# L1: Directive Extraction (families, order, seealso, nodoc)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@pytest.mark.parametrize("pkg_name", _AVAILABLE_PACKAGES)
+def test_L1_family_directives(pkg_name: str, tmp_path: Path):
+    """Objects with %family directives are correctly grouped."""
+    pkg_dir, spec = _make_package(pkg_name, tmp_path)
+    expected = spec.get("expected", {})
+    if "families" not in expected:
+        pytest.skip("No 'families' in spec expected outcomes")
+
+    from great_docs._directives import extract_directives
+
+    module_name = expected.get("detected_module", pkg_name)
+
+    # Read the __init__.py and extract family directives from each object's docstring
+    # via griffe to get actual docstrings
+    try:
+        import griffe
+
+        mod = griffe.load(module_name, search_paths=[str(pkg_dir), str(pkg_dir / "src")])
+    except Exception:
+        pytest.skip(f"Could not load module {module_name!r} with griffe")
+
+    families_found: dict[str, list[str]] = {}
+    for member_name, member in mod.members.items():
+        if member_name.startswith("_"):
+            continue
+        try:
+            docstring = member.docstring
+        except Exception:
+            # Aliases (e.g., re-exported imports) may not resolve
+            continue
+        if docstring:
+            directives = extract_directives(docstring.value)
+            if directives.family:
+                families_found.setdefault(directives.family, []).append(member_name)
+
+    expected_families = expected["families"]
+    for family_name, expected_members in expected_families.items():
+        assert family_name in families_found, (
+            f"Family {family_name!r} not found. Found: {list(families_found.keys())}"
+        )
+        actual_members = set(families_found[family_name])
+        expected_set = set(expected_members)
+        assert expected_set == actual_members, (
+            f"Family {family_name!r} members mismatch.\n"
+            f"  Expected: {sorted(expected_set)}\n"
+            f"  Got:      {sorted(actual_members)}"
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# L2: Init / Config Generation
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@pytest.mark.parametrize("pkg_name", PHASE1_PACKAGES)
+def test_L2_init_creates_config(pkg_name: str, tmp_path: Path):
+    """``great-docs init --force`` produces a valid great-docs.yml."""
+    pkg_dir, spec = _make_package(pkg_name, tmp_path)
+
+    docs = GreatDocs(project_path=str(pkg_dir))
+    docs.install(force=True)
+
+    config_path = pkg_dir / "great-docs.yml"
+    assert config_path.exists(), "great-docs.yml was not created"
+
+    # Config should be parseable YAML
+    import yaml
+
+    with open(config_path, encoding="utf-8") as f:
+        config_data = yaml.safe_load(f)
+
+    # Should not be None/empty
+    assert config_data is not None, "great-docs.yml is empty"
+
+
+@pytest.mark.parametrize("pkg_name", PHASE1_PACKAGES)
+def test_L2_init_detects_correct_exports(pkg_name: str, tmp_path: Path):
+    """Init generates reference sections that include expected exports."""
+    pkg_dir, spec = _make_package(pkg_name, tmp_path)
+    expected = spec.get("expected", {})
+    if "export_names" not in expected:
+        pytest.skip("No 'export_names' in spec")
+
+    docs = GreatDocs(project_path=str(pkg_dir))
+    docs.install(force=True)
+
+    # Read the generated config and check reference sections
+    import yaml
+
+    config_path = pkg_dir / "great-docs.yml"
+    with open(config_path, encoding="utf-8") as f:
+        config_data = yaml.safe_load(f)
+
+    # Collect all content items from reference sections
+    reference = config_data.get("reference", [])
+    all_items: set[str] = set()
+    for section in reference:
+        for item in section.get("contents", []):
+            if isinstance(item, str):
+                all_items.add(item)
+            elif isinstance(item, dict):
+                name = item.get("name", "")
+                all_items.add(name)
+                # Also check for ClassName.method entries
+                if name:
+                    all_items.add(name)
+
+    # Every expected export should be referenced somewhere
+    expected_names = set(expected["export_names"])
+    # Some exports may appear as ClassName.method, so extract base names
+    base_items = {item.split(".")[0] for item in all_items}
+    combined = all_items | base_items
+
+    missing = expected_names - combined
+    assert not missing, (
+        f"Missing exports in generated config: {missing}\n  Reference items: {sorted(all_items)}"
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# L2: User Guide Detection
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@pytest.mark.parametrize("pkg_name", _AVAILABLE_PACKAGES)
+def test_L2_user_guide_detection(pkg_name: str, tmp_path: Path):
+    """User guide presence is correctly detected."""
+    pkg_dir, spec = _make_package(pkg_name, tmp_path)
+    expected = spec.get("expected", {})
+    if "has_user_guide" not in expected:
+        pytest.skip("No 'has_user_guide' in spec")
+
+    has_guide = (pkg_dir / "user_guide").is_dir() or (pkg_dir / "user-guide").is_dir()
+
+    assert has_guide == expected["has_user_guide"], (
+        f"Expected has_user_guide={expected['has_user_guide']}, "
+        f"but user_guide/ {'exists' if has_guide else 'does not exist'}"
+    )
+
+
+@pytest.mark.parametrize("pkg_name", _AVAILABLE_PACKAGES)
+def test_L2_user_guide_files(pkg_name: str, tmp_path: Path):
+    """User guide has the expected files."""
+    pkg_dir, spec = _make_package(pkg_name, tmp_path)
+    expected = spec.get("expected", {})
+    if "user_guide_files" not in expected:
+        pytest.skip("No 'user_guide_files' in spec")
+
+    guide_dir = pkg_dir / "user_guide"
+    if not guide_dir.exists():
+        guide_dir = pkg_dir / "user-guide"
+
+    assert guide_dir.exists(), "No user guide directory found"
+
+    actual_files = sorted(f.name for f in guide_dir.glob("*.qmd"))
+    expected_files = sorted(expected["user_guide_files"])
+    assert actual_files == expected_files, (
+        f"User guide file mismatch.\n  Expected: {expected_files}\n  Actual:   {actual_files}"
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# L2: Supporting Pages Detection
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@pytest.mark.parametrize("pkg_name", _AVAILABLE_PACKAGES)
+def test_L2_supporting_pages(pkg_name: str, tmp_path: Path):
+    """Supporting pages (LICENSE, CITATION.cff, etc.) are correctly detected."""
+    pkg_dir, spec = _make_package(pkg_name, tmp_path)
+    expected = spec.get("expected", {})
+
+    checks = {
+        "has_license_page": [pkg_dir / "LICENSE"],
+        "has_citation_page": [pkg_dir / "CITATION.cff"],
+        "has_contributing_page": [
+            pkg_dir / "CONTRIBUTING.md",
+            pkg_dir / ".github" / "CONTRIBUTING.md",
+        ],
+        "has_code_of_conduct_page": [pkg_dir / "CODE_OF_CONDUCT.md"],
+    }
+
+    performed = False
+    for key, file_paths in checks.items():
+        if key in expected:
+            performed = True
+            found = any(fp.exists() for fp in file_paths)
+            assert found == expected[key], (
+                f"{key}: expected {expected[key]}, "
+                f"but none of {[fp.name for fp in file_paths]} found"
+            )
+
+    if "has_assets" in expected:
+        performed = True
+        assert (pkg_dir / "assets").is_dir() == expected["has_assets"]
+
+    if not performed:
+        pytest.skip("No supporting page expectations in spec")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# L2: Explicit Reference Config
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@pytest.mark.parametrize("pkg_name", _AVAILABLE_PACKAGES)
+def test_L2_explicit_reference_config(pkg_name: str, tmp_path: Path):
+    """Explicit reference config produces correct section structure."""
+    pkg_dir, spec = _make_package(pkg_name, tmp_path)
+    expected = spec.get("expected", {})
+    if not expected.get("explicit_reference"):
+        pytest.skip("Not an explicit reference config spec")
+
+    config = spec.get("config", {})
+    reference = config.get("reference", [])
+
+    assert reference, "Spec says explicit_reference but no reference config found"
+
+    docs = GreatDocs(project_path=str(pkg_dir))
+    sections = docs._build_sections_from_reference_config(reference)
+    assert sections is not None, "Sections were None from explicit reference config"
+    assert len(sections) == len(reference)
+
+    # Check section titles match
+    actual_titles = [s["title"] for s in sections]
+    for exp_title in expected.get("section_titles", []):
+        assert exp_title in actual_titles, (
+            f"Expected section {exp_title!r} not found in {actual_titles}"
+        )
+
+    # Check members:false handling
+    if "members_false_classes" in expected:
+        for class_name in expected["members_false_classes"]:
+            found = False
+            for section in sections:
+                for item in section.get("contents", []):
+                    if isinstance(item, dict) and item.get("name") == class_name:
+                        assert item.get("members") == [], (
+                            f"{class_name} should have members: [] but got {item}"
+                        )
+                        found = True
+            assert found, f"{class_name} not found in any section"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# L2: Name / Module Mismatch
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@pytest.mark.parametrize("pkg_name", _AVAILABLE_PACKAGES)
+def test_L2_name_module_mismatch(pkg_name: str, tmp_path: Path):
+    """Packages where project name ≠ module name are handled correctly."""
+    pkg_dir, spec = _make_package(pkg_name, tmp_path)
+    expected = spec.get("expected", {})
+    if not expected.get("name_module_mismatch"):
+        pytest.skip("Not a name/module mismatch spec")
+
+    docs = GreatDocs(project_path=str(pkg_dir))
+
+    # Project name detection should find the pyproject.toml name
+    detected_name = docs._detect_package_name()
+    assert detected_name == expected["detected_name"]
+
+    # Module should differ from normalized project name
+    module_name = expected["detected_module"]
+    normalized = expected["detected_name"].replace("-", "_")
+    assert module_name != normalized, (
+        f"Module {module_name!r} should differ from normalized project name {normalized!r}"
+    )
+
+    # The module's __init__.py should still be findable
+    init_file = docs._find_package_init(module_name)
+    assert init_file is not None, f"Could not find __init__.py for {module_name!r}"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Generator Sanity
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def test_generator_creates_expected_files(tmp_path: Path):
+    """Smoke test: the generator creates the right file tree."""
+    spec = get_spec("gdtest_minimal")
+    pkg_dir = generate_package(spec, tmp_path)
+
+    assert pkg_dir.exists()
+    assert (pkg_dir / "pyproject.toml").exists()
+    assert (pkg_dir / "README.md").exists()
+    assert (pkg_dir / "gdtest_minimal" / "__init__.py").exists()
+
+
+def test_generator_with_config_override(tmp_path: Path):
+    """Config override replaces any spec-bundled config."""
+    spec = get_spec("gdtest_minimal")
+    config_path = (
+        Path(__file__).resolve().parent.parent
+        / "test-packages"
+        / "synthetic"
+        / "configs"
+        / "config_google.yml"
+    )
+    pkg_dir = generate_package(spec, tmp_path, config_override=config_path)
+
+    config_file = pkg_dir / "great-docs.yml"
+    assert config_file.exists()
+    content = config_file.read_text()
+    assert "google" in content
+
+
+def test_all_phase1_specs_loadable():
+    """All Phase 1 specs can be loaded from the catalog."""
+    for name in PHASE1_PACKAGES:
+        spec = get_spec(name)
+        assert spec["name"] == name
+        assert "files" in spec
+        assert "dimensions" in spec

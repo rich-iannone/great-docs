@@ -75,6 +75,62 @@ ALL_PACKAGES: list[str] = [
     "gdtest_explicit_ref",  # 48
     "gdtest_kitchen_sink",  # 49
     "gdtest_name_mismatch",  # 50
+    # 51–65: Cross-dimension combos
+    "gdtest_src_families",  # 51
+    "gdtest_src_big_class",  # 52
+    "gdtest_google_big_class",  # 53
+    "gdtest_sphinx_families",  # 54
+    "gdtest_user_guide_cli",  # 55
+    "gdtest_explicit_big_class",  # 56
+    "gdtest_families_nodoc",  # 57
+    "gdtest_src_no_all",  # 58
+    "gdtest_extras_guide",  # 59
+    "gdtest_google_seealso",  # 60
+    "gdtest_setup_cfg_src",  # 61
+    "gdtest_hatch_families",  # 62
+    "gdtest_mixed_families",  # 63
+    "gdtest_exclude_cli",  # 64
+    "gdtest_src_explicit_ref",  # 65
+    # 66–77: New API patterns
+    "gdtest_async_funcs",  # 66
+    "gdtest_generators",  # 67
+    "gdtest_overloads",  # 68
+    "gdtest_abstract_props",  # 69
+    "gdtest_multi_inherit",  # 70
+    "gdtest_slots_class",  # 71
+    "gdtest_frozen_dc",  # 72
+    "gdtest_generics",  # 73
+    "gdtest_context_mgr",  # 74
+    "gdtest_decorators",  # 75
+    "gdtest_exceptions",  # 76
+    "gdtest_reexports",  # 77
+    # 78–82: Scale & stress
+    "gdtest_many_exports",  # 78
+    "gdtest_deep_nesting",  # 79
+    "gdtest_long_docs",  # 80
+    "gdtest_many_guides",  # 81
+    "gdtest_many_big_classes",  # 82
+    # 83–88: Build systems & layouts
+    "gdtest_flit",  # 83
+    "gdtest_pdm",  # 84
+    "gdtest_namespace",  # 85
+    "gdtest_monorepo",  # 86
+    "gdtest_multi_module",  # 87
+    "gdtest_src_legacy",  # 88
+    # 89–95: Edge cases
+    "gdtest_empty_module",  # 89
+    "gdtest_all_private",  # 90
+    "gdtest_duplicate_all",  # 91
+    "gdtest_badge_readme",  # 92
+    "gdtest_math_docs",  # 93
+    "gdtest_mixed_guide_ext",  # 94
+    "gdtest_unicode_docs",  # 95
+    # 96–100: Config matrix
+    "gdtest_config_all_on",  # 96
+    "gdtest_config_display",  # 97
+    "gdtest_config_minimal",  # 98
+    "gdtest_config_parser",  # 99
+    "gdtest_config_extra_keys",  # 100
 ]
 
 
@@ -90,6 +146,10 @@ DIMENSIONS: dict[str, dict[str, str]] = {
     "A7": {"axis": "layout", "label": "setup.cfg only"},
     "A8": {"axis": "layout", "label": "setup.py only"},
     "A9": {"axis": "layout", "label": "Auto-discover"},
+    "A10": {"axis": "layout", "label": "Flit build"},
+    "A11": {"axis": "layout", "label": "PDM build"},
+    "A12": {"axis": "layout", "label": "Namespace package"},
+    "A13": {"axis": "layout", "label": "Monorepo sub-dir"},
     "B1": {"axis": "exports", "label": "Explicit __all__"},
     "B2": {"axis": "exports", "label": "__all__ concatenation"},
     "B3": {"axis": "exports", "label": "No __all__ (griffe)"},
@@ -97,6 +157,7 @@ DIMENSIONS: dict[str, dict[str, str]] = {
     "B5": {"axis": "exports", "label": "Config exclude"},
     "B6": {"axis": "exports", "label": "Submodule exports"},
     "B7": {"axis": "exports", "label": "AUTO_EXCLUDE names"},
+    "B8": {"axis": "exports", "label": "Multi-module re-export"},
     "C1": {"axis": "objects", "label": "Functions only"},
     "C2": {"axis": "objects", "label": "Small classes (≤5)"},
     "C3": {"axis": "objects", "label": "Big class (>5)"},
@@ -109,6 +170,18 @@ DIMENSIONS: dict[str, dict[str, str]] = {
     "C10": {"axis": "objects", "label": "Dunder methods"},
     "C11": {"axis": "objects", "label": "Nested classes"},
     "C12": {"axis": "objects", "label": "Constants/aliases"},
+    "C13": {"axis": "objects", "label": "Async functions"},
+    "C14": {"axis": "objects", "label": "Generator functions"},
+    "C15": {"axis": "objects", "label": "Overloaded functions"},
+    "C16": {"axis": "objects", "label": "Abstract properties"},
+    "C17": {"axis": "objects", "label": "Multiple inheritance"},
+    "C18": {"axis": "objects", "label": "__slots__ classes"},
+    "C19": {"axis": "objects", "label": "Frozen dataclasses"},
+    "C20": {"axis": "objects", "label": "Generic classes"},
+    "C21": {"axis": "objects", "label": "Context managers"},
+    "C22": {"axis": "objects", "label": "Decorator functions"},
+    "C23": {"axis": "objects", "label": "Custom exceptions"},
+    "C24": {"axis": "objects", "label": "Re-exported symbols"},
     "D1": {"axis": "docstrings", "label": "NumPy"},
     "D2": {"axis": "docstrings", "label": "Google"},
     "D3": {"axis": "docstrings", "label": "Sphinx"},
@@ -472,6 +545,320 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "should use the project name. The Reference page should show exports "
         "from gdtest_nm: Mapper (class) and transform (function). The key "
         "test: config-driven module name override."
+    ),
+    # ── 51-65: Cross-dimension combos ─────────────────────────────────────
+    "gdtest_src_families": (
+        "Combines src/ layout (A2) with %family directives (E1). Module lives "
+        "in src/gdtest_src_families/. Six exports split into 'IO' family "
+        "(read_file, write_file, FileHandler) and 'Transform' family "
+        "(transform, validate). On the Reference page you should see two "
+        "family section headings, not a flat list. Key test: families work "
+        "correctly with src/ layout."
+    ),
+    "gdtest_src_big_class": (
+        "src/ layout (A2) with a big class (C3) having 7 methods. Module at "
+        "src/gdtest_src_big_class/. Pipeline class with add_step, remove_step, "
+        "run, pause, resume, reset, status. On the Reference page you should "
+        "see 'Classes' and a separate 'Pipeline Methods' subsection. Key "
+        "test: big-class method extraction works from src/ layout."
+    ),
+    "gdtest_google_big_class": (
+        "Google docstrings (D2) with a big class (C3). DataProcessor has 7 "
+        "methods all documented in Google style. On the Reference page you "
+        "should see the class with a separate methods subsection, and each "
+        "method's Args/Returns sections should be parsed correctly from "
+        "Google format — not shown as raw text."
+    ),
+    "gdtest_sphinx_families": (
+        "Sphinx docstrings (D3) with %family directives (E1). Three exports "
+        "in 'Network' family (connect, disconnect, status) with "
+        ":param:/:returns: docs. On the Reference page you should see a "
+        "'Network' section heading with Sphinx field lists rendered properly."
+    ),
+    "gdtest_user_guide_cli": (
+        "User guide (F1) combined with CLI documentation. Has user_guide/ "
+        "with two pages plus a Click CLI. The sidebar should show both "
+        "'User Guide' and 'CLI Reference' sections. On the Reference page "
+        "you should see two functions (process, analyze)."
+    ),
+    "gdtest_explicit_big_class": (
+        "Explicit reference config with a big class. Config defines sections "
+        "'Core' with BigEngine (members: false) and 'Helpers' with helper_a, "
+        "helper_b. On the Reference page BigEngine should appear WITHOUT its "
+        "methods listed (members: false suppresses them), and there should be "
+        "NO separate 'BigEngine Methods' subsection."
+    ),
+    "gdtest_families_nodoc": (
+        "Combines %family (E1) and %nodoc (E4) in the same module. Six "
+        "exports: 'Math' family (add, subtract, multiply) and two items "
+        "tagged %nodoc (internal_calc, debug_dump). On the Reference page "
+        "you should see the 'Math' section with three items. The two %nodoc "
+        "items must be completely absent."
+    ),
+    "gdtest_src_no_all": (
+        "src/ layout (A2) with no __all__ (B3). Module at "
+        "src/gdtest_src_no_all/ defines functions without an __all__ list. "
+        "On the Reference page you should see only public names (fetch, "
+        "store, Record) — names starting with underscore must be absent. "
+        "Key test: griffe fallback within src/ layout."
+    ),
+    "gdtest_extras_guide": (
+        "Full supporting pages (H1-H4) combined with a user guide (F1). "
+        "Sidebar should show License, Citation, Contributing, Code of "
+        "Conduct links AND a User Guide section with two pages. "
+        "Reference page shows two functions (start, stop)."
+    ),
+    "gdtest_google_seealso": (
+        "Google docstrings (D2) with %seealso directives (E3). Four exports "
+        "(encode, decode, compress, decompress) with Google-style Args/Returns "
+        "plus %seealso cross-references. Each function's rendered docs should "
+        "show both the Google parameter tables and a 'See Also' block."
+    ),
+    "gdtest_setup_cfg_src": (
+        "setup.cfg only (A7) with src/ layout. No pyproject.toml — metadata "
+        "comes from setup.cfg, but the module lives in src/. On the Reference "
+        "page you should see two functions (parse, format). Key test: "
+        "setup.cfg metadata detection combined with src/ directory scanning."
+    ),
+    "gdtest_hatch_families": (
+        "Hatch build system (A5) with %family directives (E1). Module "
+        "discovered via Hatch config, then grouped by families. On the "
+        "Reference page you should see 'Data' family (load, save) and "
+        "'Display' family (render, show) as separate sections."
+    ),
+    "gdtest_mixed_families": (
+        "Mixed docstrings (D5) with %family directives (E1). Some functions "
+        "use NumPy style, others Google style, all with %family tags. On the "
+        "Reference page, family sections should group correctly regardless of "
+        "docstring style. 'Input' (read_csv, read_json) and 'Output' "
+        "(write_csv, write_json) families."
+    ),
+    "gdtest_exclude_cli": (
+        "Config-level exclusion (B5) with CLI documentation. Two API exports "
+        "are excluded via config, plus a Click CLI. The sidebar should show "
+        "CLI Reference. The API Reference should show only the non-excluded "
+        "items (execute, report) — hidden_func must be absent."
+    ),
+    "gdtest_src_explicit_ref": (
+        "src/ layout (A2) with explicit reference config. Config defines two "
+        "sections: 'Core' (Engine, run) and 'Utils' (format_result). Module "
+        "lives in src/. On the Reference page you should see exactly 'Core' "
+        "and 'Utils' headings. Key test: explicit ref + src/ layout together."
+    ),
+    # ── 66-77: New API patterns ───────────────────────────────────────────
+    "gdtest_async_funcs": (
+        "Module with async def functions: async_fetch, async_process, "
+        "async_save. On the Reference page you should see these functions "
+        "with 'async' in their signatures. The coroutine return types should "
+        "display correctly. Key test: async functions render without errors."
+    ),
+    "gdtest_generators": (
+        "Module with generator functions using yield: count_up, fibonacci, "
+        "iter_chunks. On the Reference page the functions should show "
+        "Iterator/Generator return types. The yield-based docstrings should "
+        "render properly. Key test: generator signatures are handled."
+    ),
+    "gdtest_overloads": (
+        "Module using @overload from typing: process() has three overloads "
+        "(str→str, int→int, list→list) plus the implementation. On the "
+        "Reference page you should ideally see the overloaded signatures. "
+        "At minimum, the function must render without errors."
+    ),
+    "gdtest_abstract_props": (
+        "ABC with abstract methods and @property decorators. Shape class has "
+        "abstract area (property) and perimeter (property), plus concrete "
+        "describe(). Circle subclass implements them. On the Reference page "
+        "you should see both classes with property markers on the abstract "
+        "properties."
+    ),
+    "gdtest_multi_inherit": (
+        "Diamond inheritance: Base → Mixin1, Mixin2 → Combined. Each class "
+        "adds methods. On the Reference page you should see all four classes. "
+        "Combined should show its own methods and potentially inherited ones. "
+        "Key test: multiple inheritance doesn't crash the renderer."
+    ),
+    "gdtest_slots_class": (
+        "Class using __slots__ = ('x', 'y', 'label') instead of __dict__. "
+        "SlottedPoint class with three slots and four methods. On the "
+        "Reference page you should see the class with its methods. The slots "
+        "should ideally appear as documented attributes."
+    ),
+    "gdtest_frozen_dc": (
+        "Frozen dataclass: @dataclass(frozen=True) with typed fields. "
+        "Coordinate has x (float), y (float), label (str). On the Reference "
+        "page you should see the class with its field signatures and defaults. "
+        "Key test: frozen=True doesn't break introspection."
+    ),
+    "gdtest_generics": (
+        "Generic classes using TypeVar: Stack[T] with push, pop, peek methods "
+        "and a Pair[K, V] container. On the Reference page you should see "
+        "the classes with their generic type parameters. Key test: TypeVar "
+        "parameterized classes render correctly."
+    ),
+    "gdtest_context_mgr": (
+        "Context manager classes with __enter__/__exit__: ManagedResource and "
+        "Timer. On the Reference page the classes should show their dunder "
+        "methods and any public methods. Key test: context manager protocols "
+        "render cleanly."
+    ),
+    "gdtest_decorators": (
+        "Module of decorator functions: retry, cache, validate_args, log_calls. "
+        "Each returns a wrapper function. On the Reference page you should see "
+        "these in the 'Functions' section with their signatures showing the "
+        "decorator parameters like max_retries, ttl, etc."
+    ),
+    "gdtest_exceptions": (
+        "Custom exception hierarchy: AppError (base), ValidationError, "
+        "NotFoundError, PermissionError_, TimeoutError_. On the Reference "
+        "page you should see a 'Classes' section with all five exceptions. "
+        "Key test: exception classes (inheriting from Exception) render "
+        "like normal classes."
+    ),
+    "gdtest_reexports": (
+        "Package with submodules (core.py, utils.py) that re-exports symbols "
+        "via __init__.py __all__. On the Reference page you should see the "
+        "re-exported names (Engine, run, format_result, parse_input) as if "
+        "they belong to the top-level package. Submodule origins should not "
+        "be visible."
+    ),
+    # ── 78-82: Scale & stress ─────────────────────────────────────────────
+    "gdtest_many_exports": (
+        "Module with 30+ exported functions (func_01 through func_30). On "
+        "the Reference page you should see a very long 'Functions' section "
+        "listing all 30. The page should not crash or truncate. Key test: "
+        "large export count doesn't break rendering or navigation."
+    ),
+    "gdtest_deep_nesting": (
+        "Deeply nested subpackages: gdtest_deep_nesting.level1.level2.level3 "
+        "with exports at each level. On the Reference page you should see "
+        "the leaf-level exports. Key test: deep package hierarchies are "
+        "traversed without errors."
+    ),
+    "gdtest_long_docs": (
+        "Three functions with very long docstrings containing multiple "
+        "sections: Parameters, Returns, Raises, Notes, Examples (with code "
+        "blocks), Warnings, References. On the Reference page each function "
+        "should render all docstring sections fully — nothing truncated."
+    ),
+    "gdtest_many_guides": (
+        "User guide with 10 pages (01-introduction through 10-appendix). "
+        "The sidebar should list all 10 pages in order. Scrolling the "
+        "sidebar should show every page. Key test: large user guide count "
+        "doesn't break sidebar rendering."
+    ),
+    "gdtest_many_big_classes": (
+        "Five big classes each with 6+ methods: Processor, Transformer, "
+        "Validator, Formatter, Exporter. On the Reference page you should "
+        "see 'Classes' plus FIVE separate method subsections. Key test: "
+        "multiple big classes coexist without section name collisions."
+    ),
+    # ── 83-88: Build systems & layouts ────────────────────────────────────
+    "gdtest_flit": (
+        "Uses Flit build backend (flit_core.buildapi). Module location "
+        "auto-detected by Flit conventions. On the Reference page you should "
+        "see two functions (compose, publish). Key test: Flit build-system "
+        "metadata is parsed correctly for module discovery."
+    ),
+    "gdtest_pdm": (
+        "Uses PDM build backend (pdm.backend). Module location auto-detected. "
+        "On the Reference page you should see two functions (install, remove). "
+        "Key test: PDM build-system configuration is recognized."
+    ),
+    "gdtest_namespace": (
+        "Implicit namespace package (no __init__.py in top-level). Module "
+        "code lives in gdtest_namespace/sub/module.py. On the Reference page "
+        "you should see exports from the sub-module. Key test: namespace "
+        "package without __init__.py is handled gracefully."
+    ),
+    "gdtest_monorepo": (
+        "Package lives in packages/mylib/ subdirectory (monorepo pattern). "
+        "The pyproject.toml is at the subdir level. On the Reference page "
+        "you should see two functions (build, deploy). Key test: package "
+        "discovery works when not at repository root."
+    ),
+    "gdtest_multi_module": (
+        "Package with three submodules (models.py, views.py, controllers.py) "
+        "re-exported via __init__.py. On the Reference page you should see "
+        "all exports merged: Model, View, Controller classes plus create, "
+        "render, dispatch functions. Key test: multi-module packages."
+    ),
+    "gdtest_src_legacy": (
+        "src/ layout with legacy setup.py (no pyproject.toml). Module at "
+        "src/gdtest_src_legacy/. On the Reference page you should see two "
+        "functions (legacy_init, legacy_run). Key test: src/ detection works "
+        "even with setup.py-only metadata."
+    ),
+    # ── 89-95: Edge cases ─────────────────────────────────────────────────
+    "gdtest_empty_module": (
+        "Module contains only __version__ — no functions, no classes, nothing "
+        "to document. The build should succeed. The Reference page should "
+        "exist but be empty or show only the module description. Key test: "
+        "zero-export packages don't crash the build."
+    ),
+    "gdtest_all_private": (
+        "Module has mostly _private names with only one public function "
+        "(public_api). __all__ lists just public_api. On the Reference page "
+        "you should see only public_api — none of the _private_* names. "
+        "Key test: private-heavy modules filter correctly."
+    ),
+    "gdtest_duplicate_all": (
+        "Module where __all__ accidentally lists 'transform' twice. On the "
+        "Reference page transform should appear exactly once, not duplicated. "
+        "Build should not crash on the duplicate. Key test: graceful handling "
+        "of duplicate __all__ entries."
+    ),
+    "gdtest_badge_readme": (
+        "README.md with shields.io badges, images, and complex Markdown "
+        "(tables, footnotes, nested lists). The landing page should render "
+        "badges as images, tables as HTML tables, and links should be "
+        "clickable. Key test: complex Markdown in README."
+    ),
+    "gdtest_math_docs": (
+        "Docstrings containing LaTeX math notation: inline $x^2$ and block "
+        "$$\\\\sum_{i=1}^n x_i$$ equations. On the Reference page the math "
+        "should render as formatted equations (or at minimum not break the "
+        "page). Key test: math in docstrings."
+    ),
+    "gdtest_mixed_guide_ext": (
+        "User guide with mixed file extensions: intro.qmd, setup.md, and "
+        "advanced.qmd. All three should appear in the sidebar. Key test: "
+        ".md and .qmd files coexist in user_guide/."
+    ),
+    "gdtest_unicode_docs": (
+        "Docstrings with unicode characters: accented names (René), emoji "
+        "(📊), CJK characters (数据), mathematical symbols (∫∑∏). On the "
+        "Reference page all characters should render correctly without "
+        "encoding errors. Key test: unicode safety."
+    ),
+    # ── 96-100: Config matrix ─────────────────────────────────────────────
+    "gdtest_config_all_on": (
+        "Every possible config toggle set to a non-default value: parser, "
+        "display_name, source.enabled=true, dark_mode, authors, funding, "
+        "user_guide, reference sections. Key test: all config options "
+        "together don't conflict."
+    ),
+    "gdtest_config_display": (
+        "Config sets display_name='Pretty Display Name', theme color, authors "
+        "with roles, and funding info. The site title should show 'Pretty "
+        "Display Name' not the package name. Author info should appear in "
+        "the sidebar."
+    ),
+    "gdtest_config_minimal": (
+        "Config explicitly sets source.enabled=false and dark_mode=false. "
+        "The site should NOT show source code links and should NOT have a "
+        "dark mode toggle. Key test: opt-out config flags are respected."
+    ),
+    "gdtest_config_parser": (
+        "Config overrides parser to 'google' even though docstrings are "
+        "written in Google style (matching). Combined with %family directives. "
+        "On the Reference page, Google Args/Returns should parse correctly "
+        "with the explicit parser setting."
+    ),
+    "gdtest_config_extra_keys": (
+        "Config YAML includes unrecognized keys (custom_field, future_option) "
+        "alongside valid ones. The build should succeed without errors — "
+        "unknown keys should be silently ignored. Key test: forward-"
+        "compatible config parsing."
     ),
 }
 

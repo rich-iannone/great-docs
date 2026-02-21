@@ -321,6 +321,12 @@ def _build_nav_html(results: list[dict], current_name: str, hub_prefix: str = ".
         "User Guide (33-38)": [],
         "Landing Pages (39-43)": [],
         "Extras & Config (44-50)": [],
+        "Cross-Dimension (51-65)": [],
+        "API Patterns (66-77)": [],
+        "Scale & Stress (78-82)": [],
+        "Build Systems (83-88)": [],
+        "Edge Cases (89-95)": [],
+        "Config Matrix (96-100)": [],
     }
 
     cat_keys = list(categories.keys())
@@ -342,8 +348,20 @@ def _build_nav_html(results: list[dict], current_name: str, hub_prefix: str = ".
             cat = cat_keys[5]
         elif idx < 43:
             cat = cat_keys[6]
-        else:
+        elif idx < 50:
             cat = cat_keys[7]
+        elif idx < 65:
+            cat = cat_keys[8]
+        elif idx < 77:
+            cat = cat_keys[9]
+        elif idx < 82:
+            cat = cat_keys[10]
+        elif idx < 88:
+            cat = cat_keys[11]
+        elif idx < 95:
+            cat = cat_keys[12]
+        else:
+            cat = cat_keys[13]
         categories[cat].append(r)
 
     # Build dropdown items

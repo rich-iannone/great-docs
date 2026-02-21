@@ -53,8 +53,10 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "toc-depth": 2,
         "toc-title": "On this page",
     },
-    # User Guide directory
-    # If not provided, looks for user_guide/ in project root
+    # User Guide configuration
+    # If None, auto-discovers from user_guide/ directory
+    # If a string, uses that as the directory path
+    # If a list of section dicts, uses explicit ordering (overrides frontmatter sections)
     "user_guide": None,
     # API Reference configuration (explicit section ordering)
     # If not provided, auto-generates sections from discovered exports
@@ -252,9 +254,28 @@ class Config:
         return self.get("display_name")
 
     @property
-    def user_guide(self) -> str | None:
-        """Get the custom user guide directory path."""
+    def user_guide(self) -> str | list | None:
+        """Get the user guide configuration.
+
+        Returns
+        -------
+        str | list | None
+            - None: auto-discover from conventional directories
+            - str: custom directory path for user guide files
+            - list: explicit section ordering (list of section dicts)
+        """
         return self.get("user_guide")
+
+    @property
+    def user_guide_is_explicit(self) -> bool:
+        """Check if user guide uses explicit section ordering."""
+        return isinstance(self.get("user_guide"), list)
+
+    @property
+    def user_guide_dir(self) -> str | None:
+        """Get the user guide directory path (only when it's a string)."""
+        val = self.get("user_guide")
+        return val if isinstance(val, str) else None
 
     @property
     def reference(self) -> list[dict[str, Any]]:
@@ -389,11 +410,27 @@ def create_default_config() -> str:
 # Enable/disable the dark mode toggle in navbar (default: true)
 # dark_mode_toggle: true
 
-# User Guide Directory
-# --------------------
+# User Guide
+# ----------
 # Custom directory for User Guide .qmd files (relative to project root).
 # If not provided, looks for user_guide/ in the project root.
 # user_guide: docs/guides
+#
+# For explicit control over section ordering and grouping:
+# user_guide:
+#   - section: "Get Started"
+#     contents:
+#       - text: "Welcome"
+#         href: index.qmd
+#       - quickstart.qmd
+#       - installation.qmd
+#   - section: "Advanced Topics"
+#     contents:
+#       - advanced-config.qmd
+#       - extending.qmd
+#
+# File paths are relative to the user guide directory (no user_guide/ prefix).
+# When using explicit ordering, numeric filename prefixes are preserved as-is.
 
 # Author Information
 # ------------------

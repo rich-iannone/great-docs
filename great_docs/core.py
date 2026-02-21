@@ -118,13 +118,13 @@ class GreatDocs:
         """
         Copy user guide files from project root to build directory.
 
-        Resolves the source directory using the same logic as `_discover_user_guide`:
-        the `user_guide` config option takes precedence, then `user_guide/` and
-        `user-guide/` conventional directories are checked.
+        Resolves the source directory using ``_find_user_guide_dir()``.
+        When ``user_guide`` config is a list (explicit ordering), only the directory
+        is resolved from conventional locations.
 
         Copies .qmd and .md files to great-docs/user-guide/ directory.
         """
-        configured_path = self._config.user_guide
+        configured_path = self._config.user_guide_dir  # str or None (ignores list)
 
         if configured_path is not None:
             source_user_guide = self.project_root / configured_path
@@ -1255,21 +1255,158 @@ class GreatDocs:
     # User Guide Methods
     # =========================================================================
 
+    def _find_user_guide_dir(self) -> Path | None:
+        """
+        Find the user guide source directory.
+
+        Resolves the directory in the following order:
+
+        1. If ``user_guide`` is a string in great-docs.yml, that path is used.
+        2. Otherwise, looks for ``user_guide/`` then ``user-guide/`` in the project root.
+
+        Returns
+        -------
+        Path | None
+            Path to the user guide source directory, or None if not found.
+        """
+        package_root = self._find_package_root()
+        configured_dir = self._config.user_guide_dir  # str or None (ignores list)
+
+        if configured_dir is not None:
+            user_guide_dir = package_root / configured_dir
+
+            # Warn if conventional directory also exists but is being ignored
+            conventional_dir = package_root / "user_guide"
+            if conventional_dir.exists() and conventional_dir.is_dir():
+                if user_guide_dir.resolve() != conventional_dir.resolve():
+                    print(
+                        f"   ⚠️  Both 'user_guide' config option ('{configured_dir}') and "
+                        f"'user_guide/' directory exist; using configured path"
+                    )
+
+            if not user_guide_dir.exists() or not user_guide_dir.is_dir():
+                print(
+                    f"   ⚠️  User guide directory '{configured_dir}' "
+                    f"specified in great-docs.yml does not exist"
+                )
+                return None
+
+            return user_guide_dir
+
+        # Fall back to conventional directory names
+        user_guide_dir = package_root / "user_guide"
+        if not user_guide_dir.exists() or not user_guide_dir.is_dir():
+            user_guide_dir = package_root / "user-guide"
+        if not user_guide_dir.exists() or not user_guide_dir.is_dir():
+            return None
+
+        return user_guide_dir
+
+    def _discover_user_guide_explicit(
+        self, user_guide_dir: Path, explicit_config: list[dict]
+    ) -> dict | None:
+        """
+        Build user guide info from explicit section ordering in great-docs.yml.
+
+        When ``user_guide`` is a list of section dicts in the config, this method
+        resolves the referenced files and builds the user_guide_info structure.
+        Files are referenced by name relative to the user guide source directory
+        (no ``user_guide/`` prefix needed). Numeric filename prefixes are preserved.
+
+        Parameters
+        ----------
+        user_guide_dir
+            Path to the user guide source directory.
+        explicit_config
+            The list of section dicts from ``user_guide`` config.
+
+        Returns
+        -------
+        dict | None
+            User guide info structure with ``explicit`` flag set to True, or None
+            if no valid files are found.
+        """
+        files_info = []
+        sections: dict[str, list] = {}
+        has_index = False
+        seen_files: set[str] = set()
+
+        for section_entry in explicit_config:
+            section_name = section_entry.get("section", "")
+            section_contents = section_entry.get("contents", [])
+
+            if not section_name or not section_contents:
+                continue
+
+            section_files = []
+
+            for item in section_contents:
+                # Each item is either a string (filename) or a dict with text/href
+                if isinstance(item, str):
+                    filename = item
+                    custom_text = None
+                elif isinstance(item, dict):
+                    filename = item.get("href", "")
+                    custom_text = item.get("text")
+                else:
+                    continue
+
+                if not filename or filename in seen_files:
+                    continue
+
+                # Resolve the file in the source directory
+                file_path = user_guide_dir / filename
+                if not file_path.exists():
+                    print(f"   ⚠️  User guide file '{filename}' referenced in config does not exist")
+                    continue
+
+                seen_files.add(filename)
+
+                # Parse the file for title/frontmatter
+                file_info = self._parse_user_guide_file(file_path)
+                if not file_info:
+                    continue
+
+                # Override section from config (not frontmatter)
+                file_info["section"] = section_name
+
+                # Store custom text if provided
+                if custom_text:
+                    file_info["custom_text"] = custom_text
+
+                files_info.append(file_info)
+                section_files.append(file_info)
+
+                if file_path.name == "index.qmd":
+                    has_index = True
+
+            if section_files:
+                sections[section_name] = section_files
+
+        if not files_info:
+            return None
+
+        return {
+            "files": files_info,
+            "sections": sections,
+            "has_index": has_index,
+            "source_dir": user_guide_dir,
+            "explicit": True,
+            "explicit_config": explicit_config,
+        }
+
     def _discover_user_guide(self) -> dict | None:
         """
         Discover user guide content from the user_guide directory.
 
-        Looks for a `user_guide/` directory in the project root and discovers all .qmd files within
-        it. Files are sorted by filename to support ordering via prefixes like `00-intro.qmd`,
-        `01-installation.qmd`.
+        Supports two modes:
 
-        The source directory is resolved in the following order:
+        1. **Explicit ordering**: When ``user_guide`` in great-docs.yml is a list of
+           section dicts, files are ordered and grouped exactly as specified.
+        2. **Auto-discovery**: When ``user_guide`` is a string (directory path) or None,
+           files are discovered from the directory and sorted by filename.
 
-        1. If `user_guide` is set in great-docs.yml, that path is used (relative to project root).
-        2. Otherwise, looks for `user_guide/` then `user-guide/` in the project root.
-
-        If the `user_guide` config option is set and a `user_guide/` directory also exists,
-        the config option takes precedence and the conventional directory is ignored.
+        The source directory is resolved by ``_find_user_guide_dir()``.
 
         Returns
         -------
@@ -1278,39 +1415,23 @@ class GreatDocs:
             Structure: {
                 "files": [{"path": Path, "section": str | None, "title": str}, ...],
                 "sections": {"Section Name": [file_info, ...], ...},
-                "has_index": bool
+                "has_index": bool,
+                "source_dir": Path,
+                "explicit": bool  (True when using explicit config ordering)
             }
         """
-        package_root = self._find_package_root()
-        configured_path = self._config.user_guide
-
-        if configured_path is not None:
-            # Config option takes precedence
-            user_guide_dir = package_root / configured_path
-
-            # Warn if the conventional directory also exists but is being ignored
-            conventional_dir = package_root / "user_guide"
-            if conventional_dir.exists() and conventional_dir.is_dir():
-                if user_guide_dir.resolve() != conventional_dir.resolve():
-                    print(
-                        f"   ⚠️  Both 'user_guide' config option ('{configured_path}') and "
-                        f"'user_guide/' directory exist; using configured path"
-                    )
-
-            if not user_guide_dir.exists() or not user_guide_dir.is_dir():
-                print(
-                    f"   ⚠️  User guide directory '{configured_path}' "
-                    f"specified in great-docs.yml does not exist"
-                )
+        # Check for explicit section ordering in config
+        user_guide_config = self._config.user_guide
+        if isinstance(user_guide_config, list):
+            user_guide_dir = self._find_user_guide_dir()
+            if not user_guide_dir:
                 return None
-        else:
-            # Fall back to conventional directory names
-            user_guide_dir = package_root / "user_guide"
-            if not user_guide_dir.exists() or not user_guide_dir.is_dir():
-                # Also check for 'user-guide' with hyphen
-                user_guide_dir = package_root / "user-guide"
-            if not user_guide_dir.exists() or not user_guide_dir.is_dir():
-                return None
+            return self._discover_user_guide_explicit(user_guide_dir, user_guide_config)
+
+        # Auto-discovery mode
+        user_guide_dir = self._find_user_guide_dir()
+        if not user_guide_dir:
+            return None
 
         # Find all .qmd files (not in subdirectories that are likely asset folders)
         qmd_files = []
@@ -1365,6 +1486,7 @@ class GreatDocs:
             "sections": sections,
             "has_index": has_index,
             "source_dir": user_guide_dir,
+            "explicit": False,
         }
 
     def _parse_user_guide_file(self, qmd_path: Path) -> dict | None:
@@ -1447,8 +1569,11 @@ class GreatDocs:
         """
         Copy user guide files from project root to docs directory.
 
-        Adds `bread-crumbs: false` to the frontmatter of each file to disable breadcrumb navigation
-        on user guide pages.
+        Adds ``bread-crumbs: false`` to the frontmatter of each file to disable breadcrumb
+        navigation on user guide pages.
+
+        When using explicit ordering (``user_guide`` is a list in config), filenames are
+        preserved as-is. In auto-discovery mode, numeric prefixes are stripped for cleaner URLs.
 
         Parameters
         ----------
@@ -1467,9 +1592,9 @@ class GreatDocs:
         target_dir = self.project_path / "user-guide"
         target_dir.mkdir(parents=True, exist_ok=True)
 
+        is_explicit = user_guide_info.get("explicit", False)
         copied_files = []
 
-        # Copy all .qmd files, renaming to strip numeric prefix for cleaner URLs
         for file_info in user_guide_info["files"]:
             src_path = file_info["path"]
 
@@ -1479,12 +1604,15 @@ class GreatDocs:
             except ValueError:
                 rel_path = Path(src_path.name)
 
-            # Strip numeric prefix from filename for cleaner URLs
-            # e.g., "00-introduction.qmd" -> "introduction.qmd"
-            clean_filename = self._strip_numeric_prefix(rel_path.name)
-            clean_rel_path = rel_path.parent / clean_filename
+            if is_explicit:
+                # Explicit mode: preserve filenames as-is
+                dest_rel_path = rel_path
+            else:
+                # Auto-discovery mode: strip numeric prefix for cleaner URLs
+                clean_filename = self._strip_numeric_prefix(rel_path.name)
+                dest_rel_path = rel_path.parent / clean_filename
 
-            dst_path = target_dir / clean_rel_path
+            dst_path = target_dir / dest_rel_path
             dst_path.parent.mkdir(parents=True, exist_ok=True)
 
             # Read the source file and modify frontmatter
@@ -1494,11 +1622,11 @@ class GreatDocs:
             # Add bread-crumbs: false to frontmatter
             content = self._add_frontmatter_option(content, "bread-crumbs", False)
 
-            # Write to destination with clean filename
+            # Write to destination
             with open(dst_path, "w", encoding="utf-8") as f:
                 f.write(content)
 
-            copied_files.append(f"user-guide/{clean_rel_path}")
+            copied_files.append(f"user-guide/{dest_rel_path}")
 
         # Also copy any asset directories (directories without .qmd files)
         for item in source_dir.iterdir():
@@ -1565,6 +1693,103 @@ class GreatDocs:
     def _generate_user_guide_sidebar(self, user_guide_info: dict) -> dict:
         """
         Generate sidebar configuration for the user guide.
+
+        In explicit mode, builds the sidebar directly from the config structure.
+        In auto-discovery mode, builds it from discovered files and frontmatter sections.
+
+        Parameters
+        ----------
+        user_guide_info
+            User guide structure from _discover_user_guide.
+
+        Returns
+        -------
+        dict
+            Sidebar configuration dict for Quarto.
+        """
+        is_explicit = user_guide_info.get("explicit", False)
+
+        if is_explicit:
+            return self._generate_user_guide_sidebar_explicit(user_guide_info)
+
+        return self._generate_user_guide_sidebar_auto(user_guide_info)
+
+    def _generate_user_guide_sidebar_explicit(self, user_guide_info: dict) -> dict:
+        """
+        Generate sidebar from explicit config ordering.
+
+        Builds the sidebar structure directly from the ``user_guide`` config list,
+        preserving exact section ordering and file ordering as specified by the user.
+        Filenames are used as-is (no numeric prefix stripping).
+
+        Parameters
+        ----------
+        user_guide_info
+            User guide structure from _discover_user_guide_explicit.
+
+        Returns
+        -------
+        dict
+            Sidebar configuration dict for Quarto.
+        """
+        explicit_config = user_guide_info["explicit_config"]
+        source_dir = user_guide_info["source_dir"]
+        contents = []
+
+        for section_entry in explicit_config:
+            section_name = section_entry.get("section", "")
+            section_contents = section_entry.get("contents", [])
+
+            if not section_name or not section_contents:
+                continue
+
+            sidebar_section_contents = []
+
+            for item in section_contents:
+                if isinstance(item, str):
+                    filename = item
+                    custom_text = None
+                elif isinstance(item, dict):
+                    filename = item.get("href", "")
+                    custom_text = item.get("text")
+                else:
+                    continue
+
+                if not filename:
+                    continue
+
+                # Verify the file exists in the source directory
+                file_path = source_dir / filename
+                if not file_path.exists():
+                    continue
+
+                href = f"user-guide/{filename}"
+
+                if custom_text:
+                    sidebar_section_contents.append({"text": custom_text, "href": href})
+                else:
+                    sidebar_section_contents.append(href)
+
+            if sidebar_section_contents:
+                contents.append(
+                    {
+                        "section": section_name,
+                        "contents": sidebar_section_contents,
+                    }
+                )
+
+        return {
+            "id": "user-guide",
+            "title": "User Guide",
+            "contents": contents,
+        }
+
+    def _generate_user_guide_sidebar_auto(self, user_guide_info: dict) -> dict:
+        """
+        Generate sidebar from auto-discovered files.
+
+        Builds the sidebar structure from discovered files and frontmatter sections,
+        stripping numeric prefixes from filenames for cleaner URLs.
 
         Parameters
         ----------
@@ -1735,6 +1960,11 @@ class GreatDocs:
             return False
 
         print("\n📖 Processing User Guide...")
+
+        is_explicit = user_guide_info.get("explicit", False)
+        if is_explicit:
+            print("   Using explicit section ordering from great-docs.yml")
+
         print(f"   Found {len(user_guide_info['files'])} page(s)")
 
         # Copy files to docs directory

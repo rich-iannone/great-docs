@@ -1,0 +1,4 @@
+# Config variation: CLI documentation enabled
+# Only compatible with packages that have Click CLI commands
+cli:
+  enabled: true

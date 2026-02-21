@@ -1,0 +1,2 @@
+# Config variation: Static analysis mode (no dynamic introspection)
+dynamic: false

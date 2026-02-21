@@ -1,0 +1,13 @@
+# Config variation: Authors with rich metadata
+authors:
+  - name: "Alice Smith"
+    email: "alice@example.com"
+    role: "Lead Developer"
+    affiliation: "Example Corp"
+    github: "alicesmith"
+    homepage: "https://alice.example.com"
+    orcid: "0000-0002-1234-5678"
+  - name: "Bob Jones"
+    email: "bob@example.com"
+    role: "Contributor"
+    github: "bobjones"

@@ -1,0 +1,3 @@
+# Config variation: Sidebar filter disabled
+sidebar_filter:
+  enabled: false

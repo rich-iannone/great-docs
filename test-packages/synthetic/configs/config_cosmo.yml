@@ -1,0 +1,6 @@
+# Config variation: Non-default Quarto theme
+site:
+  theme: "cosmo"
+  toc: true
+  toc-depth: 3
+  toc-title: "Contents"

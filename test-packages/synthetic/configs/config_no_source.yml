@@ -1,0 +1,3 @@
+# Config variation: Source links disabled
+source:
+  enabled: false

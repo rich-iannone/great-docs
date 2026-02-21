@@ -1,0 +1,35 @@
+# Config variation: All options set to non-default values
+# Used for exhaustive feature toggle testing
+display_name: "Full Config Test"
+parser: google
+dynamic: false
+github_style: "icon"
+dark_mode_toggle: false
+
+source:
+  enabled: true
+  placement: "title"
+  branch: "develop"
+
+sidebar_filter:
+  enabled: true
+  min_items: 5
+
+site:
+  theme: "cosmo"
+  toc: true
+  toc-depth: 3
+  toc-title: "Contents"
+
+authors:
+  - name: "Test Author"
+    email: "test@example.com"
+    role: "Maintainer"
+    github: "testuser"
+    orcid: "0000-0000-0000-0001"
+
+funding:
+  name: "Test Foundation"
+  roles:
+    - "Funder"
+  homepage: "https://example.com"

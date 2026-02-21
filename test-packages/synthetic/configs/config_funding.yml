@@ -1,0 +1,8 @@
+# Config variation: Funding organization with ROR
+funding:
+  name: "Open Source Foundation"
+  roles:
+    - "Copyright holder"
+    - "Funder"
+  homepage: "https://opensourcefoundation.example.com"
+  ror: "https://ror.org/03wc8by49"

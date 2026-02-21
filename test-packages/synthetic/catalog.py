@@ -149,284 +149,329 @@ DIMENSIONS: dict[str, dict[str, str]] = {
 
 PACKAGE_DESCRIPTIONS: dict[str, str] = {
     "gdtest_minimal": (
-        "The simplest possible package: a single flat module with one function "
-        "that has a NumPy-style docstring and an explicit __all__. This is the "
-        "baseline build — if this fails, nothing else will work. Verifies that "
-        "Great Docs can detect the package name from pyproject.toml, find the "
-        "module in a flat layout, and render a minimal reference page."
+        "The simplest possible package: two functions (greet, add) with NumPy "
+        "docstrings in a flat layout. On the Reference page you should see a "
+        "single 'Functions' section listing both. Each function should show a "
+        "Parameters table and a Returns block. If this build fails, nothing "
+        "else will work."
     ),
     "gdtest_google": (
-        "A flat-layout package whose docstrings are written entirely in Google "
-        "style (Args/Returns/Raises sections). Tests that the docstring format "
-        "auto-detector correctly identifies Google style and that parameter "
-        "tables, return values, and exception lists render properly."
+        "Three functions (connect, disconnect, send_message) documented in "
+        "Google style with Args/Returns/Raises sections. On the Reference page "
+        "you should see a 'Functions' section. Each function's rendered docs "
+        "should display parameter tables and return types parsed from the "
+        "Google-style format — not raw 'Args:' text."
     ),
     "gdtest_sphinx": (
-        "Docstrings written in classic Sphinx/reST style using :param:, "
-        ":returns:, :rtype:, and :raises: field lists. Verifies the docstring "
-        "parser handles Sphinx conventions and that the rendered output "
-        "correctly shows parameter types, defaults, and exception information."
+        "Three exports (Timer class, start_timer, format_duration) with "
+        "classic Sphinx :param:/:returns:/:rtype:/:raises: field lists. On "
+        "the Reference page you should see 'Classes' and 'Functions' sections. "
+        "Parameter types and defaults should be rendered from the Sphinx field "
+        "list syntax, not shown as raw :param: markers."
     ),
     "gdtest_nodocs": (
-        "A package where every exported object — functions, classes, and "
-        "constants — has no docstring at all. Tests that Great Docs gracefully "
-        "handles undocumented objects without crashing, still lists them in the "
-        "reference, and does not produce broken HTML."
+        "Four exports (Processor class, run, stop, status) with zero "
+        "docstrings. On the Reference page you should see 'Classes' and "
+        "'Functions' sections listing all four items, but each entry should "
+        "have no description text — just the signature. The page must not "
+        "crash or show broken rendering."
     ),
     "gdtest_mixed_docs": (
-        "A single module that mixes NumPy-style and Google-style docstrings "
-        "across different functions. Tests per-object docstring format "
-        "detection and verifies that both styles render cleanly within the "
-        "same reference page."
+        "Five exports (Converter class, encode, decode, validate, transform) "
+        "mixing NumPy and Google docstrings in the same module. On the "
+        "Reference page you should see 'Classes' and 'Functions' sections. "
+        "Both docstring styles should be rendered cleanly — NumPy Parameters "
+        "tables and Google Args sections should both appear correctly."
     ),
     "gdtest_src_layout": (
-        "A modern src-layout package where the importable module lives under "
-        "src/gdtest_src_layout/. This is the most common layout for packages "
-        "using modern Python packaging. Tests that Great Docs correctly "
-        "searches the src/ subdirectory when locating __init__.py."
+        "Module lives under src/gdtest_src_layout/ (modern src-layout). "
+        "Three exports (Widget class, create_widget, destroy_widget). On the "
+        "Reference page you should see 'Classes' and 'Functions' sections. "
+        "The key test: Great Docs must find the module inside src/ without "
+        "any explicit path configuration."
     ),
     "gdtest_python_layout": (
-        "Uses the less common python/ subdirectory layout (e.g., as used by "
-        "some scientific packages). The module lives at python/gdtest_pylayout/. "
-        "Verifies Great Docs expands its search path to include python/ as a "
-        "source root."
+        "Module lives under python/gdtest_pylayout/ (less common convention). "
+        "Two functions (read_file, write_file). On the Reference page you "
+        "should see a 'Functions' section with both. The key test: Great Docs "
+        "searches the python/ subdirectory as a source root."
     ),
     "gdtest_lib_layout": (
-        "Uses a lib/ subdirectory layout for the module source. Similar to "
-        "python/ but with lib/ as the source root. Tests that all three "
-        "non-standard source roots (src/, python/, lib/) are handled."
+        "Module lives under lib/gdtest_lib_layout/. Two functions "
+        "(open_connection, close_connection). On the Reference page you should "
+        "see a 'Functions' section with both. The key test: lib/ is recognized "
+        "as a source root alongside src/ and python/."
     ),
     "gdtest_hatch": (
-        "Configured with the Hatch build system, specifying an explicit wheel "
-        "package location via [tool.hatch.build.targets.wheel]. The importable "
-        "module name differs from the project name. Tests that Great Docs "
-        "reads Hatch build metadata to resolve the correct module."
+        "Uses the Hatch build system with [tool.hatch.build.targets.wheel] "
+        "specifying the package location. The module name (gdtest_hatch_pkg) "
+        "differs from the project name (gdtest-hatch). On the Reference page "
+        "you should see 'Classes' (Builder) and 'Functions' (build, clean). "
+        "The key test: module discovery via Hatch metadata."
     ),
     "gdtest_setuptools_find": (
-        "Uses setuptools find:packages with a where=src directive in "
-        "pyproject.toml. The module is at src/gdtest_stfind/. Tests that Great "
-        "Docs parses setuptools find configuration to locate the package root "
-        "rather than relying on simple directory scanning."
+        "Uses setuptools find:packages with where=src. Module is at "
+        "src/gdtest_stfind/ (different name from the project). Three exports "
+        "(Scanner class, scan, report). On the Reference page you should see "
+        "'Classes' and 'Functions' sections. The key test: Great Docs parses "
+        "setuptools find configuration to locate the correct module."
     ),
     "gdtest_setup_cfg": (
-        "An older-style package that uses only setup.cfg for metadata — there "
-        "is no pyproject.toml. Tests that Great Docs can detect the package "
-        "name and version from setup.cfg's [metadata] section and still "
-        "produce a working documentation site."
+        "No pyproject.toml — only setup.cfg for metadata. Two functions "
+        "(ping, pong). On the Reference page you should see a 'Functions' "
+        "section. The site title should be 'gdtest-setup-cfg' (read from "
+        "setup.cfg [metadata]). The key test: metadata detection falls back "
+        "to setup.cfg."
     ),
     "gdtest_setup_py": (
-        "A legacy package with only a setup.py file containing a setup() call. "
-        "No pyproject.toml or setup.cfg. Tests the oldest supported metadata "
-        "format and verifies that Great Docs falls back to parsing setup.py "
-        "for the package name."
+        "No pyproject.toml, no setup.cfg — only a legacy setup.py. Two "
+        "functions (echo, reverse). On the Reference page you should see a "
+        "'Functions' section. The site title should be 'gdtest-setup-py'. "
+        "The key test: name detection falls back to parsing setup.py."
     ),
     "gdtest_auto_discover": (
-        "A package with no metadata files at all — no pyproject.toml, no "
-        "setup.cfg, no setup.py. The only signal is a single top-level "
-        "directory containing __init__.py. Tests the auto-discovery fallback "
-        "where Great Docs infers the package from directory structure alone."
+        "No pyproject.toml, no setup.cfg, no setup.py — zero metadata files. "
+        "Three exports (Engine class, ignite, shutdown). On the Reference page "
+        "you should see 'Classes' and 'Functions' sections. The key test: "
+        "Great Docs discovers the package purely from directory structure."
     ),
     "gdtest_no_all": (
-        "A module with no __all__ list defined. Functions and classes are "
-        "defined at module scope alongside private names. Tests the griffe "
-        "fallback discovery mode that infers the public API by examining "
-        "module-level definitions and filtering out private names."
+        "Module defines functions and classes but has no __all__ list. Three "
+        "exports (Registry class, create_registry, list_keys) discovered via "
+        "griffe fallback. On the Reference page you should see these three "
+        "items but NOT any names starting with underscore. The key test: "
+        "griffe-based public API inference without __all__."
     ),
     "gdtest_gt_exclude": (
-        "Defines __all__ with several exports but also sets __gt_exclude__ = "
-        "['secret_func'] to exclude specific names from documentation. Tests "
-        "the legacy exclusion mechanism that lets package authors hide objects "
-        "without removing them from __all__."
+        "Defines __all__ with four items but sets __gt_exclude__ = "
+        "['internal_func', 'helper'] to hide two. On the Reference page you "
+        "should see only public_func and PublicClass — internal_func and "
+        "helper must be absent. The key test: code-level exclusion via the "
+        "legacy __gt_exclude__ mechanism."
     ),
     "gdtest_config_exclude": (
-        "All functions are listed in __all__, but great-docs.yml contains an "
-        "exclude list that removes specific names. Tests config-level "
-        "exclusion as an alternative to code-level __gt_exclude__, useful when "
-        "authors cannot or prefer not to modify package source."
+        "All four exports are in __all__, but great-docs.yml excludes "
+        "helper_func and InternalClass. On the Reference page you should see "
+        "only PublicAPI and transform — the excluded items must be absent. "
+        "The key test: config-level exclusion as an alternative to code-level "
+        "__gt_exclude__."
     ),
     "gdtest_auto_exclude": (
-        "Exports common utility names like main, cli, config, setup, and "
-        "conftest that match Great Docs' AUTO_EXCLUDE set. Tests that these "
-        "boilerplate names are automatically filtered out of the reference "
-        "unless explicitly overridden."
+        "Module exports common boilerplate names (main, cli, config, utils, "
+        "logger) alongside real API (MyClass, real_func). On the Reference "
+        "page you should see only MyClass and real_func — the AUTO_EXCLUDE "
+        "names must be filtered out automatically."
     ),
     "gdtest_small_class": (
-        "A package with small classes that have 5 or fewer public methods. "
-        "Small classes are rendered inline in the reference page rather than "
-        "getting their own separate method section. Tests the threshold logic "
-        "that decides between inline and expanded rendering."
+        "Two small classes (Point, Color) each with ≤5 methods. On the "
+        "Reference page you should see a 'Classes' section where methods are "
+        "rendered inline within each class entry — there should be NO separate "
+        "'Point Methods' or 'Color Methods' subsection pages."
     ),
     "gdtest_big_class": (
-        "Contains a class with more than 5 public methods, which triggers "
-        "Great Docs' expanded rendering mode. Each method gets its own "
-        "subsection on a dedicated methods page. Tests method extraction, "
-        "sorting, and the big-class section generation pipeline."
+        "DataProcessor class has 8 public methods, exceeding the threshold "
+        "for expanded rendering. On the Reference page you should see three "
+        "sections: 'Classes', 'DataProcessor Methods' (a dedicated subsection "
+        "listing all 8 methods), and 'Functions' (load_data, save_data). "
+        "The key test: big-class method extraction into a separate section."
     ),
     "gdtest_dataclasses": (
-        "Uses Python @dataclass decorators with various field types including "
-        "defaults, field() calls, and type annotations. Tests that Great Docs "
-        "correctly represents dataclass fields in the reference and renders "
-        "their docstrings and type hints."
+        "Two @dataclass types (Config, Record) with typed fields, defaults, "
+        "and field() calls. On the Reference page you should see a 'Classes' "
+        "section. Each dataclass should show its field signatures with type "
+        "annotations and default values rendered in the constructor docs."
     ),
     "gdtest_enums": (
-        "Defines Enum and IntEnum subclasses with documented members. Tests "
-        "that enum types are correctly identified, their values are displayed "
-        "in the reference, and member docstrings (if any) are rendered."
+        "Two enum types: Color (Enum with RED/GREEN/BLUE) and Priority "
+        "(IntEnum with LOW/MEDIUM/HIGH). On the Reference page you should "
+        "see a 'Classes' section listing both. Enum members and their values "
+        "should be visible in the rendered docs."
     ),
     "gdtest_typed_containers": (
-        "Uses NamedTuple and TypedDict — typed container types that have "
-        "field-level documentation via docstrings or annotations. Tests that "
-        "these special class forms are rendered with their field signatures "
-        "intact."
+        "Coordinate (NamedTuple) and UserProfile (TypedDict) — typed "
+        "container types with field-level annotations. On the Reference page "
+        "you should see a 'Classes' section. Each type's fields should appear "
+        "with their type annotations intact."
     ),
     "gdtest_protocols": (
-        "Defines ABC abstract base classes and Protocol types with abstract "
-        "methods. Tests that abstract methods are marked correctly in the "
-        "rendered docs and that Protocol structural typing is represented."
+        "Serializable (ABC) and Renderable (Protocol) with abstract methods. "
+        "On the Reference page you should see a 'Classes' section listing "
+        "both. Abstract methods should be shown with their signatures. "
+        "The key test: ABC/Protocol types are handled without errors."
     ),
     "gdtest_descriptors": (
-        "A class with @property, @classmethod, and @staticmethod descriptors. "
-        "Tests that each descriptor kind is identified and rendered with the "
-        "correct decorator label and signature."
+        "Resource class with @property (name), @classmethod (from_dict), and "
+        "@staticmethod (validate). On the Reference page you should see a "
+        "'Classes' section. Each descriptor should display with its correct "
+        "decorator label — property, classmethod, or staticmethod markers."
     ),
     "gdtest_dunders": (
-        "A class that defines dunder methods: __init__, __repr__, __eq__, "
-        "__len__, __getitem__, and __iter__. Tests that dunder methods are "
-        "included in documentation when they have docstrings, and that their "
-        "signatures render correctly."
+        "Collection class with 6 dunder methods: __init__, __repr__, __eq__, "
+        "__len__, __getitem__, __iter__. On the Reference page you should see "
+        "a 'Classes' section. The dunder methods should appear in the class "
+        "documentation with their docstrings and signatures rendered."
     ),
     "gdtest_nested_class": (
-        "Contains a class with inner/nested class definitions. Tests how "
-        "Great Docs handles nested classes — whether they appear as separate "
-        "reference items or are nested under the parent class."
+        "Tree class with a nested Node inner class. On the Reference page you "
+        "should see a 'Classes' section with Tree. The inner Node class should "
+        "appear under Tree — check whether it renders as a nested entry or a "
+        "separate top-level item."
     ),
     "gdtest_constants": (
-        "Module-level constants and type aliases (using TypeAlias or plain "
-        "assignment). Tests that non-callable exports are recognized and "
-        "rendered in the reference with their values and type annotations."
+        "Five exports: three constants (DEFAULT_TIMEOUT, MAX_RETRIES, "
+        "SUPPORTED_FORMATS), one type alias (HandlerFunc), and one function "
+        "(process). On the Reference page you should see both constants and "
+        "the function listed. Constants should show their values and type "
+        "annotations."
     ),
     "gdtest_families": (
-        "Functions tagged with the %family directive in their docstrings to "
-        "group them into named sections (e.g., 'Input/Output', 'Transform'). "
-        "Tests that the %family directive is parsed and that the reference "
-        "page organizes items under the correct section headings."
+        "Eight exports grouped by %family into 'Validation' (Validate, "
+        "col_vals_gt, col_vals_lt, col_vals_between, col_exists) and "
+        "'Formatting' (fmt_number, fmt_percent), plus one ungrouped (helper). "
+        "On the Reference page you should see these as separate section "
+        "headings — NOT a single flat 'Functions' list."
     ),
     "gdtest_ordered": (
-        "Combines %family with %order directives to control both grouping and "
-        "sort order within each section. Tests that items appear in the "
-        "specified numeric order rather than alphabetically."
+        "Seven exports grouped by %family + %order: 'Processing' (Pipeline, "
+        "step_validate, step_transform, step_load, step_export) and 'Logging' "
+        "(log_start, log_end). On the Reference page the items within each "
+        "section should appear in the specified numeric order, not "
+        "alphabetically. Check that step_validate comes before step_transform."
     ),
     "gdtest_seealso": (
-        "Functions with %seealso directives linking to related functions. "
-        "Tests that cross-reference links are generated correctly in the "
-        "rendered output, pointing to other documented items on the same "
-        "reference page."
+        "Four exports (Encoder class, encode, decode, validate) with %seealso "
+        "cross-references. On the Reference page, each function's docs should "
+        "include a 'See Also' block with links to the related functions. "
+        "For example, encode's docs should link to decode and validate."
     ),
     "gdtest_nodoc": (
-        "Some functions are tagged with %nodoc in their docstrings to exclude "
-        "them from documentation entirely. Tests that %nodoc items are "
-        "filtered out during reference generation while other exports remain."
+        "Four exports in __all__ (Calculator, compute, reset, debug_info) but "
+        "reset and debug_info are tagged with %nodoc. On the Reference page "
+        "you should see only Calculator and compute — reset and debug_info "
+        "must be completely absent from the rendered docs."
     ),
     "gdtest_mixed_directives": (
-        "A package where some functions use directives (%family, %order, "
-        "%seealso) and others have none. Tests that the directive parser "
-        "handles the mix gracefully — directive-tagged items are grouped and "
-        "ordered while plain items fall into a default section."
+        "Six exports: three tagged with %family 'Parsing' (Parser, parse_json, "
+        "parse_csv) and three with no directives (format_output, "
+        "validate_schema, count_records). On the Reference page you should "
+        "see a 'Parsing' section heading for the tagged items and a separate "
+        "default section for the untagged ones."
     ),
     "gdtest_user_guide_auto": (
-        "Has a user_guide/ directory with numerically-prefixed .qmd files "
-        "(01-intro.qmd, 02-basics.qmd, etc.). Tests the auto-discovery mode "
-        "that finds user guide pages and orders them by their numeric prefix."
+        "Has user_guide/ with three numbered files: 01-intro.qmd, "
+        "02-quickstart.qmd, 03-advanced.qmd. The sidebar should show a "
+        "'User Guide' section with these three pages in numeric order. "
+        "Clicking each should navigate to the corresponding guide page. "
+        "The Reference page should show App (class) and run_app (function)."
     ),
     "gdtest_user_guide_sections": (
-        "User guide .qmd files include frontmatter with guide-section keys "
-        "that group pages under section headings in the sidebar. Tests that "
-        "guide-section metadata is parsed and reflected in the navigation."
+        "Has user_guide/ with four pages that use frontmatter guide-section "
+        "keys: 01-welcome and 02-install under 'Getting Started', "
+        "03-customization and 04-plugins under 'Advanced'. In the sidebar, "
+        "user guide pages should be grouped under these section headings, "
+        "not listed flat."
     ),
     "gdtest_user_guide_subdirs": (
-        "User guide pages are organized into subdirectories (getting-started/, "
-        "advanced/) rather than a flat list. Tests that the recursive "
-        "discovery walks subdirectories and preserves hierarchy."
+        "User guide pages are in subdirectories: user_guide/basics/ "
+        "(01-intro.qmd, 02-setup.qmd) and user_guide/advanced/ (01-tips.qmd). "
+        "The sidebar should show user guide pages preserving the subdirectory "
+        "hierarchy — basics and advanced as separate groups."
     ),
     "gdtest_user_guide_explicit": (
-        "The user guide page order is explicitly defined in great-docs.yml "
-        "rather than auto-discovered. Tests config-driven user guide ordering "
-        "as an alternative to filename-based sorting."
+        "User guide order is defined in great-docs.yml: 'Get Started' section "
+        "(Welcome → quickstart.qmd) then 'Advanced' section (advanced.qmd). "
+        "The sidebar should show exactly this ordering, ignoring filename "
+        "sort. 'Welcome' should use custom text (not the filename)."
     ),
     "gdtest_user_guide_custom_dir": (
-        "The user guide lives in a non-standard directory (docs/tutorials/ "
-        "instead of user_guide/). The path is specified in great-docs.yml. "
-        "Tests custom user guide directory configuration."
+        "User guide lives in docs/guides/ instead of user_guide/. The config "
+        "specifies user_guide: 'docs/guides'. In the sidebar you should see "
+        "user guide pages from this custom directory. Two functions (fetch, "
+        "store) should appear on the Reference page."
     ),
     "gdtest_user_guide_hyphen": (
-        "Uses a hyphenated directory name (user-guide/) instead of the "
-        "underscored default (user_guide/). Tests that both naming conventions "
-        "are supported for user guide auto-discovery."
+        "Uses user-guide/ (with hyphen) instead of user_guide/ (with "
+        "underscore). One guide page: 01-intro.qmd. The sidebar should show "
+        "a 'User Guide' section with this page. The key test: both naming "
+        "conventions (hyphen and underscore) are supported."
     ),
     "gdtest_readme_rst": (
-        "The landing page is a README.rst written in reStructuredText rather "
-        "than Markdown. Tests RST-to-QMD conversion and verifies that RST "
-        "constructs (headings, code blocks, links) translate correctly."
+        "Landing page source is README.rst in reStructuredText. The landing "
+        "page should show the converted content — RST headings, code blocks, "
+        "and links should render as proper HTML, not raw RST markup. Two "
+        "functions (convert, parse) on the Reference page."
     ),
     "gdtest_index_qmd": (
-        "Provides an index.qmd file that Great Docs uses as-is for the "
-        "landing page, without any conversion or generation. Tests the "
-        "pass-through behavior for pre-authored Quarto index files."
+        "Provides an index.qmd with title 'Custom Landing Page'. The landing "
+        "page should display this Quarto content as-is — look for the text "
+        "'This is a custom landing page written in Quarto markdown.' The "
+        "Reference page should show one function (hello)."
     ),
     "gdtest_index_md": (
-        "Has both README.md and index.md at the project root. index.md takes "
-        "priority over README.md as the landing page source. Tests the file "
-        "priority ordering in landing page detection."
+        "Has both README.md and index.md. The landing page should show the "
+        "index.md content ('Custom Index') NOT the README.md content. Look "
+        "for the text 'This is index.md and should take priority over "
+        "README.md.' One function (greet) on the Reference page."
     ),
     "gdtest_no_readme": (
-        "Has no README.md, README.rst, index.md, or index.qmd. Great Docs "
-        "must auto-generate a minimal landing page from package metadata. "
-        "Tests the fallback landing page generation when no source file exists."
+        "Has no README, no index file — nothing for the landing page. Great "
+        "Docs auto-generates a minimal landing page from package metadata. "
+        "The landing page should show the package name and an installation "
+        "command. One function (noop) on the Reference page."
     ),
     "gdtest_index_wins": (
-        "Has both a README.md and an index.qmd. The index.qmd should take "
-        "priority and be used as-is. Tests the complete priority chain: "
-        "index.qmd > index.md > README.md > README.rst > auto-generated."
+        "Has both index.qmd and README.md. The landing page should show the "
+        "index.qmd content ('Index Wins') NOT the README.md. Look for the "
+        "text 'This index.qmd should take priority over README.md.' Tests the "
+        "full priority chain: index.qmd > index.md > README.md."
     ),
     "gdtest_full_extras": (
-        "Includes every supporting page type: LICENSE, CITATION.cff, "
-        "CONTRIBUTING.md, CODE_OF_CONDUCT.md, CHANGELOG.md, and an assets/ "
-        "directory. Tests that all optional supporting pages are detected, "
-        "converted, and linked in the navigation."
+        "Includes every supporting page type. The sidebar/nav should show "
+        "links to: License, Citation, Contributing, and Code of Conduct. "
+        "There should also be a User Guide section (Getting Started, "
+        "Configuration). The Reference page should show Manager (class), "
+        "start and stop (functions)."
     ),
     "gdtest_github_contrib": (
-        "Stores CONTRIBUTING.md in the .github/ subdirectory rather than the "
-        "project root — a common convention for GitHub repos. Tests the "
-        "fallback search path that checks .github/ when the root file is missing."
+        "CONTRIBUTING.md lives in .github/ (not the project root). The "
+        "sidebar should still show a Contributing link. Clicking it should "
+        "display the contributing content. The Reference page should show "
+        "two functions (process, validate). The key test: .github/ fallback "
+        "path for contributing."
     ),
     "gdtest_cli_click": (
-        "A package with simple Click CLI commands and CLI documentation "
-        "enabled in great-docs.yml. Tests automatic CLI reference generation "
-        "from Click command definitions."
+        "A package with Click CLI commands and cli.enabled=true in config. "
+        "The sidebar should show a CLI Reference section alongside the API "
+        "Reference. The CLI reference page should document the Click commands. "
+        "The API Reference should show Formatter (class) and format_text "
+        "(function)."
     ),
     "gdtest_cli_nested": (
-        "A Click CLI with nested command groups and subcommands (e.g., "
-        "main > sub-group > command). Tests that the CLI documentation "
-        "generator handles multi-level group hierarchies and renders them "
-        "with proper nesting."
+        "Click CLI with nested groups: main command → task group (run, list) "
+        "and config group (show, set). The CLI Reference should show the "
+        "multi-level command hierarchy with subgroups. The API Reference "
+        "should show Engine (class) and run_task (function)."
     ),
     "gdtest_explicit_ref": (
-        "The reference page structure is explicitly defined in great-docs.yml "
-        "rather than auto-generated from exports. Tests config-driven "
-        "reference sections where the author specifies exactly which objects "
-        "appear in which section."
+        "Reference structure is defined in great-docs.yml with two sections: "
+        "'Core' (MyClass with members=false, helper_func) and 'Utilities' "
+        "(util_a, util_b). On the Reference page you should see exactly these "
+        "two named sections — not auto-generated ones. MyClass should appear "
+        "WITHOUT its methods (members: false)."
     ),
     "gdtest_kitchen_sink": (
-        "The maximum-coverage package that combines as many features as "
-        "possible: src/ layout, mixed docstring styles, big and small classes, "
-        "directives, user guide, supporting pages, CLI docs, and more. Tests "
-        "that all features coexist without conflicts in a single build."
+        "Maximum coverage: src/ layout, 10 exports, %family sections (Core "
+        "and Utility), Pipeline as a big class with 6+ methods, user guide "
+        "(3 pages), all supporting pages (License, Citation, Contributing, "
+        "Code of Conduct), author metadata in sidebar, display_name 'Kitchen "
+        "Sink'. Every feature should work together without conflicts."
     ),
     "gdtest_name_mismatch": (
-        "The pyproject.toml project name ('gdtest-name-mismatch') does not "
-        "match the importable module name ('gdtest_nm_mod'). The config "
-        "overrides the module name. Tests the name/module disambiguation "
-        "logic and config-driven module name resolution."
+        "Project name is 'gdtest-name-mismatch' but the module is 'gdtest_nm' "
+        "(completely different). Config sets module: gdtest_nm. The site title "
+        "should use the project name. The Reference page should show exports "
+        "from gdtest_nm: Mapper (class) and transform (function). The key "
+        "test: config-driven module name override."
     ),
 }
 

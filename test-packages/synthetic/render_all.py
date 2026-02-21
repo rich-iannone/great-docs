@@ -93,6 +93,18 @@ def build_package(name: str) -> dict:
     # Generate package files
     pkg_dir = generate_package(spec, RENDERED_DIR)
 
+    # Enrich README.md with the long description from the catalog so it
+    # appears on the landing page of the built site.
+    long_desc = PACKAGE_DESCRIPTIONS.get(name, "")
+    if long_desc:
+        readme = pkg_dir / "README.md"
+        if readme.exists():
+            original = readme.read_text(encoding="utf-8")
+            readme.write_text(
+                original.rstrip() + "\n\n" + long_desc + "\n",
+                encoding="utf-8",
+            )
+
     # For packages without pyproject.toml (e.g., setup.cfg-only), create a
     # minimal pyproject.toml as a "root barrier" so that _find_package_root()
     # doesn't walk up into the great-docs repo itself.
@@ -283,11 +295,21 @@ def _dimension_badges(dims: list[str]) -> str:
     return " ".join(badges)
 
 
-def _build_nav_html(results: list[dict], current_name: str) -> str:
+def _build_nav_html(results: list[dict], current_name: str, hub_prefix: str = "..") -> str:
     """
     Build the top navigation bar HTML to inject into every page.
 
-    Styled like GitHub's top bar with a dropdown package selector.
+    Parameters
+    ----------
+    results
+        Build results list.
+    current_name
+        Name of the current package.
+    hub_prefix
+        Relative path prefix from the current page to the hub root directory.
+        Defaults to ".." (correct for top-level pages like ``<name>/index.html``).
+        For deeper pages like ``<name>/reference/index.html`` this should be
+        "../.." so that links resolve correctly.
     """
     # Group packages by category for the dropdown
     categories = {
@@ -338,7 +360,7 @@ def _build_nav_html(results: list[dict], current_name: str) -> str:
             desc = r.get("description", "")
 
             if status == "ok":
-                href = f"../{name}/index.html"
+                href = f"{hub_prefix}/{name}/index.html"
                 cls = "gd-nav-item" + (" gd-nav-current" if is_current else "")
                 icon = "●" if is_current else ""
                 dropdown_items.append(
@@ -372,10 +394,10 @@ def _build_nav_html(results: list[dict], current_name: str) -> str:
         ci = ok_names.index(current_name)
         if ci > 0:
             prev_name = ok_names[ci - 1]
-            prev_link = f'<a href="../{prev_name}/index.html" class="gd-nav-arrow" title="{prev_name}">&#9664;</a>'
+            prev_link = f'<a href="{hub_prefix}/{prev_name}/index.html" class="gd-nav-arrow" title="{prev_name}">&#9664;</a>'
         if ci < len(ok_names) - 1:
             next_name = ok_names[ci + 1]
-            next_link = f'<a href="../{next_name}/index.html" class="gd-nav-arrow" title="{next_name}">&#9654;</a>'
+            next_link = f'<a href="{hub_prefix}/{next_name}/index.html" class="gd-nav-arrow" title="{next_name}">&#9654;</a>'
 
     return textwrap.dedent(f"""\
     <!-- Great Docs Synthetic Package Navigator -->
@@ -509,7 +531,7 @@ def _build_nav_html(results: list[dict], current_name: str) -> str:
     </style>
 
     <div class="gd-topnav" id="gd-topnav">
-        <a href="../index.html" class="gd-nav-hub">&#9776; Hub</a>
+        <a href="{hub_prefix}/index.html" class="gd-nav-hub">&#9776; Hub</a>
         <span class="gd-nav-sep">/</span>
 
         {prev_link}
@@ -916,7 +938,7 @@ def create_hub_page(results: list[dict]) -> None:
 
         if status == "ok":
             cards_html.append(f"""\
-            <a href="{name}/index.html" class="card card-ok">
+            <div class="card card-ok" data-href="{name}/index.html">
                 <div class="card-header">
                     <span class="card-num">#{num:02d}</span>
                     <span class="card-name">{html.escape(name)}</span>
@@ -925,7 +947,7 @@ def create_hub_page(results: list[dict]) -> None:
                 <div class="card-long">{card_long}</div>
                 <div class="card-dims">{badges}</div>
                 {links}
-            </a>""")
+            </div>""")
         else:
             error = html.escape(r.get("error", status)[:120])
             cards_html.append(f"""\
@@ -1039,6 +1061,9 @@ def create_hub_page(results: list[dict]) -> None:
                 transition: border-color .15s, box-shadow .15s;
                 text-decoration: none !important;
                 color: inherit !important;
+            }}
+            .card-ok {{
+                cursor: pointer;
             }}
             .card-ok:hover {{
                 border-color: #58a6ff;
@@ -1182,6 +1207,14 @@ def create_hub_page(results: list[dict]) -> None:
                 }});
             }});
         }})();
+
+        // Card click navigation (avoids nested <a> tags)
+        document.querySelectorAll('.card[data-href]').forEach(card => {{
+            card.addEventListener('click', (e) => {{
+                if (e.target.closest('.card-link')) return;
+                window.location.href = card.dataset.href;
+            }});
+        }});
         </script>
     </body>
     </html>
@@ -1220,19 +1253,25 @@ def assemble_hub(results: list[dict]) -> None:
 
     # Inject nav bar into all HTML files
     print("\n  Injecting navigation bar ...")
+    nav_count = 0
     for r in ok_results:
         name = r["name"]
         target = HUB_DIR / name
         if not target.exists():
             continue
 
-        nav_html = _build_nav_html(results, name)
         for html_file in target.rglob("*.html"):
+            # Compute the relative path from this file up to the hub root.
+            # For <name>/index.html → ".."
+            # For <name>/reference/index.html → "../.."
+            # For <name>/reference/Foo.bar.html → "../.."
+            depth = len(html_file.relative_to(target).parts)
+            hub_prefix = "/".join([".."] * depth)
+            nav_html = _build_nav_html(results, name, hub_prefix=hub_prefix)
             inject_nav_into_html(html_file, nav_html)
+            nav_count += 1
 
-    print(
-        f"  Injected nav into {sum(1 for r in ok_results for _ in (HUB_DIR / r['name']).rglob('*.html'))} pages"
-    )
+    print(f"  Injected nav into {nav_count} pages")
 
     # Create hub index
     create_hub_page(results)

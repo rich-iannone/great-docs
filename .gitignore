@@ -152,6 +152,7 @@ great-docs/
 
 # Integration test packages (external repos for testing)
 test-packages/*/
+!test-packages/synthetic/
 
 # Rendered synthetic package hub (ephemeral)
 test-packages/synthetic/_rendered/

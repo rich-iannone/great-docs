@@ -144,3 +144,17 @@ docs-preview: ## Preview documentation locally
 .PHONY: docs-install
 docs-install: ## Install documentation dependencies
 	@pip install -e ".[docs]"
+
+.PHONY: hub-build
+hub-build: ## Build all 50 synthetic package doc sites into the hub
+	@$(PYTHON) test-packages/synthetic/render_all.py --build
+
+.PHONY: hub-open
+hub-open: ## Open the synthetic package hub in the default browser
+	@open test-packages/synthetic/_rendered/_hub/index.html 2>/dev/null || \
+	 xdg-open test-packages/synthetic/_rendered/_hub/index.html 2>/dev/null || \
+	 echo "Hub page: test-packages/synthetic/_rendered/_hub/index.html"
+
+.PHONY: hub-serve
+hub-serve: ## Serve the synthetic package hub locally (port 3333)
+	@$(PYTHON) test-packages/synthetic/render_all.py --serve

@@ -315,6 +315,27 @@ cli:
 
 See [CLI Documentation](cli-documentation.qmd) for details.
 
+## Changelog
+
+Great Docs auto-generates a Changelog page from your GitHub Releases. It's enabled by default — if your `pyproject.toml` has a GitHub repository URL, a changelog page will appear automatically.
+
+To customize:
+
+```{.yaml filename="great-docs.yml"}
+changelog:
+  enabled: true        # Enable/disable changelog (default: true)
+  max_releases: 50     # Max releases to include (default: 50)
+```
+
+To disable it entirely:
+
+```{.yaml filename="great-docs.yml"}
+changelog:
+  enabled: false
+```
+
+See [Changelog](changelog.qmd) for full details on authentication, CLI usage, and edge cases.
+
 ## Author Information
 
 Customize author display in the landing page sidebar:
@@ -415,6 +436,11 @@ dark_mode_toggle: true
 # CLI Documentation
 cli:
   enabled: true
+
+# Changelog (GitHub Releases)
+changelog:
+  enabled: true
+  max_releases: 50
 
 # API Reference Structure
 reference:

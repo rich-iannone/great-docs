@@ -1,0 +1,144 @@
+---
+title: "Changelog"
+guide-section: "Core Concepts"
+bread-crumbs: false
+---
+
+# Changelog
+
+Great Docs can automatically generate a Changelog page from your GitHub Releases. Each published release becomes a section on the page, with its title, date, body content, and a link back to the release on GitHub.
+
+## How It Works
+
+When changelog generation is enabled (the default), `great-docs build` will:
+
+1. **Detect your GitHub repository** – reads the `Repository` URL from `[project.urls]` in `pyproject.toml`
+2. **Fetch releases** – calls the GitHub Releases API to retrieve published releases
+3. **Generate the page** – writes a `changelog.qmd` file in the build directory with one section per release
+4. **Add a navbar link** – adds a "Changelog" item to the site's top navigation bar
+
+The result is a fully rendered Changelog page that stays in sync with your GitHub Releases — no manual maintenance needed.
+
+## Prerequisites
+
+Your `pyproject.toml` must include a `Repository` URL pointing to GitHub:
+
+```{.toml filename="pyproject.toml"}
+[project.urls]
+Repository = "https://github.com/your-org/your-package"
+```
+
+If no GitHub URL is found, the changelog step is silently skipped.
+
+## Configuration
+
+The changelog works out of the box with sensible defaults. To customize behavior, add a `changelog` section to `great-docs.yml`:
+
+```{.yaml filename="great-docs.yml"}
+changelog:
+  enabled: true        # Enable/disable changelog (default: true)
+  max_releases: 50     # Maximum releases to include (default: 50)
+```
+
+### Disabling the Changelog
+
+If you don't want a changelog page at all:
+
+```{.yaml filename="great-docs.yml"}
+changelog:
+  enabled: false
+```
+
+### Limiting Releases
+
+For projects with many releases, you can cap how many appear:
+
+```{.yaml filename="great-docs.yml"}
+changelog:
+  max_releases: 20
+```
+
+Releases are shown in reverse chronological order (newest first), so older releases are the ones omitted.
+
+## Authentication
+
+The GitHub API allows unauthenticated requests but with a low rate limit (60 requests/hour). For most projects this is fine, but if you hit rate limits — particularly in CI — set a GitHub token:
+
+```{.bash filename="Terminal"}
+export GITHUB_TOKEN=ghp_your_token_here
+```
+
+Great Docs checks for `GITHUB_TOKEN` or `GH_TOKEN` environment variables and uses whichever is set. A token raises the rate limit to 5,000 requests/hour.
+
+::: {.callout-tip}
+## GitHub Actions
+
+In GitHub Actions workflows, `GITHUB_TOKEN` is already available automatically. No extra setup is needed.
+:::
+
+## Standalone CLI Command
+
+You can generate the changelog independently of a full build:
+
+```{.bash filename="Terminal"}
+great-docs changelog
+```
+
+This is useful for testing or regenerating just the changelog. You can also override the max releases:
+
+```{.bash filename="Terminal"}
+great-docs changelog --max-releases 10
+```
+
+## What Gets Included
+
+- **Published releases** — shown with their title, date, and body
+- **Pre-releases** — included but marked with a "(Pre-release)" badge
+- **Draft releases** — excluded (they aren't public yet)
+
+The release body is rendered as Markdown, so any formatting, lists, headings, or code blocks in your GitHub Release notes carry through to the documentation site.
+
+## Generated Output
+
+The generated `changelog.qmd` page includes:
+
+- A title ("Changelog") and table of contents
+- An introductory line linking to the full GitHub Releases page
+- One `##` section per release, containing:
+  - The release name as the heading
+  - A metadata line with the publication date and a "View on GitHub" link
+  - The full release body as Markdown
+
+Here's an example of what a section looks like:
+
+```markdown
+## Version 2.0.0
+
+*2026-01-15* · [View on GitHub](https://github.com/org/pkg/releases/tag/v2.0.0)
+
+### What's New
+
+- Added feature X
+- Improved performance of Y
+
+### Breaking Changes
+
+- Removed deprecated `old_function()`
+```
+
+## Edge Cases
+
+| Scenario | Behavior |
+|---|---|
+| No GitHub URL in `pyproject.toml` | Changelog step is skipped silently |
+| Repository exists but has no releases | No `changelog.qmd` is created; build continues normally |
+| GitHub API rate limit reached | Warning printed; partial results used if any were already fetched |
+| GitHub API returns 404 | Warning printed; changelog skipped |
+| Network error | Warning printed; changelog skipped |
+
+In all cases, the build completes successfully — the changelog is never a hard failure.
+
+## Next Steps
+
+- **[Configuration](configuration.qmd)** – See all available `great-docs.yml` options
+- **[Deployment](deployment.qmd)** – Deploy your docs (including the changelog) to GitHub Pages

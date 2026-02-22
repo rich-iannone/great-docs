@@ -3333,3 +3333,378 @@ def test_fetch_github_releases_max_cap():
         releases = docs._fetch_github_releases("o", "r", max_releases=5)
 
     assert len(releases) == 5
+
+
+# =========================================================================
+# Custom Sections Tests
+# =========================================================================
+
+
+def test_process_sections_empty_config():
+    """Test that no sections are processed when config is empty."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+        (project_path / "great-docs.yml").write_text("")
+        (project_path / "great-docs").mkdir()
+
+        docs = GreatDocs(project_path=tmp_dir)
+        result = docs._process_sections()
+        assert result == 0
+
+
+def test_process_sections_discovers_and_copies():
+    """Test that sections are discovered, copied, and indexed."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+        config_path = project_path / "great-docs.yml"
+        config_path.write_text("sections:\n  - title: Examples\n    dir: examples\n")
+        build_dir = project_path / "great-docs"
+        build_dir.mkdir()
+
+        # Write a minimal _quarto.yml
+        quarto_yml = build_dir / "_quarto.yml"
+        quarto_yml.write_text(
+            "website:\n"
+            "  navbar:\n"
+            "    left:\n"
+            "      - text: Home\n"
+            "        href: index.qmd\n"
+            "      - text: Reference\n"
+            "        href: reference/index.qmd\n"
+            "  sidebar: []\n"
+        )
+
+        # Create example files
+        examples_dir = project_path / "examples"
+        examples_dir.mkdir()
+        (examples_dir / "01-basic.qmd").write_text(
+            '---\ntitle: "Basic Example"\ndescription: "A basic demo"\n---\n\nHello\n'
+        )
+        (examples_dir / "02-advanced.qmd").write_text(
+            '---\ntitle: "Advanced Example"\n---\n\nAdvanced content\n'
+        )
+
+        docs = GreatDocs(project_path=tmp_dir)
+        result = docs._process_sections()
+
+        assert result == 1
+
+        # Check files were copied (with numeric prefix stripped)
+        dest = build_dir / "examples"
+        assert dest.exists()
+        assert (dest / "basic.qmd").exists()
+        assert (dest / "advanced.qmd").exists()
+
+        # Check auto-generated index
+        index = dest / "index.qmd"
+        assert index.exists()
+        content = index.read_text()
+        assert "Examples" in content
+        assert "Basic Example" in content
+        assert "Advanced Example" in content
+
+        # Check navbar was updated
+        import yaml
+
+        with open(quarto_yml) as f:
+            config = yaml.safe_load(f)
+        navbar_texts = [
+            item.get("text")
+            for item in config["website"]["navbar"]["left"]
+            if isinstance(item, dict)
+        ]
+        assert "Examples" in navbar_texts
+
+        # Check sidebar was added
+        sidebar_ids = [s.get("id") for s in config["website"]["sidebar"] if isinstance(s, dict)]
+        assert "examples" in sidebar_ids
+
+
+def test_process_sections_user_provided_index():
+    """Test that user-provided index.qmd is used instead of auto-generating."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+        (project_path / "great-docs.yml").write_text(
+            "sections:\n  - title: Demos\n    dir: demos\n"
+        )
+        build_dir = project_path / "great-docs"
+        build_dir.mkdir()
+        quarto_yml = build_dir / "_quarto.yml"
+        quarto_yml.write_text(
+            "website:\n  navbar:\n    left:\n"
+            "      - text: Home\n        href: index.qmd\n"
+            "  sidebar: []\n"
+        )
+
+        demos_dir = project_path / "demos"
+        demos_dir.mkdir()
+        (demos_dir / "index.qmd").write_text(
+            '---\ntitle: "My Custom Index"\n---\n\nCustom gallery content\n'
+        )
+        (demos_dir / "demo1.qmd").write_text('---\ntitle: "Demo One"\n---\n\nDemo\n')
+
+        docs = GreatDocs(project_path=tmp_dir)
+        result = docs._process_sections()
+
+        assert result == 1
+
+        # The user's index should be preserved, not overwritten
+        index = build_dir / "demos" / "index.qmd"
+        content = index.read_text()
+        assert "Custom gallery content" in content
+
+
+def test_process_sections_missing_dir():
+    """Test that a section with a missing directory is skipped."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+        (project_path / "great-docs.yml").write_text(
+            "sections:\n  - title: Nope\n    dir: nonexistent\n"
+        )
+        (project_path / "great-docs").mkdir()
+
+        docs = GreatDocs(project_path=tmp_dir)
+        result = docs._process_sections()
+
+        assert result == 0
+
+
+def test_process_sections_navbar_after():
+    """Test that navbar_after controls link placement."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+        (project_path / "great-docs.yml").write_text(
+            "sections:\n  - title: Tutorials\n    dir: tutorials\n    navbar_after: Home\n"
+        )
+        build_dir = project_path / "great-docs"
+        build_dir.mkdir()
+        quarto_yml = build_dir / "_quarto.yml"
+        quarto_yml.write_text(
+            "website:\n"
+            "  navbar:\n"
+            "    left:\n"
+            "      - text: Home\n"
+            "        href: index.qmd\n"
+            "      - text: User Guide\n"
+            "        href: user-guide/index.qmd\n"
+            "      - text: Reference\n"
+            "        href: reference/index.qmd\n"
+            "  sidebar: []\n"
+        )
+
+        tut_dir = project_path / "tutorials"
+        tut_dir.mkdir()
+        (tut_dir / "intro.qmd").write_text('---\ntitle: "Intro"\n---\n\nIntro\n')
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs._process_sections()
+
+        import yaml
+
+        with open(quarto_yml) as f:
+            config = yaml.safe_load(f)
+        texts = [
+            item.get("text")
+            for item in config["website"]["navbar"]["left"]
+            if isinstance(item, dict)
+        ]
+        # Tutorials should be right after Home
+        assert texts.index("Tutorials") == texts.index("Home") + 1
+        assert texts.index("Tutorials") < texts.index("Reference")
+
+
+def test_process_sections_default_navbar_before_reference():
+    """Test that without navbar_after, link goes before Reference."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+        (project_path / "great-docs.yml").write_text(
+            "sections:\n  - title: Examples\n    dir: examples\n"
+        )
+        build_dir = project_path / "great-docs"
+        build_dir.mkdir()
+        quarto_yml = build_dir / "_quarto.yml"
+        quarto_yml.write_text(
+            "website:\n"
+            "  navbar:\n"
+            "    left:\n"
+            "      - text: Home\n"
+            "        href: index.qmd\n"
+            "      - text: Reference\n"
+            "        href: reference/index.qmd\n"
+            "  sidebar: []\n"
+        )
+
+        ex_dir = project_path / "examples"
+        ex_dir.mkdir()
+        (ex_dir / "demo.qmd").write_text('---\ntitle: "Demo"\n---\n\nDemo\n')
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs._process_sections()
+
+        import yaml
+
+        with open(quarto_yml) as f:
+            config = yaml.safe_load(f)
+        texts = [
+            item.get("text")
+            for item in config["website"]["navbar"]["left"]
+            if isinstance(item, dict)
+        ]
+        assert texts.index("Examples") < texts.index("Reference")
+
+
+def test_process_sections_multiple():
+    """Test processing multiple sections at once."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+        (project_path / "great-docs.yml").write_text(
+            "sections:\n"
+            "  - title: Examples\n"
+            "    dir: examples\n"
+            "  - title: Tutorials\n"
+            "    dir: tutorials\n"
+        )
+        build_dir = project_path / "great-docs"
+        build_dir.mkdir()
+        quarto_yml = build_dir / "_quarto.yml"
+        quarto_yml.write_text(
+            "website:\n"
+            "  navbar:\n"
+            "    left:\n"
+            "      - text: Home\n"
+            "        href: index.qmd\n"
+            "      - text: Reference\n"
+            "        href: reference/index.qmd\n"
+            "  sidebar: []\n"
+        )
+
+        for d in ("examples", "tutorials"):
+            (project_path / d).mkdir()
+            (project_path / d / "page.qmd").write_text(f'---\ntitle: "{d} page"\n---\n\n{d}\n')
+
+        docs = GreatDocs(project_path=tmp_dir)
+        result = docs._process_sections()
+
+        assert result == 2
+
+        import yaml
+
+        with open(quarto_yml) as f:
+            config = yaml.safe_load(f)
+        texts = [
+            item.get("text")
+            for item in config["website"]["navbar"]["left"]
+            if isinstance(item, dict)
+        ]
+        assert "Examples" in texts
+        assert "Tutorials" in texts
+
+
+def test_process_sections_idempotent():
+    """Test that processing sections twice doesn't duplicate navbar/sidebar."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+        (project_path / "great-docs.yml").write_text(
+            "sections:\n  - title: Examples\n    dir: examples\n"
+        )
+        build_dir = project_path / "great-docs"
+        build_dir.mkdir()
+        quarto_yml = build_dir / "_quarto.yml"
+        quarto_yml.write_text(
+            "website:\n"
+            "  navbar:\n"
+            "    left:\n"
+            "      - text: Home\n"
+            "        href: index.qmd\n"
+            "  sidebar: []\n"
+        )
+
+        ex_dir = project_path / "examples"
+        ex_dir.mkdir()
+        (ex_dir / "page.qmd").write_text('---\ntitle: "Page"\n---\n\nContent\n')
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs._process_sections()
+        docs._process_sections()
+
+        import yaml
+
+        with open(quarto_yml) as f:
+            config = yaml.safe_load(f)
+
+        # Only one navbar link
+        example_links = [
+            item
+            for item in config["website"]["navbar"]["left"]
+            if isinstance(item, dict) and item.get("text") == "Examples"
+        ]
+        assert len(example_links) == 1
+
+        # Only one sidebar
+        example_sidebars = [
+            s
+            for s in config["website"]["sidebar"]
+            if isinstance(s, dict) and s.get("id") == "examples"
+        ]
+        assert len(example_sidebars) == 1
+
+
+def test_sections_config_default():
+    """Test that sections config defaults to an empty list."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        (Path(tmp_dir) / "great-docs.yml").write_text("")
+        config = Config(Path(tmp_dir))
+        assert config.sections == []
+
+
+def test_sections_config_parsed():
+    """Test that sections config is parsed correctly."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        (Path(tmp_dir) / "great-docs.yml").write_text(
+            "sections:\n"
+            "  - title: Examples\n"
+            "    dir: examples\n"
+            "    navbar_after: Home\n"
+            "  - title: Blog\n"
+            "    dir: blog\n"
+        )
+        config = Config(Path(tmp_dir))
+        assert len(config.sections) == 2
+        assert config.sections[0]["title"] == "Examples"
+        assert config.sections[0]["dir"] == "examples"
+        assert config.sections[0]["navbar_after"] == "Home"
+        assert config.sections[1]["title"] == "Blog"
+
+
+def test_generate_section_index_with_descriptions():
+    """Test auto-generated index includes descriptions and images."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+        (project_path / "great-docs.yml").write_text(
+            "sections:\n  - title: Gallery\n    dir: gallery\n"
+        )
+        build_dir = project_path / "great-docs"
+        build_dir.mkdir()
+        quarto_yml = build_dir / "_quarto.yml"
+        quarto_yml.write_text("website:\n  navbar:\n    left: []\n  sidebar: []\n")
+
+        gallery_dir = project_path / "gallery"
+        gallery_dir.mkdir()
+        (gallery_dir / "card1.qmd").write_text(
+            '---\ntitle: "Card One"\ndescription: "First card description"\n'
+            'image: "img/card1.png"\n---\n\nBody\n'
+        )
+        (gallery_dir / "card2.qmd").write_text(
+            '---\ntitle: "Card Two"\ndescription: "Second card"\n---\n\nBody\n'
+        )
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs._process_sections()
+
+        index = build_dir / "gallery" / "index.qmd"
+        content = index.read_text()
+        assert "Card One" in content
+        assert "First card description" in content
+        assert "img/card1.png" in content
+        assert "Card Two" in content
+        assert "Second card" in content

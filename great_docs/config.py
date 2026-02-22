@@ -58,6 +58,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "enabled": True,
         "max_releases": 50,
     },
+    # Custom sections (generic page groups: examples, tutorials, blog, etc.)
+    # Each entry: {"title": str, "dir": str, "navbar_after": str | None}
+    "sections": [],
     # User Guide configuration
     # If None, auto-discovers from user_guide/ directory
     # If a string, uses that as the directory path
@@ -232,6 +235,11 @@ class Config:
     def changelog_max_releases(self) -> int:
         """Get the maximum number of GitHub Releases to include."""
         return self.get("changelog.max_releases", 50)
+
+    @property
+    def sections(self) -> list[dict]:
+        """Get the custom sections configuration."""
+        return self.get("sections", [])
 
     @property
     def dark_mode_toggle(self) -> bool:
@@ -426,6 +434,19 @@ def create_default_config() -> str:
 # changelog:
 #   enabled: true              # Enable/disable changelog (default: true)
 #   max_releases: 50           # Max releases to include (default: 50)
+
+# Custom Sections
+# ---------------
+# Add custom page groups (examples, tutorials, blog, etc.) to the site.
+# Each section gets a navbar link, a sidebar, and an auto-generated index
+# page (unless you provide your own index.qmd in the directory).
+#
+# sections:
+#   - title: Examples            # Navbar link text
+#     dir: examples              # Source directory (relative to project root)
+#     navbar_after: User Guide   # Place after this navbar item (optional)
+#   - title: Tutorials
+#     dir: tutorials
 
 # Dark Mode Toggle
 # ----------------

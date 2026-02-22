@@ -1022,6 +1022,358 @@ class GreatDocs:
         self._write_quarto_yml(quarto_yml, config)
 
     # =========================================================================
+    # Custom Sections Methods
+    # =========================================================================
+
+    def _process_sections(self) -> int:
+        """
+        Process custom sections: discover files, copy, generate index, wire nav.
+
+        Each configured section gets its own navbar link, sidebar, and
+        (optionally) an auto-generated index page.
+
+        Returns
+        -------
+        int
+            Number of sections successfully processed.
+        """
+        sections_config = self._config.sections
+        if not sections_config:
+            return 0
+
+        processed = 0
+
+        for section_cfg in sections_config:
+            title = section_cfg.get("title")
+            src_dir = section_cfg.get("dir")
+            if not title or not src_dir:
+                print(f"   ⚠️  Section missing 'title' or 'dir', skipping: {section_cfg}")
+                continue
+
+            source_path = self.project_root / src_dir
+            if not source_path.exists() or not source_path.is_dir():
+                print(f"   ⚠️  Section directory '{src_dir}' not found, skipping")
+                continue
+
+            # Discover .qmd / .md files
+            files = sorted(
+                [
+                    f
+                    for f in source_path.rglob("*")
+                    if f.suffix in (".qmd", ".md") and f.name != "README.md"
+                ]
+            )
+
+            if not files:
+                print(f"   ⚠️  Section '{title}' directory '{src_dir}' has no .qmd/.md files")
+                continue
+
+            # Determine the slug for the build directory (lowercase, hyphenated)
+            slug = src_dir.replace("_", "-").replace(" ", "-").lower()
+            dest_dir = self.project_path / slug
+            dest_dir.mkdir(parents=True, exist_ok=True)
+
+            # Copy files (strip numeric prefixes, add bread-crumbs: false)
+            copied = self._copy_section_files(files, source_path, dest_dir)
+
+            # Generate index if user didn't provide one
+            has_user_index = any(f.name == "index.qmd" for f in files)
+            if has_user_index:
+                # The user's index.qmd was already copied
+                index_href = f"{slug}/index.qmd"
+            else:
+                # Auto-generate a listing index
+                self._generate_section_index(title, copied, slug, dest_dir)
+                index_href = f"{slug}/index.qmd"
+
+            # Add sidebar
+            self._add_section_sidebar(title, slug, copied, has_user_index)
+
+            # Add navbar link
+            navbar_after = section_cfg.get("navbar_after")
+            self._add_section_to_navbar(title, index_href, navbar_after)
+
+            n_pages = len(copied)
+            print(f"   📂 {title}: {n_pages} page(s) from {src_dir}/")
+            processed += 1
+
+        return processed
+
+    def _copy_section_files(
+        self,
+        files: list[Path],
+        source_dir: Path,
+        dest_dir: Path,
+    ) -> list[dict]:
+        """
+        Copy section files to the build directory.
+
+        Strips numeric prefixes and adds ``bread-crumbs: false`` to frontmatter.
+
+        Parameters
+        ----------
+        files
+            List of source file paths.
+        source_dir
+            Root of the section source directory.
+        dest_dir
+            Destination directory in the build tree.
+
+        Returns
+        -------
+        list[dict]
+            List of dicts with ``filename``, ``title``, ``description`` keys.
+        """
+        copied: list[dict] = []
+
+        for src_file in files:
+            rel = src_file.relative_to(source_dir)
+
+            # Strip numeric prefix from filename (e.g., 01-intro.qmd -> intro.qmd)
+            clean_name = self._strip_numeric_prefix(rel.name)
+            dest_file = dest_dir / rel.parent / clean_name
+
+            # Ensure subdirectories exist
+            dest_file.parent.mkdir(parents=True, exist_ok=True)
+
+            content = src_file.read_text(encoding="utf-8")
+
+            # Parse frontmatter for metadata
+            title = clean_name.replace(".qmd", "").replace(".md", "").replace("-", " ").title()
+            description = ""
+            image = ""
+
+            if content.startswith("---"):
+                parts = content.split("---", 2)
+                if len(parts) >= 3:
+                    try:
+                        fm = yaml.safe_load(parts[1])
+                        if isinstance(fm, dict):
+                            title = fm.get("title", title)
+                            description = fm.get("description", "")
+                            image = fm.get("image", "")
+
+                            # Add bread-crumbs: false
+                            if "bread-crumbs" not in fm:
+                                fm["bread-crumbs"] = False
+                                parts[1] = "\n" + yaml.dump(
+                                    fm, default_flow_style=False, sort_keys=False
+                                )
+                                content = "---".join(parts)
+                    except yaml.YAMLError:
+                        pass
+
+            dest_file.write_text(content, encoding="utf-8")
+
+            copied.append(
+                {
+                    "filename": str(rel.parent / clean_name)
+                    if rel.parent != Path(".")
+                    else clean_name,
+                    "title": title,
+                    "description": description,
+                    "image": image,
+                }
+            )
+
+        return copied
+
+    def _generate_section_index(
+        self,
+        title: str,
+        pages: list[dict],
+        slug: str,
+        dest_dir: Path,
+    ) -> None:
+        """
+        Auto-generate an index page for a custom section.
+
+        Creates a gallery-style listing from each page's frontmatter title
+        and description.
+
+        Parameters
+        ----------
+        title
+            Section title (used as page heading).
+        pages
+            List of page dicts from ``_copy_section_files``.
+        slug
+            URL slug for the section.
+        dest_dir
+            Build directory for the section.
+        """
+        lines = [
+            "---",
+            f'title: "{title}"',
+            "bread-crumbs: false",
+            "toc: false",
+            "---",
+            "",
+        ]
+
+        # Filter out the index itself if present
+        entries = [p for p in pages if p["filename"] != "index.qmd"]
+
+        if not entries:
+            lines.append("*No pages found.*")
+        else:
+            lines.append(f"A collection of {len(entries)} page(s).\n")
+            lines.append(":::::: {.column-page}")
+            lines.append("::::: {.grid}")
+
+            for entry in entries:
+                href = entry["filename"]
+                entry_title = entry["title"]
+                desc = entry.get("description", "")
+                image = entry.get("image", "")
+
+                lines.append(":::{.g-col-lg-6 .g-col-12}")
+                lines.append("<div style='padding: 10px;'>")
+
+                if image:
+                    lines.append(
+                        f'<a href="{href}"><img src="{image}" '
+                        'style="width: 100%; padding-bottom: 8px;" /></a>'
+                    )
+
+                lines.append(f"### [{entry_title}]({href})")
+                if desc:
+                    lines.append(f"\n{desc}")
+                lines.append("</div>")
+                lines.append(":::")
+
+            lines.append(":::::")
+            lines.append("::::::")
+
+        lines.append("")
+        index_file = dest_dir / "index.qmd"
+        index_file.write_text("\n".join(lines), encoding="utf-8")
+
+    def _add_section_sidebar(
+        self,
+        title: str,
+        slug: str,
+        pages: list[dict],
+        has_user_index: bool,
+    ) -> None:
+        """
+        Add a sidebar for the custom section to ``_quarto.yml``.
+
+        Parameters
+        ----------
+        title
+            Section title.
+        slug
+            URL slug for the section directory.
+        pages
+            List of page dicts from ``_copy_section_files``.
+        has_user_index
+            Whether the user provided their own index.qmd.
+        """
+        quarto_yml = self.project_path / "_quarto.yml"
+        config = self._read_quarto_config(quarto_yml)
+
+        sidebar_id = slug
+        contents: list[dict | str] = []
+
+        # Add index as the first item
+        contents.append({"text": title, "href": f"{slug}/index.qmd"})
+
+        # Add each page (except index.qmd)
+        for page in pages:
+            if page["filename"] == "index.qmd":
+                continue
+            contents.append(
+                {
+                    "text": page["title"],
+                    "href": f"{slug}/{page['filename']}",
+                }
+            )
+
+        sidebar_config = {
+            "id": sidebar_id,
+            "title": title,
+            "contents": contents,
+        }
+
+        # Remove existing sidebar with same id
+        sidebar = config["website"]["sidebar"]
+        sidebar = [s for s in sidebar if not (isinstance(s, dict) and s.get("id") == sidebar_id)]
+        sidebar.append(sidebar_config)
+        config["website"]["sidebar"] = sidebar
+
+        self._write_quarto_yml(quarto_yml, config)
+
+    def _add_section_to_navbar(
+        self,
+        title: str,
+        href: str,
+        navbar_after: str | None = None,
+    ) -> None:
+        """
+        Add a navbar link for the custom section.
+
+        Parameters
+        ----------
+        title
+            Link text.
+        href
+            Link target.
+        navbar_after
+            Name of an existing navbar item to insert after. If None,
+            inserts before "Reference".
+        """
+        quarto_yml = self.project_path / "_quarto.yml"
+        config = self._read_quarto_config(quarto_yml)
+
+        navbar = config.get("website", {}).get("navbar", {})
+        if not navbar or "left" not in navbar:
+            return
+
+        # Check if link already exists
+        if any(isinstance(item, dict) and item.get("text") == title for item in navbar["left"]):
+            return
+
+        link = {"text": title, "href": href}
+
+        if navbar_after:
+            # Find the item to insert after
+            for i, item in enumerate(navbar["left"]):
+                if isinstance(item, dict) and item.get("text") == navbar_after:
+                    navbar["left"].insert(i + 1, link)
+                    break
+            else:
+                # Fallback: insert before Reference
+                self._insert_before_reference(navbar["left"], link)
+        else:
+            # Default: insert before Reference
+            self._insert_before_reference(navbar["left"], link)
+
+        self._write_quarto_yml(quarto_yml, config)
+
+    def _insert_before_reference(self, navbar_items: list, link: dict) -> None:
+        """Insert a link before the 'Reference' navbar item, or append."""
+        for i, item in enumerate(navbar_items):
+            if isinstance(item, dict) and item.get("text") == "Reference":
+                navbar_items.insert(i, link)
+                return
+        # No Reference found — append
+        navbar_items.append(link)
+
+    def _read_quarto_config(self, quarto_yml: Path) -> dict:
+        """Read and return the _quarto.yml config, ensuring website.sidebar exists."""
+        if quarto_yml.exists():
+            with open(quarto_yml, "r") as f:
+                config = yaml.safe_load(f) or {}
+        else:
+            config = {}
+
+        config.setdefault("website", {})
+        config["website"].setdefault("sidebar", [])
+        config["website"].setdefault("navbar", {"left": []})
+        return config
+
+    # =========================================================================
     # CLI Documentation Methods
     # =========================================================================
 
@@ -6600,6 +6952,19 @@ toc: false
                 import traceback
 
                 traceback.print_exc()
+
+            # Step 0.85: Process custom sections (examples, tutorials, etc.)
+            if self._config.sections:
+                print("\n📂 Processing custom sections...")
+                try:
+                    n_sections = self._process_sections()
+                    if n_sections:
+                        print(f"✅ {n_sections} section(s) processed")
+                except Exception as e:
+                    print(f"   ⚠️  Error processing sections: {e}")
+                    import traceback
+
+                    traceback.print_exc()
 
             # Step 0.95: Copy assets directory if present
             try:

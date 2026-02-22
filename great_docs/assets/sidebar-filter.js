@@ -92,17 +92,12 @@
     }
 
     /**
-     * Check if we're on a CLI reference page (should not show filter)
+     * Check if we're on an API reference page (where the filter should show).
+     * Returns true only for /reference/ pages that are NOT CLI reference pages.
      */
-    function isCliReferencePage() {
-        return window.location.pathname.includes('/reference/cli/');
-    }
-
-    /**
-     * Check if we're on a User Guide page (should not show filter)
-     */
-    function isUserGuidePage() {
-        return window.location.pathname.includes('/user-guide/');
+    function isApiReferencePage() {
+        const path = window.location.pathname;
+        return path.includes('/reference/') && !path.includes('/reference/cli/');
     }
 
     /**
@@ -194,8 +189,8 @@
      * Initialize the sidebar filter
      */
     function initSidebarFilter() {
-        // Don't show filter on CLI reference pages or User Guide pages
-        if (isCliReferencePage() || isUserGuidePage()) {
+        // Only show filter on API reference pages
+        if (!isApiReferencePage()) {
             return;
         }
 

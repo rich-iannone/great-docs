@@ -624,7 +624,6 @@ class GreatDocs:
                     metadata["keywords"] = project.get("keywords", [])
                     metadata["description"] = project.get("description", "")
                     metadata["optional_dependencies"] = project.get("optional-dependencies", {})
-                    metadata["version"] = project.get("version", "")
 
             except Exception:
                 pass
@@ -6261,25 +6260,50 @@ toc: false
 
                 config["website"]["page-footer"] = {"left": footer_html}
 
-        # Write package metadata JSON for post-render version badge injection
-        package_version = metadata.get("version", "")
-        if not package_version:
-            # Try importlib.metadata as fallback for dynamic versions
-            package_name = config.get("website", {}).get("title", "")
-            if package_name:
-                try:
-                    import importlib.metadata as importlib_metadata
+        # Write package metadata JSON for post-render version badge injection.
+        # The version and release date come from the latest GitHub Release so
+        # the badge always reflects what has actually been published.
+        meta_path = self.project_path / "_package_meta.json"
 
-                    package_version = importlib_metadata.version(package_name)
-                except Exception:
-                    pass
+        if owner and repo:
+            try:
+                releases = self._fetch_github_releases(owner, repo, max_releases=1)
+            except Exception:
+                releases = []
 
-        if package_version:
-            meta_path = self.project_path / "_package_meta.json"
-            meta = {"version": package_version}
-            with open(meta_path, "w") as f:
-                json.dump(meta, f)
-            print(f"Wrote package metadata (version={package_version}) to {meta_path}")
+            if releases:
+                latest = releases[0]
+                tag = latest.get("tag_name", "")
+                published = latest.get("published_at", "")
+
+                # Strip leading 'v' for normalisation, then re-add for display
+                version_str = tag.lstrip("v") if tag else ""
+
+                if version_str:
+                    meta: dict[str, str] = {"version": version_str}
+                    if published:
+                        meta["published_at"] = published
+                    with open(meta_path, "w") as f:
+                        json.dump(meta, f)
+                    print(
+                        f"Wrote package metadata (version={version_str}) "
+                        f"to {meta_path}"
+                    )
+                else:
+                    # Tag with no version-like content — remove stale file
+                    meta_path.unlink(missing_ok=True)
+            else:
+                print(
+                    "No GitHub releases found; skipping version badge metadata"
+                )
+                # Remove stale metadata from a previous build
+                meta_path.unlink(missing_ok=True)
+        else:
+            print(
+                "No GitHub repository info available; "
+                "skipping version badge metadata"
+            )
+            meta_path.unlink(missing_ok=True)
 
         # Write back to file
         self._write_quarto_yml(quarto_yml, config)

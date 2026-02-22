@@ -226,6 +226,7 @@ a.sidebar-item-toggle.text-start > i {
     margin-left: 6px;
     vertical-align: middle;
     letter-spacing: 0.02em;
+    cursor: default;
 }
 
 #quarto-sidebar {

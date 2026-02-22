@@ -3771,21 +3771,43 @@ def test_navbar_home_removed_from_existing():
         assert "Reference" in texts
 
 
-def test_version_metadata_written():
-    """Test that _package_meta.json is written with version from pyproject.toml."""
+def test_version_metadata_from_github_release():
+    """Test that _package_meta.json is written from the latest GitHub release."""
+    from unittest.mock import patch
+
+    fake_releases = [
+        {
+            "tag_name": "v2.3.4",
+            "name": "Release 2.3.4",
+            "body": "Bug fixes",
+            "published_at": "2025-06-15T18:30:00Z",
+            "html_url": "https://github.com/test/pkg/releases/tag/v2.3.4",
+            "prerelease": False,
+        }
+    ]
+
     with tempfile.TemporaryDirectory() as tmp_dir:
         project_path = Path(tmp_dir)
         (project_path / "great-docs.yml").write_text("")
         (project_path / "pyproject.toml").write_text(
-            '[project]\nname = "test-pkg"\nversion = "2.3.4"\n'
+            "[project]\n"
+            'name = "test-pkg"\n'
+            'version = "2.3.4"\n'
+            "\n"
+            "[project.urls]\n"
+            'Repository = "https://github.com/test/pkg"\n'
         )
         build_dir = project_path / "great-docs"
         build_dir.mkdir()
         quarto_yml = build_dir / "_quarto.yml"
-        quarto_yml.write_text("website:\n  title: test-pkg\nformat:\n  html:\n    theme: flatly\n")
+        quarto_yml.write_text(
+            "website:\n  title: test-pkg\nformat:\n  html:\n    theme: flatly\n"
+        )
 
         docs = GreatDocs(project_path=tmp_dir)
-        docs._update_quarto_config()
+
+        with patch.object(docs, "_fetch_github_releases", return_value=fake_releases):
+            docs._update_quarto_config()
 
         import json
 
@@ -3794,20 +3816,106 @@ def test_version_metadata_written():
         with open(meta_path) as f:
             meta = json.load(f)
         assert meta["version"] == "2.3.4"
+        assert meta["published_at"] == "2025-06-15T18:30:00Z"
 
 
-def test_version_metadata_not_written_when_missing():
-    """Test that _package_meta.json is not written when version is unavailable."""
+def test_version_metadata_not_written_no_releases():
+    """Test graceful degradation when no GitHub releases exist."""
+    from unittest.mock import patch
+
     with tempfile.TemporaryDirectory() as tmp_dir:
         project_path = Path(tmp_dir)
         (project_path / "great-docs.yml").write_text("")
+        (project_path / "pyproject.toml").write_text(
+            "[project]\n"
+            'name = "test-pkg"\n'
+            'version = "0.0.1"\n'
+            "\n"
+            "[project.urls]\n"
+            'Repository = "https://github.com/test/pkg"\n'
+        )
         build_dir = project_path / "great-docs"
         build_dir.mkdir()
         quarto_yml = build_dir / "_quarto.yml"
-        quarto_yml.write_text("website:\n  title: test-pkg\nformat:\n  html:\n    theme: flatly\n")
+        quarto_yml.write_text(
+            "website:\n  title: test-pkg\nformat:\n  html:\n    theme: flatly\n"
+        )
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        with patch.object(docs, "_fetch_github_releases", return_value=[]):
+            docs._update_quarto_config()
+
+        meta_path = build_dir / "_package_meta.json"
+        assert not meta_path.exists()
+
+
+def test_version_metadata_not_written_no_github():
+    """Test that _package_meta.json is not written when no GitHub repo info."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+        (project_path / "great-docs.yml").write_text("")
+        # No repository URL in pyproject.toml
+        (project_path / "pyproject.toml").write_text(
+            '[project]\nname = "test-pkg"\nversion = "1.0.0"\n'
+        )
+        build_dir = project_path / "great-docs"
+        build_dir.mkdir()
+        quarto_yml = build_dir / "_quarto.yml"
+        quarto_yml.write_text(
+            "website:\n  title: test-pkg\nformat:\n  html:\n    theme: flatly\n"
+        )
 
         docs = GreatDocs(project_path=tmp_dir)
         docs._update_quarto_config()
 
         meta_path = build_dir / "_package_meta.json"
         assert not meta_path.exists()
+
+
+def test_version_metadata_strips_v_prefix():
+    """Test that 'v' prefix is stripped from tag_name for the version value."""
+    from unittest.mock import patch
+
+    fake_releases = [
+        {
+            "tag_name": "v1.0.0",
+            "name": "v1.0.0",
+            "body": "",
+            "published_at": "2025-01-01T00:00:00Z",
+            "html_url": "",
+            "prerelease": False,
+        }
+    ]
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+        (project_path / "great-docs.yml").write_text("")
+        (project_path / "pyproject.toml").write_text(
+            "[project]\n"
+            'name = "test-pkg"\n'
+            'version = "1.0.0"\n'
+            "\n"
+            "[project.urls]\n"
+            'Repository = "https://github.com/test/pkg"\n'
+        )
+        build_dir = project_path / "great-docs"
+        build_dir.mkdir()
+        quarto_yml = build_dir / "_quarto.yml"
+        quarto_yml.write_text(
+            "website:\n  title: test-pkg\nformat:\n  html:\n    theme: flatly\n"
+        )
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        with patch.object(docs, "_fetch_github_releases", return_value=fake_releases):
+            docs._update_quarto_config()
+
+        import json
+
+        meta_path = build_dir / "_package_meta.json"
+        assert meta_path.exists()
+        with open(meta_path) as f:
+            meta = json.load(f)
+        # Should be "1.0.0" not "v1.0.0"
+        assert meta["version"] == "1.0.0"

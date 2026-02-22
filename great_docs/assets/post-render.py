@@ -806,9 +806,12 @@ def inject_version_badge():
     """
     Inject a version badge next to the package name in the navbar.
 
-    Reads package version from ``_package_meta.json`` (written by the build)
-    and inserts a small badge span inside each ``<span class="navbar-title">``
-    element across all rendered HTML files.
+    Reads package version (and optional release date) from
+    ``_package_meta.json`` (written by the build) and inserts a small badge
+    span inside each ``<span class="navbar-title">`` element across all
+    rendered HTML files.  When a ``published_at`` date is present the badge
+    receives a ``title`` attribute so the release date appears as a native
+    browser tooltip on hover.
     """
     meta_path = "_package_meta.json"
     if not os.path.exists(meta_path):
@@ -823,12 +826,24 @@ def inject_version_badge():
         print("No version in _package_meta.json, skipping version badge injection")
         return
 
+    # Build an optional title attribute with the release date
+    published_at = meta.get("published_at", "")
+    title_attr = ""
+    if published_at:
+        # published_at is ISO-8601 e.g. "2025-06-15T12:00:00Z"
+        date_str = published_at[:10]  # "2025-06-15"
+        title_attr = f' title="Released {date_str}"'
+
     print(f"Injecting version badge v{version} into navbar...")
 
     # Match <span class="navbar-title">PackageName</span>
-    navbar_title_pattern = re.compile(r'(<span class="navbar-title">)(.*?)(</span>)')
+    navbar_title_pattern = re.compile(
+        r'(<span class="navbar-title">)(.*?)(</span>)'
+    )
 
-    badge_html = f'<span class="version-badge">v{version}</span>'
+    badge_html = (
+        f'<span class="version-badge"{title_attr}>v{version}</span>'
+    )
 
     badge_count = 0
 
@@ -840,7 +855,10 @@ def inject_version_badge():
         if match:
             # Only inject if badge not already present
             if "version-badge" not in content:
-                replacement = f"{match.group(1)}{match.group(2)} {badge_html}{match.group(3)}"
+                replacement = (
+                    f"{match.group(1)}{match.group(2)} "
+                    f"{badge_html}{match.group(3)}"
+                )
                 content = navbar_title_pattern.sub(replacement, content)
 
                 with open(html_file, "w") as file:

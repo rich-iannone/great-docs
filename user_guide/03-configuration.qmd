@@ -336,6 +336,23 @@ changelog:
 
 See [Changelog](changelog.qmd) for full details on authentication, CLI usage, and edge cases.
 
+## Custom Sections
+
+Add custom page groups (examples, tutorials, blog, etc.) to your site. Each section gets a navbar link, sidebar, and auto-generated index page:
+
+```{.yaml filename="great-docs.yml"}
+sections:
+  - title: Examples          # Navbar link text
+    dir: examples            # Source directory
+    navbar_after: User Guide  # Position in navbar (optional)
+  - title: Tutorials
+    dir: tutorials
+```
+
+If the directory contains an `index.qmd`, that file is used as the landing page. Otherwise, a gallery-style index is auto-generated from each page's frontmatter.
+
+See [Custom Sections](custom-sections.qmd) for full details.
+
 ## Author Information
 
 Customize author display in the landing page sidebar:
@@ -441,6 +458,14 @@ cli:
 changelog:
   enabled: true
   max_releases: 50
+
+# Custom Sections
+sections:
+  - title: Examples
+    dir: examples
+  - title: Tutorials
+    dir: tutorials
+    navbar_after: Examples
 
 # API Reference Structure
 reference:

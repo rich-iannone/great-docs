@@ -325,41 +325,55 @@ def scan(project_path, docs_dir, verbose):
         marker_not_included = click.style("[ ]", fg="red")
         marker_class_only = click.style("[-]", fg="yellow")
 
-        # Show classes
-        if categories.get("classes"):
-            click.echo("\nClasses:")
-            for class_name in categories["classes"]:
-                method_names = categories.get("class_method_names", {}).get(class_name, [])
+        # Show class-like categories (with method details)
+        _class_like_cats = [
+            ("classes", "Classes"),
+            ("dataclasses", "Dataclasses"),
+            ("abstract_classes", "Abstract Classes"),
+            ("protocols", "Protocols"),
+        ]
+        for cat_key, label in _class_like_cats:
+            cat_items = categories.get(cat_key)
+            if cat_items:
+                click.echo(f"\n{label}:")
+                for class_name in cat_items:
+                    method_names = categories.get("class_method_names", {}).get(class_name, [])
 
-                # Determine class marker
-                if class_name in ref_classes_without_members:
-                    class_marker = marker_class_only
-                elif class_name in ref_classes_with_members or class_name in ref_items:
-                    class_marker = marker_included
-                else:
-                    class_marker = marker_not_included
+                    # Determine class marker
+                    if class_name in ref_classes_without_members:
+                        class_marker = marker_class_only
+                    elif class_name in ref_classes_with_members or class_name in ref_items:
+                        class_marker = marker_included
+                    else:
+                        class_marker = marker_not_included
 
-                click.echo(f"• {class_marker} {class_name}")
-                for method in method_names:
-                    full_method = f"{class_name}.{method}"
-                    method_marker = (
-                        marker_included if full_method in ref_items else marker_not_included
-                    )
-                    click.echo(f"    • {method_marker} {full_method}")
+                    click.echo(f"• {class_marker} {class_name}")
+                    for method in method_names:
+                        full_method = f"{class_name}.{method}"
+                        method_marker = (
+                            marker_included if full_method in ref_items else marker_not_included
+                        )
+                        click.echo(f"    • {method_marker} {full_method}")
 
-        # Show functions
-        if categories.get("functions"):
-            click.echo("\nFunctions:")
-            for func_name in categories["functions"]:
-                func_marker = marker_included if func_name in ref_items else marker_not_included
-                click.echo(f"• {func_marker} {func_name}")
-
-        # Show other exports
-        if categories.get("other"):
-            click.echo("\nOther:")
-            for other_name in categories["other"]:
-                other_marker = marker_included if other_name in ref_items else marker_not_included
-                click.echo(f"• {other_marker} {other_name}")
+        # Show flat categories (simple lists)
+        _flat_cats = [
+            ("enums", "Enumerations"),
+            ("exceptions", "Exceptions"),
+            ("namedtuples", "Named Tuples"),
+            ("typeddicts", "Typed Dicts"),
+            ("functions", "Functions"),
+            ("async_functions", "Async Functions"),
+            ("constants", "Constants"),
+            ("type_aliases", "Type Aliases"),
+            ("other", "Other"),
+        ]
+        for cat_key, label in _flat_cats:
+            cat_items = categories.get(cat_key)
+            if cat_items:
+                click.echo(f"\n{label}:")
+                for name in cat_items:
+                    m = marker_included if name in ref_items else marker_not_included
+                    click.echo(f"• {m} {name}")
 
         # Section 3: Config status
         click.echo("\n" + "─" * 50)

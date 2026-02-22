@@ -112,7 +112,7 @@ SPEC = {
         "detected_parser": "numpy",
         "export_names": ["Serializable", "Renderable"],
         "num_exports": 2,
-        "section_titles": ["Classes"],
+        "section_titles": ["Abstract Classes", "Protocols", "Other"],
         "has_user_guide": False,
     },
 }

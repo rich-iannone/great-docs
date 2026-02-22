@@ -66,7 +66,7 @@ SPEC = {
         "detected_parser": "numpy",
         "export_names": ["Color", "Priority"],
         "num_exports": 2,
-        "section_titles": ["Classes"],
+        "section_titles": ["Enumerations", "Other"],
         "has_user_guide": False,
     },
 }

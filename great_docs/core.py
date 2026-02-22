@@ -2212,7 +2212,7 @@ class GreatDocs:
 
             # Also get source links for methods of classes
             categories = self._categorize_api_objects(package_name, [item_name])
-            if item_name in categories.get("classes", []):
+            if item_name in categories.get("all_classes", []):
                 method_names = categories.get("class_method_names", {}).get(item_name, [])
                 for method_name in method_names:
                     full_name = f"{item_name}.{method_name}"
@@ -2924,6 +2924,252 @@ class GreatDocs:
             return self._parse_package_exports(package_name)
         return exports
 
+    # ── Exception base classes (used for sub-classification) ─────────────
+    _EXCEPTION_BASES = frozenset(
+        {
+            "Exception",
+            "BaseException",
+            # Built-in error types
+            "ArithmeticError",
+            "AssertionError",
+            "AttributeError",
+            "BlockingIOError",
+            "BrokenPipeError",
+            "BufferError",
+            "BytesWarning",
+            "ChildProcessError",
+            "ConnectionAbortedError",
+            "ConnectionError",
+            "ConnectionRefusedError",
+            "ConnectionResetError",
+            "DeprecationWarning",
+            "EOFError",
+            "EnvironmentError",
+            "FileExistsError",
+            "FileNotFoundError",
+            "FloatingPointError",
+            "FutureWarning",
+            "GeneratorExit",
+            "IOError",
+            "ImportError",
+            "ImportWarning",
+            "IndentationError",
+            "IndexError",
+            "InterruptedError",
+            "IsADirectoryError",
+            "KeyError",
+            "KeyboardInterrupt",
+            "LookupError",
+            "MemoryError",
+            "ModuleNotFoundError",
+            "NameError",
+            "NotADirectoryError",
+            "NotImplementedError",
+            "OSError",
+            "OverflowError",
+            "PendingDeprecationWarning",
+            "PermissionError",
+            "ProcessLookupError",
+            "RecursionError",
+            "ReferenceError",
+            "ResourceWarning",
+            "RuntimeError",
+            "RuntimeWarning",
+            "StopAsyncIteration",
+            "StopIteration",
+            "SyntaxError",
+            "SyntaxWarning",
+            "SystemError",
+            "SystemExit",
+            "TabError",
+            "TimeoutError",
+            "TypeError",
+            "UnboundLocalError",
+            "UnicodeDecodeError",
+            "UnicodeEncodeError",
+            "UnicodeError",
+            "UnicodeTranslationError",
+            "UnicodeWarning",
+            "UserWarning",
+            "ValueError",
+            "Warning",
+            "ZeroDivisionError",
+        }
+    )
+
+    # ── Enum base classes ────────────────────────────────────────────────
+    _ENUM_BASES = frozenset(
+        {"Enum", "IntEnum", "StrEnum", "Flag", "IntFlag", "ReprEnum", "EnumCheck"}
+    )
+
+    @staticmethod
+    def _sub_classify_class(obj) -> str:
+        """
+        Determine the sub-type of a griffe ``class`` object.
+
+        Returns one of: ``"dataclass"``, ``"enum"``, ``"exception"``,
+        ``"namedtuple"``, ``"typeddict"``, ``"protocol"``, ``"abc"``,
+        or ``"class"`` (the generic fallback).
+
+        Parameters
+        ----------
+        obj
+            A griffe ``Class`` object (or ``Alias`` that resolves to one).
+
+        Returns
+        -------
+        str
+            The sub-classification label.
+        """
+        # --- labels (fast path) ---
+        try:
+            labels = obj.labels
+        except Exception:
+            labels = set()
+
+        if "dataclass" in labels:
+            return "dataclass"
+
+        # --- bases (may be short names like "Enum" or dotted) ---
+        try:
+            bases = [str(b) for b in obj.bases]
+        except Exception:
+            bases = []
+
+        # Normalize base names: "enum.IntEnum" → "IntEnum"
+        short_bases = {b.rsplit(".", 1)[-1] for b in bases}
+
+        if short_bases & GreatDocs._ENUM_BASES:
+            return "enum"
+        if short_bases & GreatDocs._EXCEPTION_BASES:
+            return "exception"
+        if "NamedTuple" in short_bases:
+            return "namedtuple"
+        if "TypedDict" in short_bases:
+            return "typeddict"
+        if "Protocol" in short_bases or "runtime_checkable" in short_bases:
+            return "protocol"
+        if short_bases & {"ABC", "ABCMeta"}:
+            return "abc"
+
+        # --- decorators (secondary check for ABC) ---
+        try:
+            decorators = [str(d.value) for d in obj.decorators]
+        except Exception:
+            decorators = []
+
+        if any("abstractmethod" in d for d in decorators):
+            return "abc"
+
+        return "class"
+
+    @staticmethod
+    def _sub_classify_function(obj) -> str:
+        """
+        Determine the sub-type of a griffe ``function`` object.
+
+        Returns one of: ``"async"``, ``"classmethod"``, ``"staticmethod"``,
+        ``"property"``, or ``"function"`` (the generic fallback).
+
+        Parameters
+        ----------
+        obj
+            A griffe ``Function`` object (or ``Alias`` that resolves to one).
+
+        Returns
+        -------
+        str
+            The sub-classification label.
+        """
+        try:
+            labels = obj.labels
+        except Exception:
+            labels = set()
+
+        if "async" in labels:
+            return "async"
+        if "classmethod" in labels:
+            return "classmethod"
+        if "staticmethod" in labels:
+            return "staticmethod"
+        if "property" in labels:
+            return "property"
+
+        return "function"
+
+    @staticmethod
+    def _sub_classify_attribute(obj) -> str:
+        """
+        Determine the sub-type of a griffe ``attribute`` object.
+
+        Returns one of: ``"type_alias"``, ``"typevar"``, or ``"constant"``.
+
+        Parameters
+        ----------
+        obj
+            A griffe ``Attribute`` object (or ``Alias`` that resolves to one).
+
+        Returns
+        -------
+        str
+            The sub-classification label.
+        """
+        try:
+            labels = obj.labels
+        except Exception:
+            labels = set()
+
+        # griffe >= 0.40 has a dedicated "type alias" kind
+        try:
+            if obj.kind.value == "type alias":
+                return "type_alias"
+        except Exception:
+            pass
+
+        # Check annotation for TypeVar / ParamSpec / TypeVarTuple
+        try:
+            annotation = str(obj.annotation) if obj.annotation else ""
+        except Exception:
+            annotation = ""
+
+        if "TypeVar" in annotation or "ParamSpec" in annotation or "TypeVarTuple" in annotation:
+            return "typevar"
+
+        # Heuristic: assignment like ``MyAlias = list[int]`` with no annotation
+        # is often a type alias, but we can't reliably distinguish from a
+        # constant without more context. Default to constant.
+        return "constant"
+
+    @staticmethod
+    def _empty_categories() -> dict:
+        """Return a fresh, empty categories dict with all keys."""
+        return {
+            # ── Class-like ──
+            "classes": [],
+            "dataclasses": [],
+            "enums": [],
+            "exceptions": [],
+            "namedtuples": [],
+            "typeddicts": [],
+            "protocols": [],
+            "abstract_classes": [],
+            # ── Function-like ──
+            "functions": [],
+            "async_functions": [],
+            # ── Data ──
+            "constants": [],
+            "type_aliases": [],
+            # ── Catch-all ──
+            "other": [],
+            # ── Metadata ──
+            "class_methods": {},
+            "class_method_names": {},
+            "cyclic_alias_count": 0,
+            # ── Convenience unions ──
+            "all_classes": [],
+            "all_functions": [],
+        }
+
     def _categorize_api_objects(self, package_name: str, exports: list) -> dict:
         """
         Categorize API objects using griffe introspection.
@@ -2943,11 +3189,23 @@ class GreatDocs:
         -------
         dict
             Dictionary with:
-            - classes: list of class names
+            - classes: list of regular class names
+            - dataclasses: list of dataclass names
+            - enums: list of enum class names
+            - exceptions: list of exception class names
+            - namedtuples: list of NamedTuple class names
+            - typeddicts: list of TypedDict class names
+            - protocols: list of Protocol class names
+            - abstract_classes: list of ABC class names
             - functions: list of function names
+            - async_functions: list of async function names
+            - constants: list of module-level constant names
+            - type_aliases: list of type alias names
             - other: list of other object names
             - class_methods: dict mapping class name to method count
             - class_method_names: dict mapping class name to list of method names
+            - all_classes: list of ALL class-like names (union for compat)
+            - all_functions: list of ALL function-like names (union for compat)
         """
         try:
             import griffe
@@ -2974,23 +3232,11 @@ class GreatDocs:
                 # Fallback to simple categorization
                 skip_names = {"__version__", "__author__", "__email__", "__all__"}
                 filtered_exports = [e for e in exports if e not in skip_names]
-                return {
-                    "classes": [],
-                    "functions": [],
-                    "other": filtered_exports,
-                    "class_methods": {},
-                    "class_method_names": {},
-                    "cyclic_alias_count": 0,
-                }
+                empty = self._empty_categories()
+                empty["other"] = filtered_exports
+                return empty
 
-            categories = {
-                "classes": [],
-                "functions": [],
-                "other": [],
-                "class_methods": {},
-                "class_method_names": {},
-                "cyclic_alias_count": 0,
-            }
+            categories = self._empty_categories()
             failed_introspection = []
             cyclic_aliases = []
 
@@ -3015,7 +3261,20 @@ class GreatDocs:
                     # Note: Accessing obj.kind or obj.members on an Alias can trigger
                     # resolution which may raise CyclicAliasError or AliasResolutionError
                     if obj.kind.value == "class":
-                        categories["classes"].append(name)
+                        # Sub-classify the class
+                        sub = self._sub_classify_class(obj)
+                        _CLASS_SUB_MAP = {
+                            "dataclass": "dataclasses",
+                            "enum": "enums",
+                            "exception": "exceptions",
+                            "namedtuple": "namedtuples",
+                            "typeddict": "typeddicts",
+                            "protocol": "protocols",
+                            "abc": "abstract_classes",
+                            "class": "classes",
+                        }
+                        cat_key = _CLASS_SUB_MAP.get(sub, "classes")
+                        categories[cat_key].append(name)
                         # Get public methods (exclude private/magic methods)
                         # We need to handle each member individually to catch cyclic aliases
                         # AND validate each method with quartodoc to catch type hint issues
@@ -3075,9 +3334,22 @@ class GreatDocs:
                         categories["class_methods"][name] = len(method_names)
                         categories["class_method_names"][name] = method_names
                     elif obj.kind.value == "function":
-                        categories["functions"].append(name)
+                        # Sub-classify the function
+                        sub = self._sub_classify_function(obj)
+                        if sub == "async":
+                            categories["async_functions"].append(name)
+                        else:
+                            categories["functions"].append(name)
+                    elif obj.kind.value in ("attribute", "type alias"):
+                        sub = self._sub_classify_attribute(obj)
+                        if sub == "type_alias":
+                            categories["type_aliases"].append(name)
+                        elif sub == "typevar":
+                            categories["type_aliases"].append(name)
+                        else:
+                            categories["constants"].append(name)
                     else:
-                        # Attributes, modules, etc.
+                        # Modules, aliases, etc.
                         categories["other"].append(name)
 
                 except griffe.CyclicAliasError:
@@ -3106,6 +3378,21 @@ class GreatDocs:
                     f"Note: Could not introspect {len(failed_introspection)} item(s), categorizing as 'Other'"
                 )
 
+            # Build convenience union keys for backward compatibility
+            categories["all_classes"] = (
+                categories["classes"]
+                + categories["dataclasses"]
+                + categories["enums"]
+                + categories["exceptions"]
+                + categories["namedtuples"]
+                + categories["typeddicts"]
+                + categories["protocols"]
+                + categories["abstract_classes"]
+            )
+            categories["all_functions"] = (
+                categories["functions"] + categories["async_functions"]
+            )
+
             return categories
 
         except ImportError:
@@ -3113,14 +3400,9 @@ class GreatDocs:
             # Fallback if griffe isn't installed
             skip_names = {"__version__", "__author__", "__email__", "__all__"}
             filtered_exports = [e for e in exports if e not in skip_names]
-            return {
-                "classes": [],
-                "functions": [],
-                "other": filtered_exports,
-                "class_methods": {},
-                "class_method_names": {},
-                "cyclic_alias_count": 0,
-            }
+            empty = self._empty_categories()
+            empty["other"] = filtered_exports
+            return empty
 
     def _create_quartodoc_sections(self, package_name: str) -> list | None:
         """
@@ -3164,49 +3446,100 @@ class GreatDocs:
         # Use static threshold of 5 methods for large class separation
         method_threshold = 5
 
-        # Add classes section if there are any
-        if categories["classes"]:
+        # ── Helper: build a class section with big-class splitting ────────
+        def _make_class_section(
+            title: str, desc: str, class_names: list
+        ) -> list[dict]:
+            """Return section dicts (possibly with a Methods companion section)."""
+            if not class_names:
+                return []
+
             class_contents = []
-            classes_with_separate_methods = []
+            separate_methods = []
 
-            for class_name in categories["classes"]:
+            for class_name in class_names:
                 method_count = categories["class_methods"].get(class_name, 0)
-
                 if method_count > method_threshold:
-                    # Class with many methods: add with members: [] to suppress inline docs
                     class_contents.append({"name": class_name, "members": []})
-                    classes_with_separate_methods.append(class_name)
+                    separate_methods.append(class_name)
                 else:
-                    # Class with few methods: document inline
                     class_contents.append(class_name)
 
-            sections.append(
-                {
-                    "title": "Classes",
-                    "desc": "Core classes and types",
-                    "contents": class_contents,
-                }
-            )
+            result = [{"title": title, "desc": desc, "contents": class_contents}]
 
-            # Create separate sections for methods of large classes
-            for class_name in classes_with_separate_methods:
+            for class_name in separate_methods:
                 method_names = categories["class_method_names"].get(class_name, [])
                 method_count = len(method_names)
-
-                # Create fully qualified method references
                 method_contents = [f"{class_name}.{method}" for method in method_names]
-
-                sections.append(
+                result.append(
                     {
                         "title": f"{class_name} Methods",
                         "desc": f"Methods for the {class_name} class",
                         "contents": method_contents,
                     }
                 )
+                print(
+                    f"  Created separate section for {class_name} "
+                    f"with {method_count} methods"
+                )
 
-                print(f"  Created separate section for {class_name} with {method_count} methods")
+            return result
 
-        # Add functions section if there are any
+        # ── Class-like sections ──────────────────────────────────────────
+        sections.extend(
+            _make_class_section("Classes", "Core classes", categories["classes"])
+        )
+        sections.extend(
+            _make_class_section(
+                "Dataclasses", "Data-holding classes", categories["dataclasses"]
+            )
+        )
+        sections.extend(
+            _make_class_section(
+                "Abstract Classes", "Abstract base classes", categories["abstract_classes"]
+            )
+        )
+        sections.extend(
+            _make_class_section(
+                "Protocols", "Structural typing protocols", categories["protocols"]
+            )
+        )
+
+        # Enums, Exceptions, NamedTuples, TypedDicts — no big-class splitting
+        if categories["enums"]:
+            sections.append(
+                {
+                    "title": "Enumerations",
+                    "desc": "Enum types",
+                    "contents": categories["enums"],
+                }
+            )
+        if categories["exceptions"]:
+            sections.append(
+                {
+                    "title": "Exceptions",
+                    "desc": "Exception classes",
+                    "contents": categories["exceptions"],
+                }
+            )
+        if categories["namedtuples"]:
+            sections.append(
+                {
+                    "title": "Named Tuples",
+                    "desc": "NamedTuple types",
+                    "contents": categories["namedtuples"],
+                }
+            )
+        if categories["typeddicts"]:
+            sections.append(
+                {
+                    "title": "Typed Dicts",
+                    "desc": "TypedDict types",
+                    "contents": categories["typeddicts"],
+                }
+            )
+
+        # ── Function sections ────────────────────────────────────────────
         if categories["functions"]:
             sections.append(
                 {
@@ -3216,7 +3549,35 @@ class GreatDocs:
                 }
             )
 
-        # Add other exports section if there are any
+        if categories["async_functions"]:
+            sections.append(
+                {
+                    "title": "Async Functions",
+                    "desc": "Asynchronous functions",
+                    "contents": categories["async_functions"],
+                }
+            )
+
+        # ── Data sections ────────────────────────────────────────────────
+        if categories["constants"]:
+            sections.append(
+                {
+                    "title": "Constants",
+                    "desc": "Module-level constants and data",
+                    "contents": categories["constants"],
+                }
+            )
+
+        if categories["type_aliases"]:
+            sections.append(
+                {
+                    "title": "Type Aliases",
+                    "desc": "Type alias definitions",
+                    "contents": categories["type_aliases"],
+                }
+            )
+
+        # ── Catch-all ────────────────────────────────────────────────────
         if categories["other"]:
             sections.append(
                 {"title": "Other", "desc": "Additional exports", "contents": categories["other"]}
@@ -3873,9 +4234,6 @@ jupyter: python3
             ]
         )
 
-        classes = categories.get("classes", [])
-        functions = categories.get("functions", [])
-        other = categories.get("other", [])
         class_methods = categories.get("class_methods", {})
         class_method_names = categories.get("class_method_names", {})
 
@@ -3883,17 +4241,31 @@ jupyter: python3
         threshold = 5
 
         # Track large classes that need separate method sections
-        large_classes = []
+        large_classes: list[str] = []
 
-        # Classes section
-        if classes:
-            lines.append("  - title: Classes")
-            lines.append("    desc: Main classes provided by the package")
+        # Track whether we've emitted any section yet (for blank-line spacing)
+        has_prev_section = False
+
+        # --- Class-like sections (support big-class splitting) ---
+        _class_like_sections = [
+            ("classes", "Classes", "Main classes provided by the package"),
+            ("dataclasses", "Dataclasses", "Dataclass definitions"),
+            ("abstract_classes", "Abstract Classes", "Abstract base classes"),
+            ("protocols", "Protocols", "Protocol / structural-typing interfaces"),
+        ]
+
+        for cat_key, title, desc in _class_like_sections:
+            items = categories.get(cat_key, [])
+            if not items:
+                continue
+            if has_prev_section:
+                lines.append("")
+            lines.append(f"  - title: {title}")
+            lines.append(f"    desc: {desc}")
             lines.append("    contents:")
-            for class_name in sorted(classes):
+            for class_name in sorted(items):
                 method_count = class_methods.get(class_name, 0)
                 if method_count > threshold:
-                    # Large class: use members: false, methods listed separately
                     lines.append(f"      - name: {class_name}")
                     lines.append(f"        members: false  # {method_count} methods listed below")
                     large_classes.append(class_name)
@@ -3901,6 +4273,7 @@ jupyter: python3
                     lines.append(f"      - {class_name}  # {method_count} method(s)")
                 else:
                     lines.append(f"      - {class_name}")
+            has_prev_section = True
 
         # Add separate method sections for large classes
         for class_name in large_classes:
@@ -3913,25 +4286,31 @@ jupyter: python3
                 for method_name in method_names:
                     lines.append(f"      - {class_name}.{method_name}")
 
-        # Functions section
-        if functions:
-            if classes or large_classes:
-                lines.append("")
-            lines.append("  - title: Functions")
-            lines.append("    desc: Utility functions")
-            lines.append("    contents:")
-            for func_name in sorted(functions):
-                lines.append(f"      - {func_name}")
+        # --- Flat sections (simple lists, no big-class splitting) ---
+        _flat_sections = [
+            ("enums", "Enumerations", "Enumeration types"),
+            ("exceptions", "Exceptions", "Exception classes"),
+            ("namedtuples", "Named Tuples", "Named tuple definitions"),
+            ("typeddicts", "Typed Dicts", "TypedDict definitions"),
+            ("functions", "Functions", "Utility functions"),
+            ("async_functions", "Async Functions", "Asynchronous functions"),
+            ("constants", "Constants", "Module-level constants and data"),
+            ("type_aliases", "Type Aliases", "Type alias definitions"),
+            ("other", "Other", "Additional exports"),
+        ]
 
-        # Other section (if any non-class, non-function exports)
-        if other:
-            if classes or functions:
+        for cat_key, title, desc in _flat_sections:
+            items = categories.get(cat_key, [])
+            if not items:
+                continue
+            if has_prev_section:
                 lines.append("")
-            lines.append("  - title: Other")
-            lines.append("    desc: Additional exports")
+            lines.append(f"  - title: {title}")
+            lines.append(f"    desc: {desc}")
             lines.append("    contents:")
-            for other_name in sorted(other):
-                lines.append(f"      - {other_name}")
+            for name in sorted(items):
+                lines.append(f"      - {name}")
+            has_prev_section = True
 
         # Add trailing sections for site settings (commented out)
         lines.extend(

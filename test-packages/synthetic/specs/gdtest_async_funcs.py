@@ -88,7 +88,7 @@ SPEC = {
         "detected_parser": "numpy",
         "export_names": ["async_fetch", "async_process", "async_save"],
         "num_exports": 3,
-        "section_titles": ["Functions"],
+        "section_titles": ["Async Functions"],
         "has_user_guide": False,
     },
 }

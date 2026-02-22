@@ -119,7 +119,7 @@ SPEC = {
         "detected_parser": "numpy",
         "export_names": ["Coordinate", "BoundingBox"],
         "num_exports": 2,
-        "section_titles": ["Classes"],
+        "section_titles": ["Dataclasses", "Other"],
         "has_user_guide": False,
     },
 }

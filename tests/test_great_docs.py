@@ -2997,3 +2997,339 @@ def test_convert_rst_to_markdown():
         assert "## Subtitle" in result or "Subtitle" in result
         assert "Paragraph text" in result
         assert "Item 1" in result
+
+
+# =========================================================================
+# Changelog (GitHub Releases) Tests
+# =========================================================================
+
+
+def test_fetch_github_releases_success():
+    """Test fetching releases from the GitHub API (mocked)."""
+    from unittest.mock import patch, MagicMock
+
+    docs = GreatDocs()
+
+    fake_response = MagicMock()
+    fake_response.status_code = 200
+    fake_response.json.return_value = [
+        {
+            "tag_name": "v1.0.0",
+            "name": "Version 1.0",
+            "body": "First stable release.\n\n- Feature A\n- Feature B",
+            "published_at": "2026-01-15T00:00:00Z",
+            "html_url": "https://github.com/owner/repo/releases/tag/v1.0.0",
+            "prerelease": False,
+            "draft": False,
+        },
+        {
+            "tag_name": "v0.9.0",
+            "name": "Beta",
+            "body": "Beta release.",
+            "published_at": "2025-12-01T00:00:00Z",
+            "html_url": "https://github.com/owner/repo/releases/tag/v0.9.0",
+            "prerelease": True,
+            "draft": False,
+        },
+        {
+            "tag_name": "v0.8.0-draft",
+            "name": "Draft",
+            "body": "Draft release.",
+            "published_at": "2025-11-01T00:00:00Z",
+            "html_url": "https://github.com/owner/repo/releases/tag/v0.8.0-draft",
+            "prerelease": False,
+            "draft": True,
+        },
+    ]
+
+    with patch("requests.get", return_value=fake_response) as mock_get:
+        releases = docs._fetch_github_releases("owner", "repo", max_releases=10)
+
+    mock_get.assert_called_once()
+    assert len(releases) == 2  # Draft skipped
+    assert releases[0]["tag_name"] == "v1.0.0"
+    assert releases[0]["name"] == "Version 1.0"
+    assert releases[0]["body"] == "First stable release.\n\n- Feature A\n- Feature B"
+    assert releases[1]["prerelease"] is True
+
+
+def test_fetch_github_releases_404():
+    """Test that a 404 returns an empty list."""
+    from unittest.mock import patch, MagicMock
+
+    docs = GreatDocs()
+    fake_response = MagicMock()
+    fake_response.status_code = 404
+
+    with patch("requests.get", return_value=fake_response):
+        releases = docs._fetch_github_releases("no", "repo")
+
+    assert releases == []
+
+
+def test_fetch_github_releases_rate_limited():
+    """Test that a 403 returns what was already fetched (empty)."""
+    from unittest.mock import patch, MagicMock
+
+    docs = GreatDocs()
+    fake_response = MagicMock()
+    fake_response.status_code = 403
+
+    with patch("requests.get", return_value=fake_response):
+        releases = docs._fetch_github_releases("owner", "repo")
+
+    assert releases == []
+
+
+def test_fetch_github_releases_network_error():
+    """Test graceful handling of network errors."""
+    from unittest.mock import patch
+    import requests as req_lib
+
+    docs = GreatDocs()
+
+    with patch("requests.get", side_effect=req_lib.ConnectionError("offline")):
+        releases = docs._fetch_github_releases("owner", "repo")
+
+    assert releases == []
+
+
+def test_generate_changelog_page():
+    """Test changelog.qmd page generation."""
+    from unittest.mock import patch, MagicMock
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create minimal project structure
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text(
+            '[project]\nname = "test-pkg"\nversion = "0.1.0"\n\n'
+            '[project.urls]\nRepository = "https://github.com/owner/repo"\n'
+        )
+        config_path = project_path / "great-docs.yml"
+        config_path.write_text("")
+        build_dir = project_path / "great-docs"
+        build_dir.mkdir()
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        fake_releases = [
+            {
+                "tag_name": "v2.0.0",
+                "name": "Version 2.0",
+                "body": "Major update.\n\n### Breaking changes\n\n- Removed X\n",
+                "published_at": "2026-02-10T00:00:00Z",
+                "html_url": "https://github.com/owner/repo/releases/tag/v2.0.0",
+                "prerelease": False,
+            },
+            {
+                "tag_name": "v1.0.0",
+                "name": "Version 1.0",
+                "body": "Initial release.",
+                "published_at": "2025-12-01T00:00:00Z",
+                "html_url": "https://github.com/owner/repo/releases/tag/v1.0.0",
+                "prerelease": False,
+            },
+        ]
+
+        with patch.object(docs, "_fetch_github_releases", return_value=fake_releases):
+            result = docs._generate_changelog_page()
+
+        assert result == "changelog.qmd"
+
+        changelog_qmd = build_dir / "changelog.qmd"
+        assert changelog_qmd.exists()
+
+        content = changelog_qmd.read_text()
+        assert 'title: "Changelog"' in content
+        assert "## Version 2.0" in content
+        assert "## Version 1.0" in content
+        assert "*2026-02-10*" in content
+        assert "### Breaking changes" in content
+        assert "Initial release." in content
+        assert "https://github.com/owner/repo/releases" in content
+
+
+def test_generate_changelog_page_no_github():
+    """Test that changelog is skipped when no GitHub repo is configured."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test-pkg"\nversion = "0.1.0"\n')
+        config_path = project_path / "great-docs.yml"
+        config_path.write_text("")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        result = docs._generate_changelog_page()
+
+        assert result is None
+
+
+def test_generate_changelog_page_no_releases():
+    """Test that changelog is skipped when there are no releases."""
+    from unittest.mock import patch
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text(
+            '[project]\nname = "test-pkg"\nversion = "0.1.0"\n\n'
+            '[project.urls]\nRepository = "https://github.com/owner/repo"\n'
+        )
+        config_path = project_path / "great-docs.yml"
+        config_path.write_text("")
+        (project_path / "great-docs").mkdir()
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        with patch.object(docs, "_fetch_github_releases", return_value=[]):
+            result = docs._generate_changelog_page()
+
+        assert result is None
+
+
+def test_add_changelog_to_navbar():
+    """Test that a Changelog link is added to the navbar."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+        (project_path / "great-docs.yml").write_text("")
+        build_dir = project_path / "great-docs"
+        build_dir.mkdir()
+
+        # Write a basic _quarto.yml
+        quarto_yml = build_dir / "_quarto.yml"
+        quarto_yml.write_text(
+            "website:\n"
+            "  navbar:\n"
+            "    left:\n"
+            "      - text: Home\n"
+            "        href: index.qmd\n"
+            "      - text: Reference\n"
+            "        href: reference/index.qmd\n"
+        )
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs._add_changelog_to_navbar()
+
+        import yaml
+
+        with open(quarto_yml, "r") as f:
+            config = yaml.safe_load(f)
+
+        navbar_items = config["website"]["navbar"]["left"]
+        changelog_items = [
+            i for i in navbar_items if isinstance(i, dict) and i.get("text") == "Changelog"
+        ]
+        assert len(changelog_items) == 1
+        assert changelog_items[0]["href"] == "changelog.qmd"
+
+
+def test_add_changelog_to_navbar_idempotent():
+    """Test that adding changelog twice doesn't duplicate it."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+        (project_path / "great-docs.yml").write_text("")
+        build_dir = project_path / "great-docs"
+        build_dir.mkdir()
+
+        quarto_yml = build_dir / "_quarto.yml"
+        quarto_yml.write_text(
+            "website:\n  navbar:\n    left:\n      - text: Home\n        href: index.qmd\n"
+        )
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs._add_changelog_to_navbar()
+        docs._add_changelog_to_navbar()
+
+        import yaml
+
+        with open(quarto_yml, "r") as f:
+            config = yaml.safe_load(f)
+
+        changelog_items = [
+            i
+            for i in config["website"]["navbar"]["left"]
+            if isinstance(i, dict) and i.get("text") == "Changelog"
+        ]
+        assert len(changelog_items) == 1
+
+
+def test_changelog_config_defaults():
+    """Test default changelog configuration values."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        config_path = Path(tmp_dir) / "great-docs.yml"
+        config_path.write_text("")
+
+        config = Config(Path(tmp_dir))
+        assert config.changelog_enabled is True
+        assert config.changelog_max_releases == 50
+
+
+def test_changelog_config_custom():
+    """Test changelog configuration overrides."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        config_path = Path(tmp_dir) / "great-docs.yml"
+        config_path.write_text("changelog:\n  enabled: false\n  max_releases: 10\n")
+
+        config = Config(Path(tmp_dir))
+        assert config.changelog_enabled is False
+        assert config.changelog_max_releases == 10
+
+
+def test_fetch_github_releases_pagination():
+    """Test that pagination works for many releases."""
+    from unittest.mock import patch, MagicMock, call
+
+    docs = GreatDocs()
+
+    page1 = MagicMock()
+    page1.status_code = 200
+    page1.json.return_value = [
+        {
+            "tag_name": f"v{i}.0.0",
+            "name": f"Release {i}",
+            "body": f"Release {i} notes.",
+            "published_at": f"2026-01-{i:02d}T00:00:00Z",
+            "html_url": f"https://github.com/o/r/releases/tag/v{i}.0.0",
+            "prerelease": False,
+            "draft": False,
+        }
+        for i in range(1, 4)
+    ]
+
+    page2 = MagicMock()
+    page2.status_code = 200
+    page2.json.return_value = []  # empty = last page
+
+    with patch("requests.get", side_effect=[page1, page2]):
+        releases = docs._fetch_github_releases("o", "r", max_releases=10)
+
+    assert len(releases) == 3
+
+
+def test_fetch_github_releases_max_cap():
+    """Test that max_releases caps the returned list."""
+    from unittest.mock import patch, MagicMock
+
+    docs = GreatDocs()
+
+    fake_response = MagicMock()
+    fake_response.status_code = 200
+    fake_response.json.return_value = [
+        {
+            "tag_name": f"v{i}",
+            "name": f"R{i}",
+            "body": "",
+            "published_at": "2026-01-01T00:00:00Z",
+            "html_url": f"https://github.com/o/r/releases/tag/v{i}",
+            "prerelease": False,
+            "draft": False,
+        }
+        for i in range(1, 20)
+    ]
+
+    with patch("requests.get", return_value=fake_response):
+        releases = docs._fetch_github_releases("o", "r", max_releases=5)
+
+    assert len(releases) == 5

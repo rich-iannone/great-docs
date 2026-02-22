@@ -846,6 +846,61 @@ def spell_check(
 cli.add_command(spell_check)
 
 
+@click.command()
+@click.option(
+    "--project-path",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    help="Path to your project root directory (default: current directory)",
+)
+@click.option(
+    "--max-releases",
+    type=int,
+    default=None,
+    help="Maximum number of releases to include (default: from config or 50)",
+)
+def changelog(project_path, max_releases):
+    """Generate a Changelog page from GitHub Releases.
+
+    Fetches published releases from the GitHub API and renders them as a
+    changelog.qmd page in the build directory. The page is also linked in
+    the navbar automatically.
+
+    \b
+    Requires the project to have a GitHub repository URL in pyproject.toml.
+    Set GITHUB_TOKEN or GH_TOKEN to avoid API rate limits.
+    """
+    try:
+        docs = GreatDocs(project_path=project_path)
+
+        # Override max_releases in config if provided
+        if max_releases is not None:
+            docs._config._config.setdefault("changelog", {})["max_releases"] = max_releases
+
+        owner, repo, _base_url = docs._get_github_repo_info()
+        if not owner or not repo:
+            click.echo(
+                "Error: No GitHub repository URL found in pyproject.toml. "
+                "Add a [project.urls] entry like:\n\n"
+                '  Repository = "https://github.com/owner/repo"',
+                err=True,
+            )
+            sys.exit(1)
+
+        result = docs._generate_changelog_page()
+        if result:
+            docs._add_changelog_to_navbar()
+            click.echo(f"✅ Changelog generated: {docs.project_path / result}")
+        else:
+            click.echo("No published releases found on GitHub.")
+
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+cli.add_command(changelog)
+
+
 def main():
     """Main CLI entry point for great-docs."""
     cli()

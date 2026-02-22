@@ -53,6 +53,11 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "toc-depth": 2,
         "toc-title": "On this page",
     },
+    # Changelog configuration (from GitHub Releases)
+    "changelog": {
+        "enabled": True,
+        "max_releases": 50,
+    },
     # User Guide configuration
     # If None, auto-discovers from user_guide/ directory
     # If a string, uses that as the directory path
@@ -217,6 +222,16 @@ class Config:
     def cli_name(self) -> str | None:
         """Get the CLI command name."""
         return self.get("cli.name")
+
+    @property
+    def changelog_enabled(self) -> bool:
+        """Check if changelog generation from GitHub Releases is enabled."""
+        return self.get("changelog.enabled", True)
+
+    @property
+    def changelog_max_releases(self) -> int:
+        """Get the maximum number of GitHub Releases to include."""
+        return self.get("changelog.max_releases", 50)
 
     @property
     def dark_mode_toggle(self) -> bool:
@@ -404,6 +419,13 @@ def create_default_config() -> str:
 #   enabled: false             # Enable CLI documentation (default: false)
 #   module: my_package.cli     # Module containing Click commands (auto-detected)
 #   name: cli                  # Name of the Click command object (auto-detected)
+
+# Changelog (GitHub Releases)
+# ---------------------------
+# Auto-generate a Changelog page from GitHub Releases.
+# changelog:
+#   enabled: true              # Enable/disable changelog (default: true)
+#   max_releases: 50           # Max releases to include (default: 50)
 
 # Dark Mode Toggle
 # ----------------

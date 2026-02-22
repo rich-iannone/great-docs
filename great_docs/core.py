@@ -837,6 +837,191 @@ class GreatDocs:
         return None, None, None
 
     # =========================================================================
+    # Changelog (GitHub Releases) Methods
+    # =========================================================================
+
+    def _fetch_github_releases(
+        self,
+        owner: str,
+        repo: str,
+        max_releases: int = 50,
+    ) -> list[dict]:
+        """
+        Fetch releases from the GitHub API.
+
+        Parameters
+        ----------
+        owner
+            GitHub repository owner.
+        repo
+            GitHub repository name.
+        max_releases
+            Maximum number of releases to return.
+
+        Returns
+        -------
+        list[dict]
+            List of release dicts with keys: tag_name, name, body, published_at,
+            html_url, prerelease, draft.
+        """
+        import requests
+
+        releases: list[dict] = []
+        per_page = min(max_releases, 100)
+        page = 1
+
+        headers = {"Accept": "application/vnd.github+json"}
+
+        # Honour GITHUB_TOKEN / GH_TOKEN for higher rate limits
+        token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+
+        while len(releases) < max_releases:
+            url = (
+                f"https://api.github.com/repos/{owner}/{repo}/releases"
+                f"?per_page={per_page}&page={page}"
+            )
+
+            try:
+                resp = requests.get(url, headers=headers, timeout=30)
+            except requests.RequestException as exc:
+                print(f"   ⚠️  Failed to fetch GitHub releases: {exc}")
+                break
+
+            if resp.status_code == 403:
+                # Rate-limited
+                print("   ⚠️  GitHub API rate limit reached; changelog may be incomplete")
+                break
+            if resp.status_code == 404:
+                print(f"   ⚠️  GitHub repository {owner}/{repo} not found")
+                break
+            if resp.status_code != 200:
+                print(f"   ⚠️  GitHub API returned status {resp.status_code}")
+                break
+
+            data = resp.json()
+            if not data:
+                break  # No more pages
+
+            for release in data:
+                if release.get("draft"):
+                    continue  # Skip drafts
+                releases.append(
+                    {
+                        "tag_name": release.get("tag_name", ""),
+                        "name": release.get("name", ""),
+                        "body": release.get("body", ""),
+                        "published_at": release.get("published_at", ""),
+                        "html_url": release.get("html_url", ""),
+                        "prerelease": release.get("prerelease", False),
+                    }
+                )
+                if len(releases) >= max_releases:
+                    break
+
+            if len(data) < per_page:
+                break  # Last page
+            page += 1
+
+        return releases
+
+    def _generate_changelog_page(self) -> str | None:
+        """
+        Generate a changelog.qmd page from GitHub Releases.
+
+        Fetches releases via the GitHub API and renders them as a dated
+        Markdown changelog.  Returns the filename written (``"changelog.qmd"``)
+        or ``None`` if the page could not be generated.
+
+        Returns
+        -------
+        str | None
+            ``"changelog.qmd"`` on success, ``None`` otherwise.
+        """
+        owner, repo, _base_url = self._get_github_repo_info()
+        if not owner or not repo:
+            return None
+
+        max_releases = self._config.changelog_max_releases
+        releases = self._fetch_github_releases(owner, repo, max_releases)
+        if not releases:
+            return None
+
+        # Build .qmd content
+        lines: list[str] = [
+            "---",
+            'title: "Changelog"',
+            "toc: true",
+            "toc-depth: 2",
+            "---",
+            "",
+            "This changelog is generated automatically from ",
+            f"[GitHub Releases](https://github.com/{owner}/{repo}/releases).",
+            "",
+        ]
+
+        for rel in releases:
+            # --- heading ------------------------------------------------
+            tag = rel["tag_name"]
+            name = rel["name"] or tag
+            published = rel["published_at"][:10] if rel["published_at"] else ""
+            gh_url = rel["html_url"]
+
+            heading = f"## {name}"
+            if published:
+                heading += f"  {{.changelog-version}}"  # noqa: F541
+
+            lines.append(heading)
+            lines.append("")
+
+            # Date + link line
+            meta_parts: list[str] = []
+            if published:
+                meta_parts.append(f"*{published}*")
+            if rel["prerelease"]:
+                meta_parts.append("*(pre-release)*")
+            meta_parts.append(f"[GitHub]({gh_url})")
+            lines.append(" · ".join(meta_parts))
+            lines.append("")
+
+            # --- body ---------------------------------------------------
+            body = (rel.get("body") or "").strip()
+            if body:
+                lines.append(body)
+                lines.append("")
+
+        changelog_path = self.project_path / "changelog.qmd"
+        changelog_path.write_text("\n".join(lines), encoding="utf-8")
+        print(f"Created {changelog_path}")
+
+        return "changelog.qmd"
+
+    def _add_changelog_to_navbar(self) -> None:
+        """Add a *Changelog* link to the navbar (idempotent)."""
+        quarto_yml = self.project_path / "_quarto.yml"
+        if not quarto_yml.exists():
+            return
+
+        with open(quarto_yml, "r") as f:
+            config = yaml.safe_load(f) or {}
+
+        navbar = config.get("website", {}).get("navbar")
+        if not navbar or "left" not in navbar:
+            return
+
+        # Already present?
+        if any(
+            isinstance(item, dict) and item.get("text") == "Changelog" for item in navbar["left"]
+        ):
+            return
+
+        # Insert before the last item (usually Reference) or at end
+        navbar["left"].append({"text": "Changelog", "href": "changelog.qmd"})
+
+        self._write_quarto_yml(quarto_yml, config)
+
+    # =========================================================================
     # CLI Documentation Methods
     # =========================================================================
 
@@ -6372,6 +6557,21 @@ toc: false
             package_name = self._detect_package_name()
             if package_name:
                 self._generate_source_links_json(package_name)
+
+            # Step 0.75: Generate changelog from GitHub Releases (if enabled)
+            if self._config.changelog_enabled:
+                owner, repo, _base_url = self._get_github_repo_info()
+                if owner and repo:
+                    print("\n📋 Generating changelog from GitHub Releases...")
+                    try:
+                        result_file = self._generate_changelog_page()
+                        if result_file:
+                            self._add_changelog_to_navbar()
+                            print("✅ Changelog generated")
+                        else:
+                            print("   No releases found; skipping changelog")
+                    except Exception as e:
+                        print(f"   ⚠️  Error generating changelog: {e}")
 
             # Step 0.8: Generate CLI documentation if enabled
             metadata = self._get_package_metadata()

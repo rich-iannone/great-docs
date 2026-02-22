@@ -3389,9 +3389,7 @@ class GreatDocs:
                 + categories["protocols"]
                 + categories["abstract_classes"]
             )
-            categories["all_functions"] = (
-                categories["functions"] + categories["async_functions"]
-            )
+            categories["all_functions"] = categories["functions"] + categories["async_functions"]
 
             return categories
 
@@ -3447,9 +3445,7 @@ class GreatDocs:
         method_threshold = 5
 
         # ── Helper: build a class section with big-class splitting ────────
-        def _make_class_section(
-            title: str, desc: str, class_names: list
-        ) -> list[dict]:
+        def _make_class_section(title: str, desc: str, class_names: list) -> list[dict]:
             """Return section dicts (possibly with a Methods companion section)."""
             if not class_names:
                 return []
@@ -3478,21 +3474,14 @@ class GreatDocs:
                         "contents": method_contents,
                     }
                 )
-                print(
-                    f"  Created separate section for {class_name} "
-                    f"with {method_count} methods"
-                )
+                print(f"  Created separate section for {class_name} with {method_count} methods")
 
             return result
 
         # ── Class-like sections ──────────────────────────────────────────
+        sections.extend(_make_class_section("Classes", "Core classes", categories["classes"]))
         sections.extend(
-            _make_class_section("Classes", "Core classes", categories["classes"])
-        )
-        sections.extend(
-            _make_class_section(
-                "Dataclasses", "Data-holding classes", categories["dataclasses"]
-            )
+            _make_class_section("Dataclasses", "Data-holding classes", categories["dataclasses"])
         )
         sections.extend(
             _make_class_section(
@@ -3500,9 +3489,7 @@ class GreatDocs:
             )
         )
         sections.extend(
-            _make_class_section(
-                "Protocols", "Structural typing protocols", categories["protocols"]
-            )
+            _make_class_section("Protocols", "Structural typing protocols", categories["protocols"])
         )
 
         # Enums, Exceptions, NamedTuples, TypedDicts — no big-class splitting

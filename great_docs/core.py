@@ -1226,7 +1226,9 @@ class GreatDocs:
             lines.append("*No pages found.*")
         else:
             # Use inline styles to ensure card layout renders correctly
-            # regardless of Quarto's page-columns grid system
+            # regardless of Quarto's page-columns grid system.
+            # Build as a single contiguous HTML block so Quarto's Markdown
+            # parser does not inject extra <p> or duplicate <a> elements.
             grid_style = (
                 "display: grid; "
                 "grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); "
@@ -1246,7 +1248,8 @@ class GreatDocs:
             )
             desc_style = "font-size: 0.9rem; color: #6c757d; line-height: 1.45;"
 
-            lines.append(f'<div class="section-cards" style="{grid_style}">')
+            parts: list[str] = []
+            parts.append(f'<div class="section-cards" style="{grid_style}">')
 
             for entry in entries:
                 href = entry["filename"]
@@ -1254,26 +1257,31 @@ class GreatDocs:
                 desc = entry.get("description", "")
                 image = entry.get("image", "")
 
-                lines.append(f'<a href="{href}" class="section-card" style="{card_style}">')
+                parts.append(f'<a href="{href}" class="section-card" style="{card_style}">')
 
                 if image:
-                    lines.append(
+                    parts.append(
                         f'<img src="{image}" class="section-card-img" '
                         'style="width: 100%; border-radius: 0.375rem; '
                         'margin-bottom: 0.75rem;" />'
                     )
 
-                lines.append(
+                parts.append(
                     f'<div class="section-card-title" style="{title_style}">{entry_title}</div>'
                 )
                 if desc:
-                    lines.append(
+                    parts.append(
                         f'<div class="section-card-desc" style="{desc_style}">{desc}</div>'
                     )
 
-                lines.append("</a>")
+                parts.append("</a>")
 
-            lines.append("</div>")
+            # Close container on the same line as the last </a> to prevent
+            # Quarto's Markdown parser from injecting a phantom <p><a></a></p>.
+            parts[-1] = parts[-1] + "</div>"
+
+            # Join without blank lines to keep it as one HTML block
+            lines.append("\n".join(parts))
 
         lines.append("")
         index_file = dest_dir / "index.qmd"

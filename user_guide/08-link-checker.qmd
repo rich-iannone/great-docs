@@ -133,7 +133,7 @@ The link checker automatically skips certain URLs that are commonly used as exam
 
 ## Excluding URLs in Documentation
 
-In `.qmd` files, you can mark specific URLs for exclusion by adding `{.gd-no-link}` immediately after the URL:
+In `.qmd` files, you can mark specific URLs for exclusion by adding `{.gd-no-link}` immediately after the URL.
 
 ```markdown
 Visit http://fake-example.com{.gd-no-link} for a placeholder example.

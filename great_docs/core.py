@@ -1089,7 +1089,9 @@ class GreatDocs:
         Process custom sections: discover files, copy, generate index, wire nav.
 
         Each configured section gets its own navbar link, sidebar, and
-        (optionally) an auto-generated index page.
+        (optionally) an auto-generated index page.  Blog-type sections
+        use Quarto's native ``listing:`` directive instead of cards and
+        skip the sidebar.
 
         Returns
         -------
@@ -1114,6 +1116,8 @@ class GreatDocs:
                 print(f"   ⚠️  Section directory '{src_dir}' not found, skipping")
                 continue
 
+            section_type = section_cfg.get("type", "default")
+
             # Discover .qmd / .md files
             files = sorted(
                 [
@@ -1132,28 +1136,42 @@ class GreatDocs:
             dest_dir = self.project_path / slug
             dest_dir.mkdir(parents=True, exist_ok=True)
 
-            # Copy files (strip numeric prefixes, add bread-crumbs: false)
-            copied = self._copy_section_files(files, source_path, dest_dir)
+            if section_type == "blog":
+                # Blog sections use Quarto's native listing directive
+                copied = self._copy_blog_files(files, source_path, dest_dir)
 
-            # Generate index if user didn't provide one
-            has_user_index = any(f.name == "index.qmd" for f in files)
-            if has_user_index:
-                # The user's index.qmd was already copied
-                index_href = f"{slug}/index.qmd"
+                # For blogs, only a root-level index.qmd counts as a user index
+                # (subdirectory index.qmd files are individual blog posts)
+                has_user_index = (source_path / "index.qmd").exists()
+                if has_user_index:
+                    index_href = f"{slug}/index.qmd"
+                else:
+                    self._generate_blog_index(title, slug, dest_dir)
+                    index_href = f"{slug}/index.qmd"
+
+                # Blog sections don't get a sidebar — the listing page
+                # is the primary navigation experience.
             else:
-                # Auto-generate a listing index
-                self._generate_section_index(title, copied, slug, dest_dir)
-                index_href = f"{slug}/index.qmd"
+                # Default: card-based sections with sidebar
+                copied = self._copy_section_files(files, source_path, dest_dir)
 
-            # Add sidebar
-            self._add_section_sidebar(title, slug, copied, has_user_index)
+                has_user_index = any(f.name == "index.qmd" for f in files)
+                if has_user_index:
+                    index_href = f"{slug}/index.qmd"
+                else:
+                    self._generate_section_index(title, copied, slug, dest_dir)
+                    index_href = f"{slug}/index.qmd"
+
+                # Add sidebar
+                self._add_section_sidebar(title, slug, copied, has_user_index)
 
             # Add navbar link
             navbar_after = section_cfg.get("navbar_after")
             self._add_section_to_navbar(title, index_href, navbar_after)
 
             n_pages = len(copied)
-            print(f"   📂 {title}: {n_pages} page(s) from {src_dir}/")
+            label = "📰" if section_type == "blog" else "📂"
+            print(f"   {label} {title}: {n_pages} post(s) from {src_dir}/")
             processed += 1
 
         return processed
@@ -1243,6 +1261,111 @@ class GreatDocs:
             )
 
         return copied
+
+    def _copy_blog_files(
+        self,
+        files: list[Path],
+        source_dir: Path,
+        dest_dir: Path,
+    ) -> list[dict]:
+        """
+        Copy blog post files to the build directory.
+
+        Preserves subdirectory structure (e.g., ``blog/my-post/index.qmd``)
+        and leaves blog frontmatter intact so Quarto's ``listing:`` directive
+        can read ``title``, ``author``, ``date``, ``categories``, etc.
+
+        Parameters
+        ----------
+        files
+            List of source file paths.
+        source_dir
+            Root of the blog source directory.
+        dest_dir
+            Destination directory in the build tree.
+
+        Returns
+        -------
+        list[dict]
+            List of dicts with ``filename``, ``title``, ``description`` keys.
+        """
+        copied: list[dict] = []
+
+        for src_file in files:
+            rel = src_file.relative_to(source_dir)
+            dest_file = dest_dir / rel
+
+            # Ensure subdirectories exist
+            dest_file.parent.mkdir(parents=True, exist_ok=True)
+
+            content = src_file.read_text(encoding="utf-8")
+
+            # Parse frontmatter for metadata (but don't modify it —
+            # Quarto's listing needs the original frontmatter)
+            title = rel.stem.replace("-", " ").title()
+            description = ""
+
+            if content.startswith("---"):
+                parts = content.split("---", 2)
+                if len(parts) >= 3:
+                    try:
+                        fm = yaml.safe_load(parts[1])
+                        if isinstance(fm, dict):
+                            title = fm.get("title", title)
+                            description = fm.get("description", "")
+                    except yaml.YAMLError:
+                        pass
+
+            dest_file.write_text(content, encoding="utf-8")
+
+            copied.append(
+                {
+                    "filename": str(rel),
+                    "title": title,
+                    "description": description,
+                }
+            )
+
+        return copied
+
+    def _generate_blog_index(
+        self,
+        title: str,
+        slug: str,
+        dest_dir: Path,
+    ) -> None:
+        """
+        Auto-generate a blog listing index using Quarto's ``listing:`` directive.
+
+        Creates a page that mirrors the approach used by Great Tables and other
+        Quarto-based project blogs: a table-style listing sorted by date.
+
+        Parameters
+        ----------
+        title
+            Blog section title (used as page heading).
+        slug
+            URL slug for the blog section.
+        dest_dir
+            Build directory for the blog section.
+        """
+        lines = [
+            "---",
+            f'title: "{title}"',
+            "listing:",
+            "  type: default",
+            '  sort: "date desc"',
+            "  contents:",
+            '    - "**.qmd"',
+            "bread-crumbs: false",
+            "toc: false",
+            "page-navigation: false",
+            "---",
+            "",
+        ]
+
+        index_file = dest_dir / "index.qmd"
+        index_file.write_text("\n".join(lines), encoding="utf-8")
 
     def _generate_section_index(
         self,
@@ -5014,9 +5137,12 @@ class GreatDocs:
             for sec in sections:
                 title = sec.get("title", "Untitled")
                 dir_name = sec.get("dir", "")
+                sec_type = sec.get("type", "")
                 parts.append(f'  - title: "{title}"')
                 if dir_name:
                     parts.append(f"    dir: {dir_name}")
+                if sec_type:
+                    parts.append(f"    type: {sec_type}")
             return "\n".join(parts) + "\n"
         return ""
 

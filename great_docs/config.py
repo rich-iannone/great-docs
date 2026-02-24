@@ -447,6 +447,9 @@ def create_default_config() -> str:
 #     navbar_after: User Guide   # Place after this navbar item (optional)
 #   - title: Tutorials
 #     dir: tutorials
+#   - title: Blog                # Blog section using Quarto's listing directive
+#     dir: blog
+#     type: blog                 # "blog" for Quarto listing, omit for card grid
 
 # Dark Mode Toggle
 # ----------------

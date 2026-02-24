@@ -517,6 +517,70 @@ def translate_rst_math(html_content):
     return new_content
 
 
+def translate_rst_references(html_content):
+    """
+    Convert RST citation references into a styled numbered list.
+
+    After quartodoc rendering, RST citations like::
+
+        .. [1] Author (Year). "Title."
+        .. [2] https://example.com
+
+    end up as a single ``<p>`` tag with the markers run together::
+
+        <p>.. [1] First ref. .. [2] Second ref.</p>
+
+    This function splits them apart and renders each as a styled list item
+    with the citation number as a label.
+    """
+
+    def _format_refs(m):
+        text = m.group(1)
+        # Split on citation markers: .. [N]
+        parts = re.split(r"\.\.\s*\[(\d+)\]", text)
+        # parts = ['', '1', ' First ref. ', '2', ' Second ref.', ...]
+        if len(parts) < 3:
+            return m.group(0)  # No valid citations found
+
+        items = []
+        # parts[0] is text before first marker (usually empty), then pairs of (number, text)
+        for i in range(1, len(parts), 2):
+            num = parts[i]
+            body = parts[i + 1].strip() if i + 1 < len(parts) else ""
+            if not body:
+                continue
+            # Auto-link bare URLs in the body
+            body = re.sub(
+                r"(https?://\S+)",
+                r'<a href="\1" target="_blank" rel="noopener">\1</a>',
+                body,
+            )
+            items.append(
+                f'<li style="margin-bottom: 0.25rem;">'
+                f'<span style="font-weight: 600; color: #6c757d;">[{num}]</span> '
+                f"{body}</li>"
+            )
+
+        if not items:
+            return m.group(0)
+
+        return (
+            '<ol style="list-style: none; padding-left: 0; margin: 0;">'
+            + "\n".join(items)
+            + "</ol>"
+        )
+
+    # Match <p> tags containing at least one .. [N] citation marker.
+    # Use [^<]* instead of .*? to prevent matching across HTML tag boundaries,
+    # and omit re.DOTALL so the match stays within a single line.
+    html_content = re.sub(
+        r"<p>((?:[^<]*\.\.\s*\[\d+\][^<]*)+)</p>",
+        _format_refs,
+        html_content,
+    )
+    return html_content
+
+
 def extract_seealso_from_html(html_content):
     """
     Extract %seealso values from HTML content before stripping.
@@ -603,6 +667,9 @@ for html_file in html_files:
 
     # Translate RST .. math:: blocks into display math
     content = translate_rst_math(content)
+
+    # Translate RST citation references (.. [1] ...)
+    content = translate_rst_references(content)
 
     # Re-highlight the signature with Pygments for better syntax coloring
     content = highlight_signature_with_pygments(content)

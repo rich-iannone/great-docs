@@ -652,6 +652,51 @@ def translate_rst_directives(html_content):
     return html_content
 
 
+def translate_bold_section_headers(html_content):
+    """
+    Convert bold-text section headings into proper doc-section markup.
+
+    Sphinx-format docstrings sometimes use ``**Examples**::`` to introduce
+    a section.  After quartodoc rendering this becomes::
+
+        <p><strong>Examples</strong>::</p>
+
+    This function converts those into the same ``<section>``/``<h1>``
+    structure that quartodoc uses for NumPy-style sections so the page
+    has a consistent look.
+    """
+
+    # Map of recognized section names → CSS id / class suffix
+    _SECTION_NAMES = {
+        "Examples": "examples",
+        "Example": "examples",
+        "Notes": "notes",
+        "Note": "notes",
+        "References": "references",
+        "Warnings": "warnings",
+        "Warning": "warnings",
+        "See Also": "see-also",
+    }
+
+    section_pattern = "|".join(re.escape(n) for n in _SECTION_NAMES)
+
+    def _replace_header(m):
+        name = m.group("name")
+        slug = _SECTION_NAMES.get(name, name.lower().replace(" ", "-"))
+        return (
+            f'<section id="{slug}" class="level1 doc-section doc-section-{slug}">\n'
+            f'<h1 class="doc-section doc-section-{slug}">{name}</h1>'
+        )
+
+    html_content = re.sub(
+        rf"<p><strong>(?P<name>{section_pattern})</strong>::</p>",
+        _replace_header,
+        html_content,
+    )
+
+    return html_content
+
+
 def translate_rst_math(html_content):
     """
     Convert RST ``.. math::`` directives into display-math blocks.
@@ -849,6 +894,9 @@ for html_file in html_files:
 
     # Translate RST directives (e.g. .. versionadded:: 2.8.1)
     content = translate_rst_directives(content)
+
+    # Translate bold section headers (e.g. **Examples**::) into doc-sections
+    content = translate_bold_section_headers(content)
 
     # Translate RST .. math:: blocks into display math
     content = translate_rst_math(content)

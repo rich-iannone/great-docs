@@ -180,6 +180,12 @@ summary::marker {
     font-size: 14px;
 }
 
+/* Prevent Quarto from collapsing the TOC entry list */
+#TOC > ul.collapse {
+    display: block !important;
+    visibility: visible !important;
+}
+
 #quarto-margin-sidebar {
     margin-left: 20px;
     padding-top: 30px;

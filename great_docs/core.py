@@ -4903,6 +4903,92 @@ class GreatDocs:
 
         return "\n".join(lines)
 
+    @staticmethod
+    def _format_preserved_extras_yaml(
+        display_name: str | None = None,
+        site: dict | None = None,
+        funding: dict | None = None,
+    ) -> tuple[str, str, str]:
+        """
+        Build YAML fragments for preserved config values.
+
+        Returns
+        -------
+        tuple[str, str, str]
+            ``(display_name_yaml, site_yaml, funding_yaml)`` — each is either
+            an active YAML block or the commented-out template placeholder.
+        """
+        # ── display_name ─────────────────────────────────────────────
+        if display_name:
+            dn_yaml = (
+                "# Display Name\n"
+                "# ------------\n"
+                "# Custom display name for the site navbar/title\n"
+                f'display_name: "{display_name}"\n'
+            )
+        else:
+            dn_yaml = ""
+
+        # ── site settings ────────────────────────────────────────────
+        if site:
+            parts = [
+                "# Site Settings",
+                "# -------------",
+                "site:",
+            ]
+            for k, v in site.items():
+                if isinstance(v, bool):
+                    parts.append(f"  {k}: {'true' if v else 'false'}")
+                elif isinstance(v, str):
+                    parts.append(f"  {k}: {v}")
+                else:
+                    parts.append(f"  {k}: {v}")
+            site_yaml = "\n".join(parts) + "\n"
+        else:
+            site_yaml = (
+                "# Site Settings\n"
+                "# -------------\n"
+                "# site:\n"
+                "#   theme: flatly              # Quarto theme (default: flatly)\n"
+                "#   toc: true                  # Show table of contents (default: true)\n"
+                "#   toc-depth: 2               # TOC heading depth (default: 2)\n"
+                '#   toc-title: On this page    # TOC title (default: "On this page")\n'
+            )
+
+        # ── funding ──────────────────────────────────────────────────
+        if funding and isinstance(funding, dict) and funding.get("name"):
+            parts = [
+                "# Funding / Copyright Holder",
+                "# --------------------------",
+                "funding:",
+                f'  name: "{funding["name"]}"',
+            ]
+            if funding.get("roles"):
+                parts.append("  roles:")
+                for role in funding["roles"]:
+                    parts.append(f"    - {role}")
+            if funding.get("homepage"):
+                parts.append(f"  homepage: {funding['homepage']}")
+            if funding.get("ror"):
+                parts.append(f"  ror: {funding['ror']}")
+            funding_yaml = "\n".join(parts) + "\n"
+        else:
+            funding_yaml = (
+                "# Funding / Copyright Holder\n"
+                "# --------------------------\n"
+                "# Credit the organization that funds or holds copyright for this package.\n"
+                "# Displays in sidebar and footer. Homepage and ROR provide links.\n"
+                "# funding:\n"
+                '#   name: "Posit Software, PBC"\n'
+                "#   roles:\n"
+                "#     - Copyright holder\n"
+                "#     - funder\n"
+                "#   homepage: https://posit.co\n"
+                "#   ror: https://ror.org/03wc8by49\n"
+            )
+
+        return dn_yaml, site_yaml, funding_yaml
+
     def _generate_initial_config(self, force: bool = False) -> bool:
         """
         Generate an initial great-docs.yml with discovered exports.
@@ -4929,14 +5015,29 @@ class GreatDocs:
                 print("Skipping great-docs.yml")
                 return False
 
-        # Preserve rich authors/funding from existing config before overwriting
-        existing_authors = []
-        existing_funding = None
+        # Preserve user-supplied config values from existing great-docs.yml
+        # before overwriting.  These are non-default values that spec authors
+        # or users have explicitly set and should survive an init --force.
+        existing_authors: list = []
+        existing_funding: dict | None = None
+        existing_display_name: str | None = None
+        existing_site: dict | None = None
         if config_path.exists():
             try:
                 existing_config = Config(config_path.parent)
                 existing_authors = existing_config.authors or []
                 existing_funding = getattr(existing_config, "funding", None)
+                existing_display_name = existing_config.display_name
+                # Only preserve site if any value differs from defaults
+                site_cfg = existing_config.site
+                _defaults = {
+                    "theme": "flatly",
+                    "toc": True,
+                    "toc-depth": 2,
+                    "toc-title": "On this page",
+                }
+                if site_cfg and site_cfg != _defaults:
+                    existing_site = site_cfg
             except Exception:
                 pass
 
@@ -4947,6 +5048,9 @@ class GreatDocs:
             # Create minimal config without reference section
             config_content = self._generate_minimal_config(
                 existing_authors=existing_authors,
+                existing_display_name=existing_display_name,
+                existing_site=existing_site,
+                existing_funding=existing_funding,
             )
             config_path.write_text(config_content, encoding="utf-8")
             print(f"Created {config_path}")
@@ -4970,6 +5074,9 @@ class GreatDocs:
                 parser=parser_style,
                 dynamic=dynamic_mode,
                 existing_authors=existing_authors,
+                existing_display_name=existing_display_name,
+                existing_site=existing_site,
+                existing_funding=existing_funding,
             )
             config_path.write_text(config_content, encoding="utf-8")
             print(f"Created {config_path}")
@@ -4996,6 +5103,9 @@ class GreatDocs:
             parser=parser_style,
             dynamic=dynamic_mode,
             existing_authors=existing_authors,
+            existing_display_name=existing_display_name,
+            existing_site=existing_site,
+            existing_funding=existing_funding,
         )
 
         config_path.write_text(config_content, encoding="utf-8")
@@ -5007,6 +5117,9 @@ class GreatDocs:
         parser: str = "numpy",
         dynamic: bool = True,
         existing_authors: list | None = None,
+        existing_display_name: str | None = None,
+        existing_site: dict | None = None,
+        existing_funding: dict | None = None,
     ) -> str:
         """
         Generate minimal great-docs.yml without reference section.
@@ -5019,6 +5132,12 @@ class GreatDocs:
             Whether to use dynamic introspection mode for quartodoc.
         existing_authors
             Rich author metadata from a pre-existing great-docs.yml to preserve.
+        existing_display_name
+            Preserved display_name from a pre-existing config.
+        existing_site
+            Preserved non-default site settings from a pre-existing config.
+        existing_funding
+            Preserved funding metadata from a pre-existing config.
 
         Returns
         -------
@@ -5037,6 +5156,16 @@ class GreatDocs:
         # Build the config with optional authors section
         authors_section = f"\n{authors_yaml}\n" if authors_yaml else ""
 
+        # Build preserved-extras YAML fragments
+        dn_yaml, site_yaml, funding_yaml = self._format_preserved_extras_yaml(
+            display_name=existing_display_name,
+            site=existing_site,
+            funding=existing_funding,
+        )
+
+        # display_name line (either active or omitted)
+        dn_section = f"\n{dn_yaml}" if dn_yaml else ""
+
         return f"""# Great Docs Configuration
 # See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html
 
@@ -5045,7 +5174,7 @@ class GreatDocs:
 # Set this if your importable module name differs from the project name.
 # Example: project 'py-yaml12' with module name 'yaml12'
 # module: yaml12
-
+{dn_section}
 # Docstring Parser
 # ----------------
 # The docstring format used in your package (numpy, google, or sphinx)
@@ -5064,26 +5193,8 @@ dynamic: {dynamic_str}
 #   - InternalClass
 #   - helper_function
 {authors_section}
-# Funding / Copyright Holder
-# --------------------------
-# Credit the organization that funds or holds copyright for this package.
-# Displays in sidebar and footer. Homepage and ROR provide links.
-# funding:
-#   name: "Posit Software, PBC"
-#   roles:
-#     - Copyright holder
-#     - funder
-#   homepage: https://posit.co
-#   ror: https://ror.org/03wc8by49
-
-# Site Settings
-# -------------
-# site:
-#   theme: flatly              # Quarto theme (default: flatly)
-#   toc: true                  # Show table of contents (default: true)
-#   toc-depth: 2               # TOC heading depth (default: 2)
-#   toc-title: On this page    # TOC title (default: "On this page")
-
+{funding_yaml}
+{site_yaml}
 # Jupyter Kernel
 # --------------
 # Jupyter kernel to use for executing code cells in .qmd files.
@@ -5123,6 +5234,9 @@ jupyter: python3
         parser: str = "numpy",
         dynamic: bool = True,
         existing_authors: list | None = None,
+        existing_display_name: str | None = None,
+        existing_site: dict | None = None,
+        existing_funding: dict | None = None,
     ) -> str:
         """
         Generate great-docs.yml with a reference section from discovered exports.
@@ -5139,6 +5253,12 @@ jupyter: python3
             Whether to use dynamic introspection mode for quartodoc.
         existing_authors
             Rich author metadata from a pre-existing great-docs.yml to preserve.
+        existing_display_name
+            Preserved display_name from a pre-existing config.
+        existing_site
+            Preserved non-default site settings from a pre-existing config.
+        existing_funding
+            Preserved funding metadata from a pre-existing config.
 
         Returns
         -------
@@ -5164,48 +5284,56 @@ jupyter: python3
             "# Example: project 'py-yaml12' with module name 'yaml12'",
             "# module: yaml12",
             "",
-            "# Docstring Parser",
-            "# ----------------",
-            "# The docstring format used in your package (numpy, google, or sphinx)",
-            f"parser: {parser}",
-            "",
-            "# Dynamic Introspection",
-            "# ---------------------",
-            "# Use runtime introspection for more accurate documentation (default: true)",
-            "# Set to false if your package has cyclic alias issues (e.g., PyO3/Rust bindings)",
-            f"dynamic: {dynamic_str}",
-            "",
-            "# API Discovery Settings",
-            "# ----------------------",
-            "# Exclude items from auto-documentation",
-            "# exclude:",
-            "#   - InternalClass",
-            "#   - helper_function",
-            "",
         ]
+
+        # ── display_name (preserved or omitted) ──────────────────────
+        if existing_display_name:
+            lines.extend(
+                [
+                    "# Display Name",
+                    "# ------------",
+                    "# Custom display name for the site navbar/title",
+                    f'display_name: "{existing_display_name}"',
+                    "",
+                ]
+            )
+
+        lines.extend(
+            [
+                "# Docstring Parser",
+                "# ----------------",
+                "# The docstring format used in your package (numpy, google, or sphinx)",
+                f"parser: {parser}",
+                "",
+                "# Dynamic Introspection",
+                "# ---------------------",
+                "# Use runtime introspection for more accurate documentation (default: true)",
+                "# Set to false if your package has cyclic alias issues (e.g., PyO3/Rust bindings)",
+                f"dynamic: {dynamic_str}",
+                "",
+                "# API Discovery Settings",
+                "# ----------------------",
+                "# Exclude items from auto-documentation",
+                "# exclude:",
+                "#   - InternalClass",
+                "#   - helper_function",
+                "",
+            ]
+        )
 
         # Add authors section if we found any
         if authors_yaml:
             lines.append(authors_yaml)
             lines.append("")
 
-        # Add funding section (commented out as template)
-        lines.extend(
-            [
-                "# Funding / Copyright Holder",
-                "# --------------------------",
-                "# Credit the organization that funds or holds copyright for this package.",
-                "# Displays in sidebar and footer. Homepage and ROR provide links.",
-                "# funding:",
-                '#   name: "Posit Software, PBC"',
-                "#   roles:",
-                "#     - Copyright holder",
-                "#     - funder",
-                "#   homepage: https://posit.co",
-                "#   ror: https://ror.org/03wc8by49",
-                "",
-            ]
+        # Add funding section
+        dn_yaml, site_yaml, funding_yaml = self._format_preserved_extras_yaml(
+            display_name=None,  # already emitted above
+            site=existing_site,
+            funding=existing_funding,
         )
+        lines.extend(funding_yaml.rstrip("\n").splitlines())
+        lines.append("")
 
         # Add reference section
         lines.extend(
@@ -5300,17 +5428,15 @@ jupyter: python3
                 lines.append(f"      - {name}")
             has_prev_section = True
 
-        # Add trailing sections for site settings (commented out)
+        # Add trailing sections for site settings
         lines.extend(
             [
                 "",
-                "# Site Settings",
-                "# -------------",
-                "# site:",
-                "#   theme: flatly              # Quarto theme (default: flatly)",
-                "#   toc: true                  # Show table of contents (default: true)",
-                "#   toc-depth: 2               # TOC heading depth (default: 2)",
-                "#   toc-title: On this page    # TOC title",
+            ]
+        )
+        lines.extend(site_yaml.rstrip("\n").splitlines())
+        lines.extend(
+            [
                 "",
                 "# Jupyter Kernel",
                 "# --------------",

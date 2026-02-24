@@ -13,7 +13,7 @@ SPEC = {
     "dimensions": ["L15"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-numpy-rich",
+            "name": "gdtest-numpy-rich",
             "version": "0.1.0",
             "description": "Test rich NumPy docstring section rendering",
         },
@@ -148,13 +148,13 @@ SPEC = {
                 return [x * scale for x in data]
         ''',
         "README.md": """\
-            # gdtest-v2-numpy-rich
+            # gdtest-numpy-rich
 
             A synthetic test package with rich NumPy-style docstrings.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-numpy-rich",
+        "detected_name": "gdtest-numpy-rich",
         "detected_module": "gdtest_numpy_rich",
         "detected_parser": "numpy",
         "export_names": ["analyze", "transform"],

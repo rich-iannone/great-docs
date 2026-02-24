@@ -470,6 +470,53 @@ def translate_rst_directives(html_content):
     return html_content
 
 
+def translate_rst_math(html_content):
+    """
+    Convert RST ``.. math::`` directives into display-math blocks.
+
+    After quartodoc rendering, a ``.. math::`` block in a docstring becomes
+    literal HTML of the form::
+
+        <p>.. math::</p>
+        <pre><code>LATEX EXPRESSION</code></pre>
+
+    This function converts that pattern into a proper KaTeX display math
+    block and injects the KaTeX CSS/JS from a CDN so the browser can
+    render the equations.
+    """
+    _KATEX_VERSION = "0.16.11"
+    _KATEX_CDN = f"https://cdn.jsdelivr.net/npm/katex@{_KATEX_VERSION}/dist"
+
+    _KATEX_HEAD = (
+        f'<link rel="stylesheet" href="{_KATEX_CDN}/katex.min.css"'
+        ' crossorigin="anonymous">\n'
+        f'<script defer src="{_KATEX_CDN}/katex.min.js"'
+        ' crossorigin="anonymous"></script>\n'
+        f'<script defer src="{_KATEX_CDN}/contrib/auto-render.min.js"'
+        ' crossorigin="anonymous"'
+        ' onload="renderMathInElement(document.body, {'
+        "delimiters: ["
+        "{left: '\\\\[', right: '\\\\]', display: true},"
+        "{left: '\\\\(', right: '\\\\)', display: false}"
+        "]"
+        '});"></script>\n'
+    )
+
+    # Replace <p>.. math::</p><pre><code>...</code></pre>  →  display math
+    new_content, count = re.subn(
+        r"<p>\s*\.\.\s*math::\s*</p>\s*<pre><code>(.*?)</code></pre>",
+        lambda m: ('<p><span class="math display">\\[' + m.group(1).strip() + "\\]</span></p>"),
+        html_content,
+        flags=re.DOTALL,
+    )
+
+    # Only inject KaTeX CDN if we actually converted any math blocks
+    if count > 0 and _KATEX_CDN not in new_content:
+        new_content = new_content.replace("</head>", _KATEX_HEAD + "</head>", 1)
+
+    return new_content
+
+
 def extract_seealso_from_html(html_content):
     """
     Extract %seealso values from HTML content before stripping.
@@ -553,6 +600,9 @@ for html_file in html_files:
 
     # Translate RST directives (e.g. .. versionadded:: 2.8.1)
     content = translate_rst_directives(content)
+
+    # Translate RST .. math:: blocks into display math
+    content = translate_rst_math(content)
 
     # Re-highlight the signature with Pygments for better syntax coloring
     content = highlight_signature_with_pygments(content)

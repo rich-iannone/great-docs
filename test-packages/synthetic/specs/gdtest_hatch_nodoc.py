@@ -4,13 +4,17 @@ gdtest_hatch_nodoc — Hatch layout + %nodoc directive + dataclasses.
 Dimensions: A5, C5, E4
 Focus: Cross-dimension test combining Hatch build layout with dataclasses
        and %nodoc to exclude specific items from documentation.
+       The `InternalState` dataclass has `%nodoc` applied, so it should NOT
+       appear in the rendered documentation. The other three exports
+       (`Config`, `UserProfile`, `create_config`) should appear normally.
 """
 
 SPEC = {
     "name": "gdtest_hatch_nodoc",
     "description": (
         "Hatch layout + dataclasses + %nodoc directive. "
-        "Tests build layout, object types, and exclusion via directive."
+        "InternalState has %nodoc so it should be excluded from docs; "
+        "Config, UserProfile, and create_config should appear normally."
     ),
     "dimensions": ["A5", "C5", "E4"],
     "pyproject_toml": {
@@ -117,7 +121,9 @@ SPEC = {
         "README.md": """\
             # gdtest-hatch-nodoc
 
-            Test package with Hatch layout, dataclasses, and %nodoc directives.
+            Test package with Hatch layout, dataclasses, and `%nodoc` directives.
+            The `InternalState` dataclass is marked `%nodoc` and should not appear
+            in the rendered documentation.
         """,
     },
     "expected": {

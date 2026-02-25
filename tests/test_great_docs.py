@@ -210,23 +210,19 @@ def some_function():
             sys.path.remove(tmp_dir)
 
 
-def test_gt_exclude():
-    """Test that __gt_exclude__ filters out non-documentable items."""
+def test_config_exclude_in_parse():
+    """Test that great-docs.yml exclude filters items from __all__."""
     import sys
 
     with tempfile.TemporaryDirectory() as tmp_dir:
-        # Create a test package with __gt_exclude__
-        package_dir = Path(tmp_dir) / "testpkg_exclude"
+        # Create a test package with __all__
+        package_dir = Path(tmp_dir) / "testpkg_cfgexcl"
         package_dir.mkdir()
 
-        # Create __init__.py with __all__ and __gt_exclude__
         init_content = '''
-"""Test package with exclusions."""
+"""Test package with config exclusions."""
 __version__ = "1.0.0"
 __all__ = ["Graph", "Node", "Edge", "some_function"]
-
-# Exclude Rust types that can't be documented
-__gt_exclude__ = ["Node", "Edge"]
 
 class Graph:
     """A graph class."""
@@ -234,11 +230,11 @@ class Graph:
     def add_edge(self): pass
 
 class Node:
-    """A Rust type (would fail in quartodoc)."""
+    """A node class."""
     pass
 
 class Edge:
-    """Another Rust type (would fail in quartodoc)."""
+    """An edge class."""
     pass
 
 def some_function():
@@ -247,10 +243,14 @@ def some_function():
 '''
         (package_dir / "__init__.py").write_text(init_content)
 
-        docs = GreatDocs(project_path=tmp_dir)
-        exports = docs._parse_package_exports("testpkg_exclude")
+        # Create great-docs.yml with exclude list
+        config_content = "exclude:\n  - Node\n  - Edge\n"
+        Path(tmp_dir, "great-docs.yml").write_text(config_content)
 
-        # Should have filtered out Node and Edge
+        docs = GreatDocs(project_path=tmp_dir)
+        exports = docs._parse_package_exports("testpkg_cfgexcl")
+
+        # Should have filtered out Node and Edge via config exclude
         assert exports is not None
         assert "Graph" in exports
         assert "some_function" in exports

@@ -3156,8 +3156,8 @@ class GreatDocs:
         """
         Parse __all__ from package's __init__.py to get public API.
 
-        Also checks for __gt_exclude__ in __init__.py or exclude in great-docs.yml
-        to filter out non-documentable items.
+        Also checks for exclude in great-docs.yml to filter out
+        non-documentable items.
 
         Parameters
         ----------
@@ -3193,13 +3193,12 @@ class GreatDocs:
             with open(init_file, "r", encoding="utf-8") as f:
                 content = f.read()
 
-            # Try to extract __all__ and __gt_exclude__ using AST (safer than eval)
+            # Try to extract __all__ using AST (safer than eval)
             import ast
 
             tree = ast.parse(content)
 
             all_exports = None
-            gt_exclude = []
 
             for node in ast.walk(tree):
                 if isinstance(node, ast.Assign):
@@ -3212,31 +3211,16 @@ class GreatDocs:
                                     if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
                                         all_exports.append(elt.value)
 
-                        # Extract __gt_exclude__ (legacy support)
-                        if isinstance(target, ast.Name) and target.id == "__gt_exclude__":
-                            if isinstance(node.value, ast.List):
-                                for elt in node.value.elts:
-                                    if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
-                                        gt_exclude.append(elt.value)
-
             if all_exports:
                 print(f"Successfully parsed __all__ with {len(all_exports)} exports")
 
-                # Combine exclusions from both sources
-                all_exclude = list(set(gt_exclude + config_exclude))
-
-                # Filter out excluded items
-                if all_exclude:
-                    filtered = [e for e in all_exports if e not in all_exclude]
+                # Filter out excluded items from great-docs.yml
+                if config_exclude:
+                    filtered = [e for e in all_exports if e not in config_exclude]
                     excluded_count = len(all_exports) - len(filtered)
                     if excluded_count > 0:
-                        source = []
-                        if gt_exclude:
-                            source.append("__gt_exclude__")
-                        if config_exclude:
-                            source.append("great-docs.yml exclude")
                         print(
-                            f"Filtered out {excluded_count} item(s) from {' and '.join(source)}: {', '.join(all_exclude)}"
+                            f"Filtered out {excluded_count} item(s) from great-docs.yml exclude: {', '.join(config_exclude)}"
                         )
                     return filtered
                 else:

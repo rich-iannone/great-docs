@@ -32,7 +32,7 @@ ALL_PACKAGES: list[str] = [
     "gdtest_auto_discover",  # 13
     # 14–17: Export discovery edge cases
     "gdtest_no_all",  # 14
-    "gdtest_gt_exclude",  # 15
+    "gdtest_all_concat",  # 15
     "gdtest_config_exclude",  # 16
     "gdtest_auto_exclude",  # 17
     # 18–27: Object type archetypes
@@ -262,7 +262,7 @@ DIMENSIONS: dict[str, dict[str, str]] = {
     "B1": {"axis": "exports", "label": "Explicit __all__"},
     "B2": {"axis": "exports", "label": "__all__ concatenation"},
     "B3": {"axis": "exports", "label": "No __all__ (griffe)"},
-    "B4": {"axis": "exports", "label": "__gt_exclude__"},
+    "B4": {"axis": "exports", "label": "__all__ concatenation (B2 alias)"},
     "B5": {"axis": "exports", "label": "Config exclude"},
     "B6": {"axis": "exports", "label": "Submodule exports"},
     "B7": {"axis": "exports", "label": "AUTO_EXCLUDE names"},
@@ -510,19 +510,20 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "items but NOT any names starting with underscore. The key test: "
         "griffe-based public API inference without __all__."
     ),
-    "gdtest_gt_exclude": (
-        "Defines __all__ with four items but sets __gt_exclude__ = "
-        "['internal_func', 'helper'] to hide two. On the Reference page you "
-        "should see only public_func and PublicClass — internal_func and "
-        "helper must be absent. The key test: code-level exclusion via the "
-        "legacy __gt_exclude__ mechanism."
+    "gdtest_all_concat": (
+        "Builds __all__ by concatenating sub-module __all__ lists "
+        "(__all__ = _models.__all__ + _utils.__all__). Because the AST parser "
+        "cannot extract a non-literal list, the system falls back to griffe "
+        "discovery. On the Reference page you should see Record, "
+        "validate_record, format_output, and parse_input — all four exports "
+        "from the two submodules."
     ),
     "gdtest_config_exclude": (
         "All four exports are in __all__, but great-docs.yml excludes "
         "helper_func and InternalClass. On the Reference page you should see "
         "only PublicAPI and transform — the excluded items must be absent. "
-        "The key test: config-level exclusion as an alternative to code-level "
-        "__gt_exclude__."
+        "The key test: config-level exclusion via the exclude list in "
+        "great-docs.yml."
     ),
     "gdtest_auto_exclude": (
         "Module exports common boilerplate names (main, cli, config, utils, "

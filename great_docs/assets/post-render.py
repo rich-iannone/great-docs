@@ -358,14 +358,16 @@ def translate_sphinx_fields(html_content):
     """
     Convert Sphinx field-list directives into structured doc sections.
 
-    After quartodoc rendering, Sphinx-style docstrings with ``:param:``,
-    ``:type:``, ``:returns:``, ``:rtype:``, and ``:raises:`` fields end up
-    mashed into a single ``<p>`` tag::
+    After quartodoc rendering, Sphinx-style docstrings with `:param:`,
+    `:type:`, `:returns:`, `:rtype:`, and `:raises:` fields end up
+    mashed into a single `<p>` tag:
 
-        <p>:param x: Desc. :type x: int :returns: Desc. :rtype: str :raises ValueError: Desc.</p>
+    ```html
+    <p>:param x: Desc. :type x: int :returns: Desc. :rtype: str :raises ValueError: Desc.</p>
+    ```
 
-    This function parses those fields and emits the same ``<section>`` /
-    ``<dl>`` / ``<dt>`` / ``<dd>`` structure that quartodoc produces for
+    This function parses those fields and emits the same `<section>` /
+    `<dl>` / `<dt>` / `<dd>` structure that quartodoc produces for
     NumPy-style Parameters / Returns / Raises sections.
     """
 
@@ -906,15 +908,71 @@ def translate_bold_section_headers(html_content):
     return html_content
 
 
+def fix_doctest_blockquotes(html_content):
+    """
+    Convert nested blockquotes from doctest `>>>` lines into code blocks.
+
+    When quartodoc produces an Example section with raw `>>>` lines in the
+    `.qmd` file, Quarto/Pandoc interprets the leading `>` characters as
+    Markdown blockquote markers.  A `>>>` line becomes triple-nested
+    `<blockquote>` elements:
+
+    ```html
+    <blockquote class="blockquote">
+    <blockquote class="blockquote">
+    <blockquote class="blockquote">
+    <p>func(x) 'result'</p>
+    </blockquote>
+    </blockquote>
+    </blockquote>
+    ```
+
+    This function detects that pattern inside Example/Examples doc-sections
+    and replaces it with a proper `<pre><code>` block so the content
+    renders in monospace as code.
+    """
+    # Match one or more triple-nested blockquote clusters inside an
+    # Example or Examples doc-section.
+    _SECTION_RE = re.compile(
+        r'(<section\s[^>]*class="[^"]*doc-section-examples?[^"]*"[^>]*>\s*'
+        r"<h1[^>]*>.*?</h1>\s*)"
+        r"((?:\s*<blockquote\s[^>]*>\s*<blockquote\s[^>]*>\s*<blockquote\s[^>]*>"
+        r"\s*<p>.*?</p>\s*</blockquote>\s*</blockquote>\s*</blockquote>\s*)+)",
+        re.DOTALL,
+    )
+
+    # Extract individual <p> content from triple-nested blockquotes
+    _BQ_TEXT_RE = re.compile(
+        r"<blockquote\s[^>]*>\s*<blockquote\s[^>]*>\s*<blockquote\s[^>]*>"
+        r"\s*<p>(.*?)</p>\s*</blockquote>\s*</blockquote>\s*</blockquote>",
+        re.DOTALL,
+    )
+
+    def _replace_section(m):
+        header = m.group(1)
+        bq_block = m.group(2)
+        lines = []
+        for bq in _BQ_TEXT_RE.finditer(bq_block):
+            text = bq.group(1).strip()
+            # Reconstruct the doctest line with >>> prefix
+            lines.append(f"&gt;&gt;&gt; {text}")
+        code = "\n".join(lines)
+        return f"{header}<pre><code>{code}</code></pre>\n"
+
+    return _SECTION_RE.sub(_replace_section, html_content)
+
+
 def translate_rst_math(html_content):
     """
-    Convert RST ``.. math::`` directives into display-math blocks.
+    Convert RST `.. math::` directives into display-math blocks.
 
-    After quartodoc rendering, a ``.. math::`` block in a docstring becomes
-    literal HTML of the form::
+    After quartodoc rendering, a `.. math::` block in a docstring becomes
+    literal HTML of the form:
 
-        <p>.. math::</p>
-        <pre><code>LATEX EXPRESSION</code></pre>
+    ```html
+    <p>.. math::</p>
+    <pre><code>LATEX EXPRESSION</code></pre>
+    ```
 
     This function converts that pattern into a proper KaTeX display math
     block and injects the KaTeX CSS/JS from a CDN so the browser can
@@ -962,7 +1020,7 @@ def translate_rst_references(html_content):
         .. [1] Author (Year). "Title."
         .. [2] https://example.com
 
-    end up as a single ``<p>`` tag with the markers run together::
+    end up as a single `<p>` tag with the markers run together::
 
         <p>.. [1] First ref. .. [2] Second ref.</p>
 
@@ -1109,6 +1167,9 @@ for html_file in html_files:
 
     # Translate bold section headers (e.g. **Examples**::) into doc-sections
     content = translate_bold_section_headers(content)
+
+    # Fix doctest >>> lines that Quarto rendered as nested blockquotes
+    content = fix_doctest_blockquotes(content)
 
     # Translate RST .. math:: blocks into display math
     content = translate_rst_math(content)
@@ -1556,10 +1617,10 @@ def inject_version_badge():
     Inject a version badge next to the package name in the navbar.
 
     Reads package version (and optional release date) from
-    ``_package_meta.json`` (written by the build) and inserts a small badge
-    span inside each ``<span class="navbar-title">`` element across all
-    rendered HTML files.  When a ``published_at`` date is present the badge
-    receives a ``title`` attribute so the release date appears as a native
+    `_package_meta.json` (written by the build) and inserts a small badge
+    span inside each `<span class="navbar-title">` element across all
+    rendered HTML files.  When a `published_at` date is present the badge
+    receives a `title` attribute so the release date appears as a native
     browser tooltip on hover.
     """
     meta_path = "_package_meta.json"

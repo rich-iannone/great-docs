@@ -303,26 +303,26 @@ def strip_directives_from_html(html_content):
     """
     Remove Great Docs %directive lines from rendered HTML.
 
-    Directives like %family, %order, %seealso, and %nodoc are used for organizing documentation but
+    Directives like %order, %seealso, and %nodoc are used for organizing documentation but
     they should not appear in the final rendered output. This function removes them after rendering.
     """
     # Match directives wrapped in <p> tags
-    # e.g., <p>%family Something</p>
+    # e.g., <p>%order 1</p>
     p_directive_pattern = re.compile(
-        r"<p>\s*%(?:family|order|seealso|nodoc)(?:\s+[^<]*)?\s*</p>\s*\n?",
+        r"<p>\s*%(?:order|seealso|nodoc)(?:\s+[^<]*)?\s*</p>\s*\n?",
         re.IGNORECASE,
     )
 
     # Match standalone directive lines (plain text)
-    # e.g., %family Something
+    # e.g., %order 1
     standalone_directive_pattern = re.compile(
-        r"^\s*%(?:family|order|seealso|nodoc)(?:\s+.*)?\s*$\n?",
+        r"^\s*%(?:order|seealso|nodoc)(?:\s+.*)?\s*$\n?",
         re.MULTILINE | re.IGNORECASE,
     )
 
     # Match directives that might be inline within text
     inline_directive_pattern = re.compile(
-        r"%(?:family|order|seealso|nodoc)(?:\s+[^\n<]*)?",
+        r"%(?:order|seealso|nodoc)(?:\s+[^\n<]*)?",
         re.IGNORECASE,
     )
 

@@ -1,18 +1,18 @@
 """
 gdtest_kitchen_sink — Maximum feature coverage in one package.
 
-Dimensions: A2, B1, C4, D1, E2, F1, G1, H1+H2+H3+H4+H6
+Dimensions: A2, B1, C4, D1, F1, G1, H1+H2+H3+H4+H6
 Focus: Everything at once.  src/ layout, mixed objects (big class, small
-       class, dataclass, enum, functions), %family + %order directives,
-       auto-discovered user guide, full supporting pages (LICENSE,
-       CITATION.cff, CONTRIBUTING.md, CODE_OF_CONDUCT.md, assets/).
-       Authors and funding in config.  The "integration smoke test" package.
+       class, dataclass, enum, functions), auto-discovered user guide,
+       full supporting pages (LICENSE, CITATION.cff, CONTRIBUTING.md,
+       CODE_OF_CONDUCT.md, assets/). Authors and funding in config.
+       The "integration smoke test" package.
 """
 
 SPEC = {
     "name": "gdtest_kitchen_sink",
     "description": "Maximum feature coverage — every major feature at once",
-    "dimensions": ["A2", "B1", "C4", "D1", "E2", "F1", "G1", "H1", "H2", "H3", "H4", "H6"],
+    "dimensions": ["A2", "B1", "C4", "D1", "F1", "G1", "H1", "H2", "H3", "H4", "H6"],
     # ── Project metadata ─────────────────────────────────────────────
     "pyproject_toml": {
         "project": {
@@ -86,9 +86,6 @@ SPEC = {
             class Pipeline:
                 """
                 A data processing pipeline with many operations.
-
-                %family Core
-                %order 1
 
                 Parameters
                 ----------
@@ -178,9 +175,6 @@ SPEC = {
                 """
                 Configuration container for a pipeline.
 
-                %family Core
-                %order 2
-
                 Parameters
                 ----------
                 settings
@@ -227,9 +221,6 @@ SPEC = {
             class Status(Enum):
                 """
                 Pipeline execution status.
-
-                %family Core
-                %order 3
                 """
                 SUCCESS = "success"
                 FAILURE = "failure"
@@ -243,9 +234,6 @@ SPEC = {
             class Result:
                 """
                 The result of a pipeline execution.
-
-                %family Core
-                %order 4
 
                 Parameters
                 ----------
@@ -267,9 +255,6 @@ SPEC = {
                 """
                 High-level function to create and run a pipeline.
 
-                %family Core
-                %order 5
-
                 Parameters
                 ----------
                 name
@@ -289,9 +274,6 @@ SPEC = {
                 """
                 Validate a configuration object.
 
-                %family Utility
-                %order 1
-
                 Parameters
                 ----------
                 config
@@ -308,9 +290,6 @@ SPEC = {
             def format_output(result: Result, fmt: str = "text") -> str:
                 """
                 Format a result for display.
-
-                %family Utility
-                %order 2
 
                 Parameters
                 ----------
@@ -331,9 +310,6 @@ SPEC = {
                 """
                 Parse raw input into a structured dict.
 
-                %family Utility
-                %order 3
-
                 Parameters
                 ----------
                 raw
@@ -349,7 +325,7 @@ SPEC = {
 
             def helper_a() -> None:
                 """
-                A helper function with no family.
+                A general-purpose helper function.
 
                 Returns
                 -------
@@ -360,7 +336,7 @@ SPEC = {
 
             def helper_b() -> None:
                 """
-                Another helper with no family.
+                Another general-purpose helper.
 
                 Returns
                 -------
@@ -470,11 +446,6 @@ SPEC = {
             "helper_b",
         ],
         "num_exports": 10,
-        "families": {
-            "Core": ["Pipeline", "Config", "Status", "Result", "run_pipeline"],
-            "Utility": ["validate_config", "format_output", "parse_input"],
-        },
-        "unfamilied": ["helper_a", "helper_b"],
         "big_class_name": "Pipeline",
         "big_class_method_count": 6,
         "has_user_guide": True,

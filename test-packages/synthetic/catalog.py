@@ -46,12 +46,9 @@ ALL_PACKAGES: list[str] = [
     "gdtest_dunders",  # 25
     "gdtest_nested_class",  # 26
     "gdtest_constants",  # 27
-    # 28–32: Directive combinations
-    "gdtest_families",  # 28
-    "gdtest_ordered",  # 29
-    "gdtest_seealso",  # 30
-    "gdtest_nodoc",  # 31
-    "gdtest_mixed_directives",  # 32
+    # 28–29: Directive combinations
+    "gdtest_seealso",  # 28
+    "gdtest_nodoc",  # 29
     # 33–38: User guide variants
     "gdtest_user_guide_auto",  # 33
     "gdtest_user_guide_sections",  # 34
@@ -75,22 +72,17 @@ ALL_PACKAGES: list[str] = [
     "gdtest_explicit_ref",  # 48
     "gdtest_kitchen_sink",  # 49
     "gdtest_name_mismatch",  # 50
-    # 51–65: Cross-dimension combos
-    "gdtest_src_families",  # 51
-    "gdtest_src_big_class",  # 52
-    "gdtest_google_big_class",  # 53
-    "gdtest_sphinx_families",  # 54
-    "gdtest_user_guide_cli",  # 55
-    "gdtest_explicit_big_class",  # 56
-    "gdtest_families_nodoc",  # 57
-    "gdtest_src_no_all",  # 58
-    "gdtest_extras_guide",  # 59
-    "gdtest_google_seealso",  # 60
-    "gdtest_setup_cfg_src",  # 61
-    "gdtest_hatch_families",  # 62
-    "gdtest_mixed_families",  # 63
-    "gdtest_exclude_cli",  # 64
-    "gdtest_src_explicit_ref",  # 65
+    # 43–54: Cross-dimension combos
+    "gdtest_src_big_class",  # 43
+    "gdtest_google_big_class",  # 44
+    "gdtest_user_guide_cli",  # 45
+    "gdtest_explicit_big_class",  # 46
+    "gdtest_src_no_all",  # 47
+    "gdtest_extras_guide",  # 48
+    "gdtest_google_seealso",  # 49
+    "gdtest_setup_cfg_src",  # 50
+    "gdtest_exclude_cli",  # 51
+    "gdtest_src_explicit_ref",  # 52
     # 66–77: New API patterns
     "gdtest_async_funcs",  # 66
     "gdtest_generators",  # 67
@@ -295,8 +287,6 @@ DIMENSIONS: dict[str, dict[str, str]] = {
     "D3": {"axis": "docstrings", "label": "Sphinx"},
     "D4": {"axis": "docstrings", "label": "No docstrings"},
     "D5": {"axis": "docstrings", "label": "Mixed styles"},
-    "E1": {"axis": "directives", "label": "%family"},
-    "E2": {"axis": "directives", "label": "%family + %order"},
     "E3": {"axis": "directives", "label": "%seealso"},
     "E4": {"axis": "directives", "label": "%nodoc"},
     "E5": {"axis": "directives", "label": "Mixed directives"},
@@ -593,20 +583,6 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "the function listed. Constants should show their values and type "
         "annotations."
     ),
-    "gdtest_families": (
-        "Eight exports grouped by %family into 'Validation' (Validate, "
-        "col_vals_gt, col_vals_lt, col_vals_between, col_exists) and "
-        "'Formatting' (fmt_number, fmt_percent), plus one ungrouped (helper). "
-        "On the Reference page you should see these as separate section "
-        "headings — NOT a single flat 'Functions' list."
-    ),
-    "gdtest_ordered": (
-        "Seven exports grouped by %family + %order: 'Processing' (Pipeline, "
-        "step_validate, step_transform, step_load, step_export) and 'Logging' "
-        "(log_start, log_end). On the Reference page the items within each "
-        "section should appear in the specified numeric order, not "
-        "alphabetically. Check that step_validate comes before step_transform."
-    ),
     "gdtest_seealso": (
         "Four exports (Encoder class, encode, decode, validate) with %seealso "
         "cross-references. On the Reference page, each function's docs should "
@@ -618,13 +594,6 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "reset and debug_info are tagged with %nodoc. On the Reference page "
         "you should see only Calculator and compute — reset and debug_info "
         "must be completely absent from the rendered docs."
-    ),
-    "gdtest_mixed_directives": (
-        "Six exports: three tagged with %family 'Parsing' (Parser, parse_json, "
-        "parse_csv) and three with no directives (format_output, "
-        "validate_schema, count_records). On the Reference page you should "
-        "see a 'Parsing' section heading for the tagged items and a separate "
-        "default section for the untagged ones."
     ),
     "gdtest_user_guide_auto": (
         "Has user_guide/ with three numbered files: 01-intro.qmd, "
@@ -729,11 +698,11 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "WITHOUT its methods (members: false)."
     ),
     "gdtest_kitchen_sink": (
-        "Maximum coverage: src/ layout, 10 exports, %family sections (Core "
-        "and Utility), Pipeline as a big class with 6+ methods, user guide "
-        "(3 pages), all supporting pages (License, Citation, Contributing, "
-        "Code of Conduct), author metadata in sidebar, display_name 'Kitchen "
-        "Sink'. Every feature should work together without conflicts."
+        "Maximum coverage: src/ layout, 10 exports, Pipeline as a big class "
+        "with 6+ methods, user guide (3 pages), all supporting pages (License, "
+        "Citation, Contributing, Code of Conduct), author metadata in sidebar, "
+        "display_name 'Kitchen Sink'. Every feature should work together "
+        "without conflicts."
     ),
     "gdtest_name_mismatch": (
         "Project name is 'gdtest-name-mismatch' but the module is 'gdtest_nm' "
@@ -742,15 +711,7 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "from gdtest_nm: Mapper (class) and transform (function). The key "
         "test: config-driven module name override."
     ),
-    # ── 51-65: Cross-dimension combos ─────────────────────────────────────
-    "gdtest_src_families": (
-        "Combines src/ layout (A2) with %family directives (E1). Module lives "
-        "in src/gdtest_src_families/. Six exports split into 'IO' family "
-        "(read_file, write_file, FileHandler) and 'Transform' family "
-        "(transform, validate). On the Reference page you should see two "
-        "family section headings, not a flat list. Key test: families work "
-        "correctly with src/ layout."
-    ),
+    # ── 43-52: Cross-dimension combos ─────────────────────────────────────
     "gdtest_src_big_class": (
         "src/ layout (A2) with a big class (C3) having 7 methods. Module at "
         "src/gdtest_src_big_class/. Pipeline class with add_step, remove_step, "
@@ -765,12 +726,6 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "method's Args/Returns sections should be parsed correctly from "
         "Google format — not shown as raw text."
     ),
-    "gdtest_sphinx_families": (
-        "Sphinx docstrings (D3) with %family directives (E1). Three exports "
-        "in 'Network' family (connect, disconnect, status) with "
-        ":param:/:returns: docs. On the Reference page you should see a "
-        "'Network' section heading with Sphinx field lists rendered properly."
-    ),
     "gdtest_user_guide_cli": (
         "User guide (F1) combined with CLI documentation. Has user_guide/ "
         "with two pages plus a Click CLI. The sidebar should show both "
@@ -783,13 +738,6 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "helper_b. On the Reference page BigEngine should appear WITHOUT its "
         "methods listed (members: false suppresses them), and there should be "
         "NO separate 'BigEngine Methods' subsection."
-    ),
-    "gdtest_families_nodoc": (
-        "Combines %family (E1) and %nodoc (E4) in the same module. Six "
-        "exports: 'Math' family (add, subtract, multiply) and two items "
-        "tagged %nodoc (internal_calc, debug_dump). On the Reference page "
-        "you should see the 'Math' section with three items. The two %nodoc "
-        "items must be completely absent."
     ),
     "gdtest_src_no_all": (
         "src/ layout (A2) with no __all__ (B3). Module at "
@@ -815,19 +763,6 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "comes from setup.cfg, but the module lives in src/. On the Reference "
         "page you should see two functions (parse, format). Key test: "
         "setup.cfg metadata detection combined with src/ directory scanning."
-    ),
-    "gdtest_hatch_families": (
-        "Hatch build system (A5) with %family directives (E1). Module "
-        "discovered via Hatch config, then grouped by families. On the "
-        "Reference page you should see 'Data' family (load, save) and "
-        "'Display' family (render, show) as separate sections."
-    ),
-    "gdtest_mixed_families": (
-        "Mixed docstrings (D5) with %family directives (E1). Some functions "
-        "use NumPy style, others Google style, all with %family tags. On the "
-        "Reference page, family sections should group correctly regardless of "
-        "docstring style. 'Input' (read_csv, read_json) and 'Output' "
-        "(write_csv, write_json) families."
     ),
     "gdtest_exclude_cli": (
         "Config-level exclusion (B5) with CLI documentation. Two API exports "
@@ -1046,9 +981,8 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
     ),
     "gdtest_config_parser": (
         "Config overrides parser to 'google' even though docstrings are "
-        "written in Google style (matching). Combined with %family directives. "
-        "On the Reference page, Google Args/Returns should parse correctly "
-        "with the explicit parser setting."
+        "written in Google style (matching). On the Reference page, Google "
+        "Args/Returns should parse correctly with the explicit parser setting."
     ),
     "gdtest_config_extra_keys": (
         "Config YAML includes unrecognized keys (custom_field, future_option) "

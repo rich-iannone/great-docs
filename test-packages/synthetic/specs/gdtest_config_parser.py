@@ -1,14 +1,14 @@
 """
-gdtest_config_parser — Config overrides parser to 'google' + %family.
+gdtest_config_parser — Config overrides parser to 'google'.
 
 Dimensions: A1, B1, C1, D1, E3, F2, G1, H7
 Focus: Explicit parser='google' in config while code uses Google-style
-       docstrings. Combined with %family directives.
+       docstrings.
 """
 
 SPEC = {
     "name": "gdtest_config_parser",
-    "description": "Config overrides parser to google with %family directives",
+    "description": "Config overrides parser to google",
     "dimensions": ["A1", "B1", "C1", "D1", "E3", "F2", "G1", "H7"],
     "pyproject_toml": {
         "project": {
@@ -28,20 +28,6 @@ SPEC = {
         "gdtest_config_parser/__init__.py": '''\
             """
             Package with Google docstrings and parser config override.
-
-            Functions
-            ---------
-            The functions in this package are organized by family:
-
-            Connection family
-            ^^^^^^^^^^^^^^^^^
-            - ``connect`` — %family connection
-            - ``disconnect`` — %family connection
-
-            Query family
-            ^^^^^^^^^^^^
-            - ``query`` — %family query
-            - ``fetch_all`` — %family query
             """
 
             __version__ = "0.1.0"
@@ -49,7 +35,7 @@ SPEC = {
 
 
             def connect(host: str, port: int = 5432) -> object:
-                """Connect to a database.     %family connection
+                """Connect to a database.
 
                 Args:
                     host: Database hostname.
@@ -62,7 +48,7 @@ SPEC = {
 
 
             def disconnect(conn: object) -> None:
-                """Disconnect from the database.     %family connection
+                """Disconnect from the database.
 
                 Args:
                     conn: Active connection.
@@ -71,7 +57,7 @@ SPEC = {
 
 
             def query(conn: object, sql: str) -> list:
-                """Execute a SQL query.     %family query
+                """Execute a SQL query.
 
                 Args:
                     conn: Active connection.
@@ -84,7 +70,7 @@ SPEC = {
 
 
             def fetch_all(conn: object, table: str) -> list:
-                """Fetch all rows from a table.     %family query
+                """Fetch all rows from a table.
 
                 Args:
                     conn: Active connection.
@@ -98,7 +84,7 @@ SPEC = {
         "README.md": """\
             # gdtest-config-parser
 
-            Tests explicit parser='google' config override with %family directives.
+            Tests explicit parser='google' config override.
         """,
     },
     "expected": {

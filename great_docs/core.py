@@ -4559,7 +4559,7 @@ class GreatDocs:
         """
         Extract Great Docs directives from all docstrings in the package.
 
-        Scans all exported classes, methods, and functions for @family, @order,
+        Scans all exported classes, methods, and functions for @order,
         @seealso, and @nodoc directives.
 
         Parameters
@@ -4861,7 +4861,7 @@ class GreatDocs:
 
         return sections if sections else None
 
-    def _create_quartodoc_sections_from_families(self, package_name: str) -> list | None:
+    def _create_quartodoc_sections_with_config(self, package_name: str) -> list | None:
         """
         Create quartodoc sections, prioritizing explicit config over auto-discovery.
 
@@ -4876,8 +4876,7 @@ class GreatDocs:
         Returns
         -------
         list | None
-            List of section dictionaries organized by family, or None if
-            no exports found.
+            List of section dictionaries, or None if no exports found.
         """
         # First, check for explicit reference config in great-docs.yml
         config_sections = self._create_quartodoc_sections_from_config(package_name)
@@ -6503,9 +6502,8 @@ toc: false
             print("      for quartodoc to generate documentation.")
 
         # Try to auto-generate sections from discovered exports
-        # First try family-based organization (from @family directives)
-        # Falls back to default categorization if no directives found
-        sections = self._create_quartodoc_sections_from_families(importable_name)
+        # Prioritizes explicit reference config from great-docs.yml over auto-discovery
+        sections = self._create_quartodoc_sections_with_config(importable_name)
 
         # Add quartodoc configuration with sensible defaults
         # Use the importable name (actual module name) for the package field
@@ -6593,9 +6591,8 @@ toc: false
         print(f"Re-discovering exports for package: {package_name}")
 
         # Re-generate sections from current package exports
-        # Uses family-based organization if @family directives are found
         # Prioritizes explicit config from great-docs.yml over auto-discovery
-        sections = self._create_quartodoc_sections_from_families(package_name)
+        sections = self._create_quartodoc_sections_with_config(package_name)
 
         # Update parser and dynamic settings from great-docs.yml config
         parser = self._config.parser
@@ -7308,7 +7305,7 @@ toc: false
 
         The format includes:
         - Package header with description
-        - Full API documentation with signatures and docstrings organized by family/section
+        - Full API documentation with signatures and docstrings organized by section
         - CLI documentation with --help output for all commands
         """
 

@@ -11,30 +11,26 @@ class DocDirectives:
 
     Attributes
     ----------
-    family
-        The family/group this item belongs to (e.g., `"Family Name"`).
     order
-        Ordering within the family (lower numbers appear first).
+        Ordering within a section (lower numbers appear first).
     seealso
         List of related items to cross-reference.
     nodoc
         If `True`, exclude this item from documentation.
     """
 
-    family: str | None = None
     order: int | None = None
     seealso: list[str] = field(default_factory=list)
     nodoc: bool = False
 
     def __bool__(self) -> bool:
         """Return True if any directive was found."""
-        return bool(self.family or self.order is not None or self.seealso or self.nodoc)
+        return bool(self.order is not None or self.seealso or self.nodoc)
 
 
 # Single-line directive patterns (with % prefix, no colon)
 # Each pattern matches a complete line starting with the directive
 DIRECTIVE_PATTERNS = {
-    "family": re.compile(r"^\s*%family\s+(.+?)\s*$", re.MULTILINE),
     "order": re.compile(r"^\s*%order\s+(\d+)\s*$", re.MULTILINE),
     "seealso": re.compile(r"^\s*%seealso\s+(.+?)\s*$", re.MULTILINE),
     "nodoc": re.compile(r"^\s*%nodoc(?:\s+(true|yes|1))?\s*$", re.MULTILINE | re.IGNORECASE),
@@ -42,7 +38,7 @@ DIRECTIVE_PATTERNS = {
 
 # Combined pattern for stripping all directives (matches the whole line including newline)
 ALL_DIRECTIVES_PATTERN = re.compile(
-    r"^\s*%(?:family|order|seealso|nodoc)(?:\s+.*)?$\n?", re.MULTILINE | re.IGNORECASE
+    r"^\s*%(?:order|seealso|nodoc)(?:\s+.*)?$\n?", re.MULTILINE | re.IGNORECASE
 )
 
 
@@ -65,7 +61,6 @@ def extract_directives(docstring: str | None) -> DocDirectives:
     >>> doc = '''
     ... Short description.
     ...
-    ... %family Family Name
     ... %order 1
     ... %seealso func_a, func_b
     ...
@@ -74,8 +69,6 @@ def extract_directives(docstring: str | None) -> DocDirectives:
     ... x : int
     ... '''
     >>> directives = extract_directives(doc)
-    >>> directives.family
-    'Family Name'
     >>> directives.order
     1
     >>> directives.seealso
@@ -85,10 +78,6 @@ def extract_directives(docstring: str | None) -> DocDirectives:
 
     if not docstring:
         return directives
-
-    # Extract %family
-    if match := DIRECTIVE_PATTERNS["family"].search(docstring):
-        directives.family = match.group(1).strip()
 
     # Extract %order
     if match := DIRECTIVE_PATTERNS["order"].search(docstring):
@@ -129,7 +118,6 @@ def strip_directives(docstring: str | None) -> str:
     >>> doc = '''
     ... Short description.
     ...
-    ... %family Family Name
     ... %order 1
     ...
     ... Parameters

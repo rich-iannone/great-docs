@@ -42,7 +42,7 @@ PHASE1_PACKAGES = [
     "gdtest_minimal",
     "gdtest_src_layout",
     "gdtest_big_class",
-    "gdtest_families",
+    "gdtest_seealso",
     "gdtest_kitchen_sink",
 ]
 
@@ -205,7 +205,7 @@ def test_L1_big_class_method_section(pkg_name: str, tmp_path: Path):
     # The class entry should have members: []
     class_section = next((s for s in sections if s["title"] == "Classes"), None)
     if class_section is None:
-        # In family-based sections, look for the class in any section
+        # Look for the class in any section
         class_entry = None
         for s in sections:
             for c in s.get("contents", []):
@@ -265,60 +265,6 @@ def test_L1_docstring_parser_detection(pkg_name: str, tmp_path: Path):
     assert detected == expected["detected_parser"], (
         f"Expected parser {expected['detected_parser']!r}, got {detected!r}"
     )
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# L1: Directive Extraction (families, order, seealso, nodoc)
-# ═══════════════════════════════════════════════════════════════════════════════
-
-
-@pytest.mark.parametrize("pkg_name", _AVAILABLE_PACKAGES)
-def test_L1_family_directives(pkg_name: str, tmp_path: Path):
-    """Objects with %family directives are correctly grouped."""
-    pkg_dir, spec = _make_package(pkg_name, tmp_path)
-    expected = spec.get("expected", {})
-    if "families" not in expected:
-        pytest.skip("No 'families' in spec expected outcomes")
-
-    from great_docs._directives import extract_directives
-
-    module_name = expected.get("detected_module", pkg_name)
-
-    # Read the __init__.py and extract family directives from each object's docstring
-    # via griffe to get actual docstrings
-    try:
-        import griffe
-
-        mod = griffe.load(module_name, search_paths=[str(pkg_dir), str(pkg_dir / "src")])
-    except Exception:
-        pytest.skip(f"Could not load module {module_name!r} with griffe")
-
-    families_found: dict[str, list[str]] = {}
-    for member_name, member in mod.members.items():
-        if member_name.startswith("_"):
-            continue
-        try:
-            docstring = member.docstring
-        except Exception:
-            # Aliases (e.g., re-exported imports) may not resolve
-            continue
-        if docstring:
-            directives = extract_directives(docstring.value)
-            if directives.family:
-                families_found.setdefault(directives.family, []).append(member_name)
-
-    expected_families = expected["families"]
-    for family_name, expected_members in expected_families.items():
-        assert family_name in families_found, (
-            f"Family {family_name!r} not found. Found: {list(families_found.keys())}"
-        )
-        actual_members = set(families_found[family_name])
-        expected_set = set(expected_members)
-        assert expected_set == actual_members, (
-            f"Family {family_name!r} members mismatch.\n"
-            f"  Expected: {sorted(expected_set)}\n"
-            f"  Got:      {sorted(actual_members)}"
-        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

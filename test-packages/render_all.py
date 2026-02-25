@@ -786,12 +786,13 @@ def _create_log_page(name: str, log_path: str | None) -> str:
 
 _FILE_TREE_CSS = """\
 <style>
-.file-tree { font-family: "SF Mono", "Fira Code", monospace; font-size: 12px; }
+.file-tree { font-family: "SF Mono", "Fira Code", monospace; font-size: 12px; padding-top: 7px; }
 .file-tree details { margin-left: 8px; }
 .file-tree > details, .file-tree > .tree-file { margin-left: 0; }
 .file-tree summary {
-    cursor: pointer; padding: 3px 4px; border-radius: 4px;
+    cursor: pointer; border-radius: 4px;
     color: #c9d1d9; list-style: none; user-select: none;
+    padding: 0; margin: 0; line-height: 1.4;
 }
 .file-tree summary::-webkit-details-marker { display: none; }
 .file-tree summary::before {
@@ -1028,8 +1029,9 @@ def _create_detail_page(r: dict, results: list[dict]) -> str:
             .file-tree details {{ margin-left: 8px; }}
             .file-tree > details, .file-tree > .tree-file {{ margin-left: 0; }}
             .file-tree summary {{
-                cursor: pointer; padding: 3px 4px; border-radius: 4px;
+                cursor: pointer; border-radius: 4px;
                 color: #c9d1d9; list-style: none; user-select: none;
+                padding: 0; margin: 0; line-height: 1.4;
             }}
             .file-tree summary::-webkit-details-marker {{ display: none; }}
             .file-tree summary::before {{

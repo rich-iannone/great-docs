@@ -12,7 +12,7 @@ SPEC = {
     "dimensions": ["L23"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-docstring-math",
+            "name": "gdtest-docstring-math",
             "version": "0.1.0",
             "description": "Test math notation rendering in docstrings",
         },
@@ -126,13 +126,13 @@ SPEC = {
                 return [e / total for e in exps]
         ''',
         "README.md": """\
-            # gdtest-v2-docstring-math
+            # gdtest-docstring-math
 
             A synthetic test package with math notation in docstrings.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-docstring-math",
+        "detected_name": "gdtest-docstring-math",
         "detected_module": "gdtest_docstring_math",
         "detected_parser": "numpy",
         "export_names": ["norm", "softmax"],

@@ -4158,15 +4158,25 @@ class GreatDocs:
                         }
                         cat_key = _CLASS_SUB_MAP.get(sub, "classes")
                         categories[cat_key].append(name)
-                        # Get public methods (exclude private/magic methods)
+                        # Get documentable methods (exclude private methods but include
+                        # documented dunder methods like __repr__, __eq__, __len__, etc.)
+                        # __init__ is excluded because its parameters are already shown
+                        # in the class constructor signature.
                         # We need to handle each member individually to catch cyclic aliases
                         # AND validate each method with quartodoc to catch type hint issues
                         # Collect (method_name, lineno) tuples to preserve source order
+                        _INIT_DUNDERS = {"__init__", "__new__", "__init_subclass__"}
                         method_entries = []
                         skipped_methods = []
                         try:
                             for member_name, member in obj.members.items():
-                                if member_name.startswith("_"):
+                                if member_name.startswith("__") and member_name.endswith("__"):
+                                    # Dunder method: skip constructor-related ones,
+                                    # include the rest (they have user-written docstrings)
+                                    if member_name in _INIT_DUNDERS:
+                                        continue
+                                elif member_name.startswith("_"):
+                                    # Single-underscore private method: skip
                                     continue
                                 try:
                                     # Accessing member.kind can trigger alias resolution
@@ -6895,6 +6905,67 @@ toc: false
         if patched_count:
             print(f"   Injected overload signatures into {patched_count} reference page(s)")
 
+    def _fix_dunder_headings_in_qmd(self) -> None:
+        """
+        Escape dunder names in quartodoc-generated QMD headings so Pandoc doesn't
+        interpret the double underscores as bold/emphasis markers.
+
+        Quartodoc produces headings like::
+
+            # Collection.__repr__ { #gdtest_dunders.Collection.__repr__ }
+
+        Pandoc interprets ``__repr__`` as ``<strong>repr</strong>``, which breaks
+        the ``{ #anchor }`` attribute parsing and causes it to render as literal
+        text in the ``<h1>``.
+
+        This method escapes the underscores in the heading text only (not the
+        attribute block)::
+
+            # Collection.\\_\\_repr\\_\\_ { #gdtest_dunders.Collection.__repr__ }
+
+        Must be called **after** ``quartodoc build`` and **before** ``quarto render``.
+        """
+        ref_dir = self.project_path / "reference"
+        if not ref_dir.exists():
+            return
+
+        # Match headings containing dunder names (double underscore patterns)
+        # e.g.: # Collection.__repr__ { #gdtest_dunders.Collection.__repr__ }
+        # Group 1: heading prefix "# "
+        # Group 2: heading text before the attribute (e.g., "Collection.__repr__")
+        # Group 3: the attribute block (e.g., "{ #gdtest_dunders.Collection.__repr__ }")
+        dunder_heading_re = re.compile(
+            r"^(# )(.+__\w+__.*?)(\s*\{[^}]+\})\s*$",
+            re.MULTILINE,
+        )
+
+        patched_count = 0
+
+        for qmd_file in sorted(ref_dir.glob("*.qmd")):
+            if qmd_file.name == "index.qmd":
+                continue
+
+            content = qmd_file.read_text()
+            original = content
+
+            def _escape_heading(m):
+                prefix = m.group(1)   # "# "
+                name = m.group(2).strip()     # "Collection.__repr__"
+                attr = m.group(3).strip()     # "{ #gdtest_dunders.Collection.__repr__ }"
+                # Escape double underscores in heading text only
+                # __name__ → \_\_name\_\_
+                escaped = re.sub(r"__(\w+)__", r"\_\_\1\_\_", name)
+                return f"{prefix}{escaped} {attr}"
+
+            content = dunder_heading_re.sub(_escape_heading, content)
+
+            if content != original:
+                qmd_file.write_text(content)
+                patched_count += 1
+
+        if patched_count:
+            print(f"   Escaped dunder headings in {patched_count} reference page(s)")
+
     def _fix_rst_code_blocks_in_qmd(self) -> None:
         """
         Convert RST-style `::` code blocks in quartodoc-generated `.qmd` files
@@ -8315,6 +8386,9 @@ toc: false
 
             # Step 1.7: Ensure all dataclass fields appear in Attributes tables
             self._fix_dataclass_attributes_in_qmd()
+
+            # Step 1.8: Escape dunder names in headings so Pandoc parses attributes
+            self._fix_dunder_headings_in_qmd()
 
             # Get environment with QUARTO_PYTHON set for proper Python detection
             quarto_env = self._get_quarto_env()

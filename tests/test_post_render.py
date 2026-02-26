@@ -36,7 +36,7 @@ def _get_functions():
     ns = {"re": _re, "__builtins__": __builtins__}
 
     # Extract function definitions by finding their source blocks
-    funcs_to_extract = ["translate_sphinx_roles", "translate_rst_directives"]
+    funcs_to_extract = ["translate_sphinx_roles", "translate_rst_directives", "translate_rst_math"]
 
     for func_name in funcs_to_extract:
         # Find the function in the source
@@ -61,10 +61,10 @@ def _get_functions():
         func_source = "\n".join(func_lines)
         exec(func_source, ns)
 
-    return ns["translate_sphinx_roles"], ns["translate_rst_directives"]
+    return ns["translate_sphinx_roles"], ns["translate_rst_directives"], ns["translate_rst_math"]
 
 
-translate_sphinx_roles, translate_rst_directives = _get_functions()
+translate_sphinx_roles, translate_rst_directives, translate_rst_math = _get_functions()
 
 
 # ── translate_sphinx_roles ──────────────────────────────────────────────────
@@ -302,3 +302,86 @@ class TestTranslateRstDirectives:
         assert "Note" in result
         assert "<code>foo()</code>" in result
         assert "<code>bar()</code>" in result
+
+
+# ── translate_rst_math ──────────────────────────────────────────────────────
+
+
+class TestTranslateRstMath:
+    """Tests for translate_rst_math (post-render HTML math conversion)."""
+
+    def test_double_colon_pre_code(self):
+        """Original pattern: <p>.. math::</p><pre><code>...</code></pre>."""
+        html = (
+            "<html><head></head><body>"
+            "<p>.. math::</p>"
+            "<pre><code>E = mc^2</code></pre>"
+            "</body></html>"
+        )
+        result = translate_rst_math(html)
+        assert 'class="math display"' in result
+        assert "E = mc^2" in result
+        assert ".. math::" not in result
+        # KaTeX CDN should be injected
+        assert "katex" in result
+
+    def test_single_colon_sourcecode_div(self):
+        """Pandoc-mangled pattern: <p>.. math:</p> + sourceCode div."""
+        html = (
+            "<html><head></head><body>"
+            "<p>.. math:</p>"
+            '<div class="sourceCode"><pre class="sourceCode python">'
+            '<code class="sourceCode python">'
+            "<span>\\|x\\|</span>"
+            "</code></pre></div>"
+            "</body></html>"
+        )
+        result = translate_rst_math(html)
+        assert 'class="math display"' in result
+        assert ".. math:" not in result
+
+    def test_single_colon_plain_pre(self):
+        """Pandoc-mangled pattern: <p>.. math:</p> + plain <pre><code>."""
+        html = (
+            "<html><head></head><body>"
+            "<p>.. math:</p>"
+            "<pre><code>a^2 + b^2 = c^2</code></pre>"
+            "</body></html>"
+        )
+        result = translate_rst_math(html)
+        assert 'class="math display"' in result
+        assert "a^2 + b^2 = c^2" in result
+
+    def test_no_math_no_katex(self):
+        """KaTeX CDN is NOT injected when no math blocks are found."""
+        html = "<html><head></head><body><p>Hello</p></body></html>"
+        result = translate_rst_math(html)
+        assert "katex" not in result
+        assert result == html
+
+    def test_multiple_math_blocks(self):
+        """Multiple math blocks are all converted."""
+        html = (
+            "<html><head></head><body>"
+            "<p>.. math::</p><pre><code>a = b</code></pre>"
+            "<p>.. math::</p><pre><code>c = d</code></pre>"
+            "</body></html>"
+        )
+        result = translate_rst_math(html)
+        assert result.count('class="math display"') == 2
+
+    def test_span_tags_stripped_from_sourcecode(self):
+        """Syntax-highlighting <span> tags inside code are removed for math."""
+        html = (
+            "<html><head></head><body>"
+            "<p>.. math:</p>"
+            '<div class="sourceCode"><pre class="sourceCode python">'
+            '<code class="sourceCode python">'
+            '<span class="op">\\</span>frac{1}{2}'
+            "</code></pre></div>"
+            "</body></html>"
+        )
+        result = translate_rst_math(html)
+        assert 'class="math display"' in result
+        # span tags should be stripped, leaving just the LaTeX
+        assert "<span" not in result.split('class="math display"')[1].split("</p>")[0]

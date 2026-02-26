@@ -2373,9 +2373,10 @@ class GreatDocs:
                 # Explicit mode: preserve filenames as-is
                 dest_rel_path = rel_path
             else:
-                # Auto-discovery mode: strip numeric prefix for cleaner URLs
-                clean_filename = self._strip_numeric_prefix(rel_path.name)
-                dest_rel_path = rel_path.parent / clean_filename
+                # Auto-discovery mode: strip numeric prefixes from both
+                # directory names and filenames for cleaner URLs
+                clean_parts = [self._strip_numeric_prefix(part) for part in rel_path.parts]
+                dest_rel_path = Path(*clean_parts) if clean_parts else rel_path
 
             dst_path = target_dir / dest_rel_path
             dst_path.parent.mkdir(parents=True, exist_ok=True)
@@ -2572,11 +2573,11 @@ class GreatDocs:
 
         contents = []
 
-        # Helper to get clean href (strips numeric prefix for cleaner URLs)
+        # Helper to get clean href (strips numeric prefixes for cleaner URLs)
         def get_clean_href(file_info: dict) -> str:
             rel_path = file_info["path"].relative_to(source_dir)
-            clean_filename = self._strip_numeric_prefix(rel_path.name)
-            clean_rel_path = rel_path.parent / clean_filename
+            clean_parts = [self._strip_numeric_prefix(part) for part in rel_path.parts]
+            clean_rel_path = Path(*clean_parts) if clean_parts else rel_path
             return f"user-guide/{clean_rel_path}"
 
         # If we have sections, organize by section

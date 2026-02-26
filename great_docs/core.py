@@ -2628,9 +2628,49 @@ class GreatDocs:
                 contents.extend(unsectioned)
 
         else:
-            # No sections, just list files in order
+            # Check if files span multiple subdirectories — if so, group by
+            # parent directory to give the sidebar a logical structure.
+            subdirs = {}
+            root_files = []
             for file_info in files_info:
-                contents.append(get_clean_href(file_info))
+                rel_path = file_info["path"].relative_to(source_dir)
+                parent = rel_path.parent
+                if parent == Path("."):
+                    root_files.append(file_info)
+                else:
+                    parent_str = str(parent)
+                    if parent_str not in subdirs:
+                        subdirs[parent_str] = []
+                    subdirs[parent_str].append(file_info)
+
+            if subdirs:
+                # Put root-level files first (index.qmd at the very top)
+                root_files.sort(key=lambda fi: (fi["path"].name != "index.qmd", fi["path"].name))
+                for file_info in root_files:
+                    href = get_clean_href(file_info)
+                    if file_info["path"].name == "index.qmd":
+                        contents.append({"text": file_info["title"], "href": href})
+                    else:
+                        contents.append(href)
+
+                # Then add subdirectory groups, sorted by directory name
+                for subdir in sorted(subdirs):
+                    dir_files = subdirs[subdir]
+                    # Use the index.qmd title as the section title if present,
+                    # otherwise derive from the directory name
+                    section_title = subdir.replace("-", " ").replace("_", " ").title()
+                    section_contents = []
+                    for file_info in dir_files:
+                        if file_info["path"].name == "index.qmd":
+                            section_title = file_info["title"]
+                        else:
+                            section_contents.append(get_clean_href(file_info))
+
+                    contents.append({"section": section_title, "contents": section_contents})
+            else:
+                # All files at the root level — list in order
+                for file_info in files_info:
+                    contents.append(get_clean_href(file_info))
 
         return {
             "id": "user-guide",

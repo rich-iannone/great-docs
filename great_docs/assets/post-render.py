@@ -1256,6 +1256,17 @@ for html_file in html_files:
     # Format signatures with multiple arguments onto separate lines
     content = format_signature_multiline(content)
 
+    # For non-callable types (e.g., TypedDict), strip empty () from the signature
+    # TypedDicts are structural type definitions, not constructors
+    _NON_CALLABLE_SIGNATURE_TYPES = {"typeddict"}
+    obj_type_for_sig = object_types.get(item_name_from_file)
+    if obj_type_for_sig and obj_type_for_sig in _NON_CALLABLE_SIGNATURE_TYPES:
+        content = re.sub(
+            r'(<span class="sig-name">[^<]+</span>)\(\)',
+            r"\1",
+            content,
+        )
+
     # Convert back to lines for line-by-line processing
     content = content.splitlines(keepends=True)
 

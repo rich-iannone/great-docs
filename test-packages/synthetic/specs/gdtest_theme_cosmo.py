@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["Q1"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-theme-cosmo",
+            "name": "gdtest-theme-cosmo",
             "version": "0.1.0",
             "description": "Test site theme cosmo config.",
         },
@@ -71,10 +71,10 @@ SPEC = {
                 """
                 return {"name": name, "bg": "#000"}
         ''',
-        "README.md": ("# gdtest-v2-theme-cosmo\n\nTest site theme cosmo config.\n"),
+        "README.md": ("# gdtest-theme-cosmo\n\nTest site theme cosmo config.\n"),
     },
     "expected": {
-        "detected_name": "gdtest-v2-theme-cosmo",
+        "detected_name": "gdtest-theme-cosmo",
         "detected_module": "gdtest_theme_cosmo",
         "detected_parser": "numpy",
         "export_names": ["style", "theme"],

@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["K7"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-sidebar-min-items",
+            "name": "gdtest-sidebar-min-items",
             "version": "0.1.0",
             "description": "Test sidebar_filter.min_items 3 config",
         },
@@ -81,13 +81,13 @@ SPEC = {
                 return "Z"
         ''',
         "README.md": """\
-            # gdtest-v2-sidebar-min-items
+            # gdtest-sidebar-min-items
 
             Tests sidebar_filter.min_items: 3 config.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-sidebar-min-items",
+        "detected_name": "gdtest-sidebar-min-items",
         "detected_module": "gdtest_sidebar_min_items",
         "detected_parser": "numpy",
         "export_names": ["func_w", "func_x", "func_y", "func_z"],

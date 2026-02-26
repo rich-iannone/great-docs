@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["M10"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-ug-single-page",
+            "name": "gdtest-ug-single-page",
             "version": "0.1.0",
             "description": "Test single-page user guide.",
         },

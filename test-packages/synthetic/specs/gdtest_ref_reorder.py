@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["P4"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-ref-reorder",
+            "name": "gdtest-ref-reorder",
             "version": "0.1.0",
             "description": "Test reference config reordering.",
         },
@@ -167,10 +167,10 @@ SPEC = {
                     """
                     return data
         ''',
-        "README.md": ("# gdtest-v2-ref-reorder\n\nTest reference config reordering.\n"),
+        "README.md": ("# gdtest-ref-reorder\n\nTest reference config reordering.\n"),
     },
     "expected": {
-        "detected_name": "gdtest-v2-ref-reorder",
+        "detected_name": "gdtest-ref-reorder",
         "detected_module": "gdtest_ref_reorder",
         "detected_parser": "numpy",
         "export_names": ["DataModel", "Schema", "compute", "transform"],

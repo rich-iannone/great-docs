@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["K18"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-config-sections",
+            "name": "gdtest-config-sections",
             "version": "0.1.0",
             "description": "Test sections config",
         },
@@ -85,13 +85,13 @@ SPEC = {
             This example demonstrates advanced patterns.
         """,
         "README.md": """\
-            # gdtest-v2-config-sections
+            # gdtest-config-sections
 
             Tests sections config for custom page groups.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-config-sections",
+        "detected_name": "gdtest-config-sections",
         "detected_module": "gdtest_config_sections",
         "detected_parser": "numpy",
         "export_names": ["transform", "validate"],

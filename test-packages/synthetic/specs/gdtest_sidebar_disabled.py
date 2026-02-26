@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["K6"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-sidebar-disabled",
+            "name": "gdtest-sidebar-disabled",
             "version": "0.1.0",
             "description": "Test sidebar_filter.enabled false config",
         },
@@ -93,13 +93,13 @@ SPEC = {
                 return 5
         ''',
         "README.md": """\
-            # gdtest-v2-sidebar-disabled
+            # gdtest-sidebar-disabled
 
             Tests sidebar_filter.enabled: false config.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-sidebar-disabled",
+        "detected_name": "gdtest-sidebar-disabled",
         "detected_module": "gdtest_sidebar_disabled",
         "detected_parser": "numpy",
         "export_names": ["func_a", "func_b", "func_c", "func_d", "func_e"],

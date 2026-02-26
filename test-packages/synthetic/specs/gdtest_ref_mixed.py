@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["P3"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-ref-mixed",
+            "name": "gdtest-ref-mixed",
             "version": "0.1.0",
             "description": "Test mixed explicit and auto-discovered reference.",
         },
@@ -124,11 +124,11 @@ SPEC = {
                 return ["127.0.0.1"]
         ''',
         "README.md": (
-            "# gdtest-v2-ref-mixed\n\nTest mixed explicit and auto-discovered reference.\n"
+            "# gdtest-ref-mixed\n\nTest mixed explicit and auto-discovered reference.\n"
         ),
     },
     "expected": {
-        "detected_name": "gdtest-v2-ref-mixed",
+        "detected_name": "gdtest-ref-mixed",
         "detected_module": "gdtest_ref_mixed",
         "detected_parser": "numpy",
         "export_names": ["connect", "disconnect", "ping", "trace"],

@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["Q3"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-theme-cerulean",
+            "name": "gdtest-theme-cerulean",
             "version": "0.1.0",
             "description": "Test site theme cerulean config.",
         },
@@ -73,10 +73,10 @@ SPEC = {
                 """
                 return f"{c1}-{c2}"
         ''',
-        "README.md": ("# gdtest-v2-theme-cerulean\n\nTest site theme cerulean config.\n"),
+        "README.md": ("# gdtest-theme-cerulean\n\nTest site theme cerulean config.\n"),
     },
     "expected": {
-        "detected_name": "gdtest-v2-theme-cerulean",
+        "detected_name": "gdtest-theme-cerulean",
         "detected_module": "gdtest_theme_cerulean",
         "detected_parser": "numpy",
         "export_names": ["blend", "paint"],

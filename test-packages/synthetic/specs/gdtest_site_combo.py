@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["Q1", "Q5", "Q6", "K12"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-site-combo",
+            "name": "gdtest-site-combo",
             "version": "0.1.0",
             "description": "Test site setting combo with display_name.",
         },
@@ -91,10 +91,10 @@ SPEC = {
                 """
                 return True
         ''',
-        "README.md": ("# gdtest-v2-site-combo\n\nTest site setting combo with display_name.\n"),
+        "README.md": ("# gdtest-site-combo\n\nTest site setting combo with display_name.\n"),
     },
     "expected": {
-        "detected_name": "gdtest-v2-site-combo",
+        "detected_name": "gdtest-site-combo",
         "detected_module": "gdtest_site_combo",
         "detected_parser": "numpy",
         "export_names": ["publish", "render", "setup"],

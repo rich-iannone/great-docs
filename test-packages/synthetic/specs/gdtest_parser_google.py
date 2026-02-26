@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["K10"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-parser-google",
+            "name": "gdtest-parser-google",
             "version": "0.1.0",
             "description": "Test parser google config",
         },
@@ -89,13 +89,13 @@ SPEC = {
                 return {}
         ''',
         "README.md": """\
-            # gdtest-v2-parser-google
+            # gdtest-parser-google
 
             Tests parser: google config.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-parser-google",
+        "detected_name": "gdtest-parser-google",
         "detected_module": "gdtest_parser_google",
         "detected_parser": "google",
         "export_names": ["connect", "disconnect", "receive", "send", "status"],

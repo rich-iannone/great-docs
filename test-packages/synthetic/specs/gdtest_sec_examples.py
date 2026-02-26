@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["N1"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-sec-examples",
+            "name": "gdtest-sec-examples",
             "version": "0.1.0",
             "description": "Test custom Examples section.",
         },
@@ -99,10 +99,10 @@ SPEC = {
             "\n"
             "Examples covering edge cases and boundary conditions.\n"
         ),
-        "README.md": ("# gdtest-v2-sec-examples\n\nTest custom Examples section.\n"),
+        "README.md": ("# gdtest-sec-examples\n\nTest custom Examples section.\n"),
     },
     "expected": {
-        "detected_name": "gdtest-v2-sec-examples",
+        "detected_name": "gdtest-sec-examples",
         "detected_module": "gdtest_sec_examples",
         "detected_parser": "numpy",
         "export_names": ["demo", "showcase"],

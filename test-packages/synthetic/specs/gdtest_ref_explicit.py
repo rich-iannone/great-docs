@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["P1"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-ref-explicit",
+            "name": "gdtest-ref-explicit",
             "version": "0.1.0",
             "description": "Test explicit reference config.",
         },
@@ -130,10 +130,10 @@ SPEC = {
                 """
                 return "hi"
         ''',
-        "README.md": ("# gdtest-v2-ref-explicit\n\nTest explicit reference config.\n"),
+        "README.md": ("# gdtest-ref-explicit\n\nTest explicit reference config.\n"),
     },
     "expected": {
-        "detected_name": "gdtest-v2-ref-explicit",
+        "detected_name": "gdtest-ref-explicit",
         "detected_module": "gdtest_ref_explicit",
         "detected_parser": "numpy",
         "export_names": ["build", "compile", "execute", "run"],

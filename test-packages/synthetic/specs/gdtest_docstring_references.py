@@ -12,7 +12,7 @@ SPEC = {
     "dimensions": ["L21"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-docstring-references",
+            "name": "gdtest-docstring-references",
             "version": "0.1.0",
             "description": "Test References section rendering",
         },
@@ -140,13 +140,13 @@ SPEC = {
                 return -1
         ''',
         "README.md": """\
-            # gdtest-v2-docstring-references
+            # gdtest-docstring-references
 
             A synthetic test package with References sections.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-docstring-references",
+        "detected_name": "gdtest-docstring-references",
         "detected_module": "gdtest_docstring_references",
         "detected_parser": "numpy",
         "export_names": ["binary_search", "quicksort"],

@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["M7"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-ug-mixed-ext",
+            "name": "gdtest-ug-mixed-ext",
             "version": "0.1.0",
             "description": "Test mixed file extensions in user guide.",
         },

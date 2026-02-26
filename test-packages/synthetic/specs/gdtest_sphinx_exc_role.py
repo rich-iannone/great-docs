@@ -12,7 +12,7 @@ SPEC = {
     "dimensions": ["L12"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-sphinx-exc-role",
+            "name": "gdtest-sphinx-exc-role",
             "version": "0.1.0",
             "description": "Test :py:exc: Sphinx role rendering",
         },
@@ -81,13 +81,13 @@ SPEC = {
                 return target_type(value)
         ''',
         "README.md": """\
-            # gdtest-v2-sphinx-exc-role
+            # gdtest-sphinx-exc-role
 
             A synthetic test package testing ``:py:exc:`` cross-reference roles.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-sphinx-exc-role",
+        "detected_name": "gdtest-sphinx-exc-role",
         "detected_module": "gdtest_sphinx_exc_role",
         "detected_parser": "numpy",
         "export_names": ["parse_int", "safe_cast"],

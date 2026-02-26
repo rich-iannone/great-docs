@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["N2"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-sec-deep",
+            "name": "gdtest-sec-deep",
             "version": "0.1.0",
             "description": "Test custom section with nested subdirectories.",
         },
@@ -93,10 +93,10 @@ SPEC = {
             "\n"
             "Explore advanced design patterns and techniques.\n"
         ),
-        "README.md": ("# gdtest-v2-sec-deep\n\nTest custom section with nested subdirectories.\n"),
+        "README.md": ("# gdtest-sec-deep\n\nTest custom section with nested subdirectories.\n"),
     },
     "expected": {
-        "detected_name": "gdtest-v2-sec-deep",
+        "detected_name": "gdtest-sec-deep",
         "detected_module": "gdtest_sec_deep",
         "detected_parser": "numpy",
         "export_names": ["learn", "test_knowledge"],

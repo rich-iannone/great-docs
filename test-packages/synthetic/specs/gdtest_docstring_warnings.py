@@ -12,7 +12,7 @@ SPEC = {
     "dimensions": ["L20"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-docstring-warnings",
+            "name": "gdtest-docstring-warnings",
             "version": "0.1.0",
             "description": "Test Warnings section rendering",
         },
@@ -117,13 +117,13 @@ SPEC = {
                 return items
         ''',
         "README.md": """\
-            # gdtest-v2-docstring-warnings
+            # gdtest-docstring-warnings
 
             A synthetic test package with Warnings sections.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-docstring-warnings",
+        "detected_name": "gdtest-docstring-warnings",
         "detected_module": "gdtest_docstring_warnings",
         "detected_parser": "numpy",
         "export_names": ["mutable_default", "unsafe_eval"],

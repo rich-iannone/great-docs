@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["N5"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-sec-faq",
+            "name": "gdtest-sec-faq",
             "version": "0.1.0",
             "description": "Test custom FAQ section.",
         },
@@ -99,10 +99,10 @@ SPEC = {
             "\n"
             "Frequently asked questions about troubleshooting common issues.\n"
         ),
-        "README.md": ("# gdtest-v2-sec-faq\n\nTest custom FAQ section.\n"),
+        "README.md": ("# gdtest-sec-faq\n\nTest custom FAQ section.\n"),
     },
     "expected": {
-        "detected_name": "gdtest-v2-sec-faq",
+        "detected_name": "gdtest-sec-faq",
         "detected_module": "gdtest_sec_faq",
         "detected_parser": "numpy",
         "export_names": ["answer", "ask"],

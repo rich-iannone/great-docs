@@ -12,7 +12,7 @@ SPEC = {
     "dimensions": ["L10"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-sphinx-func-role",
+            "name": "gdtest-sphinx-func-role",
             "version": "0.1.0",
             "description": "Test :py:func: Sphinx role rendering",
         },
@@ -90,13 +90,13 @@ SPEC = {
                     return False
         ''',
         "README.md": """\
-            # gdtest-v2-sphinx-func-role
+            # gdtest-sphinx-func-role
 
             A synthetic test package testing ``:py:func:`` cross-reference roles.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-sphinx-func-role",
+        "detected_name": "gdtest-sphinx-func-role",
         "detected_module": "gdtest_sphinx_func_role",
         "detected_parser": "numpy",
         "export_names": ["encode", "decode", "validate"],

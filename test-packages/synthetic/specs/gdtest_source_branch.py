@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["K2"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-source-branch",
+            "name": "gdtest-source-branch",
             "version": "0.1.0",
             "description": "Test source.branch develop config",
         },
@@ -64,13 +64,13 @@ SPEC = {
                 pass
         ''',
         "README.md": """\
-            # gdtest-v2-source-branch
+            # gdtest-source-branch
 
             Tests source.branch: develop config.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-source-branch",
+        "detected_name": "gdtest-source-branch",
         "detected_module": "gdtest_source_branch",
         "detected_parser": "numpy",
         "export_names": ["read_data", "write_data"],

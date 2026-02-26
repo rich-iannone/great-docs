@@ -12,7 +12,7 @@ SPEC = {
     "dimensions": ["N4"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-sec-blog",
+            "name": "gdtest-sec-blog",
             "version": "0.1.0",
             "description": "Test blog section using Quarto listing.",
         },
@@ -140,10 +140,10 @@ SPEC = {
             "\n"
             "None in this release.\n"
         ),
-        "README.md": ("# gdtest-v2-sec-blog\n\nTest blog section using Quarto listing.\n"),
+        "README.md": ("# gdtest-sec-blog\n\nTest blog section using Quarto listing.\n"),
     },
     "expected": {
-        "detected_name": "gdtest-v2-sec-blog",
+        "detected_name": "gdtest-sec-blog",
         "detected_module": "gdtest_sec_blog",
         "detected_parser": "numpy",
         "export_names": ["archive", "post"],

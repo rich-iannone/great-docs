@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["L5"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-rst-tip",
+            "name": "gdtest-rst-tip",
             "version": "0.1.0",
             "description": "Test tip RST directives",
         },
@@ -70,13 +70,13 @@ SPEC = {
                 return items
         ''',
         "README.md": """\
-            # gdtest-v2-rst-tip
+            # gdtest-rst-tip
 
             Tests tip RST directives in docstrings.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-rst-tip",
+        "detected_name": "gdtest-rst-tip",
         "detected_module": "gdtest_rst_tip",
         "detected_parser": "numpy",
         "export_names": ["batch_process", "optimize"],

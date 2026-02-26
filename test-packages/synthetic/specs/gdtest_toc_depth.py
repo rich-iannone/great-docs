@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["Q5"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-toc-depth",
+            "name": "gdtest-toc-depth",
             "version": "0.1.0",
             "description": "Test site toc-depth config.",
         },
@@ -71,10 +71,10 @@ SPEC = {
                 """
                 return {"section": section, "children": []}
         ''',
-        "README.md": ("# gdtest-v2-toc-depth\n\nTest site toc-depth config.\n"),
+        "README.md": ("# gdtest-toc-depth\n\nTest site toc-depth config.\n"),
     },
     "expected": {
-        "detected_name": "gdtest-v2-toc-depth",
+        "detected_name": "gdtest-toc-depth",
         "detected_module": "gdtest_toc_depth",
         "detected_parser": "numpy",
         "export_names": ["expand", "outline"],

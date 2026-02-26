@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["N6"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-sec-multi",
+            "name": "gdtest-sec-multi",
             "version": "0.1.0",
             "description": "Test multiple custom sections.",
         },
@@ -97,10 +97,10 @@ SPEC = {
         "recipes/quick.qmd": (
             "---\ntitle: Quick Recipe\n---\n\n# Quick Recipe\n\nA quick recipe for common tasks.\n"
         ),
-        "README.md": ("# gdtest-v2-sec-multi\n\nTest multiple custom sections.\n"),
+        "README.md": ("# gdtest-sec-multi\n\nTest multiple custom sections.\n"),
     },
     "expected": {
-        "detected_name": "gdtest-v2-sec-multi",
+        "detected_name": "gdtest-sec-multi",
         "detected_module": "gdtest_sec_multi",
         "detected_parser": "numpy",
         "export_names": ["combine", "multi_demo"],

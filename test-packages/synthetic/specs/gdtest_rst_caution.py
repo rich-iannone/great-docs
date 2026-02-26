@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["L6"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-rst-caution",
+            "name": "gdtest-rst-caution",
             "version": "0.1.0",
             "description": "Test caution RST directives",
         },
@@ -67,13 +67,13 @@ SPEC = {
                 return True
         ''',
         "README.md": """\
-            # gdtest-v2-rst-caution
+            # gdtest-rst-caution
 
             Tests caution RST directives in docstrings.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-rst-caution",
+        "detected_name": "gdtest-rst-caution",
         "detected_module": "gdtest_rst_caution",
         "detected_parser": "numpy",
         "export_names": ["migrate", "modify_schema"],

@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["K3"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-source-path",
+            "name": "gdtest-source-path",
             "version": "0.1.0",
             "description": "Test source.path src/mylib config",
         },
@@ -67,13 +67,13 @@ SPEC = {
                 return ""
         ''',
         "README.md": """\
-            # gdtest-v2-source-path
+            # gdtest-source-path
 
             Tests source.path: src/mylib config.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-source-path",
+        "detected_name": "gdtest-source-path",
         "detected_module": "gdtest_source_path",
         "detected_parser": "numpy",
         "export_names": ["format_output", "parse"],

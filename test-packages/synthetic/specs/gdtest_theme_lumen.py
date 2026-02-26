@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["Q2"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-theme-lumen",
+            "name": "gdtest-theme-lumen",
             "version": "0.1.0",
             "description": "Test site theme lumen config.",
         },
@@ -71,10 +71,10 @@ SPEC = {
                 """
                 return brightness / 2.0
         ''',
-        "README.md": ("# gdtest-v2-theme-lumen\n\nTest site theme lumen config.\n"),
+        "README.md": ("# gdtest-theme-lumen\n\nTest site theme lumen config.\n"),
     },
     "expected": {
-        "detected_name": "gdtest-v2-theme-lumen",
+        "detected_name": "gdtest-theme-lumen",
         "detected_module": "gdtest_theme_lumen",
         "detected_parser": "numpy",
         "export_names": ["dim", "illuminate"],

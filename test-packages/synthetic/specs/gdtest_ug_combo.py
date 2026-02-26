@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["M2", "M3", "M4", "M7"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-ug-combo",
+            "name": "gdtest-ug-combo",
             "version": "0.1.0",
             "description": "Test complex user guide combination.",
         },
@@ -106,7 +106,7 @@ SPEC = {
             "How to extend the project with custom plugins.\n"
         ),
         "README.md": (
-            "# gdtest-v2-ug-combo\n"
+            "# gdtest-ug-combo\n"
             "\n"
             "Complex user guide combining numbered files, sections, subdirs, and mixed extensions.\n"
         ),

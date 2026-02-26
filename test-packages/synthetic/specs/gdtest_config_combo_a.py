@@ -9,7 +9,7 @@ SPEC = {
     "dimensions": ["K1", "K4", "K12", "K13", "K14"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-config-combo-a",
+            "name": "gdtest-config-combo-a",
             "version": "0.1.0",
             "description": "Test package for config combo A.",
         },

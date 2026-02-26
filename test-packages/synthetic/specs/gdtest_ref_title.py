@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["P8"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-ref-title",
+            "name": "gdtest-ref-title",
             "version": "0.1.0",
             "description": "Test reference config with custom title.",
         },
@@ -96,10 +96,10 @@ SPEC = {
                 """
                 return True
         ''',
-        "README.md": ("# gdtest-v2-ref-title\n\nTest reference config with custom title.\n"),
+        "README.md": ("# gdtest-ref-title\n\nTest reference config with custom title.\n"),
     },
     "expected": {
-        "detected_name": "gdtest-v2-ref-title",
+        "detected_name": "gdtest-ref-title",
         "detected_module": "gdtest_ref_title",
         "detected_parser": "numpy",
         "export_names": ["delete", "insert", "query"],

@@ -12,7 +12,7 @@ SPEC = {
     "dimensions": ["L14"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-sphinx-mixed-roles",
+            "name": "gdtest-sphinx-mixed-roles",
             "version": "0.1.0",
             "description": "Test mixed Sphinx role rendering",
         },
@@ -173,13 +173,13 @@ SPEC = {
                 return True
         ''',
         "README.md": """\
-            # gdtest-v2-sphinx-mixed-roles
+            # gdtest-sphinx-mixed-roles
 
             A synthetic test package testing mixed Sphinx cross-reference roles.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-sphinx-mixed-roles",
+        "detected_name": "gdtest-sphinx-mixed-roles",
         "detected_module": "gdtest_sphinx_mixed_roles",
         "detected_parser": "numpy",
         "export_names": ["Registry", "register", "lookup", "validate_entry"],

@@ -12,7 +12,7 @@ SPEC = {
     "dimensions": ["N1", "N2", "N3", "N5", "N6", "M1", "P1"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-stress-all-sections",
+            "name": "gdtest-stress-all-sections",
             "version": "0.1.0",
             "description": "Stress test with maximum navigation complexity.",
         },
@@ -182,11 +182,11 @@ SPEC = {
             "An introduction to the package and its capabilities.\n"
         ),
         "README.md": (
-            "# gdtest-v2-stress-all-sections\n\nStress test with maximum navigation complexity.\n"
+            "# gdtest-stress-all-sections\n\nStress test with maximum navigation complexity.\n"
         ),
     },
     "expected": {
-        "detected_name": "gdtest-v2-stress-all-sections",
+        "detected_name": "gdtest-stress-all-sections",
         "detected_module": "gdtest_stress_all_sections",
         "detected_parser": "numpy",
         "export_names": ["create", "delete", "read", "update"],

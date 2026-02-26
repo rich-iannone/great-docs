@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["P5"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-ref-sectioned",
+            "name": "gdtest-ref-sectioned",
             "version": "0.1.0",
             "description": "Test reference with 4 named sections.",
         },
@@ -257,10 +257,10 @@ SPEC = {
                     except ValueError:
                         return text
         ''',
-        "README.md": ("# gdtest-v2-ref-sectioned\n\nTest reference with 4 named sections.\n"),
+        "README.md": ("# gdtest-ref-sectioned\n\nTest reference with 4 named sections.\n"),
     },
     "expected": {
-        "detected_name": "gdtest-v2-ref-sectioned",
+        "detected_name": "gdtest-ref-sectioned",
         "detected_module": "gdtest_ref_sectioned",
         "detected_parser": "numpy",
         "export_names": [

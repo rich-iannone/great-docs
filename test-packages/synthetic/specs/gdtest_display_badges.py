@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["Q7"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-display-badges",
+            "name": "gdtest-display-badges",
             "version": "0.1.0",
             "description": "A package with badge-rich README.",
         },
@@ -71,7 +71,7 @@ SPEC = {
                 return {"name": name, "color": "green"}
         ''',
         "README.md": (
-            "# gdtest-v2-display-badges\n"
+            "# gdtest-display-badges\n"
             "\n"
             "![Version](https://img.shields.io/badge/version-0.1.0-blue)\n"
             "![Python](https://img.shields.io/badge/python-3.9+-green)\n"
@@ -90,7 +90,7 @@ SPEC = {
         ),
     },
     "expected": {
-        "detected_name": "gdtest-v2-display-badges",
+        "detected_name": "gdtest-display-badges",
         "detected_module": "gdtest_display_badges",
         "detected_parser": "numpy",
         "export_names": ["badge", "shield"],

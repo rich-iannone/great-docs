@@ -13,7 +13,7 @@ SPEC = {
     "dimensions": ["L9", "L14", "L15", "L18", "L19", "L22", "L23"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-docstring-combo",
+            "name": "gdtest-docstring-combo",
             "version": "0.1.0",
             "description": "Test all docstring features combined",
         },
@@ -206,13 +206,13 @@ SPEC = {
                     return -math.sqrt(-x)
         ''',
         "README.md": """\
-            # gdtest-v2-docstring-combo
+            # gdtest-docstring-combo
 
             A synthetic test package combining all docstring content features.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-docstring-combo",
+        "detected_name": "gdtest-docstring-combo",
         "detected_module": "gdtest_docstring_combo",
         "detected_parser": "numpy",
         "export_names": ["advanced_compute", "helper"],

@@ -13,7 +13,7 @@ SPEC = {
     "dimensions": ["L17"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-sphinx-rich",
+            "name": "gdtest-sphinx-rich",
             "version": "0.1.0",
             "description": "Test rich Sphinx docstring section rendering",
         },
@@ -128,13 +128,13 @@ SPEC = {
                 return True
         ''',
         "README.md": """\
-            # gdtest-v2-sphinx-rich
+            # gdtest-sphinx-rich
 
             A synthetic test package with rich Sphinx-format docstrings.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-sphinx-rich",
+        "detected_name": "gdtest-sphinx-rich",
         "detected_module": "gdtest_sphinx_rich",
         "detected_parser": "sphinx",
         "export_names": ["execute", "schedule"],

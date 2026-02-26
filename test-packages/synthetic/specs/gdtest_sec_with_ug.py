@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["N1", "M1"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-sec-with-ug",
+            "name": "gdtest-sec-with-ug",
             "version": "0.1.0",
             "description": "Test custom section with auto-discovered user guide.",
         },
@@ -77,11 +77,11 @@ SPEC = {
             "---\ntitle: Demo\n---\n\n# Demo\n\nA demonstration of the package features.\n"
         ),
         "README.md": (
-            "# gdtest-v2-sec-with-ug\n\nTest custom section with auto-discovered user guide.\n"
+            "# gdtest-sec-with-ug\n\nTest custom section with auto-discovered user guide.\n"
         ),
     },
     "expected": {
-        "detected_name": "gdtest-v2-sec-with-ug",
+        "detected_name": "gdtest-sec-with-ug",
         "detected_module": "gdtest_sec_with_ug",
         "detected_parser": "numpy",
         "export_names": ["guide_user", "run_example"],

@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["K15"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-no-darkmode",
+            "name": "gdtest-no-darkmode",
             "version": "0.1.0",
             "description": "Test dark_mode_toggle false config",
         },
@@ -65,13 +65,13 @@ SPEC = {
                 return x * 2
         ''',
         "README.md": """\
-            # gdtest-v2-no-darkmode
+            # gdtest-no-darkmode
 
             Tests dark_mode_toggle: false config.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-no-darkmode",
+        "detected_name": "gdtest-no-darkmode",
         "detected_module": "gdtest_no_darkmode",
         "detected_parser": "numpy",
         "export_names": ["bright_func", "light_func"],

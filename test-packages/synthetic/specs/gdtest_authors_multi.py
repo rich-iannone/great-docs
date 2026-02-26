@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["K14"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-authors-multi",
+            "name": "gdtest-authors-multi",
             "version": "0.1.0",
             "description": "Test multiple authors config",
         },
@@ -84,13 +84,13 @@ SPEC = {
                 return True
         ''',
         "README.md": """\
-            # gdtest-v2-authors-multi
+            # gdtest-authors-multi
 
             Tests multiple authors config.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-authors-multi",
+        "detected_name": "gdtest-authors-multi",
         "detected_module": "gdtest_authors_multi",
         "detected_parser": "numpy",
         "export_names": ["collaborate", "review"],

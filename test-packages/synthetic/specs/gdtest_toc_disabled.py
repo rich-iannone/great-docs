@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["Q4"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-toc-disabled",
+            "name": "gdtest-toc-disabled",
             "version": "0.1.0",
             "description": "Test site toc disabled config.",
         },
@@ -71,10 +71,10 @@ SPEC = {
                 """
                 return 1
         ''',
-        "README.md": ("# gdtest-v2-toc-disabled\n\nTest site toc disabled config.\n"),
+        "README.md": ("# gdtest-toc-disabled\n\nTest site toc disabled config.\n"),
     },
     "expected": {
-        "detected_name": "gdtest-v2-toc-disabled",
+        "detected_name": "gdtest-toc-disabled",
         "detected_module": "gdtest_toc_disabled",
         "detected_parser": "numpy",
         "export_names": ["bookmark", "navigate"],

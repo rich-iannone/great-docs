@@ -12,7 +12,7 @@ SPEC = {
     "dimensions": ["L24"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-docstring-tables",
+            "name": "gdtest-docstring-tables",
             "version": "0.1.0",
             "description": "Test table rendering in docstrings",
         },
@@ -140,13 +140,13 @@ SPEC = {
                 return "\\n".join(lines)
         ''',
         "README.md": """\
-            # gdtest-v2-docstring-tables
+            # gdtest-docstring-tables
 
             A synthetic test package with tables in docstrings.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-docstring-tables",
+        "detected_name": "gdtest-docstring-tables",
         "detected_module": "gdtest_docstring_tables",
         "detected_parser": "numpy",
         "export_names": ["compare_methods", "format_report"],

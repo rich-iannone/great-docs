@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["M1"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-ug-with-images",
+            "name": "gdtest-ug-with-images",
             "version": "0.1.0",
             "description": "Test user guide with asset references.",
         },
@@ -83,7 +83,7 @@ SPEC = {
             "\n"
             "Component A --> Component B --> Component C\n"
         ),
-        "README.md": ("# gdtest-v2-ug-with-images\n\nTest user guide with asset references.\n"),
+        "README.md": ("# gdtest-ug-with-images\n\nTest user guide with asset references.\n"),
     },
     "expected": {
         "files_exist": [

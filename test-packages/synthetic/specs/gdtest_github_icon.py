@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["K1"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-github-icon",
+            "name": "gdtest-github-icon",
             "version": "0.1.0",
             "description": "Test github_style icon config",
         },
@@ -62,13 +62,13 @@ SPEC = {
                 pass
         ''',
         "README.md": """\
-            # gdtest-v2-github-icon
+            # gdtest-github-icon
 
             Tests github_style: icon config.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-github-icon",
+        "detected_name": "gdtest-github-icon",
         "detected_module": "gdtest_github_icon",
         "detected_parser": "numpy",
         "export_names": ["fetch", "store"],

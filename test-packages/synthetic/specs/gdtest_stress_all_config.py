@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["K1", "K4", "K5", "K6", "K9", "K10", "K12", "K13", "K14", "K15"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-stress-all-config",
+            "name": "gdtest-stress-all-config",
             "version": "0.1.0",
             "description": "Stress test with all config options.",
         },
@@ -97,10 +97,10 @@ SPEC = {
                 """
                 return True
         ''',
-        "README.md": ("# gdtest-v2-stress-all-config\n\nStress test with all config options.\n"),
+        "README.md": ("# gdtest-stress-all-config\n\nStress test with all config options.\n"),
     },
     "expected": {
-        "detected_name": "gdtest-v2-stress-all-config",
+        "detected_name": "gdtest-stress-all-config",
         "detected_module": "gdtest_stress_all_config",
         "detected_parser": "google",
         "export_names": ["stress_create", "stress_delete", "stress_read"],

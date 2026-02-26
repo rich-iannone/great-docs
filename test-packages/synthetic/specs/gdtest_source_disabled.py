@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["K5"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-source-disabled",
+            "name": "gdtest-source-disabled",
             "version": "0.1.0",
             "description": "Test source.enabled false config",
         },
@@ -71,13 +71,13 @@ SPEC = {
                 return ""
         ''',
         "README.md": """\
-            # gdtest-v2-source-disabled
+            # gdtest-source-disabled
 
             Tests source.enabled: false config.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-source-disabled",
+        "detected_name": "gdtest-source-disabled",
         "detected_module": "gdtest_source_disabled",
         "detected_parser": "numpy",
         "export_names": ["decrypt", "encrypt"],

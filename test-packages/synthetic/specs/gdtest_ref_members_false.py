@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["P2"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-ref-members-false",
+            "name": "gdtest-ref-members-false",
             "version": "0.1.0",
             "description": "Test reference config with members: false.",
         },
@@ -141,11 +141,11 @@ SPEC = {
                 return engine
         ''',
         "README.md": (
-            "# gdtest-v2-ref-members-false\n\nTest reference config with members: false.\n"
+            "# gdtest-ref-members-false\n\nTest reference config with members: false.\n"
         ),
     },
     "expected": {
-        "detected_name": "gdtest-v2-ref-members-false",
+        "detected_name": "gdtest-ref-members-false",
         "detected_module": "gdtest_ref_members_false",
         "detected_parser": "numpy",
         "export_names": ["Engine", "start_engine"],

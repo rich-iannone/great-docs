@@ -12,7 +12,7 @@ SPEC = {
     "dimensions": ["L9"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-rst-mixed-dirs",
+            "name": "gdtest-rst-mixed-dirs",
             "version": "0.1.0",
             "description": "Test mixed RST directives",
         },
@@ -100,13 +100,13 @@ SPEC = {
                 return True
         ''',
         "README.md": """\
-            # gdtest-v2-rst-mixed-dirs
+            # gdtest-rst-mixed-dirs
 
             Tests mixed RST directives in docstrings.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-rst-mixed-dirs",
+        "detected_name": "gdtest-rst-mixed-dirs",
         "detected_module": "gdtest_rst_mixed_dirs",
         "detected_parser": "numpy",
         "export_names": ["process_v2", "safe_delete", "transform_legacy"],

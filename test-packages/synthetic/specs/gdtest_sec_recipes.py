@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["N3"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-sec-recipes",
+            "name": "gdtest-sec-recipes",
             "version": "0.1.0",
             "description": "Test custom Recipes section.",
         },
@@ -90,10 +90,10 @@ SPEC = {
             "\n"
             "A recipe for building a data processing pipeline.\n"
         ),
-        "README.md": ("# gdtest-v2-sec-recipes\n\nTest custom Recipes section.\n"),
+        "README.md": ("# gdtest-sec-recipes\n\nTest custom Recipes section.\n"),
     },
     "expected": {
-        "detected_name": "gdtest-v2-sec-recipes",
+        "detected_name": "gdtest-sec-recipes",
         "detected_module": "gdtest_sec_recipes",
         "detected_parser": "numpy",
         "export_names": ["cook", "serve"],

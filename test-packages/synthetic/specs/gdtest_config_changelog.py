@@ -6,7 +6,7 @@ SPEC = {
     "dimensions": ["K21"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-config-changelog",
+            "name": "gdtest-config-changelog",
             "version": "0.1.0",
             "description": "Test package for changelog config.",
         },

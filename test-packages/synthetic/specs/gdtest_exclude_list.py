@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["K16"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-exclude-list",
+            "name": "gdtest-exclude-list",
             "version": "0.1.0",
             "description": "Test exclude config",
         },
@@ -94,13 +94,13 @@ SPEC = {
                     return "help"
         ''',
         "README.md": """\
-            # gdtest-v2-exclude-list
+            # gdtest-exclude-list
 
             Tests exclude config.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-exclude-list",
+        "detected_name": "gdtest-exclude-list",
         "detected_module": "gdtest_exclude_list",
         "detected_parser": "numpy",
         "export_names": ["public_a", "public_b", "public_c"],

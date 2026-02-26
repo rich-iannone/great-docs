@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["L22"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-docstring-seealso",
+            "name": "gdtest-docstring-seealso",
             "version": "0.1.0",
             "description": "Test See Also section rendering",
         },
@@ -144,13 +144,13 @@ SPEC = {
                 return json.dumps(obj)
         ''',
         "README.md": """\
-            # gdtest-v2-docstring-seealso
+            # gdtest-docstring-seealso
 
             A synthetic test package with See Also sections.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-docstring-seealso",
+        "detected_name": "gdtest-docstring-seealso",
         "detected_module": "gdtest_docstring_seealso",
         "detected_parser": "numpy",
         "export_names": ["deserialize", "serialize", "to_json"],

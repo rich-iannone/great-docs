@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["M11"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-ug-no-frontmatter",
+            "name": "gdtest-ug-no-frontmatter",
             "version": "0.1.0",
             "description": "Test user guide pages without frontmatter.",
         },
@@ -63,7 +63,7 @@ SPEC = {
         "user_guide/intro.qmd": ("# Introduction\n\nWelcome to the project.\n"),
         "user_guide/usage.qmd": ("# Usage Guide\n\nHow to use.\n"),
         "README.md": (
-            "# gdtest-v2-ug-no-frontmatter\n\nTest user guide pages without YAML frontmatter.\n"
+            "# gdtest-ug-no-frontmatter\n\nTest user guide pages without YAML frontmatter.\n"
         ),
     },
     "expected": {

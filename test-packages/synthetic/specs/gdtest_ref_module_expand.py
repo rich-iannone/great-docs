@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["P6"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-ref-module-expand",
+            "name": "gdtest-ref-module-expand",
             "version": "0.1.0",
             "description": "Test reference config with submodule expansion.",
         },
@@ -127,11 +127,11 @@ SPEC = {
                 return len(items)
         ''',
         "README.md": (
-            "# gdtest-v2-ref-module-expand\n\nTest reference config with submodule expansion.\n"
+            "# gdtest-ref-module-expand\n\nTest reference config with submodule expansion.\n"
         ),
     },
     "expected": {
-        "detected_name": "gdtest-v2-ref-module-expand",
+        "detected_name": "gdtest-ref-module-expand",
         "detected_module": "gdtest_ref_module_expand",
         "detected_parser": "numpy",
         "export_names": ["main_func", "util_a", "util_b", "util_c"],

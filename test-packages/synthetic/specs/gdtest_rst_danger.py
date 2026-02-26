@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["L7"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-rst-danger",
+            "name": "gdtest-rst-danger",
             "version": "0.1.0",
             "description": "Test danger RST directives",
         },
@@ -62,13 +62,13 @@ SPEC = {
                 return 0
         ''',
         "README.md": """\
-            # gdtest-v2-rst-danger
+            # gdtest-rst-danger
 
             Tests danger RST directives in docstrings.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-rst-danger",
+        "detected_name": "gdtest-rst-danger",
         "detected_module": "gdtest_rst_danger",
         "detected_parser": "numpy",
         "export_names": ["drop_database", "purge_cache"],

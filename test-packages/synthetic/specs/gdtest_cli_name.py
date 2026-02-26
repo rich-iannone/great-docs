@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["K8"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-cli-name",
+            "name": "gdtest-cli-name",
             "version": "0.1.0",
             "description": "Test cli.name mytool config",
         },
@@ -90,13 +90,13 @@ SPEC = {
                 click.echo("Status: OK")
         ''',
         "README.md": """\
-            # gdtest-v2-cli-name
+            # gdtest-cli-name
 
             Tests cli.name: mytool config.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-cli-name",
+        "detected_name": "gdtest-cli-name",
         "detected_module": "gdtest_cli_name",
         "detected_parser": "numpy",
         "export_names": ["process", "summarize"],

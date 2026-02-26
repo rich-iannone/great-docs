@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["M1"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-ug-auto",
+            "name": "gdtest-ug-auto",
             "version": "0.1.0",
             "description": "Test auto-discovered user guide.",
         },

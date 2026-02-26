@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["L1"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-rst-versionadded",
+            "name": "gdtest-rst-versionadded",
             "version": "0.1.0",
             "description": "Test versionadded RST directives",
         },
@@ -66,13 +66,13 @@ SPEC = {
                 pass
         ''',
         "README.md": """\
-            # gdtest-v2-rst-versionadded
+            # gdtest-rst-versionadded
 
             Tests versionadded RST directives in docstrings.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-rst-versionadded",
+        "detected_name": "gdtest-rst-versionadded",
         "detected_module": "gdtest_rst_versionadded",
         "detected_parser": "numpy",
         "export_names": ["close_session", "create_session"],

@@ -12,7 +12,7 @@ SPEC = {
     "dimensions": ["L13"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-sphinx-meth-role",
+            "name": "gdtest-sphinx-meth-role",
             "version": "0.1.0",
             "description": "Test :py:meth: Sphinx role rendering",
         },
@@ -102,13 +102,13 @@ SPEC = {
                     self._steps.clear()
         ''',
         "README.md": """\
-            # gdtest-v2-sphinx-meth-role
+            # gdtest-sphinx-meth-role
 
             A synthetic test package testing ``:py:meth:`` cross-reference roles.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-sphinx-meth-role",
+        "detected_name": "gdtest-sphinx-meth-role",
         "detected_module": "gdtest_sphinx_meth_role",
         "detected_parser": "numpy",
         "export_names": ["Pipeline"],

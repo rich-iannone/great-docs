@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["L8"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-rst-important",
+            "name": "gdtest-rst-important",
             "version": "0.1.0",
             "description": "Test important RST directives",
         },
@@ -61,13 +61,13 @@ SPEC = {
                 pass
         ''',
         "README.md": """\
-            # gdtest-v2-rst-important
+            # gdtest-rst-important
 
             Tests important RST directives in docstrings.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-rst-important",
+        "detected_name": "gdtest-rst-important",
         "detected_module": "gdtest_rst_important",
         "detected_parser": "numpy",
         "export_names": ["finalize", "initialize"],

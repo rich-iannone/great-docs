@@ -6,7 +6,7 @@ SPEC = {
     "dimensions": ["K22"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-config-reference",
+            "name": "gdtest-config-reference",
             "version": "0.1.0",
             "description": "Test package for reference config with sections.",
         },

@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["K12"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-display-name",
+            "name": "gdtest-display-name",
             "version": "0.1.0",
             "description": "Test display_name config",
         },
@@ -58,13 +58,13 @@ SPEC = {
                 pass
         ''',
         "README.md": """\
-            # gdtest-v2-display-name
+            # gdtest-display-name
 
             Tests display_name: My Pretty Library config.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-display-name",
+        "detected_name": "gdtest-display-name",
         "detected_module": "gdtest_display_name",
         "detected_parser": "numpy",
         "export_names": ["cleanup", "init"],

@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["M13"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-ug-hyphen-dir",
+            "name": "gdtest-ug-hyphen-dir",
             "version": "0.1.0",
             "description": "Test user guide in hyphenated directory.",
         },
@@ -60,7 +60,7 @@ SPEC = {
             "---\ntitle: Setup\n---\n\n# Setup\n\nHow to set up the application.\n"
         ),
         "README.md": (
-            "# gdtest-v2-ug-hyphen-dir\n\nTest user guide in a hyphenated user-guide/ directory.\n"
+            "# gdtest-ug-hyphen-dir\n\nTest user guide in a hyphenated user-guide/ directory.\n"
         ),
     },
     "expected": {

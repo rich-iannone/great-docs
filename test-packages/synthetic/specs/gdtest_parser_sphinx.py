@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["K11"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-parser-sphinx",
+            "name": "gdtest-parser-sphinx",
             "version": "0.1.0",
             "description": "Test parser sphinx config",
         },
@@ -91,13 +91,13 @@ SPEC = {
                 return f"{seconds:.2f}s"
         ''',
         "README.md": """\
-            # gdtest-v2-parser-sphinx
+            # gdtest-parser-sphinx
 
             Tests parser: sphinx config.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-parser-sphinx",
+        "detected_name": "gdtest-parser-sphinx",
         "detected_module": "gdtest_parser_sphinx",
         "detected_parser": "sphinx",
         "export_names": ["Timer", "create_timer", "format_duration"],

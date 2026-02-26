@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["P7"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-ref-big-class",
+            "name": "gdtest-ref-big-class",
             "version": "0.1.0",
             "description": "Test reference config with a big class.",
         },
@@ -175,10 +175,10 @@ SPEC = {
                 """
                 return Manager(name)
         ''',
-        "README.md": ("# gdtest-v2-ref-big-class\n\nTest reference config with a big class.\n"),
+        "README.md": ("# gdtest-ref-big-class\n\nTest reference config with a big class.\n"),
     },
     "expected": {
-        "detected_name": "gdtest-v2-ref-big-class",
+        "detected_name": "gdtest-ref-big-class",
         "detected_module": "gdtest_ref_big_class",
         "detected_parser": "numpy",
         "export_names": ["Manager", "create_manager"],

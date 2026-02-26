@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["M9"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-ug-explicit-order",
+            "name": "gdtest-ug-explicit-order",
             "version": "0.1.0",
             "description": "Test explicit user guide ordering.",
         },

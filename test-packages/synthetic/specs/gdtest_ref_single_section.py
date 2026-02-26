@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["P5"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-ref-single-section",
+            "name": "gdtest-ref-single-section",
             "version": "0.1.0",
             "description": "Test reference with a single named section.",
         },
@@ -126,11 +126,11 @@ SPEC = {
                 return x / 2.0
         ''',
         "README.md": (
-            "# gdtest-v2-ref-single-section\n\nTest reference with a single named section.\n"
+            "# gdtest-ref-single-section\n\nTest reference with a single named section.\n"
         ),
     },
     "expected": {
-        "detected_name": "gdtest-v2-ref-single-section",
+        "detected_name": "gdtest-ref-single-section",
         "detected_module": "gdtest_ref_single_section",
         "detected_parser": "numpy",
         "export_names": ["alpha", "beta", "delta", "gamma"],

@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["P7"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-ref-multi-big",
+            "name": "gdtest-ref-multi-big",
             "version": "0.1.0",
             "description": "Test reference config with multiple big classes.",
         },
@@ -247,11 +247,11 @@ SPEC = {
                     return {"method": self.method, "fitted": self._fitted}
         ''',
         "README.md": (
-            "# gdtest-v2-ref-multi-big\n\nTest reference config with multiple big classes.\n"
+            "# gdtest-ref-multi-big\n\nTest reference config with multiple big classes.\n"
         ),
     },
     "expected": {
-        "detected_name": "gdtest-v2-ref-multi-big",
+        "detected_name": "gdtest-ref-multi-big",
         "detected_module": "gdtest_ref_multi_big",
         "detected_parser": "numpy",
         "export_names": ["Processor", "Transformer"],

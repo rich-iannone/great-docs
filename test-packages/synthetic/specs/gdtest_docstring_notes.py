@@ -12,7 +12,7 @@ SPEC = {
     "dimensions": ["L19"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-docstring-notes",
+            "name": "gdtest-docstring-notes",
             "version": "0.1.0",
             "description": "Test detailed Notes section rendering",
         },
@@ -135,13 +135,13 @@ SPEC = {
                 return result
         ''',
         "README.md": """\
-            # gdtest-v2-docstring-notes
+            # gdtest-docstring-notes
 
             A synthetic test package with detailed Notes sections.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-docstring-notes",
+        "detected_name": "gdtest-docstring-notes",
         "detected_module": "gdtest_docstring_notes",
         "detected_parser": "numpy",
         "export_names": ["flatten_list", "merge_dicts"],

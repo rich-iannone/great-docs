@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["N2", "P1"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-sec-with-ref",
+            "name": "gdtest-sec-with-ref",
             "version": "0.1.0",
             "description": "Test custom section with explicit reference config.",
         },
@@ -131,11 +131,11 @@ SPEC = {
             "The second step in the tutorial series.\n"
         ),
         "README.md": (
-            "# gdtest-v2-sec-with-ref\n\nTest custom section with explicit reference config.\n"
+            "# gdtest-sec-with-ref\n\nTest custom section with explicit reference config.\n"
         ),
     },
     "expected": {
-        "detected_name": "gdtest-v2-sec-with-ref",
+        "detected_name": "gdtest-sec-with-ref",
         "detected_module": "gdtest_sec_with_ref",
         "detected_parser": "numpy",
         "export_names": ["analyze", "format_output", "process"],

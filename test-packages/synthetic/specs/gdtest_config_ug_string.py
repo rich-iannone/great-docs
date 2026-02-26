@@ -6,7 +6,7 @@ SPEC = {
     "dimensions": ["K19"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-config-ug-string",
+            "name": "gdtest-config-ug-string",
             "version": "0.1.0",
             "description": "Test package for user_guide string config.",
         },

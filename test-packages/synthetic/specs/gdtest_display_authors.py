@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["K14"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-display-authors",
+            "name": "gdtest-display-authors",
             "version": "0.1.0",
             "description": "Test authors config with full metadata.",
         },
@@ -84,10 +84,10 @@ SPEC = {
                 """
                 return f"doi:10.1234/{paper.get('title', 'unknown').lower().replace(' ', '-')}"
         ''',
-        "README.md": ("# gdtest-v2-display-authors\n\nTest authors config with full metadata.\n"),
+        "README.md": ("# gdtest-display-authors\n\nTest authors config with full metadata.\n"),
     },
     "expected": {
-        "detected_name": "gdtest-v2-display-authors",
+        "detected_name": "gdtest-display-authors",
         "detected_module": "gdtest_display_authors",
         "detected_parser": "numpy",
         "export_names": ["publish", "research"],

@@ -12,7 +12,7 @@ SPEC = {
     "dimensions": ["M2", "M3", "M4", "M7", "M8"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-stress-all-ug",
+            "name": "gdtest-stress-all-ug",
             "version": "0.1.0",
             "description": "Stress test with maximum user guide complexity.",
         },
@@ -83,7 +83,7 @@ SPEC = {
             "Follow these steps to install the package.\n"
             "\n"
             "```bash\n"
-            "pip install gdtest-v2-stress-all-ug\n"
+            "pip install gdtest-stress-all-ug\n"
             "```\n"
         ),
         "user_guide/basics/03-quickstart.qmd": (
@@ -147,11 +147,11 @@ SPEC = {
             "Key terms and definitions used in the documentation.\n"
         ),
         "README.md": (
-            "# gdtest-v2-stress-all-ug\n\nStress test with maximum user guide complexity.\n"
+            "# gdtest-stress-all-ug\n\nStress test with maximum user guide complexity.\n"
         ),
     },
     "expected": {
-        "detected_name": "gdtest-v2-stress-all-ug",
+        "detected_name": "gdtest-stress-all-ug",
         "detected_module": "gdtest_stress_all_ug",
         "detected_parser": "numpy",
         "export_names": ["scaffold", "teardown"],

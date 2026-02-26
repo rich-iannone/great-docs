@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["N2"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-sec-tutorials",
+            "name": "gdtest-sec-tutorials",
             "version": "0.1.0",
             "description": "Test custom Tutorials section.",
         },
@@ -90,10 +90,10 @@ SPEC = {
             "\n"
             "A tutorial covering intermediate-level concepts.\n"
         ),
-        "README.md": ("# gdtest-v2-sec-tutorials\n\nTest custom Tutorials section.\n"),
+        "README.md": ("# gdtest-sec-tutorials\n\nTest custom Tutorials section.\n"),
     },
     "expected": {
-        "detected_name": "gdtest-v2-sec-tutorials",
+        "detected_name": "gdtest-sec-tutorials",
         "detected_module": "gdtest_sec_tutorials",
         "detected_parser": "numpy",
         "export_names": ["learn", "practice"],

@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["N7"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-sec-navbar-after",
+            "name": "gdtest-sec-navbar-after",
             "version": "0.1.0",
             "description": "Test custom section with navbar_after.",
         },
@@ -78,10 +78,10 @@ SPEC = {
         "cookbook/recipe2.qmd": (
             "---\ntitle: Recipe Two\n---\n\n# Recipe Two\n\nThe second recipe in the cookbook.\n"
         ),
-        "README.md": ("# gdtest-v2-sec-navbar-after\n\nTest custom section with navbar_after.\n"),
+        "README.md": ("# gdtest-sec-navbar-after\n\nTest custom section with navbar_after.\n"),
     },
     "expected": {
-        "detected_name": "gdtest-v2-sec-navbar-after",
+        "detected_name": "gdtest-sec-navbar-after",
         "detected_module": "gdtest_sec_navbar_after",
         "detected_parser": "numpy",
         "export_names": ["prepare", "serve"],

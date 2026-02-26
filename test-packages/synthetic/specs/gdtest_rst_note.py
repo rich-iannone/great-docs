@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["L3"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-rst-note",
+            "name": "gdtest-rst-note",
             "version": "0.1.0",
             "description": "Test note RST directives",
         },
@@ -77,13 +77,13 @@ SPEC = {
                 return {}
         ''',
         "README.md": """\
-            # gdtest-v2-rst-note
+            # gdtest-rst-note
 
             Tests note RST directives in docstrings.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-rst-note",
+        "detected_name": "gdtest-rst-note",
         "detected_module": "gdtest_rst_note",
         "detected_parser": "numpy",
         "export_names": ["configure", "get_config", "reset_defaults"],

@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["M6"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-ug-deep-nest",
+            "name": "gdtest-ug-deep-nest",
             "version": "0.1.0",
             "description": "Test deeply nested user guide structure.",
         },

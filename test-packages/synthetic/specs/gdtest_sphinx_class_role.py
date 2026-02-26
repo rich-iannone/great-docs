@@ -12,7 +12,7 @@ SPEC = {
     "dimensions": ["L11"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-sphinx-class-role",
+            "name": "gdtest-sphinx-class-role",
             "version": "0.1.0",
             "description": "Test :py:class: Sphinx role rendering",
         },
@@ -91,13 +91,13 @@ SPEC = {
                 return isinstance(obj, Processor)
         ''',
         "README.md": """\
-            # gdtest-v2-sphinx-class-role
+            # gdtest-sphinx-class-role
 
             A synthetic test package testing ``:py:class:`` cross-reference roles.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-sphinx-class-role",
+        "detected_name": "gdtest-sphinx-class-role",
         "detected_module": "gdtest_sphinx_class_role",
         "detected_parser": "numpy",
         "export_names": ["Processor", "create_processor", "is_processor"],

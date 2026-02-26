@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["K13"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-funding",
+            "name": "gdtest-funding",
             "version": "0.1.0",
             "description": "Test funding config",
         },
@@ -70,13 +70,13 @@ SPEC = {
                 return True
         ''',
         "README.md": """\
-            # gdtest-v2-funding
+            # gdtest-funding
 
             Tests funding config.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-funding",
+        "detected_name": "gdtest-funding",
         "detected_module": "gdtest_funding",
         "detected_parser": "numpy",
         "export_names": ["donate", "sponsor"],

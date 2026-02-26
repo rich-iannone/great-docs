@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["Q6"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-toc-title",
+            "name": "gdtest-toc-title",
             "version": "0.1.0",
             "description": "Test site toc-title config.",
         },
@@ -71,10 +71,10 @@ SPEC = {
                 """
                 return key
         ''',
-        "README.md": ("# gdtest-v2-toc-title\n\nTest site toc-title config.\n"),
+        "README.md": ("# gdtest-toc-title\n\nTest site toc-title config.\n"),
     },
     "expected": {
-        "detected_name": "gdtest-v2-toc-title",
+        "detected_name": "gdtest-toc-title",
         "detected_module": "gdtest_toc_title",
         "detected_parser": "numpy",
         "export_names": ["index", "lookup"],

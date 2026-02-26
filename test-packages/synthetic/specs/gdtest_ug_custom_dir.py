@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["M5"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-ug-custom-dir",
+            "name": "gdtest-ug-custom-dir",
             "version": "0.1.0",
             "description": "Test user guide in custom directory.",
         },

@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["K17"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-jupyter-kernel",
+            "name": "gdtest-jupyter-kernel",
             "version": "0.1.0",
             "description": "Test jupyter python3 config",
         },
@@ -67,13 +67,13 @@ SPEC = {
                 return 0.0
         ''',
         "README.md": """\
-            # gdtest-v2-jupyter-kernel
+            # gdtest-jupyter-kernel
 
             Tests jupyter: python3 config.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-jupyter-kernel",
+        "detected_name": "gdtest-jupyter-kernel",
         "detected_module": "gdtest_jupyter_kernel",
         "detected_parser": "numpy",
         "export_names": ["compute", "evaluate"],

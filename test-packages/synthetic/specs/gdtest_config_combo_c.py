@@ -9,7 +9,7 @@ SPEC = {
     "dimensions": ["K18", "K20", "K22"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-config-combo-c",
+            "name": "gdtest-config-combo-c",
             "version": "0.1.0",
             "description": "Test package for config combo C (full navigation).",
         },

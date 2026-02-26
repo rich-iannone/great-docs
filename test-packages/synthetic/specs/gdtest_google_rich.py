@@ -12,7 +12,7 @@ SPEC = {
     "dimensions": ["L16"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-google-rich",
+            "name": "gdtest-google-rich",
             "version": "0.1.0",
             "description": "Test rich Google docstring section rendering",
         },
@@ -133,13 +133,13 @@ SPEC = {
                 return True
         ''',
         "README.md": """\
-            # gdtest-v2-google-rich
+            # gdtest-google-rich
 
             A synthetic test package with rich Google-style docstrings.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-google-rich",
+        "detected_name": "gdtest-google-rich",
         "detected_module": "gdtest_google_rich",
         "detected_parser": "google",
         "export_names": ["process", "validate"],

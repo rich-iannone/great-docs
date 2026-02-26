@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["M3"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-ug-sections-fm",
+            "name": "gdtest-ug-sections-fm",
             "version": "0.1.0",
             "description": "Test guide-section frontmatter in user guide.",
         },

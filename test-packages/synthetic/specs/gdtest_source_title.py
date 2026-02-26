@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["K4"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-source-title",
+            "name": "gdtest-source-title",
             "version": "0.1.0",
             "description": "Test source.placement title config",
         },
@@ -67,13 +67,13 @@ SPEC = {
                 return data
         ''',
         "README.md": """\
-            # gdtest-v2-source-title
+            # gdtest-source-title
 
             Tests source.placement: title config.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-source-title",
+        "detected_name": "gdtest-source-title",
         "detected_module": "gdtest_source_title",
         "detected_parser": "numpy",
         "export_names": ["compress", "decompress"],

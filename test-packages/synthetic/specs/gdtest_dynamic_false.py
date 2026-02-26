@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["K9"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-dynamic-false",
+            "name": "gdtest-dynamic-false",
             "version": "0.1.0",
             "description": "Test dynamic false config",
         },
@@ -65,13 +65,13 @@ SPEC = {
                 return f"Goodbye, {name}!"
         ''',
         "README.md": """\
-            # gdtest-v2-dynamic-false
+            # gdtest-dynamic-false
 
             Tests dynamic: false config.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-dynamic-false",
+        "detected_name": "gdtest-dynamic-false",
         "detected_module": "gdtest_dynamic_false",
         "detected_parser": "numpy",
         "export_names": ["farewell", "greet"],

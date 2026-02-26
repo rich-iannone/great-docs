@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["M4"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-ug-subdirs",
+            "name": "gdtest-ug-subdirs",
             "version": "0.1.0",
             "description": "Test user guide with subdirectory organization.",
         },

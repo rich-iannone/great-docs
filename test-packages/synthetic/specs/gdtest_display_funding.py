@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["K13"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-display-funding",
+            "name": "gdtest-display-funding",
             "version": "0.1.0",
             "description": "Test funding config with all fields.",
         },
@@ -78,10 +78,10 @@ SPEC = {
                 """
                 return f"Grant {grant_id}: active"
         ''',
-        "README.md": ("# gdtest-v2-display-funding\n\nTest funding config with all fields.\n"),
+        "README.md": ("# gdtest-display-funding\n\nTest funding config with all fields.\n"),
     },
     "expected": {
-        "detected_name": "gdtest-v2-display-funding",
+        "detected_name": "gdtest-display-funding",
         "detected_module": "gdtest_display_funding",
         "detected_parser": "numpy",
         "export_names": ["fund", "report"],

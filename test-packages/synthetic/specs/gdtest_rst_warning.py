@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["L4"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-rst-warning",
+            "name": "gdtest-rst-warning",
             "version": "0.1.0",
             "description": "Test warning RST directives",
         },
@@ -62,13 +62,13 @@ SPEC = {
                 pass
         ''',
         "README.md": """\
-            # gdtest-v2-rst-warning
+            # gdtest-rst-warning
 
             Tests warning RST directives in docstrings.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-rst-warning",
+        "detected_name": "gdtest-rst-warning",
         "detected_module": "gdtest_rst_warning",
         "detected_parser": "numpy",
         "export_names": ["delete_all", "force_restart"],

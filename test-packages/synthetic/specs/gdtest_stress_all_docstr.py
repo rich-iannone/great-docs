@@ -14,7 +14,7 @@ SPEC = {
     "dimensions": ["L1", "L3", "L4", "L10", "L11", "L15", "L18", "L19", "L22"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-stress-all-docstr",
+            "name": "gdtest-stress-all-docstr",
             "version": "0.1.0",
             "description": "Stress test with every docstring feature.",
         },
@@ -217,11 +217,11 @@ SPEC = {
                     return self._data
         ''',
         "README.md": (
-            "# gdtest-v2-stress-all-docstr\n\nStress test with every docstring feature.\n"
+            "# gdtest-stress-all-docstr\n\nStress test with every docstring feature.\n"
         ),
     },
     "expected": {
-        "detected_name": "gdtest-v2-stress-all-docstr",
+        "detected_name": "gdtest-stress-all-docstr",
         "detected_module": "gdtest_stress_all_docstr",
         "detected_parser": "numpy",
         "export_names": ["DataHolder", "mega_function", "other_func"],

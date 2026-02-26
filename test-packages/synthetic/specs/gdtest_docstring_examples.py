@@ -12,7 +12,7 @@ SPEC = {
     "dimensions": ["L18"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-docstring-examples",
+            "name": "gdtest-docstring-examples",
             "version": "0.1.0",
             "description": "Test extended Examples section rendering",
         },
@@ -135,13 +135,13 @@ SPEC = {
                 return result
         ''',
         "README.md": """\
-            # gdtest-v2-docstring-examples
+            # gdtest-docstring-examples
 
             A synthetic test package with extended Examples sections.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-docstring-examples",
+        "detected_name": "gdtest-docstring-examples",
         "detected_module": "gdtest_docstring_examples",
         "detected_parser": "numpy",
         "export_names": ["factorial", "fibonacci"],

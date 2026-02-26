@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["L2"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-rst-deprecated",
+            "name": "gdtest-rst-deprecated",
             "version": "0.1.0",
             "description": "Test deprecated RST directives",
         },
@@ -68,13 +68,13 @@ SPEC = {
                 return {}
         ''',
         "README.md": """\
-            # gdtest-v2-rst-deprecated
+            # gdtest-rst-deprecated
 
             Tests deprecated RST directives in docstrings.
         """,
     },
     "expected": {
-        "detected_name": "gdtest-v2-rst-deprecated",
+        "detected_name": "gdtest-rst-deprecated",
         "detected_module": "gdtest_rst_deprecated",
         "detected_parser": "numpy",
         "export_names": ["legacy_parse", "old_connect"],

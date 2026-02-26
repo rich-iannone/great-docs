@@ -11,7 +11,7 @@ SPEC = {
     "dimensions": ["M12"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-v2-ug-with-code",
+            "name": "gdtest-ug-with-code",
             "version": "0.1.0",
             "description": "Test user guide with code blocks.",
         },
@@ -90,7 +90,7 @@ SPEC = {
             "output = transform(data)\n"
             "```\n"
         ),
-        "README.md": ("# gdtest-v2-ug-with-code\n\nTest user guide with Python code blocks.\n"),
+        "README.md": ("# gdtest-ug-with-code\n\nTest user guide with Python code blocks.\n"),
     },
     "expected": {
         "files_exist": [

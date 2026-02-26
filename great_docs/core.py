@@ -4016,7 +4016,7 @@ class GreatDocs:
             "exceptions": "exception",
             "namedtuples": "namedtuple",
             "typeddicts": "typeddict",
-            "protocols": "class",
+            "protocols": "protocol",
             "abstract_classes": "class",
             "functions": "function",
             "async_functions": "function",

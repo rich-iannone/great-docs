@@ -41,6 +41,18 @@ if os.path.exists(object_types_path):
 else:
     print("No object types file found, falling back to heuristic classification")
 
+# Load dataclass attributes metadata for fixing incomplete Attributes tables.
+# Written by great-docs core during build step 1.7.
+# Keys are fully qualified object paths (e.g., "pkg.Config"), values are
+# dicts mapping field name -> description.
+dataclass_attrs_metadata: dict[str, dict[str, str]] = {}
+dataclass_attrs_path = "_dataclass_attrs.json"
+if os.path.exists(dataclass_attrs_path):
+    with open(dataclass_attrs_path, "r") as f:
+        dataclass_attrs_metadata = json.load(f)
+    if dataclass_attrs_metadata:
+        print(f"Loaded dataclass attribute metadata for {len(dataclass_attrs_metadata)} class(es)")
+
 
 def get_source_link_html(item_name):
     """Generate HTML for a source link given an item name."""
@@ -1132,6 +1144,67 @@ def generate_seealso_html(seealso_items):
 """
 
 
+def fix_dataclass_attributes(content_str):
+    """Rebuild the Attributes table for dataclass pages using *_dataclass_attrs.json* metadata.
+
+    Quartodoc may only discover a subset of dataclass fields.  This function
+    replaces the ``<tbody>`` of the Attributes ``<table>`` with the complete
+    set of fields recorded in the metadata file.
+    """
+    if not dataclass_attrs_metadata:
+        return content_str
+
+    # Locate the Attributes <section> (Quarto wraps each ## heading in a section)
+    attrs_match = re.search(r'<section[^>]*\bid="attributes"[^>]*>', content_str)
+    if not attrs_match:
+        return content_str
+
+    # Determine the object path by inspecting existing <a href="#obj.field">
+    # anchors inside the Attributes table.
+    attrs_section_start = attrs_match.start()
+    attrs_section_end = content_str.find("</section>", attrs_section_start)
+    if attrs_section_end < 0:
+        return content_str
+
+    attrs_section = content_str[attrs_section_start : attrs_section_end + len("</section>")]
+
+    # Extract obj_path from an existing anchor (e.g., href="#pkg.Cls.field" -> "pkg.Cls")
+    anchor_re = re.search(r'href="#([^"]+)\.(\w+)"', attrs_section)
+    if not anchor_re:
+        return content_str
+
+    obj_path = anchor_re.group(1)
+
+    if obj_path not in dataclass_attrs_metadata:
+        return content_str
+
+    fields = dataclass_attrs_metadata[obj_path]
+
+    # Build new table rows
+    rows = []
+    for i, (fname, desc) in enumerate(fields.items()):
+        row_class = "odd" if i % 2 == 0 else "even"
+        anchor = f"{obj_path}.{fname}"
+        rows.append(
+            f'<tr class="{row_class}">\n'
+            f'<td><a href="#{anchor}">{fname}</a></td>\n'
+            f"<td>{desc}</td>\n"
+            f"</tr>"
+        )
+
+    new_tbody = "<tbody>\n" + "\n".join(rows) + "\n</tbody>"
+
+    # Replace the <tbody> inside the Attributes section
+    new_attrs_section = re.sub(r"<tbody>.*?</tbody>", new_tbody, attrs_section, flags=re.DOTALL)
+
+    content_str = (
+        content_str[:attrs_section_start]
+        + new_attrs_section
+        + content_str[attrs_section_end + len("</section>") :]
+    )
+    return content_str
+
+
 # Process all HTML files in the `_site/reference/` directory (except `index.html`)
 # and apply the specified transformations
 html_files = [f for f in glob.glob("_site/reference/*.html") if not f.endswith("index.html")]
@@ -1433,6 +1506,9 @@ for html_file in html_files:
         r'<span class="parameter-default">"\1"</span>',
         content_str,
     )
+
+    # Fix incomplete Attributes tables for dataclass pages
+    content_str = fix_dataclass_attributes(content_str)
 
     # Fix double asterisks in **kwargs and **attributes style parameters
     # Pattern: ****name** -> **name (with proper styling)

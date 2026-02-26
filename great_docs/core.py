@@ -6919,6 +6919,123 @@ toc: false
         if patched_count:
             print(f"   Converted RST code blocks in {patched_count} reference page(s)")
 
+    def _fix_dataclass_attributes_in_qmd(self) -> None:
+        """
+        Write `_dataclass_attrs.json` so that `post-render.py` can rebuild
+        the Attributes tables for dataclass reference pages.
+
+        Quartodoc may only discover a subset of dataclass fields as attributes
+        (e.g. `bool` fields show up because `bool` has a descriptor, while
+        `str`, `list`, or `dict` fields are silently omitted).  Because
+        quartodoc re-runs automatically during `quarto render`, QMD-level
+        patches are overwritten.  Instead, this method extracts the complete
+        field information from the generated QMD files and writes it to a JSON
+        file.  `post-render.py` then reads this file and fixes the rendered
+        HTML Attributes tables.
+
+        Must be called **after** `quartodoc build` has generated the reference
+        `.qmd` files (the first explicit build, before `quarto render`).
+        """
+        try:
+            from quartodoc import get_object as qd_get_object
+        except ImportError:
+            return
+
+        ref_dir = self.project_path / "reference"
+        if not ref_dir.exists():
+            return
+
+        quarto_yml = self.project_path / "_quarto.yml"
+        if not quarto_yml.exists():
+            return
+
+        with open(quarto_yml, "r") as f:
+            qconfig = yaml.safe_load(f) or {}
+
+        qdoc_cfg = qconfig.get("quartodoc", {})
+        package_name = qdoc_cfg.get("package")
+        dynamic = qdoc_cfg.get("dynamic", False)
+
+        if not package_name:
+            return
+
+        header_re = re.compile(r"^#\s+\S+\s+\{\s*#(\S+)\s*\}")
+
+        # Pattern to extract parameter names + descriptions from the Parameters
+        # section of quartodoc-generated QMD.  Each entry looks like:
+        #
+        #   <code>[**name**]{.parameter-name} ...]{.parameter-annotation}</code>
+        #
+        #   :   Description text.
+        #
+        # Note: there is a blank line (\n\n) between the </code> line and the
+        # description line.
+        param_entry_re = re.compile(
+            r"\[\*\*(\w+)\*\*\]\{\.parameter-name\}[^\n]*\n\n"
+            r":   (.+)",
+        )
+
+        # Collect dataclass field info: { obj_path: { field: description, ... } }
+        dataclass_attrs: dict[str, dict[str, str]] = {}
+
+        for qmd_file in sorted(ref_dir.glob("*.qmd")):
+            if qmd_file.name == "index.qmd":
+                continue
+
+            content = qmd_file.read_text()
+
+            # Only process files that have an Attributes section
+            if "\n## Attributes" not in content:
+                continue
+
+            # Extract the object path from the header
+            header_match = header_re.search(content)
+            if not header_match:
+                continue
+
+            obj_path = header_match.group(1)
+
+            if obj_path.startswith(package_name + "."):
+                lookup = package_name + ":" + obj_path[len(package_name) + 1 :]
+            else:
+                lookup = obj_path.replace(".", ":", 1)
+
+            # Load the griffe object and check if it's a dataclass
+            try:
+                obj = qd_get_object(lookup, dynamic=dynamic)
+            except Exception:
+                continue
+
+            is_dataclass = False
+            try:
+                labels = obj.labels
+                if "dataclass" in labels:
+                    is_dataclass = True
+            except Exception:
+                pass
+
+            if not is_dataclass:
+                continue
+
+            # Extract parameter names and descriptions from the Parameters section
+            params: dict[str, str] = {}
+            for m in param_entry_re.finditer(content):
+                params[m.group(1)] = m.group(2).strip()
+
+            if not params:
+                continue
+
+            dataclass_attrs[obj_path] = params
+
+        # Write the JSON metadata file (even if empty, so post-render doesn't
+        # read stale data from a previous run).
+        json_path = self.project_path / "_dataclass_attrs.json"
+        with open(json_path, "w") as f:
+            json.dump(dataclass_attrs, f, indent=2)
+
+        if dataclass_attrs:
+            print(f"   Wrote dataclass attribute metadata for {len(dataclass_attrs)} class(es)")
+
     def _update_quarto_config(self) -> None:
         """
         Update _quarto.yml with great-docs configuration.
@@ -8136,6 +8253,9 @@ toc: false
 
             # Step 1.6: Convert RST :: code blocks to Markdown fenced blocks
             self._fix_rst_code_blocks_in_qmd()
+
+            # Step 1.7: Ensure all dataclass fields appear in Attributes tables
+            self._fix_dataclass_attributes_in_qmd()
 
             # Get environment with QUARTO_PYTHON set for proper Python detection
             quarto_env = self._get_quarto_env()

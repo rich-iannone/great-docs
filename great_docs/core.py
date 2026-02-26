@@ -4017,7 +4017,7 @@ class GreatDocs:
             "namedtuples": "namedtuple",
             "typeddicts": "typeddict",
             "protocols": "protocol",
-            "abstract_classes": "class",
+            "abstract_classes": "abc",
             "functions": "function",
             "async_functions": "function",
             "constants": "constant",

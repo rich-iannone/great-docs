@@ -820,14 +820,14 @@ def translate_rst_directives(html_content):
             content = body
 
         # Build the callout HTML
-        content_html = f'<p style="margin: 0;">{content}</p>' if content else ""
+        content_html = f'<p style="margin: 0; color: #1f2937;">{content}</p>' if content else ""
         return (
             f'<div style="margin: 1rem 0; padding: 0.75rem 1rem; '
             f"background-color: {bg}; "
             f"border-left: 4px solid {border}; "
-            f'border-radius: 4px;">'
+            f'border-radius: 4px; color: #1f2937;">'
             f'<p style="margin: 0 0 0.25rem 0; font-weight: 600; '
-            f'font-size: 0.875rem;">{icon} {title}</p>'
+            f'font-size: 0.875rem; color: #1f2937;">{icon} {title}</p>'
             f"{content_html}"
             f"</div>"
         )
@@ -851,14 +851,14 @@ def translate_rst_directives(html_content):
             title = label
             content = pre_body
 
-        content_html = f'<p style="margin: 0;">{content}</p>' if content else ""
+        content_html = f'<p style="margin: 0; color: #1f2937;">{content}</p>' if content else ""
         return (
             f'<div style="margin: 1rem 0; padding: 0.75rem 1rem; '
             f"background-color: {bg}; "
             f"border-left: 4px solid {border}; "
-            f'border-radius: 4px;">'
+            f'border-radius: 4px; color: #1f2937;">'
             f'<p style="margin: 0 0 0.25rem 0; font-weight: 600; '
-            f'font-size: 0.875rem;">{icon} {title}</p>'
+            f'font-size: 0.875rem; color: #1f2937;">{icon} {title}</p>'
             f"{content_html}"
             f"</div>"
         )
@@ -909,14 +909,14 @@ def translate_rst_directives(html_content):
             title = label
             content = dd_body if dd_body else body
 
-        content_html = f'<p style="margin: 0;">{content}</p>' if content else ""
+        content_html = f'<p style="margin: 0; color: #1f2937;">{content}</p>' if content else ""
         return (
             f'<div style="margin: 1rem 0; padding: 0.75rem 1rem; '
             f"background-color: {bg}; "
             f"border-left: 4px solid {border}; "
-            f'border-radius: 4px;">'
+            f'border-radius: 4px; color: #1f2937;">'
             f'<p style="margin: 0 0 0.25rem 0; font-weight: 600; '
-            f'font-size: 0.875rem;">{icon} {title}</p>'
+            f'font-size: 0.875rem; color: #1f2937;">{icon} {title}</p>'
             f"{content_html}"
             f"</div>"
         )

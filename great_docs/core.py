@@ -3987,6 +3987,7 @@ class GreatDocs:
             # ── Metadata ──
             "class_methods": {},
             "class_method_names": {},
+            "class_member_types": {},
             "cyclic_alias_count": 0,
             # ── Convenience unions ──
             "all_classes": [],
@@ -4031,10 +4032,19 @@ class GreatDocs:
             for name in categories.get(cat_key, []):
                 object_types[name] = obj_type
 
-        # Methods: ClassName.method → "method"
+        # Methods: ClassName.method → specific type (classmethod/staticmethod/method)
+        member_types = categories.get("class_member_types", {})
         for class_name, method_names in categories.get("class_method_names", {}).items():
             for method in method_names:
-                object_types[f"{class_name}.{method}"] = "method"
+                key = f"{class_name}.{method}"
+                # Use the specific sub-type if available, otherwise "method"
+                object_types[key] = member_types.get(key, "method")
+
+        # Properties and other descriptor members not in class_method_names
+        # (e.g., @property attributes classified as "attribute" by griffe)
+        for key, member_type in member_types.items():
+            if key not in object_types:
+                object_types[key] = member_type
 
         types_path = self.project_path / "_object_types.json"
         types_path.parent.mkdir(parents=True, exist_ok=True)
@@ -4161,6 +4171,8 @@ class GreatDocs:
                                 try:
                                     # Accessing member.kind can trigger alias resolution
                                     if member.kind.value in ("function", "method"):
+                                        # Sub-classify to detect classmethod/staticmethod/property
+                                        member_sub = self._sub_classify_function(member)
                                         # Get line number for source ordering
                                         lineno = getattr(member, "lineno", float("inf"))
                                         # Validate with quartodoc if available
@@ -4173,11 +4185,31 @@ class GreatDocs:
                                                 _ = qd_obj.members
                                                 _ = qd_obj.kind
                                                 method_entries.append((member_name, lineno))
+                                                # Store sub-type for classmethod/staticmethod/property
+                                                if member_sub in ("classmethod", "staticmethod", "property"):
+                                                    categories["class_member_types"][
+                                                        f"{name}.{member_name}"
+                                                    ] = member_sub
                                             except Exception:
                                                 # Method can't be documented by quartodoc
                                                 skipped_methods.append(member_name)
                                         else:
                                             method_entries.append((member_name, lineno))
+                                            # Store sub-type for classmethod/staticmethod/property
+                                            if member_sub in ("classmethod", "staticmethod", "property"):
+                                                categories["class_member_types"][
+                                                    f"{name}.{member_name}"
+                                                ] = member_sub
+                                    elif member.kind.value == "attribute":
+                                        # Check if this attribute is a @property descriptor
+                                        try:
+                                            member_labels = member.labels
+                                        except Exception:
+                                            member_labels = set()
+                                        if "property" in member_labels:
+                                            categories["class_member_types"][
+                                                f"{name}.{member_name}"
+                                            ] = "property"
                                 except (
                                     griffe.CyclicAliasError,
                                     griffe.AliasResolutionError,
@@ -4288,6 +4320,8 @@ class GreatDocs:
                                                 continue
                                             try:
                                                 if meth.kind.value in ("function", "method"):
+                                                    # Sub-classify for descriptor types
+                                                    meth_sub = self._sub_classify_function(meth)
                                                     lineno = getattr(meth, "lineno", float("inf"))
                                                     if quartodoc_get_object is not None:
                                                         try:
@@ -4298,6 +4332,11 @@ class GreatDocs:
                                                             method_entries.append(
                                                                 (meth_name, lineno)
                                                             )
+                                                            # Store sub-type
+                                                            if meth_sub in ("classmethod", "staticmethod", "property"):
+                                                                categories["class_member_types"][
+                                                                    f"{qualified}.{meth_name}"
+                                                                ] = meth_sub
                                                         except Exception:
                                                             # Dynamic failed; try static
                                                             try:
@@ -4313,10 +4352,30 @@ class GreatDocs:
                                                                 method_entries.append(
                                                                     (meth_name, lineno)
                                                                 )
+                                                                # Store sub-type
+                                                                if meth_sub in ("classmethod", "staticmethod", "property"):
+                                                                    categories["class_member_types"][
+                                                                        f"{qualified}.{meth_name}"
+                                                                    ] = meth_sub
                                                             except Exception:
                                                                 pass
                                                     else:
                                                         method_entries.append((meth_name, lineno))
+                                                        # Store sub-type
+                                                        if meth_sub in ("classmethod", "staticmethod", "property"):
+                                                            categories["class_member_types"][
+                                                                f"{qualified}.{meth_name}"
+                                                            ] = meth_sub
+                                                elif meth.kind.value == "attribute":
+                                                    # Check if attribute is a @property
+                                                    try:
+                                                        meth_labels = meth.labels
+                                                    except Exception:
+                                                        meth_labels = set()
+                                                    if "property" in meth_labels:
+                                                        categories["class_member_types"][
+                                                            f"{qualified}.{meth_name}"
+                                                        ] = "property"
                                             except (
                                                 griffe.CyclicAliasError,
                                                 griffe.AliasResolutionError,

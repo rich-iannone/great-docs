@@ -1272,6 +1272,9 @@ for html_file in html_files:
         "enum": ("enum", "#6366f1", "#EEF2FF"),
         "function": ("function", "#7c3aed", "#F5F3FF"),
         "method": ("method", "#0891b2", "#ECFEFF"),
+        "classmethod": ("classmethod", "#0891b2", "#ECFEFF"),
+        "staticmethod": ("staticmethod", "#0891b2", "#ECFEFF"),
+        "property": ("property", "#0d9488", "#F0FDFA"),
         "constant": ("constant", "#d97706", "#FFFBEB"),
         "type_alias": ("type alias", "#059669", "#ECFDF5"),
         "other": ("other", "#6b7280", "#F9FAFB"),
@@ -1393,13 +1396,27 @@ for html_file in html_files:
     ]
 
     # Some h1 tags may not have a class attribute, so we handle that case too
-    content = [
-        line.replace(
-            "<h1>",
-            "<h1 style=\"font-family: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 1.25rem;\">",
-        )
-        for line in content
-    ]
+    # But skip "Attributes" and "Methods" section headings — they should look like
+    # the Parameters section label (doc-section style), not code font.
+    _SECTION_HEADINGS = {"Attributes", "Methods"}
+    new_content = []
+    for line in content:
+        if "<h1>" in line:
+            # Check if this is a section heading like Attributes or Methods
+            h1_text_match = re.search(r"<h1>(.*?)</h1>", line)
+            if h1_text_match and h1_text_match.group(1).strip() in _SECTION_HEADINGS:
+                # Style like Parameters: use doc-section class instead of code font
+                line = line.replace(
+                    "<h1>",
+                    '<h1 class="doc-section">',
+                )
+            else:
+                line = line.replace(
+                    "<h1>",
+                    "<h1 style=\"font-family: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 1.25rem;\">",
+                )
+        new_content.append(line)
+    content = new_content
 
     # Move the first <p> tag (description) to immediately after the title header
     header_end_line = None
@@ -1533,6 +1550,128 @@ for html_file in html_files:
 
     # Turn all h2 tags into h3 tags
     content = [line.replace("<h2", "<h3").replace("</h2>", "</h3>") for line in content]
+
+    # Inject decorator/descriptor badges into member-level headings (h3 tags)
+    # Method headings are originally h2 in quartodoc output, converted to h3 above.
+    # These headings have data-anchor-id attributes like "pkg.Class.method"
+    # We look up the member type in object_types to add classmethod/staticmethod/property badges.
+    # Also style member headings in code font and append () for callable members.
+    _MONO_FONT = "font-family: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 1.1rem;"
+    _CALLABLE_MEMBER_TYPES = {"method", "classmethod", "staticmethod", "function"}
+    if object_types:
+        _MEMBER_BADGE_TYPES = {"method", "classmethod", "staticmethod", "property"}
+        for i, line in enumerate(content):
+            anchor_match = re.search(r'<h3[^>]*data-anchor-id="([^"]+)"[^>]*>(.*?)</h3>', line)
+            if anchor_match:
+                anchor_id = anchor_match.group(1)
+                h3_content = anchor_match.group(2)
+
+                # Try to find a matching object_types key
+                # The anchor_id is like "pkg.Class.method"; object_types keys are "Class.method"
+                member_type = None
+                for key, val in object_types.items():
+                    if anchor_id.endswith(f".{key}") or anchor_id == key:
+                        member_type = val
+                        break
+
+                # Build the new heading content: code font + parens + badge
+                display_text = h3_content
+                # Add () for callable members
+                if member_type and member_type in _CALLABLE_MEMBER_TYPES:
+                    display_text += "()"
+
+                badge_html = ""
+                if member_type and member_type in _MEMBER_BADGE_TYPES:
+                    badge_info = _TYPE_BADGE_STYLES.get(member_type)
+                    if badge_info:
+                        label_text, label_color, bg_color = badge_info
+                        badge_html = (
+                            f'<span style="font-size: 0.7rem; border-style: solid; '
+                            f"border-width: 1px; border-color: {label_color}; "
+                            f"background-color: {bg_color}; margin-left: 8px; "
+                            f"padding: 1px 6px; vertical-align: 0.1rem; "
+                            f'border-radius: 3px;">'
+                            f'<code style="background-color: transparent; '
+                            f'color: {label_color}; font-size: 0.7rem;">'
+                            f"{label_text}</code></span>"
+                        )
+
+                new_heading = display_text + badge_html
+                # Replace h3 content and add code font style
+                content[i] = line.replace(h3_content + "</h3>", new_heading + "</h3>")
+                # Add code font styling to the h3 tag
+                content[i] = re.sub(
+                    r'<h3 class="anchored"',
+                    f'<h3 class="anchored" style="{_MONO_FONT}"',
+                    content[i],
+                )
+    else:
+        # Even without object_types, style member h3 headings in code font
+        for i, line in enumerate(content):
+            anchor_match = re.search(r'<h3[^>]*data-anchor-id="[^"]+"[^>]*>(.*?)</h3>', line)
+            if anchor_match:
+                content[i] = re.sub(
+                    r'<h3 class="anchored"',
+                    f'<h3 class="anchored" style="{_MONO_FONT}"',
+                    content[i],
+                )
+
+    # Inject property badges into the Attributes table
+    # Attributes table cells: <td><a href="#pkg.Class.attr">attr_name</a></td>
+    if object_types:
+        property_badge_info = _TYPE_BADGE_STYLES.get("property")
+        if property_badge_info:
+            p_label, p_color, p_bg = property_badge_info
+            p_badge = (
+                f'<span style="font-size: 0.65rem; border-style: solid; '
+                f"border-width: 1px; border-color: {p_color}; "
+                f"background-color: {p_bg}; margin-left: 6px; "
+                f"padding: 0px 4px; vertical-align: 0.05rem; "
+                f'border-radius: 3px;">'
+                f'<code style="background-color: transparent; '
+                f'color: {p_color}; font-size: 0.65rem;">'
+                f"{p_label}</code></span>"
+            )
+            for i, line in enumerate(content):
+                td_match = re.search(r'<td><a href="#([^"]+)">([^<]+)</a></td>', line)
+                if td_match:
+                    anchor_ref = td_match.group(1)
+                    link_text = td_match.group(2)
+                    # Check if this attribute is a property
+                    for key, val in object_types.items():
+                        if (
+                            anchor_ref.endswith(f".{key}") or anchor_ref == key
+                        ) and val == "property":
+                            new_link = f"{link_text}</a>{p_badge}</td>"
+                            content[i] = line.replace(f"{link_text}</a></td>", new_link)
+                            break
+
+    # Add separator lines between class details and individual members,
+    # and between individual member sections.
+    # - Thin solid line after the Methods/Attributes summary table (before first member section)
+    # - Dotted line between each individual member section
+    for i, line in enumerate(content):
+        # Detect <section class="level2"> — these are individual member sections
+        if "<section id=" in line and 'class="level2"' in line:
+            # Check if the previous non-blank line ends a table (</table> in </section>)
+            # or is another level2 section close
+            for j in range(i - 1, max(0, i - 5), -1):
+                prev = content[j].strip()
+                if not prev:
+                    continue
+                if "</table>" in prev:
+                    # First member section after a summary table — solid line
+                    content[i] = (
+                        '<hr style="border: none; border-top: 2px solid #c5c8cd; margin: 1.5rem 0 1rem 0;">\n'
+                        + content[i]
+                    )
+                elif "</section>" in prev:
+                    # Between member sections — dotted line
+                    content[i] = (
+                        '<hr style="border: none; border-top: 2px dotted #b0b4ba; margin: 1.5rem 0 1rem 0;">\n'
+                        + content[i]
+                    )
+                break
 
     # Inject "See Also" section if %seealso was found
     content_str = "".join(content)

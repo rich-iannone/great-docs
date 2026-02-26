@@ -1070,12 +1070,30 @@ def translate_rst_math(html_content):
     )
 
     # Replace <p>.. math::</p><pre><code>...</code></pre>  →  display math
+    # (original two-colon pattern from RST)
     new_content, count = re.subn(
         r"<p>\s*\.\.\s*math::\s*</p>\s*<pre><code>(.*?)</code></pre>",
         lambda m: ('<p><span class="math display">\\[' + m.group(1).strip() + "\\]</span></p>"),
         html_content,
         flags=re.DOTALL,
     )
+
+    # Also handle the single-colon variant produced when Pandoc reduces
+    # trailing :: to : (e.g. <p>.. math:</p> followed by a sourceCode block)
+    new_content, count2 = re.subn(
+        r"<p>\s*\.\.\s*math:\s*</p>\s*"
+        r"(?:<div[^>]*>\s*)?"  # optional wrapper div
+        r"<pre[^>]*><code[^>]*>(.*?)</code></pre>"
+        r"(?:\s*</div>)?",  # optional closing wrapper div
+        lambda m: (
+            '<p><span class="math display">\\['
+            + re.sub(r"</?span[^>]*>", "", m.group(1)).strip()
+            + "\\]</span></p>"
+        ),
+        new_content,
+        flags=re.DOTALL,
+    )
+    count += count2
 
     # Only inject KaTeX CDN if we actually converted any math blocks
     if count > 0 and _KATEX_CDN not in new_content:

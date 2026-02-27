@@ -3668,6 +3668,9 @@ class GreatDocs:
         bool
             True if dynamic mode works, False if it causes errors.
         """
+        if not package_name or not package_name.strip():
+            return True
+
         try:
             import griffe
             from quartodoc import get_object as qd_get_object
@@ -4098,8 +4101,7 @@ class GreatDocs:
             with open(values_path, "w") as f:
                 json.dump(constant_metadata, f, indent=2, sort_keys=True)
             print(
-                f"Wrote constant value metadata ({len(constant_metadata)} items) "
-                f"to {values_path}"
+                f"Wrote constant value metadata ({len(constant_metadata)} items) to {values_path}"
             )
 
     def _categorize_api_objects(self, package_name: str, exports: list) -> dict:
@@ -4162,9 +4164,7 @@ class GreatDocs:
             except Exception as e:
                 print(f"Warning: Could not load package with griffe ({type(e).__name__})")
                 # Fallback: use importlib + inspect to categorize exports
-                return self._categorize_api_objects_fallback(
-                    normalized_name, exports
-                )
+                return self._categorize_api_objects_fallback(normalized_name, exports)
 
             categories = self._empty_categories()
             failed_introspection = []
@@ -4243,7 +4243,11 @@ class GreatDocs:
                                                 _ = qd_obj.kind
                                                 method_entries.append((member_name, lineno))
                                                 # Store sub-type for classmethod/staticmethod/property
-                                                if member_sub in ("classmethod", "staticmethod", "property"):
+                                                if member_sub in (
+                                                    "classmethod",
+                                                    "staticmethod",
+                                                    "property",
+                                                ):
                                                     categories["class_member_types"][
                                                         f"{name}.{member_name}"
                                                     ] = member_sub
@@ -4253,7 +4257,11 @@ class GreatDocs:
                                         else:
                                             method_entries.append((member_name, lineno))
                                             # Store sub-type for classmethod/staticmethod/property
-                                            if member_sub in ("classmethod", "staticmethod", "property"):
+                                            if member_sub in (
+                                                "classmethod",
+                                                "staticmethod",
+                                                "property",
+                                            ):
                                                 categories["class_member_types"][
                                                     f"{name}.{member_name}"
                                                 ] = member_sub
@@ -4310,9 +4318,7 @@ class GreatDocs:
                             categories["type_aliases"].append(name)
                         else:
                             categories["constants"].append(name)
-                            self._extract_constant_metadata(
-                                obj, name, categories
-                            )
+                            self._extract_constant_metadata(obj, name, categories)
                     elif obj.kind.value == "module":
                         # Drill into the module to discover its public classes and functions
                         # Use qualified names like "module.ClassName" so quartodoc resolves
@@ -4393,7 +4399,11 @@ class GreatDocs:
                                                                 (meth_name, lineno)
                                                             )
                                                             # Store sub-type
-                                                            if meth_sub in ("classmethod", "staticmethod", "property"):
+                                                            if meth_sub in (
+                                                                "classmethod",
+                                                                "staticmethod",
+                                                                "property",
+                                                            ):
                                                                 categories["class_member_types"][
                                                                     f"{qualified}.{meth_name}"
                                                                 ] = meth_sub
@@ -4413,8 +4423,14 @@ class GreatDocs:
                                                                     (meth_name, lineno)
                                                                 )
                                                                 # Store sub-type
-                                                                if meth_sub in ("classmethod", "staticmethod", "property"):
-                                                                    categories["class_member_types"][
+                                                                if meth_sub in (
+                                                                    "classmethod",
+                                                                    "staticmethod",
+                                                                    "property",
+                                                                ):
+                                                                    categories[
+                                                                        "class_member_types"
+                                                                    ][
                                                                         f"{qualified}.{meth_name}"
                                                                     ] = meth_sub
                                                             except Exception:
@@ -4422,7 +4438,11 @@ class GreatDocs:
                                                     else:
                                                         method_entries.append((meth_name, lineno))
                                                         # Store sub-type
-                                                        if meth_sub in ("classmethod", "staticmethod", "property"):
+                                                        if meth_sub in (
+                                                            "classmethod",
+                                                            "staticmethod",
+                                                            "property",
+                                                        ):
                                                             categories["class_member_types"][
                                                                 f"{qualified}.{meth_name}"
                                                             ] = meth_sub
@@ -4538,13 +4558,9 @@ class GreatDocs:
             print("Warning: griffe not available, using fallback categorization")
             # Fallback: use importlib + inspect to categorize exports
             normalized_name = package_name.replace("-", "_")
-            return self._categorize_api_objects_fallback(
-                normalized_name, exports
-            )
+            return self._categorize_api_objects_fallback(normalized_name, exports)
 
-    def _categorize_api_objects_fallback(
-        self, package_name: str, exports: list[str]
-    ) -> dict:
+    def _categorize_api_objects_fallback(self, package_name: str, exports: list[str]) -> dict:
         """
         Categorize API objects using importlib + inspect when griffe is unavailable.
 
@@ -4590,8 +4606,10 @@ class GreatDocs:
                     ):
                         try:
                             mod = __import__(child.name)
-                            print(f"  Fallback: imported '{child.name}' "
-                                  f"(project name was '{package_name}')")
+                            print(
+                                f"  Fallback: imported '{child.name}' "
+                                f"(project name was '{package_name}')"
+                            )
                             break
                         except Exception:
                             continue
@@ -4638,9 +4656,7 @@ class GreatDocs:
             + categories["protocols"]
             + categories["abstract_classes"]
         )
-        categories["all_functions"] = (
-            categories["functions"] + categories["async_functions"]
-        )
+        categories["all_functions"] = categories["functions"] + categories["async_functions"]
 
         return categories
 
@@ -5156,9 +5172,7 @@ class GreatDocs:
 
         return sections
 
-    def _apply_nodoc_filter(
-        self, package_name: str, sections: list[dict]
-    ) -> list[dict] | None:
+    def _apply_nodoc_filter(self, package_name: str, sections: list[dict]) -> list[dict] | None:
         """
         Filter out items marked with `%nodoc` from quartodoc sections.
 
@@ -5192,7 +5206,9 @@ class GreatDocs:
         if not nodoc_names:
             return sections
 
-        print(f"Excluding {len(nodoc_names)} item(s) marked with %nodoc: {', '.join(sorted(nodoc_names))}")
+        print(
+            f"Excluding {len(nodoc_names)} item(s) marked with %nodoc: {', '.join(sorted(nodoc_names))}"
+        )
 
         def _item_name(item: str | dict) -> str:
             """Extract the bare object name from a section content item."""
@@ -5203,10 +5219,7 @@ class GreatDocs:
         filtered_sections = []
         for section in sections:
             contents = section.get("contents", [])
-            filtered_contents = [
-                item for item in contents
-                if _item_name(item) not in nodoc_names
-            ]
+            filtered_contents = [item for item in contents if _item_name(item) not in nodoc_names]
 
             # Also drop companion method sections whose parent class is %nodoc
             title = section.get("title", "")
@@ -5217,9 +5230,7 @@ class GreatDocs:
                     continue
 
             if filtered_contents:
-                filtered_sections.append(
-                    {**section, "contents": filtered_contents}
-                )
+                filtered_sections.append({**section, "contents": filtered_contents})
 
         return filtered_sections if filtered_sections else None
 
@@ -7177,9 +7188,9 @@ toc: false
             original = content
 
             def _escape_heading(m):
-                prefix = m.group(1)   # "# "
-                name = m.group(2).strip()     # "Collection.__repr__"
-                attr = m.group(3).strip()     # "{ #gdtest_dunders.Collection.__repr__ }"
+                prefix = m.group(1)  # "# "
+                name = m.group(2).strip()  # "Collection.__repr__"
+                attr = m.group(3).strip()  # "{ #gdtest_dunders.Collection.__repr__ }"
                 # Escape double underscores in heading text only
                 # __name__ → \_\_name\_\_
                 escaped = re.sub(r"__(\w+)__", r"\_\_\1\_\_", name)
@@ -7253,10 +7264,18 @@ toc: false
                 # Skip known RST directives — they should be preserved for
                 # the post-render script to handle (e.g. .. note::, .. warning::)
                 _RST_DIRECTIVES = {
-                    "versionadded", "versionchanged", "deprecated",
-                    "note", "warning", "caution", "danger",
-                    "important", "tip", "hint",
-                    "seealso", "todo",
+                    "versionadded",
+                    "versionchanged",
+                    "deprecated",
+                    "note",
+                    "warning",
+                    "caution",
+                    "danger",
+                    "important",
+                    "tip",
+                    "hint",
+                    "seealso",
+                    "todo",
                 }
                 stripped_prefix = prefix_text.strip()
                 if stripped_prefix.startswith(".."):
@@ -7269,13 +7288,9 @@ toc: false
                         lines = indented_block.splitlines()
                         if lines:
                             min_indent = min(
-                                len(line) - len(line.lstrip())
-                                for line in lines
-                                if line.strip()
+                                len(line) - len(line.lstrip()) for line in lines if line.strip()
                             )
-                            dedented = "\n".join(
-                                line[min_indent:] for line in lines
-                            )
+                            dedented = "\n".join(line[min_indent:] for line in lines)
                         else:
                             dedented = indented_block
                         return f"\n$$\n{dedented.strip()}\n$$\n"
@@ -7392,9 +7407,7 @@ toc: false
                 # Determine the second column start from the separator to
                 # validate whether subsequent lines are table data.
                 second_col_match = re.search(r"\s+(=+)", line)
-                second_col_start = (
-                    second_col_match.start(1) if second_col_match else 4
-                )
+                second_col_start = second_col_match.start(1) if second_col_match else 4
                 j = i + 1
                 while j < len(lines):
                     cur = lines[j]
@@ -7420,9 +7433,7 @@ toc: false
                         if (
                             peek < len(lines)
                             and lines[peek].strip()
-                            and not re.match(
-                                r"^=+(\s+=+)+\s*$", lines[peek]
-                            )
+                            and not re.match(r"^=+(\s+=+)+\s*$", lines[peek])
                             and len(lines[peek]) > second_col_start
                             and lines[peek][second_col_start] != " "
                         ):
@@ -7480,9 +7491,7 @@ toc: false
                         table_lines.append(lines[j])
                         # Check if this is the closing border (next line is
                         # not a table row)
-                        if j + 1 >= len(lines) or not re.match(
-                            r"^\|", lines[j + 1]
-                        ):
+                        if j + 1 >= len(lines) or not re.match(r"^\|", lines[j + 1]):
                             j += 1
                             break
                     elif re.match(r"^\|", lines[j]):
@@ -9829,9 +9838,7 @@ def _rst_simple_table_to_md(table_lines: list[str]) -> str | None:
     """
     # Filter out blank lines and find separator lines
     separators = [
-        (idx, line)
-        for idx, line in enumerate(table_lines)
-        if re.match(r"^=+(\s+=+)+\s*$", line)
+        (idx, line) for idx, line in enumerate(table_lines) if re.match(r"^=+(\s+=+)+\s*$", line)
     ]
     if len(separators) < 2:
         return None

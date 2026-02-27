@@ -1839,7 +1839,7 @@ class GreatDocs:
         ctx = click.Context(cmd, info_name=full_path)
         return cmd.get_help(ctx)
 
-    def _generate_cli_reference_pages(self, cli_info: dict) -> list[str]:
+    def _generate_cli_reference_pages(self, cli_info: dict) -> list[str | dict]:
         """
         Generate Quarto reference pages for CLI commands.
 
@@ -1850,8 +1850,9 @@ class GreatDocs:
 
         Returns
         -------
-        list[str]
-            List of generated .qmd file paths (relative to docs dir).
+        list[str | dict]
+            Sidebar items — plain path strings for leaf commands, or
+            ``{"section": ..., "contents": [...]}`` dicts for groups.
         """
         if not cli_info:
             return []
@@ -1859,7 +1860,7 @@ class GreatDocs:
         cli_ref_dir = self.project_path / "reference" / "cli"
         cli_ref_dir.mkdir(parents=True, exist_ok=True)
 
-        generated_files = []
+        generated_files: list[str | dict] = []
 
         # Generate main CLI page
         main_page = self._generate_cli_command_page(cli_info, is_main=True)
@@ -1874,7 +1875,12 @@ class GreatDocs:
 
         return generated_files
 
-    def _generate_subcommand_pages(self, cmd_info: dict, output_dir: Path) -> list[str]:
+    def _generate_subcommand_pages(
+        self,
+        cmd_info: dict,
+        output_dir: Path,
+        rel_prefix: str = "reference/cli",
+    ) -> list[str | dict]:
         """
         Recursively generate pages for subcommands.
 
@@ -1884,13 +1890,17 @@ class GreatDocs:
             Command information dictionary.
         output_dir
             Directory to write pages to.
+        rel_prefix
+            The relative path prefix for sidebar entries (e.g. ``reference/cli``
+            or ``reference/cli/task`` for nested groups).
 
         Returns
         -------
-        list[str]
-            List of generated file paths.
+        list[str | dict]
+            Sidebar items — plain path strings for leaf commands, or
+            ``{"section": ..., "contents": [...]}`` dicts for groups.
         """
-        generated = []
+        sidebar_items: list[str | dict] = []
 
         for subcmd in cmd_info.get("commands", []):
             # Generate page for this subcommand
@@ -1901,17 +1911,21 @@ class GreatDocs:
             with open(page_path, "w") as f:
                 f.write(page_content)
 
-            rel_path = f"reference/cli/{safe_name}.qmd"
-            generated.append(rel_path)
+            rel_path = f"{rel_prefix}/{safe_name}.qmd"
             print(f"Generated CLI reference: {page_path.relative_to(self.project_path)}")
 
             # Recursively generate for nested subcommands
             if subcmd.get("commands"):
                 subcmd_dir = output_dir / safe_name
                 subcmd_dir.mkdir(exist_ok=True)
-                generated.extend(self._generate_subcommand_pages(subcmd, subcmd_dir))
+                nested = self._generate_subcommand_pages(
+                    subcmd, subcmd_dir, f"{rel_prefix}/{safe_name}"
+                )
+                sidebar_items.append({"section": subcmd["name"], "contents": [rel_path] + nested})
+            else:
+                sidebar_items.append(rel_path)
 
-        return generated
+        return sidebar_items
 
     def _generate_cli_command_page(self, cmd_info: dict, is_main: bool = False) -> str:
         """
@@ -1951,14 +1965,26 @@ class GreatDocs:
 
         return "\n".join(lines)
 
-    def _update_sidebar_with_cli(self, cli_files: list[str]) -> None:
+    @staticmethod
+    def _count_cli_sidebar_items(items: list) -> int:
+        """Count the total number of .qmd pages in a (possibly nested) sidebar list."""
+        count = 0
+        for item in items:
+            if isinstance(item, str):
+                count += 1
+            elif isinstance(item, dict):
+                count += GreatDocs._count_cli_sidebar_items(item.get("contents", []))
+        return count
+
+    def _update_sidebar_with_cli(self, cli_files: list[str | dict]) -> None:
         """
         Update the sidebar configuration to include CLI reference.
 
         Parameters
         ----------
         cli_files
-            List of generated CLI reference file paths.
+            Sidebar items — plain path strings for leaf commands, or
+            ``{"section": ..., "contents": [...]}`` dicts for groups.
         """
         if not cli_files:
             return
@@ -2017,7 +2043,9 @@ class GreatDocs:
 
         self._write_quarto_yml(quarto_yml, config)
 
-        print(f"Updated sidebar with {len(cli_files)} CLI reference page(s)")
+        print(
+            f"Updated sidebar with {self._count_cli_sidebar_items(cli_files)} CLI reference page(s)"
+        )
 
     # =========================================================================
     # User Guide Methods
@@ -8803,7 +8831,8 @@ toc: false
                         cli_files = self._generate_cli_reference_pages(cli_info)
                         if cli_files:
                             self._update_sidebar_with_cli(cli_files)
-                            print(f"✅ Generated {len(cli_files)} CLI reference page(s)")
+                            n_pages = self._count_cli_sidebar_items(cli_files)
+                            print(f"✅ Generated {n_pages} CLI reference page(s)")
                     else:
                         print("   No Click CLI found or CLI documentation disabled")
                 except Exception as e:

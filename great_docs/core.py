@@ -5498,6 +5498,51 @@ class GreatDocs:
         return dn_yaml, site_yaml, funding_yaml
 
     @staticmethod
+    def _format_existing_reference_yaml(reference: list[dict]) -> list[str]:
+        """
+        Format preserved explicit reference sections as YAML lines.
+
+        Converts a list of reference section dicts (from an existing
+        great-docs.yml) back into indented YAML lines suitable for appending
+        after the ``reference:`` key.
+
+        Parameters
+        ----------
+        reference
+            List of section dicts, each with ``title``, optional ``desc``,
+            and ``contents`` (list of strings or dicts with ``name``/``members``).
+
+        Returns
+        -------
+        list[str]
+            YAML lines (without the leading ``reference:`` key).
+        """
+        lines: list[str] = []
+        for i, section in enumerate(reference):
+            if i > 0:
+                lines.append("")
+            title = section.get("title", "Untitled")
+            desc = section.get("desc", "")
+            contents = section.get("contents", [])
+
+            lines.append(f"  - title: {title}")
+            if desc:
+                lines.append(f"    desc: {desc}")
+            lines.append("    contents:")
+            for item in contents:
+                if isinstance(item, str):
+                    lines.append(f"      - {item}")
+                elif isinstance(item, dict):
+                    name = item.get("name", "")
+                    members = item.get("members", True)
+                    if members is False:
+                        lines.append(f"      - name: {name}")
+                        lines.append("        members: false")
+                    else:
+                        lines.append(f"      - {name}")
+        return lines
+
+    @staticmethod
     def _format_sections_yaml(sections: list | None = None) -> str:
         """
         Build YAML fragment for custom sections (examples, tutorials, etc.).
@@ -5614,6 +5659,7 @@ class GreatDocs:
         existing_site: dict | None = None
         existing_sections: list | None = None
         existing_cli: dict | None = None
+        existing_reference: list | None = None
         if config_path.exists():
             try:
                 existing_config = Config(config_path.parent)
@@ -5641,6 +5687,10 @@ class GreatDocs:
                         existing_cli["module"] = existing_config.cli_module
                     if existing_config.cli_name:
                         existing_cli["name"] = existing_config.cli_name
+                # Preserve explicit reference sections (user-defined API structure)
+                _reference = existing_config.reference
+                if _reference:
+                    existing_reference = _reference
             except Exception:
                 pass
 
@@ -5715,6 +5765,7 @@ class GreatDocs:
             existing_funding=existing_funding,
             existing_sections=existing_sections,
             existing_cli=existing_cli,
+            existing_reference=existing_reference,
         )
 
         config_path.write_text(config_content, encoding="utf-8")
@@ -5861,6 +5912,7 @@ jupyter: python3
         existing_funding: dict | None = None,
         existing_sections: list | None = None,
         existing_cli: dict | None = None,
+        existing_reference: list | None = None,
     ) -> str:
         """
         Generate great-docs.yml with a reference section from discovered exports.
@@ -5887,6 +5939,10 @@ jupyter: python3
             Preserved custom sections from a pre-existing config.
         existing_cli
             Preserved CLI documentation config from a pre-existing config.
+        existing_reference
+            Preserved explicit reference sections from a pre-existing config.
+            When provided, these sections are used as-is instead of auto-generating
+            from discovered exports.
 
         Returns
         -------
@@ -5978,83 +6034,90 @@ jupyter: python3
             ]
         )
 
-        class_methods = categories.get("class_methods", {})
-        class_method_names = categories.get("class_method_names", {})
+        if existing_reference:
+            # Use preserved explicit reference sections as-is
+            lines.extend(self._format_existing_reference_yaml(existing_reference))
+        else:
+            # Auto-generate reference sections from discovered exports
+            class_methods = categories.get("class_methods", {})
+            class_method_names = categories.get("class_method_names", {})
 
-        # Use static threshold of 5 methods for large class separation
-        threshold = 5
+            # Use static threshold of 5 methods for large class separation
+            threshold = 5
 
-        # Track large classes that need separate method sections
-        large_classes: list[str] = []
+            # Track large classes that need separate method sections
+            large_classes: list[str] = []
 
-        # Track whether we've emitted any section yet (for blank-line spacing)
-        has_prev_section = False
+            # Track whether we've emitted any section yet (for blank-line spacing)
+            has_prev_section = False
 
-        # --- Class-like sections (support big-class splitting) ---
-        _class_like_sections = [
-            ("classes", "Classes", "Main classes provided by the package"),
-            ("dataclasses", "Dataclasses", "Dataclass definitions"),
-            ("abstract_classes", "Abstract Classes", "Abstract base classes"),
-            ("protocols", "Protocols", "Protocol / structural-typing interfaces"),
-        ]
+            # --- Class-like sections (support big-class splitting) ---
+            _class_like_sections = [
+                ("classes", "Classes", "Main classes provided by the package"),
+                ("dataclasses", "Dataclasses", "Dataclass definitions"),
+                ("abstract_classes", "Abstract Classes", "Abstract base classes"),
+                ("protocols", "Protocols", "Protocol / structural-typing interfaces"),
+            ]
 
-        for cat_key, title, desc in _class_like_sections:
-            items = categories.get(cat_key, [])
-            if not items:
-                continue
-            if has_prev_section:
-                lines.append("")
-            lines.append(f"  - title: {title}")
-            lines.append(f"    desc: {desc}")
-            lines.append("    contents:")
-            for class_name in sorted(items):
-                method_count = class_methods.get(class_name, 0)
-                if method_count > threshold:
-                    lines.append(f"      - name: {class_name}")
-                    lines.append(f"        members: false  # {method_count} methods listed below")
-                    large_classes.append(class_name)
-                elif method_count > 0:
-                    lines.append(f"      - {class_name}  # {method_count} method(s)")
-                else:
-                    lines.append(f"      - {class_name}")
-            has_prev_section = True
-
-        # Add separate method sections for large classes
-        for class_name in large_classes:
-            method_names = class_method_names.get(class_name, [])
-            if method_names:
-                lines.append("")
-                lines.append(f"  - title: {class_name} Methods")
-                lines.append(f"    desc: Methods for the {class_name} class")
+            for cat_key, title, desc in _class_like_sections:
+                items = categories.get(cat_key, [])
+                if not items:
+                    continue
+                if has_prev_section:
+                    lines.append("")
+                lines.append(f"  - title: {title}")
+                lines.append(f"    desc: {desc}")
                 lines.append("    contents:")
-                for method_name in method_names:
-                    lines.append(f"      - {class_name}.{method_name}")
+                for class_name in sorted(items):
+                    method_count = class_methods.get(class_name, 0)
+                    if method_count > threshold:
+                        lines.append(f"      - name: {class_name}")
+                        lines.append(
+                            f"        members: false  # {method_count} methods listed below"
+                        )
+                        large_classes.append(class_name)
+                    elif method_count > 0:
+                        lines.append(f"      - {class_name}  # {method_count} method(s)")
+                    else:
+                        lines.append(f"      - {class_name}")
+                has_prev_section = True
 
-        # --- Flat sections (simple lists, no big-class splitting) ---
-        _flat_sections = [
-            ("enums", "Enumerations", "Enumeration types"),
-            ("exceptions", "Exceptions", "Exception classes"),
-            ("namedtuples", "Named Tuples", "Named tuple definitions"),
-            ("typeddicts", "Typed Dicts", "TypedDict definitions"),
-            ("functions", "Functions", "Utility functions"),
-            ("async_functions", "Async Functions", "Asynchronous functions"),
-            ("constants", "Constants", "Module-level constants and data"),
-            ("type_aliases", "Type Aliases", "Type alias definitions"),
-            ("other", "Other", "Additional exports"),
-        ]
+            # Add separate method sections for large classes
+            for class_name in large_classes:
+                method_names = class_method_names.get(class_name, [])
+                if method_names:
+                    lines.append("")
+                    lines.append(f"  - title: {class_name} Methods")
+                    lines.append(f"    desc: Methods for the {class_name} class")
+                    lines.append("    contents:")
+                    for method_name in method_names:
+                        lines.append(f"      - {class_name}.{method_name}")
 
-        for cat_key, title, desc in _flat_sections:
-            items = categories.get(cat_key, [])
-            if not items:
-                continue
-            if has_prev_section:
-                lines.append("")
-            lines.append(f"  - title: {title}")
-            lines.append(f"    desc: {desc}")
-            lines.append("    contents:")
-            for name in sorted(items):
-                lines.append(f"      - {name}")
-            has_prev_section = True
+            # --- Flat sections (simple lists, no big-class splitting) ---
+            _flat_sections = [
+                ("enums", "Enumerations", "Enumeration types"),
+                ("exceptions", "Exceptions", "Exception classes"),
+                ("namedtuples", "Named Tuples", "Named tuple definitions"),
+                ("typeddicts", "Typed Dicts", "TypedDict definitions"),
+                ("functions", "Functions", "Utility functions"),
+                ("async_functions", "Async Functions", "Asynchronous functions"),
+                ("constants", "Constants", "Module-level constants and data"),
+                ("type_aliases", "Type Aliases", "Type alias definitions"),
+                ("other", "Other", "Additional exports"),
+            ]
+
+            for cat_key, title, desc in _flat_sections:
+                items = categories.get(cat_key, [])
+                if not items:
+                    continue
+                if has_prev_section:
+                    lines.append("")
+                lines.append(f"  - title: {title}")
+                lines.append(f"    desc: {desc}")
+                lines.append("    contents:")
+                for name in sorted(items):
+                    lines.append(f"      - {name}")
+                has_prev_section = True
 
         # Add trailing sections for site settings
         lines.extend(

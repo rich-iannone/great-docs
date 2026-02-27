@@ -26,7 +26,7 @@ SPEC = {
         ],
     },
     "files": {
-        "gdtest_sec_navbar_after/__init__.py": '"""Test package for custom section with navbar_after."""\n',
+        "gdtest_sec_navbar_after/__init__.py": '"""Test package for custom section with navbar_after."""\n\nfrom .core import prepare, serve\n\n__all__ = ["prepare", "serve"]\n',
         "gdtest_sec_navbar_after/core.py": '''
             """Core prepare/serve functions."""
 

@@ -33,7 +33,7 @@ SPEC = {
         ],
     },
     "files": {
-        "gdtest_ref_mixed/__init__.py": '"""Test package for mixed reference config."""\n',
+        "gdtest_ref_mixed/__init__.py": '"""Test package for mixed reference config."""\n\nfrom .core import connect, disconnect, ping, trace\n\n__all__ = ["connect", "disconnect", "ping", "trace"]\n',
         "gdtest_ref_mixed/core.py": '''
             """Core networking functions."""
 
@@ -123,9 +123,7 @@ SPEC = {
                 """
                 return ["127.0.0.1"]
         ''',
-        "README.md": (
-            "# gdtest-ref-mixed\n\nTest mixed explicit and auto-discovered reference.\n"
-        ),
+        "README.md": ("# gdtest-ref-mixed\n\nTest mixed explicit and auto-discovered reference.\n"),
     },
     "expected": {
         "detected_name": "gdtest-ref-mixed",

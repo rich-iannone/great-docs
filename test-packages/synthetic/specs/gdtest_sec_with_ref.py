@@ -43,7 +43,7 @@ SPEC = {
         ],
     },
     "files": {
-        "gdtest_sec_with_ref/__init__.py": '"""Test package for custom section with reference config."""\n',
+        "gdtest_sec_with_ref/__init__.py": '"""Test package for custom section with reference config."""\n\nfrom .core import analyze, format_output, process\n\n__all__ = ["analyze", "format_output", "process"]\n',
         "gdtest_sec_with_ref/core.py": '''
             """Core process/analyze/format_output functions."""
 

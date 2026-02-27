@@ -33,7 +33,7 @@ SPEC = {
         ],
     },
     "files": {
-        "gdtest_ref_big_class/__init__.py": '"""Test package for reference config with a big class."""\n',
+        "gdtest_ref_big_class/__init__.py": '"""Test package for reference config with a big class."""\n\nfrom .core import Manager, create_manager\n\n__all__ = ["Manager", "create_manager"]\n',
         "gdtest_ref_big_class/core.py": '''
             """Core Manager class and factory function."""
 

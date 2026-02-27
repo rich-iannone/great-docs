@@ -49,7 +49,7 @@ SPEC = {
         ],
     },
     "files": {
-        "gdtest_stress_all_sections/__init__.py": '"""Test package for maximum navigation complexity."""\n',
+        "gdtest_stress_all_sections/__init__.py": '"""Test package for maximum navigation complexity."""\n\nfrom .core import create, delete, read, update\n\n__all__ = ["create", "delete", "read", "update"]\n',
         "gdtest_stress_all_sections/core.py": '''
             """Core CRUD functions."""
 

@@ -26,7 +26,7 @@ SPEC = {
         ],
     },
     "files": {
-        "gdtest_sec_recipes/__init__.py": '"""Test package for custom Recipes section."""\n',
+        "gdtest_sec_recipes/__init__.py": '"""Test package for custom Recipes section."""\n\nfrom .core import cook, serve\n\n__all__ = ["cook", "serve"]\n',
         "gdtest_sec_recipes/core.py": '''
             """Core cook/serve functions."""
 

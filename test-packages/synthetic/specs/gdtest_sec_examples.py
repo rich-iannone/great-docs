@@ -26,7 +26,7 @@ SPEC = {
         ],
     },
     "files": {
-        "gdtest_sec_examples/__init__.py": '"""Test package for custom Examples section."""\n',
+        "gdtest_sec_examples/__init__.py": '"""Test package for custom Examples section."""\n\nfrom .core import demo, showcase\n\n__all__ = ["demo", "showcase"]\n',
         "gdtest_sec_examples/core.py": '''
             """Core demo/showcase functions."""
 

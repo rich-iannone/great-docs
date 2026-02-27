@@ -26,7 +26,7 @@ SPEC = {
         ],
     },
     "files": {
-        "gdtest_sec_with_ug/__init__.py": '"""Test package for custom section with user guide."""\n',
+        "gdtest_sec_with_ug/__init__.py": '"""Test package for custom section with user guide."""\n\nfrom .core import guide_user, run_example\n\n__all__ = ["guide_user", "run_example"]\n',
         "gdtest_sec_with_ug/core.py": '''
             """Core run_example/guide_user functions."""
 

@@ -27,7 +27,7 @@ SPEC = {
         ],
     },
     "files": {
-        "gdtest_sec_blog/__init__.py": '"""Test package for blog section."""\n',
+        "gdtest_sec_blog/__init__.py": '"""Test package for blog section."""\n\nfrom .core import archive, post\n\n__all__ = ["archive", "post"]\n',
         "gdtest_sec_blog/core.py": '''
             """Core post/archive functions."""
 

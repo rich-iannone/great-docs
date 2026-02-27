@@ -81,7 +81,7 @@ SPEC = {
         "detected_parser": "numpy",
         "export_names": ["Coordinate", "UserProfile"],
         "num_exports": 2,
-        "section_titles": ["Named Tuples", "Typed Dicts", "Other"],
+        "section_titles": ["Named Tuples", "Typed Dicts"],
         "has_user_guide": False,
     },
 }

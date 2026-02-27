@@ -41,7 +41,7 @@ SPEC = {
         ],
     },
     "files": {
-        "gdtest_ref_reorder/__init__.py": '"""Test package for reference config reordering."""\n',
+        "gdtest_ref_reorder/__init__.py": '"""Test package for reference config reordering."""\n\nfrom .functions import compute, transform\nfrom .models import DataModel, Schema\n\n__all__ = ["DataModel", "Schema", "compute", "transform"]\n',
         "gdtest_ref_reorder/functions.py": '''
             """Utility functions for computing and transforming."""
 

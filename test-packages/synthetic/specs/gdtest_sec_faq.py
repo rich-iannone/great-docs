@@ -26,7 +26,7 @@ SPEC = {
         ],
     },
     "files": {
-        "gdtest_sec_faq/__init__.py": '"""Test package for custom FAQ section."""\n',
+        "gdtest_sec_faq/__init__.py": '"""Test package for custom FAQ section."""\n\nfrom .core import answer, ask\n\n__all__ = ["answer", "ask"]\n',
         "gdtest_sec_faq/core.py": '''
             """Core ask/answer functions."""
 

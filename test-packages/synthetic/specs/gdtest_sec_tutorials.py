@@ -26,7 +26,7 @@ SPEC = {
         ],
     },
     "files": {
-        "gdtest_sec_tutorials/__init__.py": '"""Test package for custom Tutorials section."""\n',
+        "gdtest_sec_tutorials/__init__.py": '"""Test package for custom Tutorials section."""\n\nfrom .core import learn, practice\n\n__all__ = ["learn", "practice"]\n',
         "gdtest_sec_tutorials/core.py": '''
             """Core learn/practice functions."""
 

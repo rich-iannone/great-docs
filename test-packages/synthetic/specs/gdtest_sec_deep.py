@@ -26,7 +26,7 @@ SPEC = {
         ],
     },
     "files": {
-        "gdtest_sec_deep/__init__.py": '"""Test package for custom section with nested subdirectories."""\n',
+        "gdtest_sec_deep/__init__.py": '"""Test package for custom section with nested subdirectories."""\n\nfrom .core import learn, test_knowledge\n\n__all__ = ["learn", "test_knowledge"]\n',
         "gdtest_sec_deep/core.py": '''
             """Core learn/test_knowledge functions."""
 

@@ -35,7 +35,7 @@ SPEC = {
         ],
     },
     "files": {
-        "gdtest_ref_single_section/__init__.py": '"""Test package for reference with a single named section."""\n',
+        "gdtest_ref_single_section/__init__.py": '"""Test package for reference with a single named section."""\n\nfrom .api import alpha, beta, delta, gamma\n\n__all__ = ["alpha", "beta", "delta", "gamma"]\n',
         "gdtest_ref_single_section/api.py": '''
             """Complete API with four functions."""
 

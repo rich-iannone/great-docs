@@ -57,7 +57,7 @@ SPEC = {
         ],
     },
     "files": {
-        "gdtest_ref_sectioned/__init__.py": '"""Test package for reference with 4 named sections."""\n',
+        "gdtest_ref_sectioned/__init__.py": '"""Test package for reference with 4 named sections."""\n\nfrom .constructors import create_layout, create_widget\nfrom .transformers import resize, rotate\nfrom .validators import check_bounds, check_type\nfrom .utilities import from_string, to_string\n\n__all__ = [\n    "check_bounds", "check_type", "create_layout", "create_widget",\n    "from_string", "resize", "rotate", "to_string",\n]\n',
         "gdtest_ref_sectioned/constructors.py": '''
             """Constructor functions for creating widgets and layouts."""
 

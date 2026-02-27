@@ -41,7 +41,7 @@ SPEC = {
         ],
     },
     "files": {
-        "gdtest_ref_explicit/__init__.py": '"""Test package for explicit reference config."""\n',
+        "gdtest_ref_explicit/__init__.py": '"""Test package for explicit reference config."""\n\nfrom .builders import build, compile\nfrom .runners import execute, run\n\n__all__ = ["build", "compile", "execute", "run"]\n',
         "gdtest_ref_explicit/builders.py": '''
             """Builder functions for compiling and building targets."""
 

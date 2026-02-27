@@ -35,7 +35,9 @@ SPEC = {
         "gdtest_ref_module_expand/__init__.py": '''\
             """Package with a submodule for reference expansion."""
 
-            __all__ = ["main_func"]
+            from .utils import util_a, util_b, util_c
+
+            __all__ = ["main_func", "util_a", "util_b", "util_c"]
 
 
             def main_func(data: str) -> str:

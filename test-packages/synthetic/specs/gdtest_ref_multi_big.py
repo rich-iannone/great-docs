@@ -33,7 +33,7 @@ SPEC = {
         ],
     },
     "files": {
-        "gdtest_ref_multi_big/__init__.py": '"""Test package for multiple big classes in reference config."""\n',
+        "gdtest_ref_multi_big/__init__.py": '"""Test package for multiple big classes in reference config."""\n\nfrom .processing import Processor, Transformer\n\n__all__ = ["Processor", "Transformer"]\n',
         "gdtest_ref_multi_big/processing.py": '''
             """Data processing classes."""
 

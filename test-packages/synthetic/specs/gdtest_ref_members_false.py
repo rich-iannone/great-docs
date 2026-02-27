@@ -33,7 +33,7 @@ SPEC = {
         ],
     },
     "files": {
-        "gdtest_ref_members_false/__init__.py": '"""Test package for reference config with members: false."""\n',
+        "gdtest_ref_members_false/__init__.py": '"""Test package for reference config with members: false."""\n\nfrom .core import Engine, start_engine\n\n__all__ = ["Engine", "start_engine"]\n',
         "gdtest_ref_members_false/core.py": '''
             """Core Engine class and start_engine function."""
 
@@ -140,9 +140,7 @@ SPEC = {
                 engine.start()
                 return engine
         ''',
-        "README.md": (
-            "# gdtest-ref-members-false\n\nTest reference config with members: false.\n"
-        ),
+        "README.md": ("# gdtest-ref-members-false\n\nTest reference config with members: false.\n"),
     },
     "expected": {
         "detected_name": "gdtest-ref-members-false",

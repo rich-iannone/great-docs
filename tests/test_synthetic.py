@@ -7,8 +7,8 @@ cover every feature dimension.  The tests are organized by assertion level:
 
 - **L0**: Package/module name detection (instant, no I/O)
 - **L1**: Export discovery + section structure (fast, griffe only)
-- **L2**: ``great-docs init`` / config generation (fast, file I/O)
-- **L3**: ``_quarto.yml`` + ``.qmd`` generation (medium)
+- **L2**: `great-docs init` / config generation (fast, file I/O)
+- **L3**: `_quarto.yml` + `.qmd` generation (medium)
 - **L4**: Full Quarto render to HTML (slow, nightly only)
 
 Run with:

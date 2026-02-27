@@ -28,7 +28,7 @@ SPEC = {
         ],
     },
     "files": {
-        "gdtest_sec_multi/__init__.py": '"""Test package for multiple custom sections."""\n',
+        "gdtest_sec_multi/__init__.py": '"""Test package for multiple custom sections."""\n\nfrom .core import combine, multi_demo\n\n__all__ = ["combine", "multi_demo"]\n',
         "gdtest_sec_multi/core.py": '''
             """Core multi_demo/combine functions."""
 

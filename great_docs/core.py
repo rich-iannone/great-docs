@@ -1640,16 +1640,19 @@ class GreatDocs:
             print("Click not installed, skipping CLI documentation")
             return None
 
+        # Normalize to importable module name (hyphens → underscores)
+        importable_name = self._normalize_package_name(package_name)
+
         # Determine the CLI module to import
         cli_module_path = metadata.get("cli_module")
         if not cli_module_path:
             # Try common CLI module locations
             common_cli_modules = [
-                f"{package_name}.cli",
-                f"{package_name}.__main__",
-                f"{package_name}.main",
-                f"{package_name}.console",
-                f"{package_name}.commands",
+                f"{importable_name}.cli",
+                f"{importable_name}.__main__",
+                f"{importable_name}.main",
+                f"{importable_name}.console",
+                f"{importable_name}.commands",
             ]
             cli_module_path = None
             for module_path in common_cli_modules:
@@ -1690,7 +1693,7 @@ class GreatDocs:
 
         # Otherwise, search for Click commands/groups
         if not cli_obj:
-            for attr_name in ["cli", "main", "app", "command", package_name.replace("-", "_")]:
+            for attr_name in ["cli", "main", "app", "command", importable_name]:
                 attr = getattr(module, attr_name, None)
                 if isinstance(attr, (click.Command, click.Group)):
                     cli_obj = attr
@@ -5505,6 +5508,49 @@ class GreatDocs:
             return "\n".join(parts) + "\n"
         return ""
 
+    @staticmethod
+    def _format_cli_yaml(cli_config: dict | None = None) -> str:
+        """
+        Build YAML fragment for CLI documentation configuration.
+
+        Parameters
+        ----------
+        cli_config
+            CLI config dict (e.g. ``{"enabled": True, "module": "pkg.cli"}``),
+            or ``None`` to emit a commented-out template.
+
+        Returns
+        -------
+        str
+            Active ``cli:`` YAML block when enabled, or a commented-out template.
+        """
+        if cli_config and cli_config.get("enabled"):
+            parts = [
+                "# CLI Documentation",
+                "# -----------------",
+                "cli:",
+                "  enabled: true",
+            ]
+            if cli_config.get("module"):
+                parts.append(f"  module: {cli_config['module']}")
+            if cli_config.get("name"):
+                parts.append(f"  name: {cli_config['name']}")
+            return "\n".join(parts) + "\n"
+
+        return (
+            "\n".join(
+                [
+                    "# CLI Documentation",
+                    "# -----------------",
+                    "# cli:",
+                    "#   enabled: true              # Enable CLI documentation",
+                    "#   module: my_package.cli     # Module containing Click commands",
+                    "#   name: cli                  # Name of the Click command object",
+                ]
+            )
+            + "\n"
+        )
+
     def _generate_initial_config(self, force: bool = False) -> bool:
         """
         Generate an initial great-docs.yml with discovered exports.
@@ -5539,6 +5585,7 @@ class GreatDocs:
         existing_display_name: str | None = None
         existing_site: dict | None = None
         existing_sections: list | None = None
+        existing_cli: dict | None = None
         if config_path.exists():
             try:
                 existing_config = Config(config_path.parent)
@@ -5559,6 +5606,13 @@ class GreatDocs:
                 _sections = existing_config.sections
                 if _sections:
                     existing_sections = _sections
+                # Preserve CLI documentation configuration
+                if existing_config.cli_enabled:
+                    existing_cli = {"enabled": True}
+                    if existing_config.cli_module:
+                        existing_cli["module"] = existing_config.cli_module
+                    if existing_config.cli_name:
+                        existing_cli["name"] = existing_config.cli_name
             except Exception:
                 pass
 
@@ -5573,6 +5627,7 @@ class GreatDocs:
                 existing_site=existing_site,
                 existing_funding=existing_funding,
                 existing_sections=existing_sections,
+                existing_cli=existing_cli,
             )
             config_path.write_text(config_content, encoding="utf-8")
             print(f"Created {config_path}")
@@ -5600,6 +5655,7 @@ class GreatDocs:
                 existing_site=existing_site,
                 existing_funding=existing_funding,
                 existing_sections=existing_sections,
+                existing_cli=existing_cli,
             )
             config_path.write_text(config_content, encoding="utf-8")
             print(f"Created {config_path}")
@@ -5630,6 +5686,7 @@ class GreatDocs:
             existing_site=existing_site,
             existing_funding=existing_funding,
             existing_sections=existing_sections,
+            existing_cli=existing_cli,
         )
 
         config_path.write_text(config_content, encoding="utf-8")
@@ -5645,6 +5702,7 @@ class GreatDocs:
         existing_site: dict | None = None,
         existing_funding: dict | None = None,
         existing_sections: list | None = None,
+        existing_cli: dict | None = None,
     ) -> str:
         """
         Generate minimal great-docs.yml without reference section.
@@ -5665,6 +5723,8 @@ class GreatDocs:
             Preserved funding metadata from a pre-existing config.
         existing_sections
             Preserved custom sections from a pre-existing config.
+        existing_cli
+            Preserved CLI documentation config from a pre-existing config.
 
         Returns
         -------
@@ -5695,6 +5755,9 @@ class GreatDocs:
 
         # Build sections YAML
         sections_yaml = self._format_sections_yaml(existing_sections)
+
+        # Build CLI section
+        cli_yaml = self._format_cli_yaml(existing_cli)
 
         return f"""# Great Docs Configuration
 # See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html
@@ -5733,6 +5796,7 @@ dynamic: {dynamic_str}
 # file frontmatter if needed for special cases.
 jupyter: python3
 
+{cli_yaml}
 # API Reference Structure
 # -----------------------
 # Auto-discovery couldn't determine your package's public API.
@@ -5768,6 +5832,7 @@ jupyter: python3
         existing_site: dict | None = None,
         existing_funding: dict | None = None,
         existing_sections: list | None = None,
+        existing_cli: dict | None = None,
     ) -> str:
         """
         Generate great-docs.yml with a reference section from discovered exports.
@@ -5792,6 +5857,8 @@ jupyter: python3
             Preserved funding metadata from a pre-existing config.
         existing_sections
             Preserved custom sections from a pre-existing config.
+        existing_cli
+            Preserved CLI documentation config from a pre-existing config.
 
         Returns
         -------
@@ -5986,14 +6053,12 @@ jupyter: python3
                 "# file frontmatter if needed for special cases.",
                 "jupyter: python3",
                 "",
-                "# CLI Documentation",
-                "# -----------------",
-                "# cli:",
-                "#   enabled: true              # Enable CLI documentation",
-                "#   module: my_package.cli     # Module containing Click commands",
-                "#   name: cli                  # Name of the Click command object",
             ]
         )
+
+        # Add CLI documentation section
+        cli_yaml = self._format_cli_yaml(existing_cli)
+        lines.extend(cli_yaml.rstrip("\n").splitlines())
 
         return "\n".join(lines) + "\n"
 

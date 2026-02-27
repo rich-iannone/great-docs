@@ -1395,6 +1395,129 @@ def test_R4_cli_sidebar_has_cli_section():
     )
 
 
+def test_R4_cli_sidebar_structure_flat():
+    """Flat CLI sidebar in _quarto.yml should contain only path strings."""
+    pkg = "gdtest_cli_click"
+    if not _has_rendered_site(pkg):
+        pytest.skip("gdtest_cli_click not rendered")
+
+    import yaml
+
+    quarto_yml = _RENDERED_DIR / pkg / "great-docs" / "_quarto.yml"
+    with open(quarto_yml) as f:
+        config = yaml.safe_load(f)
+
+    sidebar = config.get("website", {}).get("sidebar", [])
+    cli_section = next(
+        (s for s in sidebar if isinstance(s, dict) and s.get("id") == "cli-reference"),
+        None,
+    )
+    assert cli_section is not None, "No cli-reference sidebar section in _quarto.yml"
+
+    contents = cli_section.get("contents", [])
+    assert len(contents) >= 1
+    # All items should be plain path strings — no section dicts
+    for item in contents:
+        assert isinstance(item, str), f"Flat CLI sidebar should only have path strings, got: {item}"
+
+
+def test_R4_cli_sidebar_structure_nested():
+    """Nested CLI sidebar in _quarto.yml should use section/contents hierarchy."""
+    pkg = "gdtest_cli_nested"
+    if not _has_rendered_site(pkg):
+        pytest.skip("gdtest_cli_nested not rendered")
+
+    import yaml
+
+    quarto_yml = _RENDERED_DIR / pkg / "great-docs" / "_quarto.yml"
+    with open(quarto_yml) as f:
+        config = yaml.safe_load(f)
+
+    sidebar = config.get("website", {}).get("sidebar", [])
+    cli_section = next(
+        (s for s in sidebar if isinstance(s, dict) and s.get("id") == "cli-reference"),
+        None,
+    )
+    assert cli_section is not None, "No cli-reference sidebar section in _quarto.yml"
+
+    contents = cli_section.get("contents", [])
+    assert len(contents) >= 3, f"Expected at least 3 items (index + 2 groups), got {len(contents)}"
+
+    # First item should be the main CLI index page
+    assert contents[0] == "reference/cli/index.qmd", (
+        f"First sidebar item should be the CLI index, got: {contents[0]}"
+    )
+
+    # Remaining items for groups should be section dicts
+    section_items = [c for c in contents[1:] if isinstance(c, dict)]
+    assert len(section_items) >= 2, (
+        f"Expected at least 2 group sections, got {len(section_items)}: {contents[1:]}"
+    )
+
+    section_names = {s["section"] for s in section_items}
+    assert "task" in section_names, f"Missing 'task' section, got: {section_names}"
+    assert "config" in section_names, f"Missing 'config' section, got: {section_names}"
+
+    # Each group section must have the overview page + nested subcommand pages
+    for section in section_items:
+        group_name = section["section"]
+        group_contents = section.get("contents", [])
+        assert len(group_contents) >= 2, (
+            f"Section {group_name!r} should have overview page + subcommands, "
+            f"got {len(group_contents)} items: {group_contents}"
+        )
+        # First entry should be the group overview (reference/cli/<group>.qmd)
+        overview = group_contents[0]
+        assert isinstance(overview, str), (
+            f"First item in section {group_name!r} should be a path string, got: {overview}"
+        )
+        assert overview == f"reference/cli/{group_name}.qmd", (
+            f"Expected overview page 'reference/cli/{group_name}.qmd', got: {overview}"
+        )
+        # Remaining entries should be nested subcommand paths
+        for sub_path in group_contents[1:]:
+            assert isinstance(sub_path, str), (
+                f"Subcommand in {group_name!r} should be a path string, got: {sub_path}"
+            )
+            assert sub_path.startswith(f"reference/cli/{group_name}/"), (
+                f"Subcommand path {sub_path!r} should be nested under "
+                f"'reference/cli/{group_name}/', not at the flat level"
+            )
+
+
+def test_R4_cli_sidebar_no_raw_qmd_paths_in_nested():
+    """Nested CLI sidebar must not have bare reference/cli/<leaf>.qmd paths for subcommands."""
+    pkg = "gdtest_cli_nested"
+    if not _has_rendered_site(pkg):
+        pytest.skip("gdtest_cli_nested not rendered")
+
+    import yaml
+
+    quarto_yml = _RENDERED_DIR / pkg / "great-docs" / "_quarto.yml"
+    with open(quarto_yml) as f:
+        config = yaml.safe_load(f)
+
+    sidebar = config.get("website", {}).get("sidebar", [])
+    cli_section = next(
+        (s for s in sidebar if isinstance(s, dict) and s.get("id") == "cli-reference"),
+        None,
+    )
+    assert cli_section is not None
+
+    # Collect top-level string items (not inside section dicts)
+    top_level_paths = [c for c in cli_section.get("contents", []) if isinstance(c, str)]
+
+    # The only top-level path should be the index page.
+    # Subcommand paths like reference/cli/run.qmd must NOT appear here.
+    known_subcommands = {"run", "list", "get", "set"}
+    for path in top_level_paths:
+        stem = path.split("/")[-1].replace(".qmd", "")
+        assert stem not in known_subcommands, (
+            f"Subcommand path {path!r} is at the top level of the CLI sidebar — "
+            f"it should be nested inside its group section"
+        )
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # R4: Math Rendering
 # ═══════════════════════════════════════════════════════════════════════════════

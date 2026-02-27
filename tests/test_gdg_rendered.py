@@ -1622,6 +1622,60 @@ def test_R4_no_broken_heading_attributes(pkg_name: str):
 
 
 @requires_bs4
+def test_R4_multi_module_no_duplicate_entries():
+    """Re-exported symbols should not appear twice (short + qualified name).
+
+    When a package re-exports submodule symbols via __init__.py (e.g.,
+    ``from .models import Model``), the reference should list only the
+    short name (``Model``), NOT both ``Model`` and ``models.Model``.
+    """
+    pkg = "gdtest_multi_module"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    ref_pages = {f.stem for f in ref.glob("*.html") if f.name != "index.html"}
+
+    # These are the 6 re-exported symbols that should appear as short names
+    expected_short = {"Controller", "Model", "View", "dispatch", "create_model", "render_view"}
+
+    # These qualified duplicates must NOT exist as separate pages
+    forbidden_qualified = {
+        "controllers.Controller",
+        "models.Model",
+        "views.View",
+        "controllers.dispatch",
+        "models.create_model",
+        "views.render_view",
+    }
+
+    # All short names should have pages
+    missing = expected_short - ref_pages
+    assert not missing, f"Missing reference pages for re-exported symbols: {missing}"
+
+    # No qualified duplicates should have pages
+    duplicates = forbidden_qualified & ref_pages
+    assert not duplicates, (
+        f"Duplicate qualified reference pages found (should only have short names): {duplicates}"
+    )
+
+    # Also verify the reference index page doesn't list duplicates
+    ref_index = ref / "index.html"
+    if ref_index.exists():
+        soup = _load_html(ref_index)
+        main = soup.select_one("main.content")
+        if main is not None:
+            text = main.get_text()
+            for qual in forbidden_qualified:
+                # The qualified name should not appear as a standalone entry
+                # (it may appear in descriptive text, so check for it as a heading)
+                headings = [h.get_text().strip() for h in main.select("h1, h2, h3, h4, h5")]
+                assert qual not in headings, (
+                    f"Qualified name '{qual}' appears as a heading — should only list '{qual.split('.')[-1]}'"
+                )
+
+
+@requires_bs4
 @pytest.mark.parametrize("pkg_name", ["gdtest_seealso", "gdtest_nodoc"])
 def test_R4_directives_stripped_from_html(pkg_name: str):
     """Great Docs directives (%seealso, %nodoc) should not appear in HTML."""

@@ -44,6 +44,7 @@ dependencies = [
 dev = [
     "pytest>=6.0",
     "pytest-cov>=3.0",
+    "pytest-xdist>=3.5",
     "ruff>=0.9.9",
     "mypy>=1.0.0",
     "pyright>=1.1.350",

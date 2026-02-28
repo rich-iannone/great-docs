@@ -1312,27 +1312,27 @@ def extract_seealso_from_doc_section(html_content):
     # Match <section id="see-also" ...> ... </section> blocks
     section_pat = re.compile(
         r'<section[^>]*\bid=["\']see-also["\'][^>]*>'
-        r'(.*?)'
-        r'</section>',
+        r"(.*?)"
+        r"</section>",
         re.DOTALL,
     )
     items = []
     for m in section_pat.finditer(html_content):
         body = m.group(1)
         # Remove the heading tags
-        body = re.sub(r'<h[1-6][^>]*>.*?</h[1-6]>', '', body, flags=re.DOTALL)
+        body = re.sub(r"<h[1-6][^>]*>.*?</h[1-6]>", "", body, flags=re.DOTALL)
         # Strip HTML tags to get plain text
-        plain = re.sub(r'<[^>]+>', '', body).strip()
+        plain = re.sub(r"<[^>]+>", "", body).strip()
         if not plain:
             continue
         # Parse entries: each may be "name : description" or "name: description"
         # or multiple comma-separated or newline-separated entries
-        for line in plain.split('\n'):
+        for line in plain.split("\n"):
             line = line.strip()
             if not line:
                 continue
             # Handle comma-separated items on a single line
-            parts = line.split(',')
+            parts = line.split(",")
             for part in parts:
                 part = part.strip()
                 if not part:
@@ -1341,8 +1341,8 @@ def extract_seealso_from_doc_section(html_content):
                 # e.g., "transform : Transform data before analysis."
                 # e.g., "``validate``: Validate a schema before processing."
                 # Strip backticks first
-                part = part.replace('``', '').replace('`', '')
-                name_match = re.match(r'^([\w.]+)(?:\s*:\s*.*)?$', part)
+                part = part.replace("``", "").replace("`", "")
+                name_match = re.match(r"^([\w.]+)(?:\s*:\s*.*)?$", part)
                 if name_match:
                     items.append(name_match.group(1))
     return items
@@ -1357,16 +1357,16 @@ def remove_seealso_doc_section(html_content):
     # Remove the section block
     html_content = re.sub(
         r'<section[^>]*\bid=["\']see-also["\'][^>]*>'
-        r'.*?'
-        r'</section>',
-        '',
+        r".*?"
+        r"</section>",
+        "",
         html_content,
         flags=re.DOTALL,
     )
     # Remove the TOC entry for See Also
     html_content = re.sub(
         r'\s*<li><a[^>]*href=["\']#see-also["\'][^>]*>See Also</a></li>',
-        '',
+        "",
         html_content,
     )
     return html_content

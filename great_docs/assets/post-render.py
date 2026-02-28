@@ -1536,8 +1536,11 @@ for html_file in html_files:
                     h1_content and not h1_content[0].isupper()
                 )
 
-            if should_add_parens and not h1_content.endswith("()"):
-                h1_content += "()"
+            if should_add_parens:
+                # Strip HTML tags to check plain text for existing ()
+                _plain = re.sub(r"<[^>]+>", "", h1_content).strip()
+                if not _plain.endswith("()"):
+                    h1_content += "()"
 
             # Replace the h1 tag with the modified content
             content[i] = line[:start] + h1_content + line[end:]
@@ -1792,7 +1795,9 @@ for html_file in html_files:
                 display_text = h3_content
                 # Add () for callable members
                 if member_type and member_type in _CALLABLE_MEMBER_TYPES:
-                    display_text += "()"
+                    _plain_member = re.sub(r"<[^>]+>", "", display_text).strip()
+                    if not _plain_member.endswith("()"):
+                        display_text += "()"
 
                 badge_html = ""
                 if member_type and member_type in _MEMBER_BADGE_TYPES:

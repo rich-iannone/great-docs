@@ -1820,9 +1820,10 @@ for html_file in html_files:
                 content[i] = line.replace(h3_content + "</h3>", new_heading + "</h3>")
                 # Add code font styling to the h3 tag
                 content[i] = re.sub(
-                    r'<h3 class="anchored"',
-                    f'<h3 class="anchored" style="{_MONO_FONT}"',
+                    r"<h3([^>]*?)(?<!style=)>",
+                    f'<h3\\1 style="{_MONO_FONT}">',
                     content[i],
+                    count=1,
                 )
     else:
         # Even without object_types, style member h3 headings in code font
@@ -1830,9 +1831,10 @@ for html_file in html_files:
             anchor_match = re.search(r'<h3[^>]*data-anchor-id="[^"]+"[^>]*>(.*?)</h3>', line)
             if anchor_match:
                 content[i] = re.sub(
-                    r'<h3 class="anchored"',
-                    f'<h3 class="anchored" style="{_MONO_FONT}"',
+                    r"<h3([^>]*?)(?<!style=)>",
+                    f'<h3\\1 style="{_MONO_FONT}">',
                     content[i],
+                    count=1,
                 )
 
     # Inject property badges into the Attributes table

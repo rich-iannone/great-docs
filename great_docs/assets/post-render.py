@@ -1295,6 +1295,83 @@ def extract_seealso_from_html(html_content):
     return []
 
 
+def extract_seealso_from_doc_section(html_content):
+    """
+    Extract See Also items from rendered doc-section ``<section>`` blocks.
+
+    NumPy-style and Google-style docstrings produce sections like::
+
+        <section id="see-also" class="level1 doc-section doc-section-see-also">
+        <h1 ...>See Also</h1>
+        <p>transform : Transform data before analysis.</p>
+        </section>
+
+    This function parses those sections and returns a list of referenced
+    item names (e.g., ``["transform"]``).
+    """
+    # Match <section id="see-also" ...> ... </section> blocks
+    section_pat = re.compile(
+        r'<section[^>]*\bid=["\']see-also["\'][^>]*>'
+        r'(.*?)'
+        r'</section>',
+        re.DOTALL,
+    )
+    items = []
+    for m in section_pat.finditer(html_content):
+        body = m.group(1)
+        # Remove the heading tags
+        body = re.sub(r'<h[1-6][^>]*>.*?</h[1-6]>', '', body, flags=re.DOTALL)
+        # Strip HTML tags to get plain text
+        plain = re.sub(r'<[^>]+>', '', body).strip()
+        if not plain:
+            continue
+        # Parse entries: each may be "name : description" or "name: description"
+        # or multiple comma-separated or newline-separated entries
+        for line in plain.split('\n'):
+            line = line.strip()
+            if not line:
+                continue
+            # Handle comma-separated items on a single line
+            parts = line.split(',')
+            for part in parts:
+                part = part.strip()
+                if not part:
+                    continue
+                # Extract the name before any " : " or ":" separator
+                # e.g., "transform : Transform data before analysis."
+                # e.g., "``validate``: Validate a schema before processing."
+                # Strip backticks first
+                part = part.replace('``', '').replace('`', '')
+                name_match = re.match(r'^([\w.]+)(?:\s*:\s*.*)?$', part)
+                if name_match:
+                    items.append(name_match.group(1))
+    return items
+
+
+def remove_seealso_doc_section(html_content):
+    """
+    Remove ``<section id="see-also" ...>`` blocks from the HTML.
+
+    Also removes the corresponding TOC entry.
+    """
+    # Remove the section block
+    html_content = re.sub(
+        r'<section[^>]*\bid=["\']see-also["\'][^>]*>'
+        r'.*?'
+        r'</section>',
+        '',
+        html_content,
+        flags=re.DOTALL,
+    )
+    # Remove the TOC entry for See Also
+    html_content = re.sub(
+        r'\s*<li><a[^>]*href=["\']#see-also["\'][^>]*>See Also</a></li>',
+        '',
+        html_content,
+    )
+    return html_content
+
+
 def generate_seealso_html(seealso_items):
     """
     Generate HTML for a "See Also" section with links to other reference pages.
@@ -1894,8 +1971,19 @@ for html_file in html_files:
                     )
                 break
 
-    # Inject "See Also" section if %seealso was found
+    # Merge See Also items from %seealso directives and doc-section blocks
     content_str = "".join(content)
+    doc_section_seealso = extract_seealso_from_doc_section(content_str)
+    if doc_section_seealso:
+        content_str = remove_seealso_doc_section(content_str)
+        # Merge with %seealso items (deduplicate, preserving order)
+        seen = set(seealso_items)
+        for item in doc_section_seealso:
+            if item not in seen:
+                seealso_items.append(item)
+                seen.add(item)
+
+    # Inject unified "See Also" section at the bottom
     if seealso_items:
         seealso_html = generate_seealso_html(seealso_items)
         # Insert before </main>

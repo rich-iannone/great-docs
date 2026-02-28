@@ -32,8 +32,12 @@ def escape(val: str):
     return f"`{val}`"
 
 
-def sanitize(val: str, allow_markdown=False, escape_quotes=False):
-    res = val.replace("\n", " ").replace("|", "\\|")
+def sanitize(val: str, allow_markdown=False, escape_quotes=False, preserve_newlines=False):
+    if preserve_newlines:
+        res = val
+    else:
+        res = val.replace("\n", " ")
+    res = res.replace("|", "\\|")
 
     if escape_quotes:
         res = res.replace("'", r"\'").replace('"', r"\"")
@@ -42,6 +46,31 @@ def sanitize(val: str, allow_markdown=False, escape_quotes=False):
         return res.replace("[", "\\[").replace("]", "\\]")
 
     return res
+
+
+_LIST_ITEM_RE = re.compile(r"^[ \t]*(?:[-*+]|\d+[.)])\s")
+
+
+def _ensure_blank_before_lists(text: str) -> str:
+    """Ensure a blank line before the first markdown list item in each run.
+
+    Pandoc Markdown requires a blank line before a list for it to be
+    recognised as a list rather than continuation of a paragraph.  This
+    inserts a blank line before the first list item when the preceding
+    line is non-blank, non-list text.
+    """
+    lines = text.split("\n")
+    result: list[str] = []
+    prev_was_list_or_blank = False
+    for i, line in enumerate(lines):
+        is_list = bool(_LIST_ITEM_RE.match(line))
+        is_blank = line.strip() == ""
+        # Insert blank line before first list item after prose text
+        if is_list and not prev_was_list_or_blank and i > 0:
+            result.append("")
+        result.append(line)
+        prev_was_list_or_blank = is_list or is_blank
+    return "\n".join(result)
 
 
 def convert_rst_link_to_md(rst):
@@ -1021,7 +1050,8 @@ class ParamRow:
     def to_definition_list(self):
         name = self.name
         anno = self.annotation
-        desc = sanitize(self.description, allow_markdown=True)
+        desc = sanitize(self.description, allow_markdown=True, preserve_newlines=True)
+        desc = _ensure_blank_before_lists(desc)
         default = sanitize(str(self.default), escape_quotes=True)
 
         part_name = Span(Strong(name), Attr(classes=["parameter-name"])) if name is not None else ""

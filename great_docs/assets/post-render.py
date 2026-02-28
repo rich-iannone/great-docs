@@ -1536,7 +1536,7 @@ for html_file in html_files:
                     h1_content and not h1_content[0].isupper()
                 )
 
-            if should_add_parens:
+            if should_add_parens and not h1_content.endswith("()"):
                 h1_content += "()"
 
             # Replace the h1 tag with the modified content

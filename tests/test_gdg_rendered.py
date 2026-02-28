@@ -4,7 +4,7 @@ Great Docs Gauntlet (GDG) — rendered output regression tests.
 
 These tests validate the **final HTML output** of pre-built GDG sites stored in
 `test-packages/_rendered/`.  They are designed as a safety net for the
-planned quartodoc fork: every assertion here must continue to pass after
+planned renderer replacement: every assertion here must continue to pass after
 the internal renderer is replaced.
 
 Test levels (building on test_synthetic.py's L0–L2):

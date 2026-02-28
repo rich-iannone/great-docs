@@ -3681,10 +3681,6 @@ class GreatDocs:
         """
         Detect whether dynamic introspection mode works for a package.
 
-        Quartodoc's `dynamic: true` mode uses runtime introspection which is more
-        accurate but can fail for packages with certain module structures (e.g.,
-        PyO3/Rust bindings, complex re-exports) that cause cyclic alias errors.
-
         This method tests if dynamic mode works by attempting to load objects
         with the renderer's get_object function in dynamic mode AND accessing their
         members (which is what triggers cyclic alias errors in some packages).
@@ -9002,7 +8998,6 @@ toc: false
             "pyproject",
             # Documentation tools
             "quarto",
-            "quartodoc",
             "sphinx",
             "mkdocs",
             "readthedocs",

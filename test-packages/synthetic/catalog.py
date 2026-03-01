@@ -848,8 +848,9 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
     "gdtest_decorators": (
         "Module of decorator functions: retry, cache, validate_args, log_calls. "
         "Each returns a wrapper function. On the Reference page you should see "
-        "these in the 'Functions' section with their signatures showing the "
-        "decorator parameters like max_retries, ttl, etc."
+        "these in the Functions section with their signatures showing the "
+        "decorator parameters like max_retries, ttl, etc. They render as "
+        "regular functions, which is correct."
     ),
     "gdtest_exceptions": (
         "Custom exception hierarchy: AppError (base), ValidationError, "

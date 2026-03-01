@@ -2246,9 +2246,9 @@ class GreatDocs:
             if item.is_file() and item.suffix == ".qmd":
                 qmd_files.append(item)
             elif item.is_dir():
-                # Check subdirectories for .qmd files (but not nested deeper)
-                for subitem in item.iterdir():
-                    if subitem.is_file() and subitem.suffix == ".qmd":
+                # Recursively check subdirectories for .qmd files at any depth
+                for subitem in item.rglob("*.qmd"):
+                    if subitem.is_file():
                         qmd_files.append(subitem)
 
         if not qmd_files:

@@ -1534,58 +1534,25 @@ class MdRenderer(Renderer):
             header = "| Name | Description |\n| --- | --- |"
 
             # For dataclasses, augment the member-based attribute list with any
-            # fields that griffe missed during static analysis.
+            # fields that griffe missed during static analysis.  Dataclass
+            # fields already appear in the Parameters section, so only
+            # non-field attributes (e.g. properties) go into the Attributes
+            # table.
             if (
                 isinstance(el, layout.DocClass)
                 and _is_griffe_dataclass(el.obj)
                 and not _has_attr_section(el.obj.docstring)
             ):
                 dc_field_names = _get_dataclass_field_names(el.obj)
-                if dc_field_names is not None:
-                    known_attr_names = {x.obj.name for x in raw_attrs}
-                    missing = [n for n in dc_field_names if n not in known_attr_names]
+                dc_field_set = set(dc_field_names) if dc_field_names else set()
 
-                    if missing:
-                        param_descs = _get_param_descriptions(el.obj)
-                        # Build summary rows for fields griffe missed
-                        extra_rows = []
-                        for fname in missing:
-                            desc = sanitize(param_descs.get(fname, ""), allow_markdown=True)
-                            link = f"[{fname}](#{el.obj.path}.{fname})"
-                            extra_rows.append(self._summary_row(link, desc))
+                # Separate field attrs (already in Parameters) from non-field
+                # attrs (properties, class vars, etc.) that belong in
+                # Attributes.
+                non_field_attrs = [x for x in raw_attrs if x.obj.name not in dc_field_set]
 
-                        # Render: existing attrs + extra rows
-                        existing_rows = list(map(self.summarize, raw_attrs))
-                        all_rows = existing_rows + extra_rows
-
-                        # Reorder to match the dataclass field order
-                        row_map: dict[str, str] = {}
-                        for row in all_rows:
-                            # extract name from "| [name](...) | desc |"
-                            m = re.search(r"\[(\w+)\]", row)
-                            if m:
-                                row_map[m.group(1)] = row
-                            else:
-                                row_map[row] = row
-
-                        ordered = [row_map[n] for n in dc_field_names if n in row_map]
-                        # Add any rows we couldn't match to field order
-                        ordered_names = set(dc_field_names)
-                        for name, row in row_map.items():
-                            if name not in ordered_names:
-                                ordered.append(row)
-
-                        _attrs_table = "\n".join(ordered)
-                        attrs = f"{sub_header} Attributes\n\n{header}\n{_attrs_table}"
-                        attr_docs.append(attrs)
-                    else:
-                        # All fields present — render normally
-                        _attrs_table = "\n".join(map(self.summarize, raw_attrs))
-                        attrs = f"{sub_header} Attributes\n\n{header}\n{_attrs_table}"
-                        attr_docs.append(attrs)
-                elif raw_attrs:
-                    # Dynamic import failed — fall back to griffe's attributes
-                    _attrs_table = "\n".join(map(self.summarize, raw_attrs))
+                if non_field_attrs:
+                    _attrs_table = "\n".join(map(self.summarize, non_field_attrs))
                     attrs = f"{sub_header} Attributes\n\n{header}\n{_attrs_table}"
                     attr_docs.append(attrs)
             elif raw_attrs and not _has_attr_section(el.obj.docstring):

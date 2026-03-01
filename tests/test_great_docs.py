@@ -2300,26 +2300,26 @@ def test_user_guide_warns_on_empty_directory(capsys):
         assert "is empty" in captured.out
 
 
-def test_user_guide_warns_on_no_qmd_files(capsys):
-    """Test warning when user guide directory has no .qmd files."""
+def test_user_guide_warns_on_no_guide_files(capsys):
+    """Test warning when user guide directory has no .qmd or .md files."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         project_path = Path(tmp_dir)
 
         pyproject = project_path / "pyproject.toml"
         pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
 
-        # Create user_guide directory with only non-.qmd files
+        # Create user_guide directory with only non-guide files
         ug_dir = project_path / "user_guide"
         ug_dir.mkdir()
         (ug_dir / "notes.txt").write_text("just a text file")
-        (ug_dir / "readme.md").write_text("# readme")
+        (ug_dir / "data.csv").write_text("a,b,c")
 
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._discover_user_guide()
 
         assert result is None
         captured = capsys.readouterr()
-        assert "contains no .qmd files" in captured.out
+        assert "contains no .qmd or .md files" in captured.out
 
 
 def test_user_guide_config_warns_when_both_exist(capsys):

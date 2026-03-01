@@ -36,14 +36,14 @@ def cli():
 @click.option(
     "--force",
     is_flag=True,
-    help="Overwrite existing great-docs.yml without prompting",
+    help="Delete existing great-docs.yml and generate a fresh default config",
 )
 def init(project_path, force):
-    """Initialize great-docs in your project.
+    """Initialize great-docs in your project (one-time bootstrap).
 
-    This command creates a great-docs.yml configuration file with discovered
-    package exports and sensible defaults. The build directory and assets will
-    be created during the build process.
+    Creates a fresh great-docs.yml configuration file with discovered
+    package exports and sensible defaults. Refuses to run if
+    great-docs.yml already exists (use --force to reset).
 
     \b
     • Creates great-docs.yml with discovered API exports
@@ -51,14 +51,14 @@ def init(project_path, force):
     • Updates .gitignore to exclude the build directory
     • Detects docstring style (numpy, google, sphinx)
 
-    Run this once to get started, then customize great-docs.yml to organize
-    your API reference. The 'great-docs/' build directory will be created
-    when you run 'great-docs build'.
+    After init, customize great-docs.yml then use 'great-docs build'
+    for all subsequent builds. You should never need to run init again
+    unless you want to completely reset your configuration.
 
     \b
     Examples:
       great-docs init                       # Initialize in current directory
-      great-docs init --force               # Overwrite existing great-docs.yml
+      great-docs init --force               # Reset config to defaults
       great-docs init --project-path ../pkg # Initialize in another project
     """
     try:
@@ -88,7 +88,10 @@ def init(project_path, force):
 def build(project_path, watch, no_refresh):
     """Build your documentation site.
 
-    This command creates the 'great-docs/' build directory, copies all assets,
+    Requires great-docs.yml to exist (run 'great-docs init' first).
+    This is the only command you need day-to-day and in CI.
+
+    Creates the 'great-docs/' build directory, copies all assets,
     and builds the documentation site. The build directory is ephemeral and
     should not be committed to version control.
 

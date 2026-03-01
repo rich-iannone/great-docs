@@ -1792,6 +1792,79 @@ guide-section: Getting Started
         assert not (docs_user_guide / "01-installation.qmd").exists()
 
 
+def test_user_guide_discovers_mixed_extensions_and_nested_files():
+    """Test that user guide discovery finds .qmd and .md files at any nesting depth."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create minimal pyproject.toml
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        # Create user_guide directory with mixed extensions and nesting
+        user_guide = project_path / "user_guide"
+        user_guide.mkdir()
+
+        # Top-level .qmd file
+        (user_guide / "intro.qmd").write_text("---\ntitle: Intro QMD\n---\n\n# Intro\n")
+
+        # Top-level .md file
+        (user_guide / "setup.md").write_text("---\ntitle: Setup MD\n---\n\n# Setup\n")
+
+        # One-level nested .qmd file
+        section1 = user_guide / "section1"
+        section1.mkdir()
+        (section1 / "overview.qmd").write_text(
+            "---\ntitle: Section 1 Overview\n---\n\n# Overview\n"
+        )
+
+        # One-level nested .md file
+        (section1 / "details.md").write_text("---\ntitle: Section 1 Details\n---\n\n# Details\n")
+
+        # Deeply nested .qmd file (2 levels)
+        topic = section1 / "topic1"
+        topic.mkdir()
+        (topic / "deep.qmd").write_text("---\ntitle: Deep Topic\n---\n\n# Deep Topic\n")
+
+        # Deeply nested .md file (2 levels)
+        (topic / "deep-notes.md").write_text("---\ntitle: Deep Notes\n---\n\n# Deep Notes\n")
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        # Discover user guide
+        user_guide_info = docs._discover_user_guide()
+        assert user_guide_info is not None
+
+        discovered_names = {f["path"].name for f in user_guide_info["files"]}
+
+        # All 6 files should be discovered regardless of extension or depth
+        assert "intro.qmd" in discovered_names
+        assert "setup.md" in discovered_names
+        assert "overview.qmd" in discovered_names
+        assert "details.md" in discovered_names
+        assert "deep.qmd" in discovered_names
+        assert "deep-notes.md" in discovered_names
+        assert len(user_guide_info["files"]) == 6
+
+        # Copy files and verify they end up in the right places
+        copied_files = docs._copy_user_guide_to_docs(user_guide_info)
+        assert len(copied_files) == 6
+
+        docs_ug = docs.project_path / "user-guide"
+
+        # Top-level files
+        assert (docs_ug / "intro.qmd").exists()
+        assert (docs_ug / "setup.md").exists()
+
+        # One-level nested files
+        assert (docs_ug / "section1" / "overview.qmd").exists()
+        assert (docs_ug / "section1" / "details.md").exists()
+
+        # Deeply nested files
+        assert (docs_ug / "section1" / "topic1" / "deep.qmd").exists()
+        assert (docs_ug / "section1" / "topic1" / "deep-notes.md").exists()
+
+
 def test_user_guide_sidebar_uses_clean_urls():
     """Test that the generated sidebar uses clean URLs without numeric prefixes."""
     with tempfile.TemporaryDirectory() as tmp_dir:

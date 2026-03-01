@@ -7,13 +7,17 @@ guide-section: "Getting Started"
 
 This guide walks you through creating your first documentation site with Great Docs in just a few minutes.
 
-## Initialize Your Documentation
+## Initialize Your Documentation (One-Time)
 
 Navigate to your Python project's root directory and run:
 
 ```{.bash filename="Terminal"}
 great-docs init
 ```
+
+You only need to run this **once**. It creates `great-docs.yml` with
+sensible defaults. After that, `great-docs build` is the only command
+you need.
 
 Great Docs will automatically:
 
@@ -50,15 +54,22 @@ Add 'great-docs/' to .gitignore? [Y/n]:
 The `great-docs.yml` file contains your API structure and is **committed to git**. The `great-docs/` build directory is **ephemeral** and should be gitignored.
 :::
 
+## Customize Your Configuration
+
+Open `great-docs.yml` and tailor it to your project—organize API
+sections, add authors or funding info, set a `display_name`, add a
+`user_guide` directory, etc.
+See [Configuration](configuration.qmd) for all available options.
+
 ## Build Your Documentation
 
-Once initialized, build your documentation with:
+Build (and rebuild) your docs with:
 
 ```{.bash filename="Terminal"}
 great-docs build
 ```
 
-This single command:
+This is the only command you need day-to-day and in CI. It:
 
 1. Creates the `great-docs/` directory with all assets (CSS, JS, etc.)
 2. Copies your configuration from `great-docs.yml`
@@ -140,9 +151,18 @@ your-project/
 # Initialize a different project
 great-docs init --project-path /path/to/project
 
-# Overwrite existing great-docs.yml without prompting
+# Reset config to fresh defaults (deletes existing great-docs.yml)
 great-docs init --force
 ```
+
+::: {.callout-warning}
+## --force Starts From Scratch
+
+`great-docs init --force` **deletes** your existing `great-docs.yml`
+and generates a brand-new default config. Any customizations you made
+(authors, sections, display_name, etc.) will be lost. Only use this if
+you genuinely want to reset.
+:::
 
 ### Build Options
 

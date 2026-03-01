@@ -23,9 +23,9 @@ SPEC = {
     "files": {
         "gdtest_ug_with_code/__init__.py": (
             '"""Test package for user guide with code blocks."""\n'
-            '\n'
-            'from .core import process, transform\n'
-            '\n'
+            "\n"
+            "from .core import process, transform\n"
+            "\n"
             '__all__ = ["process", "transform"]\n'
         ),
         "gdtest_ug_with_code/core.py": '''

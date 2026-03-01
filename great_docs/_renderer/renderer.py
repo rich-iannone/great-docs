@@ -1827,11 +1827,12 @@ class MdRenderer(Renderer):
 
         if isinstance(el, layout.Doc):
             path = args[0] if args else kwargs.get("path", None)
+            display_name = _escape_dunders(el.name)
 
             if path is None:
-                link = f"[{el.name}](#{el.anchor})"
+                link = f"[{display_name}](#{el.anchor})"
             else:
-                link = f"[{el.name}]({path}.qmd#{el.anchor})"
+                link = f"[{display_name}]({path}.qmd#{el.anchor})"
 
             description = self.summarize(el.obj)
             return self._summary_row(link, description)

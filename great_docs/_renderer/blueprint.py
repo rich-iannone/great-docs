@@ -327,7 +327,15 @@ class BlueprintTransformer(PydanticTransformer):
             options = {k: v for k, v in options.items() if v.is_exported}
 
         if not el.include_private:
-            options = {k: v for k, v in options.items() if not k.startswith("_")}
+            # Filter out private members (names starting with _), but keep
+            # dunder methods that have docstrings — those are intentionally
+            # documented (e.g. __enter__, __exit__, __getitem__).
+            options = {
+                k: v
+                for k, v in options.items()
+                if not k.startswith("_")
+                or (k.startswith("__") and k.endswith("__") and v.docstring is not None)
+            }
 
         if not el.include_imports and obj.is_module:
             options = {k: v for k, v in options.items() if not v.is_alias}

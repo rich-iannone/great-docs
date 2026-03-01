@@ -176,9 +176,9 @@ def test_R0_site_index_exists(pkg_name: str):
     assert index.exists(), f"Missing {index}"
 
 
-@pytest.mark.parametrize("pkg_name", _RENDERED_PACKAGES)
+@pytest.mark.parametrize("pkg_name", _PKGS_WITH_EXPORTS)
 def test_R0_reference_index_exists(pkg_name: str):
-    """Every rendered site has a reference/index.html."""
+    """Rendered sites with exports have a reference/index.html."""
     ref_index = _ref_dir(pkg_name) / "index.html"
     assert ref_index.exists(), f"Missing {ref_index}"
 

@@ -3888,7 +3888,9 @@ def test_navbar_no_home_new_build():
         navbar_items = config["website"]["navbar"]["left"]
         texts = [item.get("text") for item in navbar_items if isinstance(item, dict)]
         assert "Home" not in texts
-        assert "Reference" in texts
+        # Reference is added later by _add_api_reference_config only when
+        # documentable exports exist, so it's not present after bare
+        # _update_quarto_config.
 
 
 def test_navbar_home_removed_from_existing():

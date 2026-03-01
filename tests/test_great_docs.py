@@ -58,6 +58,33 @@ def test_uninstall_removes_files():
         assert not (project_path / "great-docs").exists()
 
 
+def test_build_requires_config():
+    """Test that build() raises FileNotFoundError when great-docs.yml is missing."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs = GreatDocs(project_path=tmp_dir)
+
+        # No great-docs.yml exists → build should fail immediately
+        with pytest.raises(FileNotFoundError, match="great-docs.yml not found"):
+            docs.build()
+
+
+def test_init_refuses_when_config_exists():
+    """Test that init refuses to run when great-docs.yml already exists (no --force)."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        # Create an initial config
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.install(force=True)
+        assert (project_path / "great-docs.yml").exists()
+
+        # A second init without --force should refuse (not overwrite)
+        docs2 = GreatDocs(project_path=tmp_dir)
+        docs2.install(force=False)
+        # The original file should still be there, unchanged
+        assert (project_path / "great-docs.yml").exists()
+
+
 def test_parse_package_exports():
     """Test parsing __all__ from __init__.py."""
     # Test on great-docs's own __init__.py

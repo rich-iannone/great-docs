@@ -5379,50 +5379,6 @@ class GreatDocs:
 
         return "\n".join(lines)
 
-    def _format_rich_authors_yaml(self, authors: list[dict]) -> str:
-        """
-        Format rich author metadata (from existing great-docs.yml) as YAML.
-
-        Unlike ``_format_authors_yaml`` which adds commented placeholders,
-        this method emits all fields that are actually present, preserving
-        the original rich metadata.
-
-        Parameters
-        ----------
-        authors
-            List of author dicts with fields like name, email, role, github, etc.
-
-        Returns
-        -------
-        str
-            YAML-formatted authors section, or empty string if no authors.
-        """
-        if not authors:
-            return ""
-
-        _AUTHOR_FIELDS = ("name", "email", "role", "affiliation", "github", "orcid", "homepage")
-
-        lines = [
-            "# Author Information",
-            "# ------------------",
-            "# Author metadata for display in the landing page sidebar",
-            "authors:",
-        ]
-
-        for author in authors:
-            first = True
-            for field in _AUTHOR_FIELDS:
-                val = author.get(field)
-                if val:
-                    prefix = "  - " if first else "    "
-                    lines.append(f"{prefix}{field}: {val}")
-                    first = False
-            if first:
-                # No fields emitted — skip this author
-                continue
-
-        return "\n".join(lines)
-
     @staticmethod
     def _format_preserved_extras_yaml(
         display_name: str | None = None,
@@ -5510,137 +5466,6 @@ class GreatDocs:
         return dn_yaml, site_yaml, funding_yaml
 
     @staticmethod
-    def _format_existing_reference_yaml(reference: list[dict]) -> list[str]:
-        """
-        Format preserved explicit reference sections as YAML lines.
-
-        Converts a list of reference section dicts (from an existing
-        great-docs.yml) back into indented YAML lines suitable for appending
-        after the ``reference:`` key.
-
-        Parameters
-        ----------
-        reference
-            List of section dicts, each with ``title``, optional ``desc``,
-            and ``contents`` (list of strings or dicts with ``name``/``members``).
-
-        Returns
-        -------
-        list[str]
-            YAML lines (without the leading ``reference:`` key).
-        """
-        lines: list[str] = []
-        for i, section in enumerate(reference):
-            if not isinstance(section, dict):
-                continue
-            if i > 0:
-                lines.append("")
-            title = section.get("title", "Untitled")
-            desc = section.get("desc", "")
-            contents = section.get("contents", [])
-
-            lines.append(f"  - title: {title}")
-            if desc:
-                lines.append(f"    desc: {desc}")
-            lines.append("    contents:")
-            for item in contents:
-                if isinstance(item, str):
-                    lines.append(f"      - {item}")
-                elif isinstance(item, dict):
-                    name = item.get("name", "")
-                    members = item.get("members", True)
-                    if members is False:
-                        lines.append(f"      - name: {name}")
-                        lines.append("        members: false")
-                    else:
-                        lines.append(f"      - {name}")
-        return lines
-
-    @staticmethod
-    def _format_user_guide_yaml(user_guide_config: str | list | None = None) -> str:
-        """
-        Build YAML fragment for user_guide configuration.
-
-        Parameters
-        ----------
-        user_guide_config
-            - ``str``: custom directory path for user guide files
-            - ``list``: explicit section ordering
-            - ``None``: omit (auto-discover from conventional directories)
-
-        Returns
-        -------
-        str
-            Active ``user_guide:`` YAML block, or empty string when None.
-        """
-        if user_guide_config is None:
-            return ""
-
-        if isinstance(user_guide_config, str):
-            return (
-                "# User Guide Directory\n"
-                "# --------------------\n"
-                "# Custom directory for user guide source files\n"
-                f"user_guide: {user_guide_config}\n"
-            )
-
-        if isinstance(user_guide_config, list):
-            parts = [
-                "# User Guide",
-                "# ----------",
-                "# Explicit section ordering for user guide pages",
-                "user_guide:",
-            ]
-            for item in user_guide_config:
-                if isinstance(item, dict):
-                    for k, v in item.items():
-                        parts.append(f"  - {k}: {v}")
-                else:
-                    parts.append(f"  - {item}")
-            return "\n".join(parts) + "\n"
-
-        return ""
-
-    @staticmethod
-    def _format_sections_yaml(sections: list | None = None) -> str:
-        """
-        Build YAML fragment for custom sections (examples, tutorials, etc.).
-
-        Parameters
-        ----------
-        sections
-            List of section dicts, each with ``title`` and ``dir`` keys.
-
-        Returns
-        -------
-        str
-            Active ``sections:`` YAML block, or a commented-out template.
-        """
-        if sections:
-            # Sections must be a list of dicts; skip if wrong type
-            if not isinstance(sections, list):
-                return ""
-            parts = [
-                "# Custom Sections",
-                "# ----------------",
-                "# Additional page groups (examples, tutorials, blog, etc.)",
-                "sections:",
-            ]
-            for sec in sections:
-                if not isinstance(sec, dict):
-                    continue
-                title = sec.get("title", "Untitled")
-                dir_name = sec.get("dir", "")
-                sec_type = sec.get("type", "")
-                parts.append(f'  - title: "{title}"')
-                if dir_name:
-                    parts.append(f"    dir: {dir_name}")
-                if sec_type:
-                    parts.append(f"    type: {sec_type}")
-            return "\n".join(parts) + "\n"
-        return ""
-
-    @staticmethod
     def _format_cli_yaml(cli_config: dict | None = None) -> str:
         """
         Build YAML fragment for CLI documentation configuration.
@@ -5704,74 +5529,18 @@ class GreatDocs:
 
         # Check if config already exists
         if config_path.exists() and not force:
-            response = input(f"{config_path} already exists. Overwrite? [y/N]: ")
-            if response.lower() != "y":
-                print("Skipping great-docs.yml")
-                return False
-
-        # Preserve user-supplied config values from existing great-docs.yml
-        # before overwriting.  These are non-default values that spec authors
-        # or users have explicitly set and should survive an init --force.
-        existing_authors: list = []
-        existing_funding: dict | None = None
-        existing_display_name: str | None = None
-        existing_site: dict | None = None
-        existing_sections: list | None = None
-        existing_cli: dict | None = None
-        existing_reference: list | None = None
-        existing_user_guide: str | list | None = None
-        if config_path.exists():
-            try:
-                existing_config = Config(config_path.parent)
-                existing_authors = existing_config.authors or []
-                existing_funding = getattr(existing_config, "funding", None)
-                existing_display_name = existing_config.display_name
-                # Only preserve site if any value differs from defaults
-                site_cfg = existing_config.site
-                _defaults = {
-                    "theme": "flatly",
-                    "toc": True,
-                    "toc-depth": 2,
-                    "toc-title": "On this page",
-                }
-                if site_cfg and site_cfg != _defaults:
-                    existing_site = site_cfg
-                # Preserve custom sections (examples, tutorials, etc.)
-                _sections = existing_config.sections
-                if _sections:
-                    existing_sections = _sections
-                # Preserve CLI documentation configuration
-                if existing_config.cli_enabled:
-                    existing_cli = {"enabled": True}
-                    if existing_config.cli_module:
-                        existing_cli["module"] = existing_config.cli_module
-                    if existing_config.cli_name:
-                        existing_cli["name"] = existing_config.cli_name
-                # Preserve explicit reference sections (user-defined API structure)
-                _reference = existing_config.reference
-                if _reference:
-                    existing_reference = _reference
-                # Preserve user_guide config (custom dir or explicit ordering)
-                _user_guide = existing_config.user_guide
-                if _user_guide is not None:
-                    existing_user_guide = _user_guide
-            except Exception:
-                pass
+            print(
+                f"great-docs.yml already exists at {config_path}\n"
+                "Use --force to overwrite it (this will reset to defaults)."
+            )
+            return False
 
         # Detect package name
         package_name = self._detect_package_name()
         if not package_name:
             print("Warning: Could not detect package name, creating minimal config")
             # Create minimal config without reference section
-            config_content = self._generate_minimal_config(
-                existing_authors=existing_authors,
-                existing_display_name=existing_display_name,
-                existing_site=existing_site,
-                existing_funding=existing_funding,
-                existing_sections=existing_sections,
-                existing_cli=existing_cli,
-                existing_user_guide=existing_user_guide,
-            )
+            config_content = self._generate_minimal_config()
             config_path.write_text(config_content, encoding="utf-8")
             print(f"Created {config_path}")
             return True
@@ -5793,13 +5562,6 @@ class GreatDocs:
             config_content = self._generate_minimal_config(
                 parser=parser_style,
                 dynamic=dynamic_mode,
-                existing_authors=existing_authors,
-                existing_display_name=existing_display_name,
-                existing_site=existing_site,
-                existing_funding=existing_funding,
-                existing_sections=existing_sections,
-                existing_cli=existing_cli,
-                existing_user_guide=existing_user_guide,
             )
             config_path.write_text(config_content, encoding="utf-8")
             print(f"Created {config_path}")
@@ -5825,14 +5587,6 @@ class GreatDocs:
             importable_name,
             parser=parser_style,
             dynamic=dynamic_mode,
-            existing_authors=existing_authors,
-            existing_display_name=existing_display_name,
-            existing_site=existing_site,
-            existing_funding=existing_funding,
-            existing_sections=existing_sections,
-            existing_cli=existing_cli,
-            existing_reference=existing_reference,
-            existing_user_guide=existing_user_guide,
         )
 
         config_path.write_text(config_content, encoding="utf-8")
@@ -5843,13 +5597,6 @@ class GreatDocs:
         self,
         parser: str = "numpy",
         dynamic: bool = True,
-        existing_authors: list | None = None,
-        existing_display_name: str | None = None,
-        existing_site: dict | None = None,
-        existing_funding: dict | None = None,
-        existing_sections: list | None = None,
-        existing_cli: dict | None = None,
-        existing_user_guide: str | list | None = None,
     ) -> str:
         """
         Generate minimal great-docs.yml without reference section.
@@ -5860,20 +5607,6 @@ class GreatDocs:
             The docstring parser style ("numpy", "google", or "sphinx").
         dynamic
             Whether to use dynamic introspection mode for API reference generation.
-        existing_authors
-            Rich author metadata from a pre-existing great-docs.yml to preserve.
-        existing_display_name
-            Preserved display_name from a pre-existing config.
-        existing_site
-            Preserved non-default site settings from a pre-existing config.
-        existing_funding
-            Preserved funding metadata from a pre-existing config.
-        existing_sections
-            Preserved custom sections from a pre-existing config.
-        existing_cli
-            Preserved CLI documentation config from a pre-existing config.
-        existing_user_guide
-            Preserved user_guide config from a pre-existing config.
 
         Returns
         -------
@@ -5882,34 +5615,18 @@ class GreatDocs:
         """
         dynamic_str = "true" if dynamic else "false"
 
-        # Use existing rich authors if available, otherwise extract from pyproject.toml
-        if existing_authors:
-            authors_yaml = self._format_rich_authors_yaml(existing_authors)
-        else:
-            authors = self._extract_authors_from_pyproject()
-            authors_yaml = self._format_authors_yaml(authors)
+        # Extract authors from pyproject.toml
+        authors = self._extract_authors_from_pyproject()
+        authors_yaml = self._format_authors_yaml(authors)
 
         # Build the config with optional authors section
         authors_section = f"\n{authors_yaml}\n" if authors_yaml else ""
 
-        # Build preserved-extras YAML fragments
-        dn_yaml, site_yaml, funding_yaml = self._format_preserved_extras_yaml(
-            display_name=existing_display_name,
-            site=existing_site,
-            funding=existing_funding,
-        )
+        # Build default YAML fragments for site, funding, etc.
+        _dn_yaml, site_yaml, funding_yaml = self._format_preserved_extras_yaml()
 
-        # display_name line (either active or omitted)
-        dn_section = f"\n{dn_yaml}" if dn_yaml else ""
-
-        # Build sections YAML
-        sections_yaml = self._format_sections_yaml(existing_sections)
-
-        # Build CLI section
-        cli_yaml = self._format_cli_yaml(existing_cli)
-
-        # Build user_guide section
-        user_guide_yaml = self._format_user_guide_yaml(existing_user_guide)
+        # Build CLI section (default commented-out template)
+        cli_yaml = self._format_cli_yaml()
 
         return f"""# Great Docs Configuration
 # See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html
@@ -5919,7 +5636,7 @@ class GreatDocs:
 # Set this if your importable module name differs from the project name.
 # Example: project 'py-yaml12' with module name 'yaml12'
 # module: yaml12
-{dn_section}
+
 # Docstring Parser
 # ----------------
 # The docstring format used in your package (numpy, google, or sphinx)
@@ -5940,7 +5657,7 @@ dynamic: {dynamic_str}
 {authors_section}
 {funding_yaml}
 {site_yaml}
-{sections_yaml}{user_guide_yaml}# Jupyter Kernel
+# Jupyter Kernel
 # --------------
 # Jupyter kernel to use for executing code cells in .qmd files.
 # This is set at the project level so it applies to all pages, including
@@ -5979,14 +5696,6 @@ jupyter: python3
         package_name: str,
         parser: str = "numpy",
         dynamic: bool = True,
-        existing_authors: list | None = None,
-        existing_display_name: str | None = None,
-        existing_site: dict | None = None,
-        existing_funding: dict | None = None,
-        existing_sections: list | None = None,
-        existing_cli: dict | None = None,
-        existing_reference: list | None = None,
-        existing_user_guide: str | list | None = None,
     ) -> str:
         """
         Generate great-docs.yml with a reference section from discovered exports.
@@ -6001,24 +5710,6 @@ jupyter: python3
             The docstring parser style ("numpy", "google", or "sphinx").
         dynamic
             Whether to use dynamic introspection mode for API reference generation.
-        existing_authors
-            Rich author metadata from a pre-existing great-docs.yml to preserve.
-        existing_display_name
-            Preserved display_name from a pre-existing config.
-        existing_site
-            Preserved non-default site settings from a pre-existing config.
-        existing_funding
-            Preserved funding metadata from a pre-existing config.
-        existing_sections
-            Preserved custom sections from a pre-existing config.
-        existing_cli
-            Preserved CLI documentation config from a pre-existing config.
-        existing_reference
-            Preserved explicit reference sections from a pre-existing config.
-            When provided, these sections are used as-is instead of auto-generating
-            from discovered exports.
-        existing_user_guide
-            Preserved user_guide config from a pre-existing config.
 
         Returns
         -------
@@ -6027,12 +5718,9 @@ jupyter: python3
         """
         dynamic_str = "true" if dynamic else "false"
 
-        # Use existing rich authors if available, otherwise extract from pyproject.toml
-        if existing_authors:
-            authors_yaml = self._format_rich_authors_yaml(existing_authors)
-        else:
-            authors = self._extract_authors_from_pyproject()
-            authors_yaml = self._format_authors_yaml(authors)
+        # Extract authors from pyproject.toml
+        authors = self._extract_authors_from_pyproject()
+        authors_yaml = self._format_authors_yaml(authors)
 
         lines = [
             "# Great Docs Configuration",
@@ -6045,18 +5733,6 @@ jupyter: python3
             "# module: yaml12",
             "",
         ]
-
-        # ── display_name (preserved or omitted) ──────────────────────
-        if existing_display_name:
-            lines.extend(
-                [
-                    "# Display Name",
-                    "# ------------",
-                    "# Custom display name for the site navbar/title",
-                    f'display_name: "{existing_display_name}"',
-                    "",
-                ]
-            )
 
         lines.extend(
             [
@@ -6086,12 +5762,8 @@ jupyter: python3
             lines.append(authors_yaml)
             lines.append("")
 
-        # Add funding section
-        dn_yaml, site_yaml, funding_yaml = self._format_preserved_extras_yaml(
-            display_name=None,  # already emitted above
-            site=existing_site,
-            funding=existing_funding,
-        )
+        # Add funding section (default commented-out template)
+        _dn_yaml, site_yaml, funding_yaml = self._format_preserved_extras_yaml()
         lines.extend(funding_yaml.rstrip("\n").splitlines())
         lines.append("")
 
@@ -6110,110 +5782,92 @@ jupyter: python3
             ]
         )
 
-        if existing_reference:
-            # Use preserved explicit reference sections as-is
-            lines.extend(self._format_existing_reference_yaml(existing_reference))
-        else:
-            # Auto-generate reference sections from discovered exports
-            class_methods = categories.get("class_methods", {})
-            class_method_names = categories.get("class_method_names", {})
+        # Auto-generate reference sections from discovered exports
+        class_methods = categories.get("class_methods", {})
+        class_method_names = categories.get("class_method_names", {})
 
-            # Use static threshold of 5 methods for large class separation
-            threshold = 5
+        # Use static threshold of 5 methods for large class separation
+        threshold = 5
 
-            # Track large classes that need separate method sections
-            large_classes: list[str] = []
+        # Track large classes that need separate method sections
+        large_classes: list[str] = []
 
-            # Track whether we've emitted any section yet (for blank-line spacing)
-            has_prev_section = False
+        # Track whether we've emitted any section yet (for blank-line spacing)
+        has_prev_section = False
 
-            # --- Class-like sections (support big-class splitting) ---
-            _class_like_sections = [
-                ("classes", "Classes", "Main classes provided by the package"),
-                ("dataclasses", "Dataclasses", "Dataclass definitions"),
-                ("abstract_classes", "Abstract Classes", "Abstract base classes"),
-                ("protocols", "Protocols", "Protocol / structural-typing interfaces"),
-            ]
+        # --- Class-like sections (support big-class splitting) ---
+        _class_like_sections = [
+            ("classes", "Classes", "Main classes provided by the package"),
+            ("dataclasses", "Dataclasses", "Dataclass definitions"),
+            ("abstract_classes", "Abstract Classes", "Abstract base classes"),
+            ("protocols", "Protocols", "Protocol / structural-typing interfaces"),
+        ]
 
-            for cat_key, title, desc in _class_like_sections:
-                items = categories.get(cat_key, [])
-                if not items:
-                    continue
-                if has_prev_section:
-                    lines.append("")
-                lines.append(f"  - title: {title}")
-                lines.append(f"    desc: {desc}")
+        for cat_key, title, desc in _class_like_sections:
+            items = categories.get(cat_key, [])
+            if not items:
+                continue
+            if has_prev_section:
+                lines.append("")
+            lines.append(f"  - title: {title}")
+            lines.append(f"    desc: {desc}")
+            lines.append("    contents:")
+            for class_name in sorted(items):
+                method_count = class_methods.get(class_name, 0)
+                if method_count > threshold:
+                    lines.append(f"      - name: {class_name}")
+                    lines.append(f"        members: false  # {method_count} methods listed below")
+                    large_classes.append(class_name)
+                elif method_count > 0:
+                    lines.append(f"      - {class_name}  # {method_count} method(s)")
+                else:
+                    lines.append(f"      - {class_name}")
+            has_prev_section = True
+
+        # Add separate method sections for large classes
+        for class_name in large_classes:
+            method_names = class_method_names.get(class_name, [])
+            if method_names:
+                lines.append("")
+                lines.append(f"  - title: {class_name} Methods")
+                lines.append(f"    desc: Methods for the {class_name} class")
                 lines.append("    contents:")
-                for class_name in sorted(items):
-                    method_count = class_methods.get(class_name, 0)
-                    if method_count > threshold:
-                        lines.append(f"      - name: {class_name}")
-                        lines.append(
-                            f"        members: false  # {method_count} methods listed below"
-                        )
-                        large_classes.append(class_name)
-                    elif method_count > 0:
-                        lines.append(f"      - {class_name}  # {method_count} method(s)")
-                    else:
-                        lines.append(f"      - {class_name}")
-                has_prev_section = True
+                for method_name in method_names:
+                    lines.append(f"      - {class_name}.{method_name}")
 
-            # Add separate method sections for large classes
-            for class_name in large_classes:
-                method_names = class_method_names.get(class_name, [])
-                if method_names:
-                    lines.append("")
-                    lines.append(f"  - title: {class_name} Methods")
-                    lines.append(f"    desc: Methods for the {class_name} class")
-                    lines.append("    contents:")
-                    for method_name in method_names:
-                        lines.append(f"      - {class_name}.{method_name}")
+        # --- Flat sections (simple lists, no big-class splitting) ---
+        _flat_sections = [
+            ("enums", "Enumerations", "Enumeration types"),
+            ("exceptions", "Exceptions", "Exception classes"),
+            ("namedtuples", "Named Tuples", "Named tuple definitions"),
+            ("typeddicts", "Typed Dicts", "TypedDict definitions"),
+            ("functions", "Functions", "Utility functions"),
+            ("async_functions", "Async Functions", "Asynchronous functions"),
+            ("constants", "Constants", "Module-level constants and data"),
+            ("type_aliases", "Type Aliases", "Type alias definitions"),
+            ("other", "Other", "Additional exports"),
+        ]
 
-            # --- Flat sections (simple lists, no big-class splitting) ---
-            _flat_sections = [
-                ("enums", "Enumerations", "Enumeration types"),
-                ("exceptions", "Exceptions", "Exception classes"),
-                ("namedtuples", "Named Tuples", "Named tuple definitions"),
-                ("typeddicts", "Typed Dicts", "TypedDict definitions"),
-                ("functions", "Functions", "Utility functions"),
-                ("async_functions", "Async Functions", "Asynchronous functions"),
-                ("constants", "Constants", "Module-level constants and data"),
-                ("type_aliases", "Type Aliases", "Type alias definitions"),
-                ("other", "Other", "Additional exports"),
-            ]
+        for cat_key, title, desc in _flat_sections:
+            items = categories.get(cat_key, [])
+            if not items:
+                continue
+            if has_prev_section:
+                lines.append("")
+            lines.append(f"  - title: {title}")
+            lines.append(f"    desc: {desc}")
+            lines.append("    contents:")
+            for name in sorted(items):
+                lines.append(f"      - {name}")
+            has_prev_section = True
 
-            for cat_key, title, desc in _flat_sections:
-                items = categories.get(cat_key, [])
-                if not items:
-                    continue
-                if has_prev_section:
-                    lines.append("")
-                lines.append(f"  - title: {title}")
-                lines.append(f"    desc: {desc}")
-                lines.append("    contents:")
-                for name in sorted(items):
-                    lines.append(f"      - {name}")
-                has_prev_section = True
-
-        # Add trailing sections for site settings
+        # Add trailing sections for site settings (default templates)
         lines.extend(
             [
                 "",
             ]
         )
         lines.extend(site_yaml.rstrip("\n").splitlines())
-
-        # Add custom sections if preserved
-        sections_yaml = self._format_sections_yaml(existing_sections)
-        if sections_yaml:
-            lines.append("")
-            lines.extend(sections_yaml.rstrip("\n").splitlines())
-
-        # Add user_guide if preserved
-        user_guide_yaml = self._format_user_guide_yaml(existing_user_guide)
-        if user_guide_yaml:
-            lines.append("")
-            lines.extend(user_guide_yaml.rstrip("\n").splitlines())
 
         lines.extend(
             [
@@ -6229,8 +5883,8 @@ jupyter: python3
             ]
         )
 
-        # Add CLI documentation section
-        cli_yaml = self._format_cli_yaml(existing_cli)
+        # Add CLI documentation section (default commented-out template)
+        cli_yaml = self._format_cli_yaml()
         lines.extend(cli_yaml.rstrip("\n").splitlines())
 
         return "\n".join(lines) + "\n"
@@ -8253,6 +7907,14 @@ toc: false
         docs.build(refresh=False)
         ```
         """
+        # Require an explicit config file; init must have been run first
+        config_path = self.project_root / "great-docs.yml"
+        if not config_path.exists():
+            raise FileNotFoundError(
+                "great-docs.yml not found. Run 'great-docs init' first to "
+                "generate a configuration file."
+            )
+
         import subprocess
         import sys
         import threading

@@ -30,11 +30,11 @@ SPEC = {
         "reference": [
             {
                 "title": "Core",
-                "members": ["Engine", "run"],
+                "contents": ["Engine", "run"],
             },
             {
-                "title": "Utils",
-                "members": ["format_result"],
+                "title": "Utility",
+                "contents": ["format_result"],
             },
         ],
     },
@@ -116,7 +116,7 @@ SPEC = {
         "detected_parser": "numpy",
         "export_names": ["Engine", "run", "format_result"],
         "num_exports": 3,
-        "section_titles": ["Classes", "Functions"],
+        "section_titles": ["Core", "Utility"],
         "has_user_guide": False,
     },
 }

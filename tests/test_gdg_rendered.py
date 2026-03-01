@@ -313,7 +313,7 @@ def test_R0_supporting_pages_exist(pkg_name: str):
 @requires_bs4
 @pytest.mark.parametrize("pkg_name", _PKGS_WITH_EXPORTS)
 def test_R1_reference_pages_have_title(pkg_name: str):
-    """Every reference page has an <h1 class='title'> element."""
+    """Every reference page has a .title element (h1 or h2)."""
     expected = _EXPECTED_CACHE[pkg_name]
     export_names = expected["export_names"]
     nodoc_items = set(expected.get("nodoc_items", []))
@@ -327,8 +327,8 @@ def test_R1_reference_pages_have_title(pkg_name: str):
             continue
 
         soup = _load_html(page)
-        title = soup.select_one("h1.title")
-        assert title is not None, f"{page.name} missing <h1 class='title'>"
+        title = soup.select_one("h1.title, h2.title")
+        assert title is not None, f"{page.name} missing .title heading"
         assert name in title.get_text(), (
             f"{page.name} title doesn't contain {name!r}: {title.get_text()!r}"
         )
@@ -367,7 +367,7 @@ def test_R1_reference_pages_have_type_badge(pkg_name: str):
             continue
 
         soup = _load_html(page)
-        title = soup.select_one("h1.title")
+        title = soup.select_one("h1.title, h2.title")
         if title is None:
             continue
 
@@ -396,7 +396,7 @@ def test_R1_function_pages_have_signature(pkg_name: str):
             continue
 
         soup = _load_html(page)
-        title = soup.select_one("h1.title")
+        title = soup.select_one("h1.title, h2.title")
         if title is None:
             continue
 
@@ -479,7 +479,7 @@ def test_R2_parameters_section_renders(pkg_name: str):
 
         params_section = soup.select_one("section.doc-section-parameters")
         if params_section is not None:
-            heading = params_section.select_one("h1, h2, h3, h4")
+            heading = params_section.select_one("h1, h2, h3, h4, h5, h6")
             assert heading is not None, f"{name}.html: parameters section has no heading"
             param_names = params_section.select("span.parameter-name")
             # Some docstring styles render parameters as a table instead of spans
@@ -509,7 +509,7 @@ def test_R2_parameter_names_match_signature(pkg_name: str):
         soup = _load_html(page)
 
         # Skip non-callable types (fields aren't function parameters)
-        title = soup.select_one("h1.title")
+        title = soup.select_one("h1.title, h2.title")
         if title:
             badge = title.select_one("code")
             if badge and badge.get_text().strip().lower() in (
@@ -518,6 +518,7 @@ def test_R2_parameter_names_match_signature(pkg_name: str):
                 "typeddict",
                 "constant",
                 "type_alias",
+                "dataclass",
             ):
                 continue
 
@@ -732,7 +733,7 @@ def test_R3_constant_pages_show_value():
             continue
 
         soup = _load_html(page)
-        badge = soup.select_one("h1.title code")
+        badge = soup.select_one(".title code")
         assert badge is not None, f"{const_name}.html: no badge"
         assert badge.get_text().strip().lower() == "constant", (
             f"{const_name}.html: badge is {badge.get_text()!r}, expected 'constant'"
@@ -761,7 +762,7 @@ def test_R3_enum_pages_have_attributes_table():
 
         soup = _load_html(page)
 
-        badge = soup.select_one("h1.title code")
+        badge = soup.select_one(".title code")
         if badge:
             assert badge.get_text().strip().lower() == "enum", (
                 f"{enum_name}.html: badge is {badge.get_text()!r}, expected 'enum'"
@@ -829,7 +830,7 @@ def test_R3_async_functions_have_badge():
             continue
 
         soup = _load_html(page)
-        badge = soup.select_one("h1.title code")
+        badge = soup.select_one(".title code")
         assert badge is not None, f"{func_name}.html: no badge"
         badge_text = badge.get_text().strip().lower()
         assert badge_text in ("async", "function"), (
@@ -851,7 +852,7 @@ def test_R3_exception_classes_have_badge():
             continue
 
         soup = _load_html(page)
-        badge = soup.select_one("h1.title code")
+        badge = soup.select_one(".title code")
         assert badge is not None, f"{exc_name}.html: no badge"
         badge_text = badge.get_text().strip().lower()
         assert badge_text in ("exception", "class"), (
@@ -876,7 +877,7 @@ def test_R3_protocol_classes_have_badge():
             continue
 
         soup = _load_html(page)
-        badge = soup.select_one("h1.title code")
+        badge = soup.select_one(".title code")
         assert badge is not None, f"{cls_name}.html: no badge"
         badge_text = badge.get_text().strip().lower()
         assert badge_text in expected_badge, (

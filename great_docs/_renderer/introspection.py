@@ -177,7 +177,21 @@ def replace_docstring(obj: dc.Object | dc.Alias, f=None):
         mod = importlib.import_module(obj.module.canonical_path)
 
         if isinstance(obj.parent, dc.Class):
-            parent_obj = getattr(mod, obj.parent.name)
+            # Walk up the parent chain to resolve nested classes
+            # e.g., for Node.add_child inside Tree, we need mod.Tree.Node
+            parent_chain = []
+            p = obj.parent
+            while isinstance(p, dc.Class):
+                parent_chain.append(p.name)
+                p = p.parent
+            parent_chain.reverse()
+
+            try:
+                parent_obj = mod
+                for attr_name in parent_chain:
+                    parent_obj = getattr(parent_obj, attr_name)
+            except AttributeError:
+                return
 
             try:
                 f = getattr(parent_obj, obj.name)

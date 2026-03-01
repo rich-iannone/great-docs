@@ -12,6 +12,11 @@ h1, h2 {
     font-weight: 500;
 }
 
+/* Reduce top margin on reference page object titles */
+h2.title {
+    margin-top: 0.5rem;
+}
+
 .table a {
     text-underline-offset: 4px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;

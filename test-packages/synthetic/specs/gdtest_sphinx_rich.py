@@ -40,18 +40,6 @@ SPEC = {
                 the standard output. The command is subject to a timeout
                 to prevent hangs.
 
-                :param command: The shell command to execute.
-                :type command: str
-                :param timeout: Maximum seconds to wait for the command
-                    to complete. Defaults to 30.
-                :type timeout: int
-                :returns: The captured standard output from the command.
-                :rtype: str
-                :raises OSError: If the command cannot be found or executed.
-                :raises TimeoutError: If the command exceeds the timeout.
-                :raises RuntimeError: If the command exits with a non-zero
-                    return code.
-
                 .. note::
 
                     The command is executed in a new subprocess. Environment
@@ -64,11 +52,23 @@ SPEC = {
 
                 **Examples**::
 
-                    >>> execute("echo hello")
-                    'hello'
+                >>> execute("echo hello")
+                'hello'
 
-                    >>> execute("sleep 5", timeout=2)
-                    TimeoutError: Command timed out after 2 seconds
+                >>> execute("sleep 5", timeout=2)
+                TimeoutError: Command timed out after 2 seconds
+
+                :param command: The shell command to execute.
+                :type command: str
+                :param timeout: Maximum seconds to wait for the command
+                    to complete. Defaults to 30.
+                :type timeout: int
+                :returns: The captured standard output from the command.
+                :rtype: str
+                :raises OSError: If the command cannot be found or executed.
+                :raises TimeoutError: If the command exceeds the timeout.
+                :raises RuntimeError: If the command exits with a non-zero
+                    return code.
                 """
                 import subprocess
 
@@ -94,6 +94,22 @@ SPEC = {
                 the specified delay. Returns whether the scheduling was
                 successful.
 
+                .. note::
+
+                    Tasks are identified by their string name. Scheduling
+                    the same task twice will return False the second time.
+
+                **Examples**::
+
+                >>> schedule("cleanup")
+                True
+
+                >>> schedule("backup", delay=60.0)
+                True
+
+                >>> schedule("cleanup")
+                False
+
                 :param task: The task identifier string to schedule.
                 :type task: str
                 :param delay: Number of seconds to wait before executing.
@@ -104,22 +120,6 @@ SPEC = {
                 :rtype: bool
                 :raises ValueError: If ``delay`` is negative.
                 :raises TypeError: If ``task`` is not a string.
-
-                .. note::
-
-                    Tasks are identified by their string name. Scheduling
-                    the same task twice will return False the second time.
-
-                **Examples**::
-
-                    >>> schedule("cleanup")
-                    True
-
-                    >>> schedule("backup", delay=60.0)
-                    True
-
-                    >>> schedule("cleanup")
-                    False
                 """
                 if not isinstance(task, str):
                     raise TypeError("task must be a string")

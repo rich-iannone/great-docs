@@ -825,8 +825,7 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
     "gdtest_slots_class": (
         "Class using __slots__ = ('x', 'y', 'label') instead of __dict__. "
         "SlottedPoint class with three slots and four methods. On the "
-        "Reference page you should see the class with its methods. The slots "
-        "should ideally appear as documented attributes."
+        "Reference page you should see the class with its methods."
     ),
     "gdtest_frozen_dc": (
         "Frozen dataclass: @dataclass(frozen=True) with typed fields. "

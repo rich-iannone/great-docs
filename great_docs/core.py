@@ -1243,14 +1243,10 @@ class GreatDocs:
                             description = fm.get("description", "")
                             image = fm.get("image", "")
 
-                            # Add bread-crumbs: false and
-                            # page-navigation: false
+                            # Add bread-crumbs: false
                             changed = False
                             if "bread-crumbs" not in fm:
                                 fm["bread-crumbs"] = False
-                                changed = True
-                            if "page-navigation" not in fm:
-                                fm["page-navigation"] = False
                                 changed = True
                             if changed:
                                 parts[1] = "\n" + yaml.dump(
@@ -1371,8 +1367,6 @@ class GreatDocs:
             "  contents:",
             '    - "**.qmd"',
             "bread-crumbs: false",
-            "toc: false",
-            "page-navigation: false",
             "---",
             "",
         ]
@@ -1408,8 +1402,6 @@ class GreatDocs:
             "---",
             f'title: "{title}"',
             "bread-crumbs: false",
-            "toc: false",
-            "page-navigation: false",
             "---",
             "",
         ]

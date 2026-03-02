@@ -1430,7 +1430,7 @@ def _create_test_coverage_summary_page(results: list[dict]) -> str:
                 <h2>Per-Package Coverage (sorted by score)</h2>
                 <table>
                     <thead><tr>
-                        <th>#</th><th>Package</th><th>Score</th><th>Levels</th><th>DED</th>
+                        <th>#</th><th>Package</th><th>Score</th><th>Levels</th><th>DEDICATED TEST</th>
                     </tr></thead>
                     <tbody>
                         {pkg_table}

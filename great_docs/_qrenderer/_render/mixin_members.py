@@ -4,15 +4,16 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import TYPE_CHECKING, cast
 
-from quartodoc.layout import Doc, DocClass, MemberPage
-from quartodoc.pandoc.blocks import (
+from tabulate import tabulate
+
+from great_docs._renderer.layout import Doc, DocClass, MemberPage
+from great_docs._renderer.pandoc.blocks import (
     Block,
     BlockContent,
     Blocks,
     Header,
 )
-from quartodoc.pandoc.components import Attr
-from tabulate import tabulate
+from great_docs._renderer.pandoc.components import Attr
 
 from .._utils import griffe_to_doc, isDoc
 from .doc import RenderDoc
@@ -21,7 +22,8 @@ if TYPE_CHECKING:
     from typing import Literal
 
     import griffe as gf
-    from quartodoc.layout import DocAttribute, DocFunction, DocModule
+
+    from great_docs._renderer.layout import DocAttribute, DocFunction, DocModule
 
 
 @dataclass

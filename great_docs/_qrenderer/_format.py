@@ -10,8 +10,9 @@ from textwrap import dedent
 from typing import TYPE_CHECKING, cast
 
 import griffe as gf
-from quartodoc.pandoc.components import Attr
-from quartodoc.pandoc.inlines import Span
+
+from great_docs._renderer.pandoc.components import Attr
+from great_docs._renderer.pandoc.inlines import Span
 
 from ._pandoc.inlines import InterLink
 

@@ -7,8 +7,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import griffe as gf
-import quartodoc.layout as layout
-from quartodoc import get_object
+
+from great_docs._renderer import get_object
+from great_docs._renderer import layout as layout
 
 from . import (
     RenderDocAttribute,

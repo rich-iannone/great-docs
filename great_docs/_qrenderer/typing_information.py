@@ -5,9 +5,8 @@ from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
-from quartodoc import layout
-from quartodoc.autosummary import Builder, get_object
-from quartodoc.pandoc.blocks import (
+from great_docs._renderer import Builder, get_object, layout
+from great_docs._renderer.pandoc.blocks import (
     Block,
     BlockContent,
     Blocks,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from quartodoc.pandoc.inlines import Inline, Link
+from great_docs._renderer.pandoc.inlines import Inline, Link
 
 
 @dataclass

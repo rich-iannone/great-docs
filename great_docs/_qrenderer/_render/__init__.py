@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, overload
 
-from quartodoc.layout import (
+from great_docs._renderer.layout import (
     DocAttribute,
     DocClass,
     DocFunction,

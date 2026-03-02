@@ -4,15 +4,16 @@ from functools import cached_property
 from typing import TYPE_CHECKING, TypeAlias, cast
 
 import griffe as gf
-from quartodoc.pandoc.blocks import (
+
+from great_docs._renderer.pandoc.blocks import (
     BlockContent,
     CodeBlock,
     DefinitionItem,
     DefinitionList,
     Div,
 )
-from quartodoc.pandoc.components import Attr
-from quartodoc.pandoc.inlines import Code
+from great_docs._renderer.pandoc.components import Attr
+from great_docs._renderer.pandoc.inlines import Code
 
 from .._format import formatted_signature, repr_obj
 from .._griffe.docstrings import (
@@ -22,7 +23,7 @@ from .._griffe.docstrings import (
 from .doc import RenderDoc
 
 if TYPE_CHECKING:
-    from quartodoc.layout import DocClass, DocFunction
+    from great_docs._renderer.layout import DocClass, DocFunction
 
     from ..typing import DocstringDefinitionType
 

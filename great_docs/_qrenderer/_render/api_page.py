@@ -4,16 +4,16 @@ from copy import copy
 from functools import cached_property
 from typing import TYPE_CHECKING, cast
 
-from quartodoc.pandoc.blocks import (
+from great_docs._renderer.pandoc.components import Attr
+from great_docs._renderer.pandoc.inlines import Link
+
+from ..._renderer.pandoc.blocks import (
     BlockContent,
     Blocks,
     DefinitionItem,
     Div,
     Header,
 )
-from quartodoc.pandoc.components import Attr
-from quartodoc.pandoc.inlines import Link
-
 from .._format import markdown_escape
 from .._pandoc.blocks import RawHTMLBlockTag
 from .base import RenderBase
@@ -21,8 +21,7 @@ from .base import RenderBase
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from quartodoc.layout import Page
-
+    from ..._renderer.layout import Page
     from ..typing import RenderObjType
     from .doc import RenderDoc
 

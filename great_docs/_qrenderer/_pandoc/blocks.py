@@ -4,7 +4,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import yaml
-from quartodoc.pandoc.blocks import (
+
+from great_docs._renderer.pandoc.blocks import (
     Block,
     BlockContent,
     Blocks,
@@ -15,8 +16,8 @@ from quartodoc.pandoc.blocks import (
 if TYPE_CHECKING:
     from typing import Any
 
-    from quartodoc.pandoc.components import Attr
-    from quartodoc.pandoc.inlines import Code
+    from great_docs._renderer.pandoc.components import Attr
+    from great_docs._renderer.pandoc.inlines import Code
 
 
 @dataclass

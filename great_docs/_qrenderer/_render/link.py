@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
-from quartodoc.pandoc.blocks import (
+from great_docs._renderer.pandoc.blocks import (
     Blocks,
     DefinitionItem,
     Div,
 )
-from quartodoc.pandoc.components import Attr
+from great_docs._renderer.pandoc.components import Attr
 
 from .._format import markdown_escape
 from .._pandoc.inlines import InterLink
@@ -16,8 +16,8 @@ from .base import RenderBase
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from quartodoc.layout import Link
-    from quartodoc.pandoc.blocks import DefinitionItem
+    from great_docs._renderer.layout import Link
+    from great_docs._renderer.pandoc.blocks import DefinitionItem
 
 
 class __RenderLink(RenderBase):

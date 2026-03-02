@@ -3,16 +3,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from quartodoc.pandoc.blocks import Div
-from quartodoc.pandoc.components import Attr
-from quartodoc.pandoc.inlines import Code
+from great_docs._renderer.pandoc.blocks import Div
+from great_docs._renderer.pandoc.components import Attr
+from great_docs._renderer.pandoc.inlines import Code
 
 from .doc import RenderDoc
 
 if TYPE_CHECKING:
     import griffe as gf
-    from quartodoc import layout
-    from quartodoc.pandoc.blocks import BlockContent
+
+    from great_docs._renderer import layout
+    from great_docs._renderer.pandoc.blocks import BlockContent
 
 
 @dataclass

@@ -3,11 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Literal
 
-from quartodoc.renderers.base import Renderer as _Renderer
+from great_docs._renderer import Renderer as _Renderer
 
 if TYPE_CHECKING:
-    from quartodoc import Builder, layout
-
+    from .._renderer import Builder, layout
     from .typing import DisplayNameFormat
 
 

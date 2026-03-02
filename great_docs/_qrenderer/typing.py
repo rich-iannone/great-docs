@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import Literal, TypeAlias
 
 import griffe as gf
-from quartodoc.layout import (
+
+from great_docs._renderer.layout import (
     Doc,
     DocAttribute,
     DocClass,
@@ -15,7 +16,7 @@ from quartodoc.layout import (
     Page,
     Section,
 )
-from quartodoc.pandoc.blocks import InlineContent
+from great_docs._renderer.pandoc.blocks import InlineContent
 
 from . import (
     RenderAPIPage,

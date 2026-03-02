@@ -3,21 +3,22 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
-from quartodoc.pandoc.blocks import (
+from tabulate import tabulate
+
+from great_docs._renderer.pandoc.blocks import (
     BlockContent,
     DefinitionList,
     Div,
     Header,
 )
-from quartodoc.pandoc.components import Attr
-from tabulate import tabulate
+from great_docs._renderer.pandoc.components import Attr
 
 from .base import RenderBase
 
 if TYPE_CHECKING:
     from typing import Literal
 
-    from quartodoc.layout import Section
+    from great_docs._renderer.layout import Section
 
     from ..typing import RenderObjType
 

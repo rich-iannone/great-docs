@@ -6,9 +6,10 @@ from functools import cached_property, singledispatchmethod
 from typing import TYPE_CHECKING, Literal, cast
 
 import griffe as gf
-from quartodoc import ast as qast
-from quartodoc import layout
-from quartodoc.pandoc.blocks import (
+
+from great_docs._renderer import ast as qast
+from great_docs._renderer import layout
+from great_docs._renderer.pandoc.blocks import (
     Block,
     BlockContent,
     Blocks,
@@ -17,8 +18,8 @@ from quartodoc.pandoc.blocks import (
     Div,
     Header,
 )
-from quartodoc.pandoc.components import Attr
-from quartodoc.pandoc.inlines import Inline, Inlines, Link, Span
+from great_docs._renderer.pandoc.components import Attr
+from great_docs._renderer.pandoc.inlines import Inline, Inlines, Link, Span
 
 from .._format import (
     HAS_RUFF,
@@ -37,8 +38,8 @@ from .base import RenderBase
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from quartodoc.pandoc.blocks import DefinitionItem
-    from quartodoc.pandoc.inlines import InlineContentItem
+    from great_docs._renderer.pandoc.blocks import DefinitionItem
+    from great_docs._renderer.pandoc.inlines import InlineContentItem
 
     from ..typing import (
         Annotation,
@@ -109,7 +110,7 @@ class __RenderDoc(RenderBase):
     """
     Name of the page where this object's rendered content
     will be written. It should be the name of the object
-    as listed in the quartodoc yaml section. e.g
+    as listed in the great_docs._renderer yaml section. e.g
 
     Given
 

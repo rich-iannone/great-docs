@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
-from quartodoc.pandoc.blocks import (
+from great_docs._renderer.pandoc.blocks import (
     Blocks,
 )
 
 from .base import RenderBase
 
 if TYPE_CHECKING:
-    from quartodoc.layout import Layout
-    from quartodoc.pandoc.blocks import BlockContent
+    from great_docs._renderer.layout import Layout
+    from great_docs._renderer.pandoc.blocks import BlockContent
 
 
 class __RenderReferencePage(RenderBase):
@@ -39,7 +39,7 @@ class __RenderReferencePage(RenderBase):
         This method is currently ignored and overriding it will not give a
         useful result.
         """
-        # The header currently being rendered in quartodoc
+        # The header currently being rendered in great_docs._renderer
         # should be rendered here.
         # We need to know title of the page. It is not passed
         # to the renderer.

@@ -4,7 +4,8 @@ from dataclasses import field
 from typing import TYPE_CHECKING, cast
 
 import griffe as gf
-from quartodoc import layout
+
+from great_docs._renderer import layout
 
 if TYPE_CHECKING:
     from typing import TypeGuard, TypeVar

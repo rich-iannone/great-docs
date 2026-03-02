@@ -1764,3 +1764,408 @@ def test_R4_directives_stripped_from_html(pkg_name: str):
         text = main.get_text()
         assert "%seealso" not in text, f"{html_file.name}: raw %seealso directive found"
         assert "%nodoc" not in text, f"{html_file.name}: raw %nodoc directive found"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# R4: TOC Configuration
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def _load_quarto_yml(pkg_name: str) -> dict:
+    """Load and parse the _quarto.yml for a rendered package."""
+    import yaml
+
+    qpath = _RENDERED_DIR / pkg_name / "great-docs" / "_quarto.yml"
+    with open(qpath) as f:
+        return yaml.safe_load(f)
+
+
+@requires_bs4
+def test_R4_toc_disabled_config():
+    """When site.toc is false, _quarto.yml should have toc: false."""
+    pkg = "gdtest_toc_disabled"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    cfg = _load_quarto_yml(pkg)
+    html_cfg = cfg.get("format", {}).get("html", {})
+    assert html_cfg.get("toc") is False, (
+        f"Expected toc: false in format.html, got toc: {html_cfg.get('toc')!r}"
+    )
+
+
+@requires_bs4
+def test_R4_toc_depth_config():
+    """When site.toc-depth is set, _quarto.yml should reflect the custom depth."""
+    pkg = "gdtest_toc_depth"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    cfg = _load_quarto_yml(pkg)
+    html_cfg = cfg.get("format", {}).get("html", {})
+    assert html_cfg.get("toc-depth") == 3, (
+        f"Expected toc-depth: 3, got {html_cfg.get('toc-depth')!r}"
+    )
+
+
+@requires_bs4
+def test_R4_toc_title_config():
+    """When site.toc-title is customized, _quarto.yml should use the custom title."""
+    pkg = "gdtest_toc_title"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    cfg = _load_quarto_yml(pkg)
+    html_cfg = cfg.get("format", {}).get("html", {})
+    assert html_cfg.get("toc-title") == "Contents", (
+        f"Expected toc-title: 'Contents', got {html_cfg.get('toc-title')!r}"
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# R4: Source Link Configuration
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def test_R4_source_disabled_no_links_file():
+    """When source.enabled is false, _source_links.json should not be generated."""
+    pkg = "gdtest_source_disabled"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    source_links = _RENDERED_DIR / pkg / "great-docs" / "_source_links.json"
+    assert not source_links.exists(), (
+        f"_source_links.json should not exist when source is disabled: {source_links}"
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# R4: Display Configuration — Badges, Authors, Funding
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@requires_bs4
+def test_R4_display_badges_index_has_badge_images():
+    """A README with shields.io badges should render badge <img> tags on index."""
+    pkg = "gdtest_display_badges"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    index = _site_dir(pkg) / "index.html"
+    soup = _load_html(index)
+    imgs = soup.select("img")
+    badge_imgs = [
+        img for img in imgs if "shields.io" in (img.get("src", "") + img.get("data-src", ""))
+    ]
+
+    assert len(badge_imgs) >= 2, (
+        f"Expected at least 2 shields.io badge images, found {len(badge_imgs)}"
+    )
+
+
+@requires_bs4
+def test_R4_display_badges_index_has_table():
+    """A README with a markdown table should render as an HTML <table>."""
+    pkg = "gdtest_display_badges"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    index = _site_dir(pkg) / "index.html"
+    soup = _load_html(index)
+    tables = soup.select("table")
+    assert len(tables) >= 1, "Expected at least one HTML table from markdown table"
+
+
+@requires_bs4
+def test_R4_display_authors_names_in_index():
+    """Author names from config should appear in the rendered index page."""
+    pkg = "gdtest_display_authors"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    index = _site_dir(pkg) / "index.html"
+    soup = _load_html(index)
+    text = soup.get_text()
+
+    assert "Jane Doe" in text, "Author 'Jane Doe' not found on index page"
+    assert "John Smith" in text, "Author 'John Smith' not found on index page"
+
+
+@requires_bs4
+def test_R4_display_authors_roles_in_index():
+    """Author roles from config should appear in the rendered index page."""
+    pkg = "gdtest_display_authors"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    index = _site_dir(pkg) / "index.html"
+    soup = _load_html(index)
+    text = soup.get_text()
+
+    assert "Principal Investigator" in text, "Role 'Principal Investigator' not found"
+    assert "Lead Developer" in text, "Role 'Lead Developer' not found"
+
+
+@requires_bs4
+def test_R4_display_funding_name_in_index():
+    """Funding organization name should appear in the rendered index page."""
+    pkg = "gdtest_display_funding"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    index = _site_dir(pkg) / "index.html"
+    soup = _load_html(index)
+    text = soup.get_text()
+
+    assert "National Science Foundation" in text, (
+        "Funding org 'National Science Foundation' not found on index page"
+    )
+
+
+@requires_bs4
+def test_R4_display_funding_link_in_index():
+    """Funding organization homepage link should appear in the rendered site."""
+    pkg = "gdtest_display_funding"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    index = _site_dir(pkg) / "index.html"
+    soup = _load_html(index)
+    html_str = str(soup)
+
+    assert "nsf.gov" in html_str, "Funding homepage 'nsf.gov' not found in index HTML"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# R3: Decorator Functions
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@requires_bs4
+def test_R3_decorator_pages_exist():
+    """Decorator functions should have reference pages."""
+    pkg = "gdtest_decorators"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("retry", "cache", "validate_args", "log_calls"):
+        page = ref / f"{name}.html"
+        assert page.exists(), f"Missing decorator reference page: {name}.html"
+
+
+@requires_bs4
+def test_R3_decorator_retry_has_params():
+    """The retry decorator page should document max_retries and delay parameters."""
+    pkg = "gdtest_decorators"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    page = _ref_dir(pkg) / "retry.html"
+    if not page.exists():
+        pytest.skip("retry.html not found")
+
+    soup = _load_html(page)
+    text = soup.get_text()
+    assert "max_retries" in text, "retry page should document 'max_retries' parameter"
+    assert "delay" in text, "retry page should document 'delay' parameter"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# R3: Generator Functions
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@requires_bs4
+def test_R3_generator_pages_exist():
+    """Generator functions should have reference pages."""
+    pkg = "gdtest_generators"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("count_up", "fibonacci", "iter_chunks"):
+        page = ref / f"{name}.html"
+        assert page.exists(), f"Missing generator reference page: {name}.html"
+
+
+@requires_bs4
+def test_R3_generator_return_types_show_iterator():
+    """Generator function pages should show Iterator in return type."""
+    pkg = "gdtest_generators"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("count_up", "fibonacci", "iter_chunks"):
+        page = ref / f"{name}.html"
+        if not page.exists():
+            continue
+        soup = _load_html(page)
+        text = soup.get_text()
+        assert "Iterator" in text, (
+            f"{name}.html should show 'Iterator' in the return type annotation"
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# R3: Generic Classes
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@requires_bs4
+def test_R3_generic_class_pages_exist():
+    """Generic classes (Stack, Pair) should have reference pages."""
+    pkg = "gdtest_generics"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("Stack", "Pair"):
+        page = ref / f"{name}.html"
+        assert page.exists(), f"Missing generic class page: {name}.html"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# R3: Frozen Dataclasses
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@requires_bs4
+def test_R3_frozen_dc_section_title():
+    """Frozen dataclasses should use 'Dataclasses' as the section heading."""
+    pkg = "gdtest_frozen_dc"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref_index = _ref_dir(pkg) / "index.html"
+    if not ref_index.exists():
+        pytest.skip("No reference index")
+
+    soup = _load_html(ref_index)
+    headings = [h.get_text().strip() for h in soup.select("h2, h3")]
+    assert "Dataclasses" in headings, f"Expected 'Dataclasses' section heading, got: {headings}"
+
+
+@requires_bs4
+def test_R3_frozen_dc_pages_have_fields():
+    """Frozen dataclass pages should document their fields as parameters."""
+    pkg = "gdtest_frozen_dc"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    page = _ref_dir(pkg) / "Coordinate.html"
+    if not page.exists():
+        pytest.skip("Coordinate.html not found")
+
+    soup = _load_html(page)
+    text = soup.get_text()
+    for field in ("x", "y"):
+        assert field in text, f"Dataclass field '{field}' not documented on Coordinate page"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# R3: Re-exports from Submodules
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@requires_bs4
+def test_R3_reexports_all_symbols_have_pages():
+    """Re-exported symbols from submodules should each have a reference page."""
+    pkg = "gdtest_reexports"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("Engine", "run", "format_result", "parse_input"):
+        page = ref / f"{name}.html"
+        assert page.exists(), f"Re-exported symbol '{name}' should have a reference page"
+
+
+@requires_bs4
+def test_R3_reexports_ref_index_has_sections():
+    """Re-exports reference index should have both Classes and Functions sections."""
+    pkg = "gdtest_reexports"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref_index = _ref_dir(pkg) / "index.html"
+    if not ref_index.exists():
+        pytest.skip("No reference index")
+
+    soup = _load_html(ref_index)
+    headings = [h.get_text().strip() for h in soup.select("h2, h3")]
+    assert "Classes" in headings, f"Expected 'Classes' section, got: {headings}"
+    assert "Functions" in headings, f"Expected 'Functions' section, got: {headings}"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# R3: Abstract Properties
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@requires_bs4
+def test_R3_abstract_class_pages_exist():
+    """Abstract base classes and their subclasses should have reference pages."""
+    pkg = "gdtest_abstract_props"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("Shape", "Circle"):
+        page = ref / f"{name}.html"
+        assert page.exists(), f"Missing class page: {name}.html"
+
+
+@requires_bs4
+def test_R3_abstract_shape_documents_properties():
+    """Abstract Shape class should document area and perimeter properties."""
+    pkg = "gdtest_abstract_props"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    page = _ref_dir(pkg) / "Shape.html"
+    if not page.exists():
+        pytest.skip("Shape.html not found")
+
+    soup = _load_html(page)
+    text = soup.get_text()
+    assert "area" in text, "Shape page should document 'area' property"
+    assert "perimeter" in text, "Shape page should document 'perimeter' property"
+
+
+@requires_bs4
+def test_R3_abstract_circle_documents_radius():
+    """Circle subclass should document the radius parameter."""
+    pkg = "gdtest_abstract_props"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    page = _ref_dir(pkg) / "Circle.html"
+    if not page.exists():
+        pytest.skip("Circle.html not found")
+
+    soup = _load_html(page)
+    text = soup.get_text()
+    assert "radius" in text, "Circle page should document 'radius' parameter"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# R3: Deep Nesting
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@requires_bs4
+def test_R3_deep_nesting_pages_exist():
+    """Deeply nested exports (3 levels) should still get reference pages."""
+    pkg = "gdtest_deep_nesting"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    # Check that the re-exported symbols have pages (may be prefixed)
+    ref_pages = {f.stem for f in ref.glob("*.html") if f.name != "index.html"}
+    has_deep_func = "deep_func" in ref_pages or any(p.endswith(".deep_func") for p in ref_pages)
+    has_deep_class = "DeepClass" in ref_pages or any(p.endswith(".DeepClass") for p in ref_pages)
+    assert has_deep_func, f"deep_func not found in ref pages: {ref_pages}"
+    assert has_deep_class, f"DeepClass not found in ref pages: {ref_pages}"

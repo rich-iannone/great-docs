@@ -145,7 +145,7 @@ line-ending = "auto"
 pythonVersion = "3.11"
 typeCheckingMode = "strict"
 include = [
-   "great_docs/renderer/"
+   "great_docs/_qrenderer/"
 ]
 
 # These checks are not enabled on by "strict"

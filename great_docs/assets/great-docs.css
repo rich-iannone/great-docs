@@ -108,6 +108,75 @@ li a {
     color: #212529;
 }
 
+/* ── Blended-homepage metadata sidebar ──
+   In blended mode the first UG page becomes the site index page.  Project
+   metadata (links, license, community, …) is placed in a panel that mirrors
+   the right-margin column of a normal homepage.
+   We use a custom class (.gd-meta-sidebar) instead of Quarto’s .column-margin
+   because .column-margin triggers slimcontent/page-full body & main classes
+   that change the outer CSS-grid template, shifting the left sidebar and
+   content area out of alignment with other user-guide pages.  With a custom
+   class, body/main keep the same classes as regular UG pages and the metadata
+   panel is positioned via CSS absolute positioning.
+
+   Because toc: false + no margin content causes Quarto to add "fullcontent"
+   to <body>, the outer grid template collapses the right-margin tracks and
+   uses different left-side tracks than a plain floating page.  We override
+   the grid template back to the default floating layout so the sidebar and
+   content align with subsequent UG pages. */
+@media (min-width: 992px) {
+    /* Fix outer grid: match the default floating (no-modifier) template so the
+       left sidebar and content area align with regular UG pages. */
+    body.nav-sidebar.floating.fullcontent .page-columns {
+        grid-template-columns:
+            [screen-start] 1.5em
+            [screen-start-inset] 5fr
+            [page-start] minmax(25px, 50px)
+            [page-start-inset] minmax(50px, 150px)
+            [body-start-outset] minmax(25px, 50px)
+            [body-start] 1.5em
+            [body-content-start] minmax(500px, calc(800px - 3em))
+            [body-content-end] 1.5em
+            [body-end] minmax(25px, 50px)
+            [body-end-outset] minmax(50px, 150px)
+            [page-end-inset] minmax(25px, 50px)
+            [page-end] 5fr
+            [screen-end-inset] 1.5em
+            [screen-end] !important;
+    }
+    main.content:has(.gd-meta-sidebar) {
+        position: relative;
+        overflow: visible;
+    }
+    .gd-meta-sidebar {
+        position: absolute;
+        top: 0;
+        left: 100%;
+        margin-left: 1.5em;
+        width: 200px;
+    }
+    .gd-meta-sidebar h3,
+    .gd-meta-sidebar h4 {
+        font-size: 0.9em;
+        font-weight: 600;
+        margin-top: 0.8em;
+        margin-bottom: 0.25em;
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    .gd-meta-sidebar h3:first-child,
+    .gd-meta-sidebar h4:first-child {
+        margin-top: 0;
+    }
+}
+@media (max-width: 991.98px) {
+    .gd-meta-sidebar {
+        border-top: 1px solid var(--bs-border-color, #dee2e6);
+        padding-top: 1em;
+        margin-top: 2em;
+    }
+}
+
 dt {
     height: 32px;
     overflow-x: visible;

@@ -124,11 +124,11 @@ class GreatDocs:
         """
         Copy user guide files from project root to build directory.
 
-        Resolves the source directory using ``_find_user_guide_dir()``.
-        When ``user_guide`` config is a list (explicit ordering), only the directory
+        Resolves the source directory using `_find_user_guide_dir()`.
+        When `user_guide` config is a list (explicit ordering), only the directory
         is resolved from conventional locations.
 
-        Copies .qmd and .md files to great-docs/user-guide/ directory.
+        Copies `.qmd` and `.md` files to `great-docs/user-guide/` directory.
         """
         configured_path = self._config.user_guide_dir  # str or None (ignores list)
 
@@ -937,8 +937,8 @@ class GreatDocs:
         """
         Turn GitHub shorthand references into Markdown links.
 
-        Converts bare ``#123``, ``gh issue #123``, ``gh pr #123``, and
-        ``@username`` references into clickable Markdown links that point to
+        Converts bare `#123`, `gh issue #123`, `gh pr #123`, and
+        `@username` references into clickable Markdown links that point to
         the correct GitHub URL.
 
         Parameters
@@ -994,13 +994,13 @@ class GreatDocs:
         Generate a changelog.qmd page from GitHub Releases.
 
         Fetches releases via the GitHub API and renders them as a dated
-        Markdown changelog.  Returns the filename written (``"changelog.qmd"``)
-        or ``None`` if the page could not be generated.
+        Markdown changelog. Returns the filename written (`"changelog.qmd"`)
+        or `None` if the page could not be generated.
 
         Returns
         -------
         str | None
-            ``"changelog.qmd"`` on success, ``None`` otherwise.
+            `"changelog.qmd"` on success, `None` otherwise.
         """
         owner, repo, _base_url = self._get_github_repo_info()
         if not owner or not repo:
@@ -1094,8 +1094,8 @@ class GreatDocs:
         Process custom sections: discover files, copy, generate index, wire nav.
 
         Each configured section gets its own navbar link, sidebar, and
-        (optionally) an auto-generated index page.  Blog-type sections
-        use Quarto's native ``listing:`` directive instead of cards and
+        (optionally) an auto-generated index page. Blog-type sections
+        use Quarto's native `listing:` directive instead of cards and
         skip the sidebar.
 
         Returns
@@ -1198,7 +1198,7 @@ class GreatDocs:
         """
         Copy section files to the build directory.
 
-        Strips numeric prefixes and adds ``bread-crumbs: false`` to frontmatter.
+        Strips numeric prefixes and adds `bread-crumbs: false` to frontmatter.
 
         Parameters
         ----------
@@ -1212,7 +1212,7 @@ class GreatDocs:
         Returns
         -------
         list[dict]
-            List of dicts with ``filename``, ``title``, ``description`` keys.
+            List of dicts with `filename`, `title`, `description`, `image` keys.
         """
         copied: list[dict] = []
 
@@ -1280,9 +1280,9 @@ class GreatDocs:
         """
         Copy blog post files to the build directory.
 
-        Preserves subdirectory structure (e.g., ``blog/my-post/index.qmd``)
-        and leaves blog frontmatter intact so Quarto's ``listing:`` directive
-        can read ``title``, ``author``, ``date``, ``categories``, etc.
+        Preserves subdirectory structure (e.g., `blog/my-post/index.qmd`)
+        and leaves blog frontmatter intact so Quarto's `listing:` directive
+        can read `title`, `author`, `date`, `categories`, etc.
 
         Parameters
         ----------
@@ -1296,7 +1296,7 @@ class GreatDocs:
         Returns
         -------
         list[dict]
-            List of dicts with ``filename``, ``title``, ``description`` keys.
+            List of dicts with `filename`, `title`, `description` keys.
         """
         copied: list[dict] = []
 
@@ -1344,7 +1344,7 @@ class GreatDocs:
         dest_dir: Path,
     ) -> None:
         """
-        Auto-generate a blog listing index using Quarto's ``listing:`` directive.
+        Auto-generate a blog listing index using Quarto's `listing:` directive.
 
         Creates a page that mirrors the approach used by Great Tables and other
         Quarto-based project blogs: a table-style listing sorted by date.
@@ -1849,7 +1849,7 @@ class GreatDocs:
         -------
         list[str | dict]
             Sidebar items — plain path strings for leaf commands, or
-            ``{"section": ..., "contents": [...]}`` dicts for groups.
+            `{"section": ..., "contents": [...]}` dicts for groups.
         """
         if not cli_info:
             return []
@@ -1888,14 +1888,14 @@ class GreatDocs:
         output_dir
             Directory to write pages to.
         rel_prefix
-            The relative path prefix for sidebar entries (e.g. ``reference/cli``
-            or ``reference/cli/task`` for nested groups).
+            The relative path prefix for sidebar entries (e.g. `reference/cli`
+            or `reference/cli/task` for nested groups).
 
         Returns
         -------
         list[str | dict]
             Sidebar items — plain path strings for leaf commands, or
-            ``{"section": ..., "contents": [...]}`` dicts for groups.
+            `{"section": ..., "contents": [...]}` dicts for groups.
         """
         sidebar_items: list[str | dict] = []
 
@@ -1981,7 +1981,7 @@ class GreatDocs:
         ----------
         cli_files
             Sidebar items — plain path strings for leaf commands, or
-            ``{"section": ..., "contents": [...]}`` dicts for groups.
+            `{"section": ..., "contents": [...]}` dicts for groups.
         """
         if not cli_files:
             return
@@ -2054,13 +2054,13 @@ class GreatDocs:
 
         Resolves the directory in the following order:
 
-        1. If ``user_guide`` is a string in great-docs.yml, that path is used.
-        2. Otherwise, looks for ``user_guide/`` then ``user-guide/`` in the project root.
+        1. If `user_guide` is a string in great-docs.yml, that path is used.
+        2. Otherwise, looks for `user_guide/` then `user-guide/` in the project root.
 
         Returns
         -------
         Path | None
-            Path to the user guide source directory, or None if not found.
+            Path to the user guide source directory, or `None` if not found.
         """
         package_root = self._find_package_root()
         configured_dir = self._config.user_guide_dir  # str or None (ignores list)
@@ -2101,22 +2101,22 @@ class GreatDocs:
         """
         Build user guide info from explicit section ordering in great-docs.yml.
 
-        When ``user_guide`` is a list of section dicts in the config, this method
+        When `user_guide` is a list of section dicts in the config, this method
         resolves the referenced files and builds the user_guide_info structure.
         Files are referenced by name relative to the user guide source directory
-        (no ``user_guide/`` prefix needed). Numeric filename prefixes are preserved.
+        (no `user_guide/` prefix needed). Numeric filename prefixes are preserved.
 
         Parameters
         ----------
         user_guide_dir
             Path to the user guide source directory.
         explicit_config
-            The list of section dicts from ``user_guide`` config.
+            The list of section dicts from `user_guide` config.
 
         Returns
         -------
         dict | None
-            User guide info structure with ``explicit`` flag set to True, or None
+            User guide info structure with `explicit` flag set to True, or `None`
             if no valid files are found.
         """
         files_info = []
@@ -2194,17 +2194,17 @@ class GreatDocs:
 
         Supports two modes:
 
-        1. **Explicit ordering**: When ``user_guide`` in great-docs.yml is a list of
+        1. **Explicit ordering**: When `user_guide` in great-docs.yml is a list of
            section dicts, files are ordered and grouped exactly as specified.
-        2. **Auto-discovery**: When ``user_guide`` is a string (directory path) or None,
+        2. **Auto-discovery**: When `user_guide` is a string (directory path) or `None`,
            files are discovered from the directory and sorted by filename.
 
-        The source directory is resolved by ``_find_user_guide_dir()``.
+        The source directory is resolved by `_find_user_guide_dir()`.
 
         Returns
         -------
         dict | None
-            Dictionary containing user guide structure, or None if no user guide found.
+            Dictionary containing user guide structure, or `None` if no user guide found.
             Structure: {
                 "files": [{"path": Path, "section": str | None, "title": str}, ...],
                 "sections": {"Section Name": [file_info, ...], ...},
@@ -2364,16 +2364,16 @@ class GreatDocs:
         """
         Copy user guide files from project root to docs directory.
 
-        Adds ``bread-crumbs: false`` to the frontmatter of each file to disable breadcrumb
+        Adds `bread-crumbs: false` to the frontmatter of each file to disable breadcrumb
         navigation on user guide pages.
 
-        When using explicit ordering (``user_guide`` is a list in config), filenames are
+        When using explicit ordering (`user_guide` is a list in config), filenames are
         preserved as-is. In auto-discovery mode, numeric prefixes are stripped for cleaner URLs.
 
         Parameters
         ----------
         user_guide_info
-            User guide structure from _discover_user_guide.
+            User guide structure from `_discover_user_guide`.
 
         Returns
         -------
@@ -2514,14 +2514,14 @@ class GreatDocs:
         """
         Generate sidebar from explicit config ordering.
 
-        Builds the sidebar structure directly from the ``user_guide`` config list,
+        Builds the sidebar structure directly from the `user_guide` config list,
         preserving exact section ordering and file ordering as specified by the user.
         Filenames are used as-is (no numeric prefix stripping).
 
         Parameters
         ----------
         user_guide_info
-            User guide structure from _discover_user_guide_explicit.
+            User guide structure from `_discover_user_guide_explicit`.
 
         Returns
         -------
@@ -2709,6 +2709,45 @@ class GreatDocs:
             "contents": contents,
         }
 
+    def _rewrite_sidebar_first_entry(self, sidebar_config: dict, blended_first: str) -> None:
+        """
+        Rewrite the first sidebar entry to point to ``index.qmd``.
+
+        In blended homepage mode the first UG page lives at the site root
+        as ``index.qmd``, so the sidebar must link there instead of to
+        ``user-guide/<page>.qmd``.
+
+        Handles both flat and sectioned sidebar layouts by recursively
+        searching for the first href match.
+
+        Parameters
+        ----------
+        sidebar_config
+            The user-guide sidebar dict (modified in place).
+        blended_first
+            The original href that was promoted (e.g. ``"user-guide/introduction.qmd"``).
+        """
+        contents = sidebar_config.get("contents", [])
+        self._rewrite_href_recursive(contents, blended_first, "index.qmd")
+
+    def _rewrite_href_recursive(self, items: list, old_href: str, new_href: str) -> bool:
+        """Recursively find and replace the first matching href in sidebar items."""
+        for item in items:
+            if isinstance(item, dict):
+                if item.get("href") == old_href:
+                    item["href"] = new_href
+                    return True
+                # Check nested section contents
+                nested = item.get("contents", [])
+                if nested and self._rewrite_href_recursive(nested, old_href, new_href):
+                    return True
+            elif isinstance(item, str) and item == old_href:
+                # Bare string entry — replace in parent list
+                idx = items.index(item)
+                items[idx] = {"text": "Home", "href": new_href}
+                return True
+        return False
+
     def _update_config_with_user_guide(self, user_guide_info: dict) -> None:
         """
         Update _quarto.yml with user guide sidebar and navbar.
@@ -2731,6 +2770,12 @@ class GreatDocs:
         # Generate and add/update user guide sidebar
         sidebar_config = self._generate_user_guide_sidebar(user_guide_info)
 
+        # In blended homepage mode, rewrite the first sidebar entry to point
+        # to index.qmd (the promoted first UG page) instead of user-guide/...
+        blended_first = getattr(self, "_blended_first_page", None)
+        if self._config.homepage == "user_guide" and blended_first:
+            self._rewrite_sidebar_first_entry(sidebar_config, blended_first)
+
         if "sidebar" not in config["website"]:
             config["website"]["sidebar"] = []
 
@@ -2743,8 +2788,8 @@ class GreatDocs:
         sidebar.append(sidebar_config)
         config["website"]["sidebar"] = sidebar
 
-        # Update navbar to include User Guide link
-        if "navbar" in config["website"]:
+        # Update navbar to include User Guide link (skip in blended homepage mode)
+        if self._config.homepage != "user_guide" and "navbar" in config["website"]:
             navbar = config["website"]["navbar"]
             if "left" in navbar:
                 # Check if User Guide link already exists
@@ -2793,6 +2838,16 @@ class GreatDocs:
         # Discover user guide
         user_guide_info = self._discover_user_guide()
         if not user_guide_info:
+            # Fallback: if homepage mode is "user_guide" but no UG pages exist,
+            # warn and create a normal index from README instead.
+            if self._config.homepage == "user_guide":
+                print(
+                    "   ⚠️  homepage: user_guide is set but no user guide pages found; "
+                    "falling back to index mode"
+                )
+                self._homepage_fallback_to_index = True
+                self._create_index_from_readme(force_rebuild=True)
+                self._homepage_fallback_to_index = False
             return False
 
         print("\n📖 Processing User Guide...")
@@ -2807,6 +2862,10 @@ class GreatDocs:
         copied_files = self._copy_user_guide_to_docs(user_guide_info)
         print(f"   Copied {len(copied_files)} file(s) to docs/user-guide/")
 
+        # In "user_guide" homepage mode, promote the first UG page to index.qmd
+        if self._config.homepage == "user_guide":
+            self._create_blended_index(user_guide_info, copied_files)
+
         # Update configuration
         self._update_config_with_user_guide(user_guide_info)
 
@@ -2817,6 +2876,105 @@ class GreatDocs:
 
         print("✅ User Guide configured")
         return True
+
+    def _create_blended_index(self, user_guide_info: dict, copied_files: list[str]) -> None:
+        """
+        Create `index.qmd` from the first user-guide page (blended homepage mode).
+
+        The first UG page becomes the site root `index.qmd` with the project
+        metadata sidebar appended in the right margin.  The duplicate file
+        under `user-guide/` is removed.
+
+        Parameters
+        ----------
+        user_guide_info
+            User guide structure from `_discover_user_guide()`.
+        copied_files
+            List of copied file paths relative to the docs dir (e.g.
+            `["user-guide/introduction.qmd", ...]`).
+        """
+        if not user_guide_info["files"]:
+            return
+
+        first_file = user_guide_info["files"][0]
+        is_explicit = user_guide_info.get("explicit", False)
+
+        # Determine the filename of the first page in user-guide/
+        source_dir = user_guide_info["source_dir"]
+        try:
+            rel_path = first_file["path"].relative_to(source_dir)
+        except ValueError:
+            rel_path = Path(first_file["path"].name)
+
+        if is_explicit:
+            dest_filename = rel_path.name
+        else:
+            dest_filename = self._strip_numeric_prefix(rel_path.name)
+
+        first_ug_path = self.project_path / "user-guide" / dest_filename
+
+        if not first_ug_path.exists():
+            print(f"   ⚠️  First UG page '{first_ug_path}' not found for blended homepage")
+            return
+
+        # Read the first UG file content
+        with open(first_ug_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        # Inject toc: false into frontmatter (bread-crumbs: false is already set
+        # by _copy_user_guide_to_docs).  Keep the original frontmatter title so
+        # Quarto renders a proper title-block header matching other UG pages.
+        content = self._add_frontmatter_option(content, "toc", False)
+
+        # Build the metadata margin sidebar
+        margin_content = self._build_metadata_margin()
+
+        # Split content into frontmatter and body.  Headings are NOT bumped
+        # here, unlike _create_index_from_readme, because UG pages already
+        # have a frontmatter title.  Quarto absorbs the first body ``#``
+        # heading (matching the title) and ``shift-heading-level-by: -1``
+        # promotes the remaining ``##`` → ``<h1>``, ``###`` → ``<h2>``, etc.
+        # — exactly the same as every other UG page.
+        if content.startswith("---"):
+            parts = content.split("---", 2)
+            if len(parts) >= 3:
+                frontmatter_block = f"---{parts[1]}---\n"
+                body = parts[2].lstrip("\n")
+            else:
+                frontmatter_block = ""
+                body = content
+        else:
+            frontmatter_block = ""
+            body = content
+
+        # Strip the first ``# …`` heading from the body.  The frontmatter
+        # ``title`` already provides the title-block heading; keeping the
+        # body ``#`` would render as a duplicate paragraph because
+        # ``shift-heading-level-by: -1`` demotes it below heading level.
+        import re
+
+        body = re.sub(r"^#\s+[^\n]*\n?", "", body, count=1, flags=re.MULTILINE)
+
+        # Reassemble with margin content inserted after frontmatter
+        if margin_content:
+            blended_content = (
+                f"{frontmatter_block}\n::: {{.gd-meta-sidebar}}\n{margin_content}\n:::\n\n{body}"
+            )
+        else:
+            blended_content = f"{frontmatter_block}\n{body}"
+
+        # Write to index.qmd at the site root
+        index_qmd = self.project_path / "index.qmd"
+        with open(index_qmd, "w", encoding="utf-8") as f:
+            f.write(blended_content)
+
+        # Remove the duplicate from user-guide/
+        first_ug_path.unlink()
+
+        # Track the first file's destination filename for sidebar adjustment
+        self._blended_first_page = f"user-guide/{dest_filename}"
+
+        print("   📄 Blended homepage: first UG page → index.qmd")
 
     def _get_source_location(self, package_name: str, item_name: str) -> dict | None:
         """
@@ -3858,16 +4016,16 @@ class GreatDocs:
     @staticmethod
     def _sub_classify_class(obj) -> str:
         """
-        Determine the sub-type of a griffe ``class`` object.
+        Determine the sub-type of a griffe `class` object.
 
-        Returns one of: ``"dataclass"``, ``"enum"``, ``"exception"``,
-        ``"namedtuple"``, ``"typeddict"``, ``"protocol"``, ``"abc"``,
-        or ``"class"`` (the generic fallback).
+        Returns one of: `dataclass`, `enum`, `exception`,
+        `namedtuple`, `typeddict`, `protocol`, `abc`,
+        or `class` (the generic fallback).
 
         Parameters
         ----------
         obj
-            A griffe ``Class`` object (or ``Alias`` that resolves to one).
+            A griffe `Class` object (or `Alias` that resolves to one).
 
         Returns
         -------
@@ -3919,15 +4077,15 @@ class GreatDocs:
     @staticmethod
     def _sub_classify_function(obj) -> str:
         """
-        Determine the sub-type of a griffe ``function`` object.
+        Determine the sub-type of a griffe `function` object.
 
-        Returns one of: ``"async"``, ``"classmethod"``, ``"staticmethod"``,
-        ``"property"``, or ``"function"`` (the generic fallback).
+        Returns one of: `async`, `classmethod`, `staticmethod`,
+        `property`, or `function` (the generic fallback).
 
         Parameters
         ----------
         obj
-            A griffe ``Function`` object (or ``Alias`` that resolves to one).
+            A griffe `Function` object (or `Alias` that resolves to one).
 
         Returns
         -------
@@ -3953,14 +4111,14 @@ class GreatDocs:
     @staticmethod
     def _sub_classify_attribute(obj) -> str:
         """
-        Determine the sub-type of a griffe ``attribute`` object.
+        Determine the sub-type of a griffe `attribute` object.
 
-        Returns one of: ``"type_alias"``, ``"typevar"``, or ``"constant"``.
+        Returns one of: `type_alias`, `typevar`, or `constant`.
 
         Parameters
         ----------
         obj
-            A griffe ``Attribute`` object (or ``Alias`` that resolves to one).
+            A griffe `Attribute` object (or `Alias` that resolves to one).
 
         Returns
         -------
@@ -3988,7 +4146,7 @@ class GreatDocs:
         if "TypeVar" in annotation or "ParamSpec" in annotation or "TypeVarTuple" in annotation:
             return "typevar"
 
-        # Heuristic: assignment like ``MyAlias = list[int]`` with no annotation
+        # Heuristic: assignment like `MyAlias = list[int]` with no annotation
         # is often a type alias, but we can't reliably distinguish from a
         # constant without more context. Default to constant.
         return "constant"
@@ -3998,14 +4156,14 @@ class GreatDocs:
         """
         Extract value and type annotation from a griffe constant/attribute.
 
-        Populates ``categories["constant_metadata"][name]`` with ``"value"``
-        and ``"annotation"`` strings when they are available and simple enough
+        Populates `categories["constant_metadata"][name]` with `"value"`
+        and `"annotation"` strings when they are available and simple enough
         to display.
 
         Parameters
         ----------
         obj
-            A griffe ``Attribute`` (or ``Alias``) object.
+            A griffe `Attribute` (or `Alias`) object.
         name
             The documented name of the constant.
         categories
@@ -4063,7 +4221,7 @@ class GreatDocs:
 
     def _write_object_types_json(self, categories: dict) -> None:
         """
-        Write ``_object_types.json`` mapping each documented name to its type.
+        Write `_object_types.json` mapping each documented name to its type.
 
         The post-render script reads this file instead of relying on heuristics
         (e.g. first-character case) to classify objects for badges and
@@ -4072,7 +4230,7 @@ class GreatDocs:
         Parameters
         ----------
         categories
-            Dictionary returned by ``_categorize_api_objects``.
+            Dictionary returned by `_categorize_api_objects`.
         """
         import json
 
@@ -4603,8 +4761,8 @@ class GreatDocs:
         Categorize API objects using importlib + inspect when griffe is unavailable.
 
         This fallback is used when griffe cannot load the package (e.g. during
-        ``great-docs init`` when the package is not yet on sys.path). It
-        attempts to import the module via ``importlib`` and uses ``inspect`` to
+        `great-docs init` when the package is not yet on sys.path). It
+        attempts to import the module via `importlib` and uses `inspect` to
         distinguish functions from classes and other objects.
 
         Parameters
@@ -5390,7 +5548,7 @@ class GreatDocs:
         Returns
         -------
         tuple[str, str, str]
-            ``(display_name_yaml, site_yaml, funding_yaml)`` — each is either
+            `(display_name_yaml, site_yaml, funding_yaml)`: each is either
             an active YAML block or the commented-out template placeholder.
         """
         # ── display_name ─────────────────────────────────────────────
@@ -5472,13 +5630,13 @@ class GreatDocs:
         Parameters
         ----------
         cli_config
-            CLI config dict (e.g. ``{"enabled": True, "module": "pkg.cli"}``),
-            or ``None`` to emit a commented-out template.
+            CLI config dict (e.g. `{"enabled": True, "module": "pkg.cli"}`),
+            or `None` to emit a commented-out template.
 
         Returns
         -------
         str
-            Active ``cli:`` YAML block when enabled, or a commented-out template.
+            Active `cli:` YAML block when enabled, or a commented-out template.
         """
         if cli_config and cli_config.get("enabled"):
             parts = [
@@ -5940,7 +6098,7 @@ jupyter: python3
         Parameters
         ----------
         rst_path
-            Path to the ``.rst`` file.
+            Path to the `.rst` file.
 
         Returns
         -------
@@ -6040,6 +6198,342 @@ jupyter: python3
             lines.append("")
 
         return "\n".join(lines) + "\n"
+
+    def _build_metadata_margin(self) -> str:
+        """
+        Build the `.column-margin` metadata sidebar content for the homepage.
+
+        Generates Markdown for the right-hand margin containing project metadata:
+        links, license, community pages, developers, funding, meta, and citation.
+
+        As a side effect, creates `contributing.qmd` and `code-of-conduct.qmd`
+        in the project directory if the corresponding source files exist.
+
+        Returns
+        -------
+        str
+            The margin content as a Markdown string (without the `::: {.column-margin}`
+            wrapper). Empty string if no metadata is available.
+        """
+        package_root = self._find_package_root()
+        metadata = self._get_package_metadata()
+
+        # Determine which supporting pages exist (already created by _create_index_from_readme)
+        license_qmd = self.project_path / "license.qmd"
+        license_link = "license.qmd" if license_qmd.exists() else None
+        citation_qmd = self.project_path / "citation.qmd"
+        citation_link = "citation.qmd" if citation_qmd.exists() else None
+
+        # If license.qmd doesn't exist yet, check if LICENSE file exists and note it
+        if not license_link and metadata.get("license"):
+            # Fallback: just show the license name without a link
+            pass
+
+        margin_sections = []
+
+        # Links section
+        links_added = []
+
+        # Try to add PyPI link based on package name
+        package_name = self._detect_package_name()
+        if package_name:
+            pypi_url = f"https://pypi.org/project/{package_name}/"
+            margin_sections.append("#### Links\n")
+            margin_sections.append(f"[View on PyPI]({pypi_url})<br>")
+            links_added.append("pypi")
+
+        if metadata.get("urls"):
+            if not links_added:
+                margin_sections.append("#### Links\n")
+
+            urls = metadata["urls"]
+
+            # Map common URL names to display text
+            url_map = {
+                "homepage": None,  # Skip if we already added PyPI
+                "repository": "Browse source code",
+                "bug_tracker": "Report a bug",
+                "documentation": None,  # Skip for that's the site we're on
+            }
+
+            for name, url in urls.items():
+                name_lower = name.lower().replace(" ", "_")
+                display_name = url_map.get(name_lower, name.replace("_", " ").title())
+
+                # Skip if display_name is None (homepage/documentation)
+                if display_name:
+                    margin_sections.append(f"[{display_name}]({url})<br>")
+
+        # Add llms.txt and llms-full.txt links at the end of Links section
+        if links_added or metadata.get("urls"):
+            margin_sections.append("[llms.txt](llms.txt)<br>")
+            margin_sections.append("[llms-full.txt](llms-full.txt)<br>")
+        else:
+            # If no links section exists yet, create one just for llms.txt files
+            margin_sections.append("#### Links\n")
+            margin_sections.append("[llms.txt](llms.txt)<br>")
+            margin_sections.append("[llms-full.txt](llms-full.txt)<br>")
+
+        # License section
+        if license_link:
+            margin_sections.append("\n#### License\n")
+            margin_sections.append(f"[Full license]({license_link})<br>")
+        elif metadata.get("license"):
+            margin_sections.append("\n#### License\n")
+            margin_sections.append(f"{metadata['license']}")
+
+        # Community section: check for CONTRIBUTING.md and CODE_OF_CONDUCT.md
+        community_items = []
+
+        # Check for CONTRIBUTING.md in root or .github directory
+        contributing_path = package_root / "CONTRIBUTING.md"
+        if not contributing_path.exists():
+            contributing_path = package_root / ".github" / "CONTRIBUTING.md"
+
+        # Check for CODE_OF_CONDUCT.md in root or .github directory
+        coc_path = package_root / "CODE_OF_CONDUCT.md"
+        if not coc_path.exists():
+            coc_path = package_root / ".github" / "CODE_OF_CONDUCT.md"
+
+        if contributing_path.exists():
+            community_items.append("[Contributing guide](contributing.qmd)<br>")
+            # Create contributing.qmd (idempotent)
+            with open(contributing_path, "r", encoding="utf-8") as f:
+                contributing_content = f.read()
+
+            # Strip first heading if it exists to avoid duplication with title
+            lines = contributing_content.split("\n")
+            if lines and lines[0].startswith("# "):
+                contributing_content = "\n".join(lines[1:]).lstrip()
+
+            contributing_qmd = self.project_path / "contributing.qmd"
+            contributing_qmd_content = f"""---
+title: "Contributing"
+---
+
+{contributing_content}
+"""
+            with open(contributing_qmd, "w", encoding="utf-8") as f:
+                f.write(contributing_qmd_content)
+
+        if coc_path.exists():
+            community_items.append("[Code of conduct](code-of-conduct.qmd)<br>")
+            # Create code-of-conduct.qmd (idempotent)
+            with open(coc_path, "r", encoding="utf-8") as f:
+                coc_content = f.read()
+
+            # Strip first heading if it exists to avoid duplication with title
+            lines = coc_content.split("\n")
+            if lines and lines[0].startswith("# "):
+                coc_content = "\n".join(lines[1:]).lstrip()
+
+            coc_qmd = self.project_path / "code-of-conduct.qmd"
+            coc_qmd_content = f"""---
+title: "Code of Conduct"
+---
+
+{coc_content}
+"""
+            with open(coc_qmd, "w", encoding="utf-8") as f:
+                f.write(coc_qmd_content)
+
+        if community_items:
+            margin_sections.append("\n#### Community\n")
+            margin_sections.extend(community_items)
+
+        # Developers section (Authors)
+        # Use rich author metadata if available, otherwise fall back to standard authors
+        authors_to_display = metadata.get("rich_authors") or metadata.get("authors", [])
+
+        if authors_to_display:
+            margin_sections.append("\n#### Developers\n")
+
+            # Try to extract GitHub username from repository URL as fallback
+            fallback_github = None
+            if metadata.get("urls"):
+                repo_url = metadata["urls"].get("repository", "") or metadata["urls"].get(
+                    "Repository", ""
+                )
+                if "github.com/" in repo_url:
+                    parts = repo_url.rstrip("/").split("github.com/")
+                    if len(parts) > 1:
+                        username_part = parts[1].split("/")[0]
+                        if username_part:
+                            fallback_github = username_part
+
+            for idx, author in enumerate(authors_to_display):
+                if isinstance(author, dict):
+                    name = author.get("name", "")
+                    email = author.get("email", "")
+
+                    # Rich metadata fields (from great-docs.yml authors)
+                    role = author.get("role", "")
+                    affiliation = author.get("affiliation", "")
+                    github = author.get("github", "")
+                    homepage = author.get("homepage", "")
+                    orcid = author.get("orcid", "")
+
+                    # Build author HTML
+                    author_html_parts = []
+
+                    # Name line
+                    name_html = (
+                        f'<span><p><strong style="padding-bottom: 4px;">{name}</strong></p></span>'
+                    )
+                    author_html_parts.append(name_html)
+
+                    # Role line (if available)
+                    if role:
+                        role_html = (
+                            f'<span style="margin-top: -0.15em; display: block;">'
+                            f"<p><small>{role}</small></p></span>"
+                        )
+                        author_html_parts.append(role_html)
+
+                    # Affiliation line (if available)
+                    if affiliation:
+                        affiliation_html = (
+                            f'<span><p><small style="margin-top: -0.15em; display: block;">'
+                            f"{affiliation}</small></p></span>"
+                        )
+                        author_html_parts.append(affiliation_html)
+
+                    # Icon links (if available)
+                    icon_links = []
+
+                    if email:
+                        icon_links.append(
+                            f'<a href="mailto:{email}" title="Email"><i class="bi bi-envelope-fill"></i></a>'
+                        )
+
+                    if github:
+                        icon_links.append(
+                            f'<a href="https://github.com/{github}" title="GitHub"><i class="bi bi-github"></i></a>'
+                        )
+                    elif fallback_github:
+                        icon_links.append(
+                            f'<a href="https://github.com/{fallback_github}" title="GitHub"><i class="bi bi-github"></i></a>'
+                        )
+
+                    if homepage:
+                        icon_links.append(
+                            f'<a href="{homepage}" title="Website"><i class="bi bi-globe"></i></a>'
+                        )
+
+                    if orcid:
+                        orcid_url = (
+                            orcid if orcid.startswith("http") else f"https://orcid.org/{orcid}"
+                        )
+                        icon_links.append(
+                            f'<a href="{orcid_url}" title="ORCID"><i class="fa-brands fa-orcid"></i></a>'
+                        )
+
+                    if icon_links:
+                        icon_html = (
+                            '<span style="margin-top: -0.15em; display: block;">'
+                            + " ".join(icon_links)
+                            + "</span>"
+                        )
+                        author_html_parts.append(icon_html)
+
+                    # Wrap entire author in <div> tag with padding for non-first authors
+                    author_div_content = "".join(author_html_parts)
+                    if idx == 0:
+                        margin_sections.append(f"<div>{author_div_content}</div>")
+                    else:
+                        margin_sections.append(
+                            f'<div style="padding-top: 10px;">{author_div_content}</div>'
+                        )
+
+        # Funding section (similar to Developers but for organizations)
+        funding = metadata.get("funding")
+        if funding and isinstance(funding, dict) and funding.get("name"):
+            margin_sections.append("\n#### Funding\n")
+
+            funder_name = funding.get("name", "")
+            roles = funding.get("roles", [])
+            homepage = funding.get("homepage", "")
+            ror_url = funding.get("ror", "")
+
+            # Build funder HTML
+            funder_html_parts = []
+
+            # Name line
+            name_html = (
+                f'<span><p><strong style="padding-bottom: 4px;">{funder_name}</strong></p></span>'
+            )
+            funder_html_parts.append(name_html)
+
+            # Roles line (if available)
+            if roles:
+                roles_text = ", ".join(roles)
+                roles_html = (
+                    f'<span style="margin-top: -0.15em; display: block;">'
+                    f"<p><small>{roles_text}</small></p></span>"
+                )
+                funder_html_parts.append(roles_html)
+
+            # Icon links (if available)
+            icon_links = []
+
+            if homepage:
+                icon_links.append(
+                    f'<a href="{homepage}" title="Website"><i class="bi bi-globe"></i></a>'
+                )
+
+            if ror_url:
+                # ROR icon (use inline SVG styled to match Bootstrap Icons)
+                ror_icon = (
+                    '<svg class="ror-sidebar-icon" viewBox="0 0 164 118" '
+                    'xmlns="http://www.w3.org/2000/svg" '
+                    'style="width: 1em; height: 0.75em; vertical-align: -0.05em; fill: currentColor;">'
+                    '<g transform="translate(-0.945,-0.815)">'
+                    '<path d="M68.65,4.16L56.52,22.74L44.38,4.16L68.65,4.16Z" style="fill:rgb(83,186,161);"/>'
+                    '<path d="M119.41,4.16L107.28,22.74L95.14,4.16L119.41,4.16Z" style="fill:rgb(83,186,161);"/>'
+                    '<path d="M44.38,115.47L56.52,96.88L68.65,115.47L44.38,115.47Z" style="fill:rgb(83,186,161);"/>'
+                    '<path d="M95.14,115.47L107.28,96.88L119.41,115.47L95.14,115.47Z" style="fill:rgb(83,186,161);"/>'
+                    '<path d="M145.53,63.71C149.83,62.91 153.1,61 155.33,57.99C157.57,54.98 158.68,51.32 158.68,47.03C158.68,43.47 158.06,40.51 156.83,38.13C155.6,35.75 153.93,33.86 151.84,32.45C149.75,31.05 147.31,30.04 144.53,29.44C141.75,28.84 138.81,28.54 135.72,28.54L112.16,28.54L112.16,47.37C111.97,46.82 111.77,46.28 111.55,45.74C109.92,41.79 107.64,38.42 104.71,35.64C101.78,32.86 98.32,30.72 94.3,29.23C90.29,27.74 85.9,26.99 81.14,26.99C76.38,26.99 72,27.74 67.98,29.23C63.97,30.72 60.5,32.86 57.57,35.64C54.95,38.13 52.85,41.1 51.27,44.54C51.04,42.07 50.46,39.93 49.53,38.13C48.3,35.75 46.63,33.86 44.54,32.45C42.45,31.05 40.01,30.04 37.23,29.44C34.45,28.84 31.51,28.54 28.42,28.54L4.87,28.54L4.87,89.42L18.28,89.42L18.28,65.08L24.9,65.08L37.63,89.42L53.71,89.42L38.24,63.71C42.54,62.91 45.81,61 48.04,57.99C48.14,57.85 48.23,57.7 48.33,57.56C48.31,58.03 48.3,58.5 48.3,58.98C48.3,63.85 49.12,68.27 50.75,72.22C52.38,76.17 54.66,79.54 57.59,82.32C60.51,85.1 63.98,87.24 68,88.73C72.01,90.22 76.4,90.97 81.16,90.97C85.92,90.97 90.3,90.22 94.32,88.73C98.33,87.24 101.8,85.1 104.73,82.32C107.65,79.54 109.93,76.17 111.57,72.22C111.79,71.69 111.99,71.14 112.18,70.59L112.18,89.42L125.59,89.42L125.59,65.08L132.21,65.08L144.94,89.42L161.02,89.42L145.53,63.71ZM36.39,50.81C35.67,51.73 34.77,52.4 33.68,52.83C32.59,53.26 31.37,53.52 30.03,53.6C28.68,53.69 27.41,53.73 26.2,53.73L18.29,53.73L18.29,39.89L27.06,39.89C28.26,39.89 29.5,39.98 30.76,40.15C32.02,40.32 33.14,40.65 34.11,41.14C35.08,41.63 35.89,42.33 36.52,43.25C37.15,44.17 37.47,45.4 37.47,46.95C37.47,48.6 37.11,49.89 36.39,50.81ZM98.74,66.85C97.85,69.23 96.58,71.29 94.91,73.04C93.25,74.79 91.26,76.15 88.93,77.13C86.61,78.11 84.01,78.59 81.15,78.59C78.28,78.59 75.69,78.1 73.37,77.13C71.05,76.16 69.06,74.79 67.39,73.04C65.73,71.29 64.45,69.23 63.56,66.85C62.67,64.47 62.23,61.85 62.23,58.98C62.23,56.17 62.67,53.56 63.56,51.15C64.45,48.74 65.72,46.67 67.39,44.92C69.05,43.17 71.04,41.81 73.37,40.83C75.69,39.86 78.28,39.37 81.15,39.37C84.02,39.37 86.61,39.86 88.93,40.83C91.25,41.8 93.24,43.17 94.91,44.92C96.57,46.67 97.85,48.75 98.74,51.15C99.63,53.56 100.07,56.17 100.07,58.98C100.07,61.85 99.63,64.47 98.74,66.85ZM143.68,50.81C142.96,51.73 142.06,52.4 140.97,52.83C139.88,53.26 138.66,53.52 137.32,53.6C135.97,53.69 134.7,53.73 133.49,53.73L125.58,53.73L125.58,39.89L134.35,39.89C135.55,39.89 136.79,39.98 138.05,40.15C139.31,40.32 140.43,40.65 141.4,41.14C142.37,41.63 143.18,42.33 143.81,43.25C144.44,44.17 144.76,45.4 144.76,46.95C144.76,48.6 144.4,49.89 143.68,50.81Z" style="fill:currentColor;"/>'
+                    "</g></svg>"
+                )
+                icon_links.append(
+                    f'<a href="{ror_url}" title="Research Organization Registry">{ror_icon}</a>'
+                )
+
+            if icon_links:
+                icon_html = (
+                    '<span style="margin-top: -0.15em; display: block;">'
+                    + " ".join(icon_links)
+                    + "</span>"
+                )
+                funder_html_parts.append(icon_html)
+
+            # Wrap entire funding entry in <div> tag
+            funder_div_content = "".join(funder_html_parts)
+            margin_sections.append(f"<div>{funder_div_content}</div>")
+
+        # Meta section (Python version and extras)
+        meta_items = []
+        if metadata.get("requires_python"):
+            meta_items.append(f"**Requires:** Python `{metadata['requires_python']}`")
+
+        if metadata.get("optional_dependencies"):
+            extras = list(metadata["optional_dependencies"].keys())
+            if extras:
+                # Wrap each extra in backticks for monospace
+                extras_formatted = ", ".join(f"`{extra}`" for extra in extras)
+                meta_items.append(f"**Provides-Extra:** {extras_formatted}")
+
+        if meta_items:
+            margin_sections.append("\n#### Meta\n")
+            margin_sections.append("<br>\n".join(meta_items))
+
+        # Citation section (if CITATION.cff exists)
+        if citation_link:
+            margin_sections.append("\n#### Citation\n")
+            package_name = package_name or self._detect_package_name() or "this package"
+            margin_sections.append(f"[Citing {package_name}]({citation_link})")
+
+        return "\n".join(margin_sections) if margin_sections else ""
 
     def _create_index_from_readme(self, force_rebuild: bool = False) -> None:
         """
@@ -6290,6 +6784,14 @@ title: "Authors and Citation"
         # Now check if we should create index.qmd
         index_qmd = self.project_path / "index.qmd"
 
+        # In "user_guide" homepage mode, the first UG page becomes index.qmd
+        # instead — skip README-based index generation entirely.
+        # The _homepage_fallback_to_index flag overrides this when no UG pages exist.
+        if self._config.homepage == "user_guide" and not getattr(
+            self, "_homepage_fallback_to_index", False
+        ):
+            return
+
         if index_qmd.exists() and not force_rebuild:
             print("index.qmd already exists, skipping creation")
             return
@@ -6332,319 +6834,8 @@ title: "Authors and Citation"
             readme_content = re.sub(r"^##\s+", r"### ", readme_content, flags=re.MULTILINE)
             readme_content = re.sub(r"^#\s+", r"## ", readme_content, flags=re.MULTILINE)
 
-        # Get package metadata for sidebar
-        metadata = self._get_package_metadata()
-
-        # Build margin content sections (right sidebar)
-        margin_sections = []
-
-        # Links section
-        links_added = []
-
-        # Try to add PyPI link based on package name
-        package_name = self._detect_package_name()
-        if package_name:
-            pypi_url = f"https://pypi.org/project/{package_name}/"
-            margin_sections.append("#### Links\n")
-            margin_sections.append(f"[View on PyPI]({pypi_url})<br>")
-            links_added.append("pypi")
-
-        if metadata.get("urls"):
-            if not links_added:
-                margin_sections.append("#### Links\n")
-
-            urls = metadata["urls"]
-
-            # Map common URL names to display text
-            url_map = {
-                "homepage": None,  # Skip if we already added PyPI
-                "repository": "Browse source code",
-                "bug_tracker": "Report a bug",
-                "documentation": None,  # Skip for that's the site we're on
-            }
-
-            for name, url in urls.items():
-                name_lower = name.lower().replace(" ", "_")
-                display_name = url_map.get(name_lower, name.replace("_", " ").title())
-
-                # Skip if display_name is None (homepage/documentation)
-                if display_name:
-                    margin_sections.append(f"[{display_name}]({url})<br>")
-
-        # Add llms.txt and llms-full.txt links at the end of Links section
-        if links_added or metadata.get("urls"):
-            margin_sections.append("[llms.txt](llms.txt)<br>")
-            margin_sections.append("[llms-full.txt](llms-full.txt)<br>")
-        else:
-            # If no links section exists yet, create one just for llms.txt files
-            margin_sections.append("#### Links\n")
-            margin_sections.append("[llms.txt](llms.txt)<br>")
-            margin_sections.append("[llms-full.txt](llms-full.txt)<br>")
-
-        # License section
-        if license_link:
-            margin_sections.append("\n#### License\n")
-            margin_sections.append(f"[Full license]({license_link})<br>")
-        elif metadata.get("license"):
-            margin_sections.append("\n#### License\n")
-            margin_sections.append(f"{metadata['license']}")
-
-        # Community section: check for CONTRIBUTING.md and CODE_OF_CONDUCT.md
-        community_items = []
-
-        # Check for CONTRIBUTING.md in root or .github directory
-        contributing_path = package_root / "CONTRIBUTING.md"
-        if not contributing_path.exists():
-            contributing_path = package_root / ".github" / "CONTRIBUTING.md"
-
-        # Check for CODE_OF_CONDUCT.md in root or .github directory
-        coc_path = package_root / "CODE_OF_CONDUCT.md"
-        if not coc_path.exists():
-            coc_path = package_root / ".github" / "CODE_OF_CONDUCT.md"
-
-        if contributing_path.exists():
-            community_items.append("[Contributing guide](contributing.qmd)<br>")
-            # Create contributing.qmd
-            with open(contributing_path, "r", encoding="utf-8") as f:
-                contributing_content = f.read()
-
-            # Strip first heading if it exists to avoid duplication with title
-            lines = contributing_content.split("\n")
-            if lines and lines[0].startswith("# "):
-                contributing_content = "\n".join(lines[1:]).lstrip()
-
-            contributing_qmd = self.project_path / "contributing.qmd"
-            contributing_qmd_content = f"""---
-title: "Contributing"
----
-
-{contributing_content}
-"""
-            with open(contributing_qmd, "w", encoding="utf-8") as f:
-                f.write(contributing_qmd_content)
-            print(f"Created {contributing_qmd}")
-
-        if coc_path.exists():
-            community_items.append("[Code of conduct](code-of-conduct.qmd)<br>")
-            # Create code-of-conduct.qmd
-            with open(coc_path, "r", encoding="utf-8") as f:
-                coc_content = f.read()
-
-            # Strip first heading if it exists to avoid duplication with title
-            lines = coc_content.split("\n")
-            if lines and lines[0].startswith("# "):
-                coc_content = "\n".join(lines[1:]).lstrip()
-
-            coc_qmd = self.project_path / "code-of-conduct.qmd"
-            coc_qmd_content = f"""---
-title: "Code of Conduct"
----
-
-{coc_content}
-"""
-            with open(coc_qmd, "w", encoding="utf-8") as f:
-                f.write(coc_qmd_content)
-            print(f"Created {coc_qmd}")
-
-        if community_items:
-            margin_sections.append("\n#### Community\n")
-            margin_sections.extend(community_items)
-
-        # Developers section (Authors)
-        # Use rich author metadata if available, otherwise fall back to standard authors
-        authors_to_display = metadata.get("rich_authors") or metadata.get("authors", [])
-
-        if authors_to_display:
-            margin_sections.append("\n#### Developers\n")
-
-            # Try to extract GitHub username from repository URL as fallback
-            fallback_github = None
-            if metadata.get("urls"):
-                repo_url = metadata["urls"].get("repository", "") or metadata["urls"].get(
-                    "Repository", ""
-                )
-                if "github.com/" in repo_url:
-                    # Extract username from URL like https://github.com/username/repo
-                    parts = repo_url.rstrip("/").split("github.com/")
-                    if len(parts) > 1:
-                        username_part = parts[1].split("/")[0]
-                        if username_part:
-                            fallback_github = username_part
-
-            for idx, author in enumerate(authors_to_display):
-                if isinstance(author, dict):
-                    name = author.get("name", "")
-                    email = author.get("email", "")
-
-                    # Rich metadata fields (from great-docs.yml authors)
-                    role = author.get("role", "")
-                    affiliation = author.get("affiliation", "")
-                    github = author.get("github", "")
-                    homepage = author.get("homepage", "")
-                    orcid = author.get("orcid", "")
-
-                    # Build author HTML
-                    author_html_parts = []
-
-                    # Name line
-                    name_html = (
-                        f'<span><p><strong style="padding-bottom: 4px;">{name}</strong></p></span>'
-                    )
-                    author_html_parts.append(name_html)
-
-                    # Role line (if available)
-                    if role:
-                        role_html = (
-                            f'<span style="margin-top: -0.15em; display: block;">'
-                            f"<p><small>{role}</small></p></span>"
-                        )
-                        author_html_parts.append(role_html)
-
-                    # Affiliation line (if available)
-                    if affiliation:
-                        affiliation_html = (
-                            f'<span><p><small style="margin-top: -0.15em; display: block;">'
-                            f"{affiliation}</small></p></span>"
-                        )
-                        author_html_parts.append(affiliation_html)
-
-                    # Icon links (if available)
-                    icon_links = []
-
-                    if email:
-                        icon_links.append(
-                            f'<a href="mailto:{email}" title="Email"><i class="bi bi-envelope-fill"></i></a>'
-                        )
-
-                    if github:
-                        icon_links.append(
-                            f'<a href="https://github.com/{github}" title="GitHub"><i class="bi bi-github"></i></a>'
-                        )
-                    elif fallback_github:
-                        icon_links.append(
-                            f'<a href="https://github.com/{fallback_github}" title="GitHub"><i class="bi bi-github"></i></a>'
-                        )
-
-                    if homepage:
-                        icon_links.append(
-                            f'<a href="{homepage}" title="Website"><i class="bi bi-globe"></i></a>'
-                        )
-
-                    if orcid:
-                        # ORCID should be a full URL or just the ID
-                        orcid_url = (
-                            orcid if orcid.startswith("http") else f"https://orcid.org/{orcid}"
-                        )
-                        icon_links.append(
-                            f'<a href="{orcid_url}" title="ORCID"><i class="fa-brands fa-orcid"></i></a>'
-                        )
-
-                    if icon_links:
-                        icon_html = (
-                            '<span style="margin-top: -0.15em; display: block;">'
-                            + " ".join(icon_links)
-                            + "</span>"
-                        )
-                        author_html_parts.append(icon_html)
-
-                    # Wrap entire author in <div> tag with padding for non-first authors
-                    author_div_content = "".join(author_html_parts)
-                    if idx == 0:
-                        margin_sections.append(f"<div>{author_div_content}</div>")
-                    else:
-                        margin_sections.append(
-                            f'<div style="padding-top: 10px;">{author_div_content}</div>'
-                        )
-
-        # Funding section (similar to Developers but for organizations)
-        funding = metadata.get("funding")
-        if funding and isinstance(funding, dict) and funding.get("name"):
-            margin_sections.append("\n#### Funding\n")
-
-            funder_name = funding.get("name", "")
-            roles = funding.get("roles", [])
-            homepage = funding.get("homepage", "")
-            ror_url = funding.get("ror", "")
-
-            # Build funder HTML
-            funder_html_parts = []
-
-            # Name line
-            name_html = (
-                f'<span><p><strong style="padding-bottom: 4px;">{funder_name}</strong></p></span>'
-            )
-            funder_html_parts.append(name_html)
-
-            # Roles line (if available)
-            if roles:
-                roles_text = ", ".join(roles)
-                roles_html = (
-                    f'<span style="margin-top: -0.15em; display: block;">'
-                    f"<p><small>{roles_text}</small></p></span>"
-                )
-                funder_html_parts.append(roles_html)
-
-            # Icon links (if available)
-            icon_links = []
-
-            if homepage:
-                icon_links.append(
-                    f'<a href="{homepage}" title="Website"><i class="bi bi-globe"></i></a>'
-                )
-
-            if ror_url:
-                # ROR icon (use inline SVG styled to match Bootstrap Icons)
-                ror_icon = (
-                    '<svg class="ror-sidebar-icon" viewBox="0 0 164 118" '
-                    'xmlns="http://www.w3.org/2000/svg" '
-                    'style="width: 1em; height: 0.75em; vertical-align: -0.05em; fill: currentColor;">'
-                    '<g transform="translate(-0.945,-0.815)">'
-                    '<path d="M68.65,4.16L56.52,22.74L44.38,4.16L68.65,4.16Z" style="fill:rgb(83,186,161);"/>'
-                    '<path d="M119.41,4.16L107.28,22.74L95.14,4.16L119.41,4.16Z" style="fill:rgb(83,186,161);"/>'
-                    '<path d="M44.38,115.47L56.52,96.88L68.65,115.47L44.38,115.47Z" style="fill:rgb(83,186,161);"/>'
-                    '<path d="M95.14,115.47L107.28,96.88L119.41,115.47L95.14,115.47Z" style="fill:rgb(83,186,161);"/>'
-                    '<path d="M145.53,63.71C149.83,62.91 153.1,61 155.33,57.99C157.57,54.98 158.68,51.32 158.68,47.03C158.68,43.47 158.06,40.51 156.83,38.13C155.6,35.75 153.93,33.86 151.84,32.45C149.75,31.05 147.31,30.04 144.53,29.44C141.75,28.84 138.81,28.54 135.72,28.54L112.16,28.54L112.16,47.37C111.97,46.82 111.77,46.28 111.55,45.74C109.92,41.79 107.64,38.42 104.71,35.64C101.78,32.86 98.32,30.72 94.3,29.23C90.29,27.74 85.9,26.99 81.14,26.99C76.38,26.99 72,27.74 67.98,29.23C63.97,30.72 60.5,32.86 57.57,35.64C54.95,38.13 52.85,41.1 51.27,44.54C51.04,42.07 50.46,39.93 49.53,38.13C48.3,35.75 46.63,33.86 44.54,32.45C42.45,31.05 40.01,30.04 37.23,29.44C34.45,28.84 31.51,28.54 28.42,28.54L4.87,28.54L4.87,89.42L18.28,89.42L18.28,65.08L24.9,65.08L37.63,89.42L53.71,89.42L38.24,63.71C42.54,62.91 45.81,61 48.04,57.99C48.14,57.85 48.23,57.7 48.33,57.56C48.31,58.03 48.3,58.5 48.3,58.98C48.3,63.85 49.12,68.27 50.75,72.22C52.38,76.17 54.66,79.54 57.59,82.32C60.51,85.1 63.98,87.24 68,88.73C72.01,90.22 76.4,90.97 81.16,90.97C85.92,90.97 90.3,90.22 94.32,88.73C98.33,87.24 101.8,85.1 104.73,82.32C107.65,79.54 109.93,76.17 111.57,72.22C111.79,71.69 111.99,71.14 112.18,70.59L112.18,89.42L125.59,89.42L125.59,65.08L132.21,65.08L144.94,89.42L161.02,89.42L145.53,63.71ZM36.39,50.81C35.67,51.73 34.77,52.4 33.68,52.83C32.59,53.26 31.37,53.52 30.03,53.6C28.68,53.69 27.41,53.73 26.2,53.73L18.29,53.73L18.29,39.89L27.06,39.89C28.26,39.89 29.5,39.98 30.76,40.15C32.02,40.32 33.14,40.65 34.11,41.14C35.08,41.63 35.89,42.33 36.52,43.25C37.15,44.17 37.47,45.4 37.47,46.95C37.47,48.6 37.11,49.89 36.39,50.81ZM98.74,66.85C97.85,69.23 96.58,71.29 94.91,73.04C93.25,74.79 91.26,76.15 88.93,77.13C86.61,78.11 84.01,78.59 81.15,78.59C78.28,78.59 75.69,78.1 73.37,77.13C71.05,76.16 69.06,74.79 67.39,73.04C65.73,71.29 64.45,69.23 63.56,66.85C62.67,64.47 62.23,61.85 62.23,58.98C62.23,56.17 62.67,53.56 63.56,51.15C64.45,48.74 65.72,46.67 67.39,44.92C69.05,43.17 71.04,41.81 73.37,40.83C75.69,39.86 78.28,39.37 81.15,39.37C84.02,39.37 86.61,39.86 88.93,40.83C91.25,41.8 93.24,43.17 94.91,44.92C96.57,46.67 97.85,48.75 98.74,51.15C99.63,53.56 100.07,56.17 100.07,58.98C100.07,61.85 99.63,64.47 98.74,66.85ZM143.68,50.81C142.96,51.73 142.06,52.4 140.97,52.83C139.88,53.26 138.66,53.52 137.32,53.6C135.97,53.69 134.7,53.73 133.49,53.73L125.58,53.73L125.58,39.89L134.35,39.89C135.55,39.89 136.79,39.98 138.05,40.15C139.31,40.32 140.43,40.65 141.4,41.14C142.37,41.63 143.18,42.33 143.81,43.25C144.44,44.17 144.76,45.4 144.76,46.95C144.76,48.6 144.4,49.89 143.68,50.81Z" style="fill:currentColor;"/>'
-                    "</g></svg>"
-                )
-                icon_links.append(
-                    f'<a href="{ror_url}" title="Research Organization Registry">{ror_icon}</a>'
-                )
-
-            if icon_links:
-                icon_html = (
-                    '<span style="margin-top: -0.15em; display: block;">'
-                    + " ".join(icon_links)
-                    + "</span>"
-                )
-                funder_html_parts.append(icon_html)
-
-            # Wrap entire funding entry in <div> tag
-            funder_div_content = "".join(funder_html_parts)
-            margin_sections.append(f"<div>{funder_div_content}</div>")
-
-        # Meta section (Python version and extras)
-        meta_items = []
-        if metadata.get("requires_python"):
-            meta_items.append(f"**Requires:** Python `{metadata['requires_python']}`")
-
-        if metadata.get("optional_dependencies"):
-            extras = list(metadata["optional_dependencies"].keys())
-            if extras:
-                # Wrap each extra in backticks for monospace
-                extras_formatted = ", ".join(f"`{extra}`" for extra in extras)
-                meta_items.append(f"**Provides-Extra:** {extras_formatted}")
-
-        if meta_items:
-            margin_sections.append("\n#### Meta\n")
-            margin_sections.append("<br>\n".join(meta_items))
-
-        # Citation section (if CITATION.cff exists)
-        if citation_link:
-            margin_sections.append("\n#### Citation\n")
-            margin_sections.append(f"[Citing great-docs]({citation_link})")
-
-        # Build margin content
-        margin_content = "\n".join(margin_sections) if margin_sections else ""
+        # Build margin content using the shared helper
+        margin_content = self._build_metadata_margin()
 
         # CSS to reduce top margin of first heading element
         # The heading ends up inside a section.level1 > h1 structure
@@ -6694,9 +6885,9 @@ toc: false
 
         Adds sensible defaults for API reference generation with automatic
         package detection.  If no documentable exports are discovered (and no
-        explicit ``reference`` config exists in great-docs.yml), the method
+        explicit `reference` config exists in great-docs.yml), the method
         skips API reference setup entirely and sets
-        ``self._has_api_reference = False``.
+        `self._has_api_reference = False`.
         """
         # Explicit opt-out via great-docs.yml
         if not self._config.reference_enabled:

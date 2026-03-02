@@ -264,6 +264,12 @@ def test_R0_user_guide_pages_exist(pkg_name: str):
     expected = _EXPECTED_CACHE[pkg_name]
     ug_files = expected["user_guide_files"]
 
+    # In blended-homepage mode the first UG page becomes index.qmd and is
+    # removed from user-guide/, so skip it here.
+    is_blended = expected.get("homepage_mode") == "user_guide"
+    if is_blended:
+        ug_files = ug_files[1:]
+
     site = _site_dir(pkg_name)
     ug_dir = site / "user-guide"
     if not ug_dir.exists():
@@ -1133,9 +1139,13 @@ def test_R4_landing_page_has_title(pkg_name: str):
         pytest.skip("No index.html")
 
     soup = _load_html(index)
-    title = soup.select_one("h1.title, h1")
-    assert title is not None, f"{pkg_name}: landing page has no <h1>"
-    assert len(title.get_text().strip()) > 0, f"{pkg_name}: landing page <h1> is empty"
+
+    # In blended-homepage mode the title block is intentionally empty and the
+    # visible heading comes from the body content.  Accept any non-empty <h1>.
+    all_h1 = soup.select("h1")
+    assert all_h1, f"{pkg_name}: landing page has no <h1>"
+    has_text = any(h.get_text().strip() for h in all_h1)
+    assert has_text, f"{pkg_name}: landing page <h1> is empty"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

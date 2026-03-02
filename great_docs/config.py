@@ -61,6 +61,10 @@ DEFAULT_CONFIG: dict[str, Any] = {
     # Custom sections (generic page groups: examples, tutorials, blog, etc.)
     # Each entry: {"title": str, "dir": str, "navbar_after": str | None}
     "sections": [],
+    # Homepage mode
+    # "index" (default): separate homepage from README / index source
+    # "user_guide": first user-guide page becomes the landing page
+    "homepage": "index",
     # User Guide configuration
     # If None, auto-discovers from user_guide/ directory
     # If a string, uses that as the directory path
@@ -275,6 +279,22 @@ class Config:
         e.g., 'Great Docs' instead of 'great_docs' or 'great-docs'.
         """
         return self.get("display_name")
+
+    @property
+    def homepage(self) -> str:
+        """Get the homepage mode ('index' or 'user_guide').
+
+        Returns
+        -------
+        str
+            The validated homepage mode. Falls back to 'index' if an
+            invalid value is configured.
+        """
+        value = self.get("homepage", "index")
+        if value not in ("index", "user_guide"):
+            print(f"Warning: Invalid homepage value '{value}', defaulting to 'index'")
+            return "index"
+        return value
 
     @property
     def user_guide(self) -> str | list | None:

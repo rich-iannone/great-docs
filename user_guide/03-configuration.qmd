@@ -295,6 +295,65 @@ The path is relative to the project root. If both the config option and a `user_
 
 See [User Guides](user-guides.qmd) for details on writing and organizing User Guide content.
 
+## Homepage Mode
+
+By default, Great Docs generates a separate homepage from your project's README (or `index.qmd`/`index.md`), with a "User Guide" link in the top navbar. Many Python documentation sites use a different layout where the first User Guide page _is_ the landing page — for example, [chatlas](https://posit-dev.github.io/chatlas/).
+
+The `homepage` setting controls which layout to use:
+
+```{.yaml filename="great-docs.yml"}
+homepage: user_guide
+```
+
+### Available Modes
+
+| Value | Behaviour |
+|-------|-----------|
+| `index` (default) | Separate homepage from README / `index.qmd`. "User Guide" appears as a navbar link. |
+| `user_guide` | First User Guide page becomes the landing page. Left sidebar shows the UG table of contents. Right sidebar shows project metadata. No separate "User Guide" navbar link. |
+
+### How `user_guide` Mode Works
+
+When `homepage: user_guide` is set:
+
+1. **Landing page**: The first User Guide page (determined by filename sort order or explicit config) becomes `index.qmd` at the site root. Its content is preserved verbatim, with the project metadata sidebar (links, license, authors, etc.) appended in the right margin.
+
+2. **Left sidebar**: The User Guide table of contents appears in the left sidebar on every UG page, including the homepage. The first entry links to the site root.
+
+3. **Navbar**: The "User Guide" link is omitted from the top navbar since clicking the site title already takes you to the User Guide landing page. All other navbar items (Reference, custom sections, etc.) are unchanged.
+
+4. **README**: Your `README.md` is not used for the homepage. It still serves its purpose on PyPI and GitHub.
+
+### Example
+
+A project with this structure:
+
+```
+my_package/
+├── user_guide/
+│   ├── 00-getting-started.qmd   # ← becomes the homepage
+│   ├── 01-installation.qmd
+│   └── 02-configuration.qmd
+├── great-docs.yml
+└── pyproject.toml
+```
+
+And this config:
+
+```{.yaml filename="great-docs.yml"}
+homepage: user_guide
+```
+
+Will produce a site where:
+
+- The homepage shows the "Getting Started" content with a project metadata sidebar
+- The left sidebar lists all three User Guide pages
+- The navbar has no "User Guide" link (the site title links home)
+
+### Fallback Behavior
+
+If `homepage: user_guide` is set but no User Guide pages exist, Great Docs will warn and fall back to the default `index` mode (generating a homepage from your README).
+
 ## CLI Documentation
 
 Enable automatic CLI documentation for Click-based CLIs:
@@ -452,6 +511,9 @@ dark_mode_toggle: true
 
 # User Guide Directory
 # user_guide: docs/guides
+
+# Homepage Mode
+# homepage: user_guide  # First UG page becomes the landing page
 
 # CLI Documentation
 cli:

@@ -274,7 +274,7 @@ def test_L1_docstring_parser_detection(pkg_name: str, tmp_path: Path):
 
 @pytest.mark.parametrize("pkg_name", PHASE1_PACKAGES)
 def test_L2_init_creates_config(pkg_name: str, tmp_path: Path):
-    """``great-docs init --force`` produces a valid great-docs.yml."""
+    """`great-docs init --force` produces a valid great-docs.yml."""
     pkg_dir, spec = _make_package(pkg_name, tmp_path)
 
     docs = GreatDocs(project_path=str(pkg_dir))
@@ -464,7 +464,7 @@ def test_L2_explicit_reference_config(pkg_name: str, tmp_path: Path):
 
 @pytest.mark.parametrize("pkg_name", _AVAILABLE_PACKAGES)
 def test_L2_explicit_reference_survives_init(pkg_name: str, tmp_path: Path):
-    """``init --force`` preserves explicit reference sections from great-docs.yml."""
+    """`great-docs init --force` preserves explicit reference sections from great-docs.yml."""
     pkg_dir, spec = _make_package(pkg_name, tmp_path)
     expected = spec.get("expected", {})
     if not expected.get("explicit_reference"):
@@ -827,7 +827,7 @@ def test_L3_cli_and_user_guide_navbar(pkg_name: str, tmp_path: Path):
 
 @pytest.mark.parametrize("pkg_name", _AVAILABLE_PACKAGES)
 def test_L2_cli_config_preserved(pkg_name: str, tmp_path: Path):
-    """``great-docs init --force`` preserves CLI config when cli_enabled is True."""
+    """`great-docs init --force` preserves CLI config when cli_enabled is True."""
     pkg_dir, spec = _make_package(pkg_name, tmp_path)
     expected = spec.get("expected", {})
     if not expected.get("cli_enabled"):
@@ -902,6 +902,164 @@ def test_L2_cli_nested_groups(pkg_name: str, tmp_path: Path):
             assert group_name in command_names, (
                 f"Expected group {group_name!r} not found in CLI commands: {sorted(command_names)}"
             )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# L3: Blended Homepage Mode (homepage: user_guide)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def _setup_blended_homepage(pkg_dir: Path, spec: dict) -> GreatDocs:
+    """Install, re-apply spec config, then build.
+
+    `install(force=True)` regenerates `great-docs.yml` from scratch, which
+    strips unknown keys like `homepage`.  This helper merges the spec's
+    `config` dict back into the generated file and reloads before proceeding.
+    """
+    import yaml
+
+    from great_docs.config import Config
+
+    docs = GreatDocs(project_path=str(pkg_dir))
+    docs.install(force=True)
+
+    # Re-apply spec config entries that install() doesn't preserve
+    if "config" in spec:
+        config_path = docs._find_package_root() / "great-docs.yml"
+        with open(config_path, "r", encoding="utf-8") as f:
+            existing = yaml.safe_load(f) or {}
+        existing.update(spec["config"])
+        with open(config_path, "w", encoding="utf-8") as f:
+            yaml.dump(existing, f, default_flow_style=False, sort_keys=False)
+        docs._config = Config(docs._find_package_root())
+
+    docs._prepare_build_directory()
+    docs._process_user_guide()
+    return docs
+
+
+@pytest.mark.parametrize("pkg_name", _AVAILABLE_PACKAGES)
+def test_L3_blended_homepage_index_content(pkg_name: str, tmp_path: Path):
+    """In blended mode, index.qmd contains first UG page content + metadata sidebar."""
+    pkg_dir, spec = _make_package(pkg_name, tmp_path)
+    expected = spec.get("expected", {})
+    if expected.get("homepage_mode") != "user_guide":
+        pytest.skip("Not a blended homepage spec")
+
+    docs = _setup_blended_homepage(pkg_dir, spec)
+
+    index_qmd = docs.project_path / "index.qmd"
+    assert index_qmd.exists(), "index.qmd was not created in blended mode"
+
+    content = index_qmd.read_text(encoding="utf-8")
+
+    for expected_text in expected.get("index_contains", []):
+        assert expected_text in content, (
+            f"index.qmd should contain {expected_text!r} but doesn't.\n"
+            f"Content preview: {content[:500]}"
+        )
+
+
+@pytest.mark.parametrize("pkg_name", _AVAILABLE_PACKAGES)
+def test_L3_blended_homepage_no_duplicate(pkg_name: str, tmp_path: Path):
+    """In blended mode, the first UG page should NOT exist under user-guide/."""
+    pkg_dir, spec = _make_package(pkg_name, tmp_path)
+    expected = spec.get("expected", {})
+    if expected.get("homepage_mode") != "user_guide":
+        pytest.skip("Not a blended homepage spec")
+
+    docs = _setup_blended_homepage(pkg_dir, spec)
+
+    for rel_path in expected.get("index_not_exists", []):
+        full_path = docs.project_path / rel_path
+        assert not full_path.exists(), f"Duplicate UG page should be removed: {rel_path}"
+
+
+@pytest.mark.parametrize("pkg_name", _AVAILABLE_PACKAGES)
+def test_L3_blended_homepage_remaining_pages(pkg_name: str, tmp_path: Path):
+    """In blended mode, remaining UG pages still exist under user-guide/."""
+    pkg_dir, spec = _make_package(pkg_name, tmp_path)
+    expected = spec.get("expected", {})
+    if expected.get("homepage_mode") != "user_guide":
+        pytest.skip("Not a blended homepage spec")
+
+    docs = _setup_blended_homepage(pkg_dir, spec)
+
+    for rel_path in expected.get("ug_pages_exist", []):
+        full_path = docs.project_path / rel_path
+        assert full_path.exists(), f"Remaining UG page should exist: {rel_path}"
+
+
+@pytest.mark.parametrize("pkg_name", _AVAILABLE_PACKAGES)
+def test_L3_blended_homepage_no_navbar_user_guide(pkg_name: str, tmp_path: Path):
+    """In blended mode, 'User Guide' should NOT appear as a navbar link."""
+    import yaml
+
+    pkg_dir, spec = _make_package(pkg_name, tmp_path)
+    expected = spec.get("expected", {})
+    if expected.get("homepage_mode") != "user_guide":
+        pytest.skip("Not a blended homepage spec")
+
+    docs = _setup_blended_homepage(pkg_dir, spec)
+
+    quarto_yml = docs.project_path / "_quarto.yml"
+    assert quarto_yml.exists(), "_quarto.yml was not created"
+
+    with open(quarto_yml, encoding="utf-8") as f:
+        config = yaml.safe_load(f)
+
+    navbar_left = config.get("website", {}).get("navbar", {}).get("left", [])
+    navbar_texts = [item.get("text") for item in navbar_left if isinstance(item, dict)]
+
+    for absent_text in expected.get("navbar_absent_texts", []):
+        assert absent_text not in navbar_texts, (
+            f"'{absent_text}' should NOT appear in navbar. Got: {navbar_texts}"
+        )
+
+
+@pytest.mark.parametrize("pkg_name", _AVAILABLE_PACKAGES)
+def test_L3_blended_homepage_sidebar_first_entry(pkg_name: str, tmp_path: Path):
+    """In blended mode, the sidebar's first entry should point to index.qmd."""
+    import yaml
+
+    pkg_dir, spec = _make_package(pkg_name, tmp_path)
+    expected = spec.get("expected", {})
+    if expected.get("homepage_mode") != "user_guide":
+        pytest.skip("Not a blended homepage spec")
+
+    docs = _setup_blended_homepage(pkg_dir, spec)
+
+    quarto_yml = docs.project_path / "_quarto.yml"
+    with open(quarto_yml, encoding="utf-8") as f:
+        config = yaml.safe_load(f)
+
+    sidebar = config.get("website", {}).get("sidebar", [])
+    ug_sidebar = next(
+        (s for s in sidebar if isinstance(s, dict) and s.get("id") == "user-guide"),
+        None,
+    )
+    assert ug_sidebar is not None, "No 'user-guide' sidebar found in _quarto.yml"
+
+    # Find the first href in the sidebar (could be flat or sectioned)
+    def find_first_href(items):
+        for item in items:
+            if isinstance(item, dict):
+                if "href" in item:
+                    return item["href"]
+                nested = item.get("contents", [])
+                if nested:
+                    result = find_first_href(nested)
+                    if result:
+                        return result
+            elif isinstance(item, str):
+                return item
+        return None
+
+    first_href = find_first_href(ug_sidebar.get("contents", []))
+    expected_href = expected.get("sidebar_first_href", "index.qmd")
+    assert first_href == expected_href, (
+        f"Sidebar first entry should point to {expected_href!r}, got {first_href!r}"
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

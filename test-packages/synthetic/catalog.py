@@ -242,6 +242,8 @@ ALL_PACKAGES: list[str] = [
     "gdtest_namespace_ug",  # 105
     # 106: Subdirectory user guide with numeric prefixes
     "gdtest_ug_subdir_numbered",  # 106
+    # 107: Homepage modes
+    "gdtest_homepage_ug",  # 107
 ]
 
 
@@ -315,6 +317,7 @@ DIMENSIONS: dict[str, dict[str, str]] = {
     "G4": {"axis": "landing", "label": "index.md"},
     "G5": {"axis": "landing", "label": "No readme"},
     "G6": {"axis": "landing", "label": "index.qmd wins"},
+    "G7": {"axis": "landing", "label": "Blended UG homepage"},
     "H1": {"axis": "extras", "label": "LICENSE"},
     "H2": {"axis": "extras", "label": "CITATION.cff"},
     "H3": {"axis": "extras", "label": "CONTRIBUTING.md"},
@@ -1457,6 +1460,13 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "+ complex user guide + multiple custom sections + explicit reference "
         "+ non-default theme + authors + funding. If this builds, everything "
         "works."
+    ),
+    # ── 106: Subdirectory user guide ──────────────────────────────────────
+    # ── 107: Homepage modes ───────────────────────────────────────────────
+    "gdtest_homepage_ug": (
+        "Blended user-guide homepage mode (homepage: user_guide). The first "
+        "user guide page becomes index.qmd with the metadata sidebar. No "
+        "separate 'User Guide' navbar link is generated."
     ),
 }
 

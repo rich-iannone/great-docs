@@ -135,7 +135,7 @@ SPEC = {
         "detected_parser": "numpy",
         "export_names": ["Converter", "encode", "decode", "validate", "transform"],
         "num_exports": 5,
-        "nodoc_items": ['transform'],
+        "nodoc_items": ["transform"],
         "section_titles": ["Classes", "Functions"],
         "has_user_guide": False,
     },

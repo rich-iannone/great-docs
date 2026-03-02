@@ -135,7 +135,7 @@ SPEC = {
         "detected_parser": "numpy",
         "export_names": ["Widget", "create_widget", "destroy_widget"],
         "num_exports": 3,
-        "nodoc_items": ['destroy_widget'],
+        "nodoc_items": ["destroy_widget"],
         "section_titles": ["Classes", "Functions"],
         "has_user_guide": False,
     },

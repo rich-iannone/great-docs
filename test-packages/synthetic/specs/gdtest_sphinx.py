@@ -99,7 +99,7 @@ SPEC = {
         "detected_parser": "sphinx",
         "export_names": ["Timer", "start_timer", "format_duration"],
         "num_exports": 3,
-        "nodoc_items": ['format_duration'],
+        "nodoc_items": ["format_duration"],
         "section_titles": ["Classes", "Functions"],
         "has_user_guide": False,
     },

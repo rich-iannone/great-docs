@@ -60,7 +60,7 @@ class __RenderDocCallMixin(RenderDoc):
         # rendering needs it.
         self._parameter_kinds = {p.name: p.kind for p in self.parameters}
 
-    @RenderDoc.render_section.register  # pyright: ignore[reportFunctionMemberAccess]
+    @RenderDoc.render_docstring_section.register  # pyright: ignore[reportFunctionMemberAccess]
     def _(self, el: DocstringSectionWithDefinitions):
         """
         Render docstring sections that have a list of definitions

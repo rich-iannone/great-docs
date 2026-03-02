@@ -248,7 +248,7 @@ class __RenderDoc(RenderBase):
             return ""
 
         labels = [
-            Span("", Attr(classes=["doc-label", f"doc-label-{l.lower()}"])) for l in self.labels
+            Span("", Attr(classes=["doc-label", f"doc-label-{label.lower()}"])) for label in self.labels
         ]
         return Span(labels, Attr(classes=["doc-labels"]))
 

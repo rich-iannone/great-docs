@@ -86,9 +86,11 @@ class __RenderDocMembersMixin(RenderDoc):
             return docstring
 
         item = self.doc.members[0]
-        if isinstance(item, Doc):
+        # TODO: Look into these instance checks, confirm that we can have different types
+        # and fix the typing.
+        if isinstance(item, Doc):  # pyright: ignore[reportUnnecessaryIsInstance]
             members = self.render_members()
-        elif isinstance(item, MemberPage):
+        elif isinstance(item, MemberPage):  # pyright: ignore[reportUnnecessaryIsInstance]
             members = self.render_member_pages()
         else:
             raise ValueError(f"Cannot render members of type {type(item)}")
@@ -202,11 +204,11 @@ class __RenderDocMembersMixin(RenderDoc):
         exclude = set(exclude)
 
         def has_attribute(p: MemberPage) -> bool:
-            obj = p.obj  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+            obj = p.obj
             return cast("gf.Object", obj).is_attribute
 
         pages = cast("list[MemberPage]", self.doc.members)
-        return [p for p in pages if has_attribute(p) and p.obj.name not in exclude]  # pyright: ignore[reportUnknownMemberType]
+        return [p for p in pages if has_attribute(p) and p.obj.name not in exclude]
 
     @cached_property
     def class_member_pages(self) -> list[MemberPage]:
@@ -221,11 +223,11 @@ class __RenderDocMembersMixin(RenderDoc):
         exclude = set(exclude)
 
         def has_class(p: MemberPage) -> bool:
-            obj = p.obj  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+            obj = p.obj
             return cast("gf.Object", obj).is_class
 
         pages = cast("list[MemberPage]", self.doc.members)
-        return [p for p in pages if has_class(p) and p.obj.name not in exclude]  # pyright: ignore[reportUnknownMemberType]
+        return [p for p in pages if has_class(p) and p.obj.name not in exclude]
 
     @cached_property
     def function_member_pages(self) -> list[MemberPage]:
@@ -240,11 +242,11 @@ class __RenderDocMembersMixin(RenderDoc):
         exclude = set(exclude)
 
         def has_function(p: MemberPage) -> bool:
-            obj = p.obj  # pyright: ignore[reportUnknownMemberType,reportUnknownVariableType]
+            obj = p.obj
             return cast("gf.Object", obj).is_function
 
         pages = cast("list[MemberPage]", self.doc.members)
-        return [p for p in pages if has_function(p) and p.obj.name not in exclude]  # pyright: ignore[reportUnknownMemberType]
+        return [p for p in pages if has_function(p) and p.obj.name not in exclude]
 
     def render_classes(self) -> RenderedMembersGroup | None:
         """
@@ -380,7 +382,7 @@ class __RenderDocMembersMixin(RenderDoc):
 
         render_objs = [
             Render(
-                griffe_to_doc(page.obj, deep=False),  # pyright: ignore[reportUnknownMemberType,reportUnknownArgumentType]
+                griffe_to_doc(page.obj, deep=False),
                 self.renderer,
                 contained=False,
                 page_path=f"{page.path}.qmd",

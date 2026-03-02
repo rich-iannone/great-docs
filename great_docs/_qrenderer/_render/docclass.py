@@ -64,7 +64,7 @@ class __RenderDocClass(RenderDocMembersMixin, RenderDocCallMixin, RenderDoc):
         pages = super().attribute_member_pages
         if self.is_dataclass:
             params = {p.name for p in self.parameters}
-            pages = [p for p in pages if p.obj.name not in params]  # pyright: ignore[reportUnknownMemberType]
+            pages = [p for p in pages if p.obj.name not in params]
         return pages
 
     @cached_property

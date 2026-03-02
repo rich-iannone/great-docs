@@ -70,6 +70,149 @@ LOGS_DIR = RENDERED_DIR / "_logs"
 STATE_FILE = RENDERED_DIR / "_build_state.json"
 PORT = 3333
 
+# ── Coverage levels tracked by test_gdg_rendered.py ─────────────────────────
+# Each level maps to a parametrized test or dedicated test in the file.
+# The score is "how many of these 21 levels does a package participate in?"
+
+_COVERAGE_LEVELS = [
+    "R0:idx",
+    "R0:srch",
+    "R0:ref",
+    "R0:nodoc",
+    "R0:bigcl",
+    "R0:ug",
+    "R0:supp",
+    "R1:title",
+    "R1:badge",
+    "R1:sig",
+    "R1:desc",
+    "R2:param",
+    "R2:pmatch",
+    "R2:ret",
+    "R4:refidx",
+    "R4:sechdg",
+    "R4:sbar",
+    "R4:sbsec",
+    "R4:land",
+    "R4:hdg",
+    "DED",
+]
+
+# Package names explicitly referenced in test_gdg_rendered.py (dedicated tests)
+_DEDICATED_PACKAGES: set[str] = set()
+
+
+def _load_dedicated_packages() -> set[str]:
+    """Parse test_gdg_rendered.py once for explicitly named packages."""
+    global _DEDICATED_PACKAGES  # noqa: PLW0603
+    if _DEDICATED_PACKAGES:
+        return _DEDICATED_PACKAGES
+    test_file = _PROJECT_ROOT / "tests" / "test_gdg_rendered.py"
+    if test_file.exists():
+        _DEDICATED_PACKAGES = set(re.findall(r"gdtest_[a-z_]+", test_file.read_text()))
+    return _DEDICATED_PACKAGES
+
+
+def _compute_coverage(name: str) -> dict[str, bool]:
+    """Compute test coverage levels for a single package.
+
+    Returns a dict mapping each coverage level to True/False.
+    """
+    result = {level: False for level in _COVERAGE_LEVELS}
+
+    try:
+        spec = get_spec(name)
+        exp = spec.get("expected", {})
+    except Exception:
+        # Not in catalog at all
+        if name in _load_dedicated_packages():
+            result["DED"] = True
+        return result
+
+    has_exports = bool(exp.get("export_names"))
+
+    # All catalog packages get basic structural tests
+    result["R0:idx"] = True
+    result["R0:srch"] = True
+    result["R4:land"] = True
+
+    if has_exports:
+        result["R0:ref"] = True
+        result["R1:title"] = True
+        result["R1:badge"] = True
+        result["R1:sig"] = True
+        result["R2:pmatch"] = True
+        result["R4:refidx"] = True
+
+    if exp.get("nodoc_items"):
+        result["R0:nodoc"] = True
+    if exp.get("big_class_name"):
+        result["R0:bigcl"] = True
+    if exp.get("user_guide_files"):
+        result["R0:ug"] = True
+    if any(
+        exp.get(k)
+        for k in (
+            "has_license_page",
+            "has_citation_page",
+            "has_contributing_page",
+            "has_code_of_conduct_page",
+        )
+    ):
+        result["R0:supp"] = True
+    if exp.get("section_titles"):
+        result["R4:sechdg"] = True
+        result["R4:sbsec"] = True
+
+    parser = exp.get("detected_parser", "numpy")
+    if has_exports and name != "gdtest_nodocs" and parser in ("numpy", "google", "sphinx"):
+        result["R1:desc"] = True
+    if has_exports and name != "gdtest_nodocs":
+        result["R2:param"] = True
+        result["R2:ret"] = True
+
+    # Sidebar check
+    ref = RENDERED_DIR / name / "great-docs" / "_site" / "reference"
+    if ref.exists() and any(f.name != "index.html" for f in ref.glob("*.html")):
+        result["R4:sbar"] = True
+
+    # Heading check (first 20 packages by catalog order)
+    try:
+        if ALL_PACKAGES.index(name) < 20:
+            result["R4:hdg"] = True
+    except ValueError:
+        pass
+
+    if name in _load_dedicated_packages():
+        result["DED"] = True
+
+    return result
+
+
+def coverage_score(name: str) -> int:
+    """Return the test coverage score (0–21) for a package."""
+    return sum(_compute_coverage(name).values())
+
+
+def _coverage_badge_html(score: int) -> str:
+    """Return an HTML badge for a test coverage score."""
+    max_score = len(_COVERAGE_LEVELS)
+    pct = score / max_score
+    if pct >= 0.7:
+        color = "#a6e3a1"  # green
+    elif pct >= 0.4:
+        color = "#f9e2af"  # yellow
+    else:
+        color = "#f38ba8"  # red
+    return (
+        f'<span style="display:inline-block;padding:1px 6px;margin:1px;'
+        f"border-radius:3px;font-size:10px;font-weight:600;"
+        f"background:{color}22;color:{color};border:1px solid {color}40;"
+        f'font-family:&quot;SF Mono&quot;,monospace;"'
+        f' title="Test coverage: {score}/{max_score} levels">'
+        f"\U0001f9ea {score}/{max_score}</span>"
+    )
+
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -488,6 +631,17 @@ def _build_nav_html(
     else:
         elapsed_html = ""
 
+    # Test coverage score for the current package
+    cov = coverage_score(current_name)
+    max_cov = len(_COVERAGE_LEVELS)
+    cov_pct = cov / max_cov
+    cov_color = "#a6e3a1" if cov_pct >= 0.7 else "#f9e2af" if cov_pct >= 0.4 else "#f38ba8"
+    coverage_html = (
+        f'<span class="gd-nav-coverage" style="color:{cov_color}"'
+        f' title="Test coverage: {cov}/{max_cov} levels">'
+        f"\U0001f9ea {cov}/{max_cov}</span>"
+    )
+
     # Prev/Next navigation
     ok_names = [r["name"] for r in results if r["status"] == "ok"]
     if current_name in ok_names:
@@ -673,6 +827,10 @@ def _build_nav_html(
         font-family: "SF Mono", "Fira Code", monospace;
         font-size: 11px;
     }}
+    .gd-nav-coverage {{
+        font-family: "SF Mono", "Fira Code", monospace;
+        font-size: 11px;
+    }}
     body {{ margin-top: 40px !important; }}
     #quarto-header {{ top: 40px !important; }}
     </style>
@@ -698,6 +856,7 @@ def _build_nav_html(
             <span>{ok_count}/{len(results)} built</span>
             {stale_stat}
             {elapsed_html}
+            {coverage_html}
         </span>
     </div>
 
@@ -803,6 +962,477 @@ def _create_log_page(name: str, log_path: str | None) -> str:
         </div>
         <div class="log-container">
             <pre class="log-pre">{log_content}</pre>
+        </div>
+    </body>
+    </html>
+    """)
+
+
+# ── Coverage-level descriptions (for the test coverage page) ──────────────
+
+_COVERAGE_LEVEL_INFO: dict[str, tuple[str, str]] = {
+    # level: (test function name, description)
+    "R0:idx": ("test_R0_site_index_exists", "Site has an index.html landing page"),
+    "R0:srch": ("test_R0_search_json_exists", "Site has a search.json for site search"),
+    "R0:ref": ("test_R0_reference_index_exists", "Reference index.html exists"),
+    "R0:nodoc": ("test_R0_nodoc_items_excluded", "Items marked %nodoc are excluded"),
+    "R0:bigcl": ("test_R0_big_class_has_method_pages", "Big class has separate method pages"),
+    "R0:ug": ("test_R0_user_guide_pages_exist", "User guide pages exist"),
+    "R0:supp": ("test_R0_supporting_pages_exist", "Supporting pages (license, etc.) exist"),
+    "R1:title": ("test_R1_reference_pages_have_title", "Reference pages have an <h1> title"),
+    "R1:badge": ("test_R1_reference_pages_have_type_badge", "Reference pages show a type badge"),
+    "R1:sig": ("test_R1_function_pages_have_signature", "Function pages show a call signature"),
+    "R1:desc": ("test_R1_pages_have_doc_description", "Pages include a docstring description"),
+    "R2:param": ("test_R2_parameters_section_renders", "Parameters section is rendered"),
+    "R2:pmatch": ("test_R2_parameter_names_match_signature", "Param names match the signature"),
+    "R2:ret": ("test_R2_returns_section_renders", "Returns section is rendered"),
+    "R4:refidx": ("test_R4_reference_index_lists_exports", "Reference index lists all exports"),
+    "R4:sechdg": (
+        "test_R4_reference_index_has_section_headings",
+        "Reference index has section headings",
+    ),
+    "R4:sbar": ("test_R4_sidebar_has_reference_section", "Sidebar has a Reference section"),
+    "R4:sbsec": ("test_R4_sidebar_lists_section_titles", "Sidebar lists section titles"),
+    "R4:land": ("test_R4_landing_page_has_title", "Landing page has a package title"),
+    "R4:hdg": ("test_R4_no_broken_heading_attributes", "No broken heading attributes"),
+    "DED": ("(dedicated tests)", "Has one or more dedicated/feature-specific tests"),
+}
+
+
+def _create_test_coverage_page(name: str) -> str:
+    """Create an HTML page showing test coverage details for a single package."""
+    coverage = _compute_coverage(name)
+    score = sum(coverage.values())
+    max_score = len(_COVERAGE_LEVELS)
+    pct = score / max_score
+    num = ALL_PACKAGES.index(name) + 1 if name in ALL_PACKAGES else 0
+
+    if pct >= 0.7:
+        color = "#a6e3a1"
+    elif pct >= 0.4:
+        color = "#f9e2af"
+    else:
+        color = "#f38ba8"
+
+    # Build the coverage table rows
+    rows = []
+    for level in _COVERAGE_LEVELS:
+        covered = coverage.get(level, False)
+        info = _COVERAGE_LEVEL_INFO.get(level, (level, ""))
+        test_fn, desc = info
+        icon = "✅" if covered else "❌"
+        row_class = "cov-pass" if covered else "cov-miss"
+        rows.append(
+            f'<tr class="{row_class}">'
+            f"<td>{icon}</td>"
+            f'<td class="cov-level">{html.escape(level)}</td>'
+            f'<td class="cov-fn">{html.escape(test_fn)}</td>'
+            f'<td class="cov-desc">{html.escape(desc)}</td>'
+            f"</tr>"
+        )
+    table_rows = "\n            ".join(rows)
+    covered_count = score
+    missing_count = max_score - score
+
+    # Suggestions for improving coverage
+    suggestions = []
+    if not coverage.get("R0:nodoc"):
+        suggestions.append(
+            "Add <code>nodoc_items</code> to the spec's <code>expected</code> dict "
+            "to enable %nodoc exclusion testing."
+        )
+    if not coverage.get("R0:bigcl"):
+        suggestions.append(
+            "Add <code>big_class_name</code> and <code>big_class_method_count</code> "
+            "to the spec to enable big-class method page testing."
+        )
+    if not coverage.get("R0:ug"):
+        suggestions.append(
+            "Add <code>user_guide_files</code> to the spec's <code>expected</code> dict "
+            "to enable user guide page existence testing."
+        )
+    if not coverage.get("R0:supp"):
+        suggestions.append(
+            "Set <code>has_license_page</code>, <code>has_citation_page</code>, etc. in the "
+            "spec to enable supporting page tests."
+        )
+    if not coverage.get("R4:sechdg"):
+        suggestions.append(
+            "Add <code>section_titles</code> to the spec's <code>expected</code> dict "
+            "to enable section heading and sidebar section tests."
+        )
+    if not coverage.get("DED"):
+        suggestions.append(
+            "Write a dedicated test in <code>test_gdg_rendered.py</code> that asserts "
+            "a feature specific to this package (e.g., config behavior, badge presence, "
+            "decorator handling). See the <code>gdg-add-tests</code> skill."
+        )
+    if not coverage.get("R4:hdg"):
+        suggestions.append(
+            "This package is not in the first 20 by catalog order, so heading attribute "
+            "checks don't run on it. This is by design (performance)."
+        )
+
+    suggestions_html = ""
+    if suggestions:
+        items = "\n".join(f"<li>{s}</li>" for s in suggestions)
+        suggestions_html = f"""\
+        <div class="section">
+            <h2>How to Improve Coverage</h2>
+            <ul class="suggestions">{items}</ul>
+        </div>"""
+
+    return textwrap.dedent(f"""\
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Test Coverage — {html.escape(name)}</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+                background: #0d1117; color: #e6edf3; min-height: 100vh;
+            }}
+            .topbar {{
+                background: #1e1e2e; border-bottom: 1px solid #30363d;
+                padding: 12px 24px; display: flex; align-items: center; gap: 12px;
+            }}
+            .topbar a {{ color: #89b4fa; text-decoration: none; font-size: 13px; }}
+            .topbar a:hover {{ text-decoration: underline; }}
+            .topbar .sep {{ color: #585b70; }}
+            .topbar h1 {{ font-size: 15px; font-weight: 600; color: #cba6f7; }}
+            .content {{ max-width: 900px; margin: 32px auto; padding: 0 24px; }}
+            .score-header {{
+                display: flex; align-items: center; gap: 16px;
+                margin-bottom: 24px; padding: 16px 20px;
+                background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+            }}
+            .score-num {{
+                font-size: 36px; font-weight: 800; color: {color};
+                font-family: "SF Mono", monospace;
+            }}
+            .score-detail {{ font-size: 14px; color: #a6adc8; }}
+            .score-bar {{
+                height: 8px; background: #21262d; border-radius: 4px;
+                margin-top: 8px; overflow: hidden; width: 200px;
+            }}
+            .score-fill {{
+                height: 100%; background: {color}; border-radius: 4px;
+                width: {pct * 100:.0f}%;
+            }}
+            .section {{ margin-bottom: 28px; }}
+            .section h2 {{
+                font-size: 16px; font-weight: 600; color: #cba6f7;
+                margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #30363d;
+            }}
+            table {{ width: 100%; border-collapse: collapse; }}
+            th {{
+                text-align: left; padding: 8px 10px; font-size: 12px;
+                color: #6e7681; border-bottom: 1px solid #30363d; text-transform: uppercase;
+            }}
+            td {{ padding: 6px 10px; font-size: 13px; border-bottom: 1px solid #161b2280; }}
+            .cov-pass td {{ color: #c9d1d9; }}
+            .cov-miss td {{ color: #6e7681; }}
+            .cov-level {{ font-family: "SF Mono", monospace; font-weight: 600; }}
+            .cov-fn {{ font-family: "SF Mono", monospace; font-size: 11px; color: #89b4fa; }}
+            .cov-miss .cov-fn {{ color: #484e58; }}
+            .cov-desc {{ max-width: 300px; }}
+            .counter {{ display: flex; gap: 16px; margin-bottom: 16px; }}
+            .counter-item {{
+                padding: 4px 12px; border-radius: 4px; font-size: 13px; font-weight: 600;
+            }}
+            .counter-pass {{ background: #a6e3a122; color: #a6e3a1; border: 1px solid #a6e3a140; }}
+            .counter-miss {{ background: #f38ba822; color: #f38ba8; border: 1px solid #f38ba840; }}
+            .suggestions {{ list-style: none; }}
+            .suggestions li {{
+                padding: 8px 12px; margin-bottom: 6px; font-size: 13px;
+                background: #161b22; border: 1px solid #30363d; border-radius: 6px;
+                color: #c9d1d9; line-height: 1.5;
+            }}
+            .suggestions code {{
+                background: #21262d; padding: 1px 5px; border-radius: 3px;
+                font-family: "SF Mono", monospace; font-size: 11px; color: #f9e2af;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="topbar">
+            <a href="index.html">&larr; GDG</a>
+            <span class="sep">/</span>
+            <a href="_detail_{name}.html">{html.escape(name)}</a>
+            <span class="sep">/</span>
+            <h1>Test Coverage</h1>
+        </div>
+        <div class="content">
+            <div class="score-header">
+                <div>
+                    <div class="score-num">{score}/{max_score}</div>
+                    <div class="score-bar"><div class="score-fill"></div></div>
+                </div>
+                <div class="score-detail">
+                    <strong>#{num:03d} {html.escape(name)}</strong><br>
+                    {covered_count} coverage levels hit, {missing_count} missing
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Coverage Levels</h2>
+                <div class="counter">
+                    <span class="counter-item counter-pass">✅ {covered_count} covered</span>
+                    <span class="counter-item counter-miss">❌ {missing_count} missing</span>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th></th><th>Level</th><th>Test</th><th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {table_rows}
+                    </tbody>
+                </table>
+            </div>
+
+            {suggestions_html}
+        </div>
+    </body>
+    </html>
+    """)
+
+
+def _create_test_coverage_summary_page(results: list[dict]) -> str:
+    """Create an HTML page showing test coverage summary for all packages."""
+    # Build per-package data
+    pkg_data = []
+    for r in results:
+        name = r["name"]
+        cov = _compute_coverage(name)
+        score = sum(cov.values())
+        pkg_data.append(
+            {
+                "name": name,
+                "score": score,
+                "coverage": cov,
+                "status": r["status"],
+            }
+        )
+
+    max_score = len(_COVERAGE_LEVELS)
+    total_pkgs = len(pkg_data)
+    avg_score = sum(p["score"] for p in pkg_data) / max(total_pkgs, 1)
+    full_cov = sum(1 for p in pkg_data if p["score"] == max_score)
+    zero_cov = sum(1 for p in pkg_data if p["score"] == 0)
+    with_ded = sum(1 for p in pkg_data if p["coverage"].get("DED"))
+
+    # Per-level stats
+    level_rows = []
+    for level in _COVERAGE_LEVELS:
+        info = _COVERAGE_LEVEL_INFO.get(level, (level, ""))
+        test_fn, desc = info
+        count = sum(1 for p in pkg_data if p["coverage"].get(level))
+        pct = count / max(total_pkgs, 1) * 100
+        bar_w = pct
+        level_rows.append(
+            f"<tr>"
+            f'<td class="lvl-code">{html.escape(level)}</td>'
+            f'<td class="lvl-fn">{html.escape(test_fn)}</td>'
+            f"<td>{count}/{total_pkgs}</td>"
+            f'<td><div class="lvl-bar"><div class="lvl-fill" style="width:{bar_w:.0f}%"></div>'
+            f"</div></td>"
+            f"<td>{pct:.0f}%</td>"
+            f"</tr>"
+        )
+    level_table = "\n            ".join(level_rows)
+
+    # Per-package rows sorted by score ascending (worst first)
+    pkg_data_sorted = sorted(pkg_data, key=lambda p: (p["score"], p["name"]))
+    pkg_rows = []
+    for p in pkg_data_sorted:
+        name = p["name"]
+        score = p["score"]
+        pct = score / max_score
+        if pct >= 0.7:
+            color = "#a6e3a1"
+        elif pct >= 0.4:
+            color = "#f9e2af"
+        else:
+            color = "#f38ba8"
+        num = ALL_PACKAGES.index(name) + 1 if name in ALL_PACKAGES else 0
+        ded_icon = "✓" if p["coverage"].get("DED") else ""
+
+        # Level dots
+        dots = []
+        for level in _COVERAGE_LEVELS:
+            if p["coverage"].get(level):
+                dots.append('<span class="dot dot-pass">●</span>')
+            else:
+                dots.append('<span class="dot dot-miss">·</span>')
+        dots_html = "".join(dots)
+
+        pkg_rows.append(
+            f"<tr>"
+            f'<td class="pkg-num">#{num:03d}</td>'
+            f'<td class="pkg-lnk"><a href="_tests_{name}.html">{html.escape(name)}</a></td>'
+            f'<td style="color:{color};font-weight:700;font-family:SF Mono,monospace">'
+            f"{score}/{max_score}</td>"
+            f'<td class="dot-row">{dots_html}</td>'
+            f'<td class="ded-icon">{ded_icon}</td>'
+            f"</tr>"
+        )
+    pkg_table = "\n            ".join(pkg_rows)
+
+    # Score distribution histogram
+    from collections import Counter
+
+    score_dist = Counter(p["score"] for p in pkg_data)
+    hist_max = max(score_dist.values()) if score_dist else 1
+    hist_bars = []
+    for s in range(max_score + 1):
+        cnt = score_dist.get(s, 0)
+        if cnt == 0:
+            continue
+        bar_h = cnt / hist_max * 100
+        if s / max_score >= 0.7:
+            color = "#a6e3a1"
+        elif s / max_score >= 0.4:
+            color = "#f9e2af"
+        else:
+            color = "#f38ba8"
+        hist_bars.append(
+            f'<div class="hist-col" title="Score {s}: {cnt} packages">'
+            f'<div class="hist-bar" style="height:{bar_h:.0f}%;background:{color}"></div>'
+            f'<div class="hist-label">{s}</div>'
+            f"</div>"
+        )
+    hist_html = "\n            ".join(hist_bars)
+
+    return textwrap.dedent(f"""\
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Test Coverage Summary — GDG</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+                background: #0d1117; color: #e6edf3; min-height: 100vh;
+            }}
+            .topbar {{
+                background: #1e1e2e; border-bottom: 1px solid #30363d;
+                padding: 12px 24px; display: flex; align-items: center; gap: 12px;
+            }}
+            .topbar a {{ color: #89b4fa; text-decoration: none; font-size: 13px; }}
+            .topbar a:hover {{ text-decoration: underline; }}
+            .topbar h1 {{ font-size: 15px; font-weight: 600; color: #cba6f7; }}
+            .content {{ max-width: 1100px; margin: 32px auto; padding: 0 24px; }}
+            .summary-header {{
+                display: flex; gap: 20px; flex-wrap: wrap;
+                margin-bottom: 28px;
+            }}
+            .sum-card {{
+                background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+                padding: 16px 24px; min-width: 140px; text-align: center;
+            }}
+            .sum-num {{ font-size: 28px; font-weight: 800; font-family: "SF Mono", monospace; }}
+            .sum-label {{ font-size: 12px; color: #6e7681; margin-top: 4px; text-transform: uppercase; }}
+            .section {{ margin-bottom: 32px; }}
+            .section h2 {{
+                font-size: 18px; font-weight: 600; color: #cba6f7;
+                margin-bottom: 14px; padding-bottom: 6px; border-bottom: 1px solid #30363d;
+            }}
+            table {{ width: 100%; border-collapse: collapse; }}
+            th {{
+                text-align: left; padding: 8px 10px; font-size: 11px;
+                color: #6e7681; border-bottom: 1px solid #30363d; text-transform: uppercase;
+            }}
+            td {{ padding: 5px 10px; font-size: 13px; border-bottom: 1px solid #161b2280; }}
+            .lvl-code {{ font-family: "SF Mono", monospace; font-weight: 600; color: #cba6f7; }}
+            .lvl-fn {{ font-family: "SF Mono", monospace; font-size: 11px; color: #6e7681; }}
+            .lvl-bar {{
+                height: 10px; background: #21262d; border-radius: 3px;
+                overflow: hidden; width: 120px; display: inline-block;
+            }}
+            .lvl-fill {{ height: 100%; background: #89b4fa; border-radius: 3px; }}
+            .pkg-num {{ font-family: "SF Mono", monospace; color: #6e7681; font-size: 12px; }}
+            .pkg-lnk a {{ color: #58a6ff; text-decoration: none; }}
+            .pkg-lnk a:hover {{ text-decoration: underline; }}
+            .dot-row {{ font-family: "SF Mono", monospace; letter-spacing: 1px; font-size: 10px; }}
+            .dot-pass {{ color: #a6e3a1; }}
+            .dot-miss {{ color: #30363d; }}
+            .ded-icon {{ color: #a6e3a1; font-weight: 700; text-align: center; }}
+            .hist-container {{
+                display: flex; align-items: flex-end; gap: 4px;
+                height: 100px; padding: 0 4px;
+            }}
+            .hist-col {{ display: flex; flex-direction: column; align-items: center; flex: 1; height: 100%; justify-content: flex-end; }}
+            .hist-bar {{ width: 100%; min-width: 8px; border-radius: 3px 3px 0 0; transition: height .3s; }}
+            .hist-label {{ font-size: 10px; color: #6e7681; margin-top: 4px; font-family: "SF Mono", monospace; }}
+        </style>
+    </head>
+    <body>
+        <div class="topbar">
+            <a href="index.html">&larr; GDG</a>
+            <span class="sep">|</span>
+            <h1>\U0001f9ea Test Coverage Summary</h1>
+        </div>
+        <div class="content">
+            <div class="summary-header">
+                <div class="sum-card">
+                    <div class="sum-num" style="color:#cdd6f4">{total_pkgs}</div>
+                    <div class="sum-label">Packages</div>
+                </div>
+                <div class="sum-card">
+                    <div class="sum-num" style="color:#89b4fa">{avg_score:.1f}/{max_score}</div>
+                    <div class="sum-label">Avg Score</div>
+                </div>
+                <div class="sum-card">
+                    <div class="sum-num" style="color:#a6e3a1">{with_ded}</div>
+                    <div class="sum-label">With Dedicated Tests</div>
+                </div>
+                <div class="sum-card">
+                    <div class="sum-num" style="color:#a6e3a1">{full_cov}</div>
+                    <div class="sum-label">Full Coverage</div>
+                </div>
+                <div class="sum-card">
+                    <div class="sum-num" style="color:#f38ba8">{zero_cov}</div>
+                    <div class="sum-label">Zero Coverage</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Score Distribution</h2>
+                <div class="hist-container">
+                    {hist_html}
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Coverage by Test Level</h2>
+                <table>
+                    <thead><tr>
+                        <th>Level</th><th>Test</th><th>Packages</th><th>Bar</th><th>%</th>
+                    </tr></thead>
+                    <tbody>
+                        {level_table}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section">
+                <h2>Per-Package Coverage (sorted by score)</h2>
+                <table>
+                    <thead><tr>
+                        <th>#</th><th>Package</th><th>Score</th><th>Levels</th><th>DED</th>
+                    </tr></thead>
+                    <tbody>
+                        {pkg_table}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </body>
     </html>
@@ -972,6 +1602,7 @@ def _create_detail_page(r: dict, results: list[dict]) -> str:
         site_link = ""
 
     log_link = f'<a href="_log_{name}.html" class="action-btn action-secondary">Build Log</a>'
+    tests_link = f'<a href="_tests_{name}.html" class="action-btn action-secondary">\U0001f9ea Test Coverage</a>'
 
     error_section = ""
     if "error" in r:
@@ -1095,6 +1726,7 @@ def _create_detail_page(r: dict, results: list[dict]) -> str:
             <div class="actions">
                 {site_link}
                 {log_link}
+                {tests_link}
             </div>
             {error_section}
             <div class="section">
@@ -1137,8 +1769,13 @@ def create_hub_page(results: list[dict]) -> None:
             f'onclick="event.stopPropagation()">Details</a>'
             f'<a href="_log_{name}.html" class="card-link" '
             f'onclick="event.stopPropagation()">Build Log</a>'
+            f'<a href="_tests_{name}.html" class="card-link" '
+            f'onclick="event.stopPropagation()">Tests</a>'
             f"</div>"
         )
+
+        cov_score = coverage_score(name)
+        cov_badge = _coverage_badge_html(cov_score)
 
         if status == "ok":
             cards_html.append(f"""\
@@ -1149,7 +1786,7 @@ def create_hub_page(results: list[dict]) -> None:
                 </div>
                 <div class="card-desc">{desc}</div>
                 <div class="card-long">{card_long}</div>
-                <div class="card-dims">{badges}</div>
+                <div class="card-dims">{badges} {cov_badge}</div>
                 {links}
             </div>""")
         else:
@@ -1164,7 +1801,7 @@ def create_hub_page(results: list[dict]) -> None:
                 <div class="card-desc">{desc}</div>
                 <div class="card-long">{card_long}</div>
                 <div class="card-error">{error}</div>
-                <div class="card-dims">{badges}</div>
+                <div class="card-dims">{badges} {cov_badge}</div>
                 {links}
             </div>""")
 
@@ -1218,6 +1855,13 @@ def create_hub_page(results: list[dict]) -> None:
             .stat-ok .stat-num {{ color: #a6e3a1; }}
             .stat-fail .stat-num {{ color: #f38ba8; }}
             .stat-total .stat-num {{ color: #89b4fa; }}
+            .stat-cov {{
+                background: #1e3a3a; border: 1px solid #94e2d5; border-radius: 20px;
+                padding: 4px 14px; color: #fff; transition: background 0.2s;
+            }}
+            .stat-cov:hover {{ background: #264d4d; }}
+            .stat-cov .stat-num {{ color: #94e2d5; }}
+            .stat-cov .chevron {{ margin-left: 2px; font-size: 16px; color: #94e2d5; }}
 
             .filter-bar {{
                 max-width: 1200px; margin: 20px auto 0; padding: 0 24px;
@@ -1278,6 +1922,7 @@ def create_hub_page(results: list[dict]) -> None:
                 <div class="stat stat-ok"><span class="stat-num">{len(ok_results)}</span> built</div>
                 <div class="stat stat-fail"><span class="stat-num">{len(fail_results)}</span> failed</div>
                 <div class="stat stat-total"><span class="stat-num">{len(results)}</span> total</div>
+                <a href="_tests_summary.html" class="stat stat-cov" style="text-decoration:none;cursor:pointer"><span class="stat-num">{sum(coverage_score(r["name"]) for r in results) // max(len(results), 1)}</span> / 21 avg cov<span class="chevron">&#8250;</span></a>
             </div>
         </div>
 
@@ -1417,7 +2062,14 @@ def assemble_hub(
         (HUB_DIR / f"_log_{name}.html").write_text(log_page, encoding="utf-8")
         detail_page = _create_detail_page(r, results)
         (HUB_DIR / f"_detail_{name}.html").write_text(detail_page, encoding="utf-8")
-    print(f"  Created {len(results)} detail pages + {len(results)} log pages")
+        tests_page = _create_test_coverage_page(name)
+        (HUB_DIR / f"_tests_{name}.html").write_text(tests_page, encoding="utf-8")
+    print(f"  Created {len(results)} detail + log + test coverage pages")
+
+    # Test coverage summary page
+    summary_page = _create_test_coverage_summary_page(results)
+    (HUB_DIR / "_tests_summary.html").write_text(summary_page, encoding="utf-8")
+    print("  Created test coverage summary page")
 
     # Save results manifest
     manifest = {

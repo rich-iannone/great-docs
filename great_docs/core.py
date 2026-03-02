@@ -75,10 +75,20 @@ class GreatDocs:
         post_render_dst = scripts_dir / "post-render.py"
         shutil.copy2(post_render_src, post_render_dst)
 
+        # Copy _renderer.py
+        renderer_src = self.assets_path / "_renderer.py"
+        renderer_dst = self.project_path / "_renderer.py"
+        shutil.copy2(renderer_src, renderer_dst)
+
         # Copy CSS file
         css_src = self.assets_path / "great-docs.css"
         css_dst = self.project_path / "great-docs.css"
         shutil.copy2(css_src, css_dst)
+
+        # Copy CSS file
+        scss_src = self.assets_path / "great-docs-q.scss"
+        scss_dst = self.project_path / "great-docs-q.scss"
+        shutil.copy2(scss_src, scss_dst)
 
         # Copy JavaScript files
         js_files = [
@@ -7094,7 +7104,7 @@ toc: false
             "dir": "reference",
             "title": ref_title,
             "style": "pkgdown",
-            "renderer": {"style": "markdown", "table_style": "description-list"},
+            "renderer": {"style": "_renderer.py"},
         }
         if ref_desc:
             api_ref_config["desc"] = ref_desc
@@ -7342,6 +7352,11 @@ toc: false
         config["format"]["html"]["toc"] = site_settings.get("toc", True)
         config["format"]["html"]["toc-depth"] = site_settings.get("toc-depth", 2)
         config["format"]["html"]["toc-title"] = site_settings.get("toc-title", "On this page")
+
+        if "great-docs-q.scss" not in config["format"]["html"]["theme"]:
+            if isinstance(config["format"]["html"]["theme"], str):
+                config["format"]["html"]["theme"] = [config["format"]["html"]["theme"]]
+            config["format"]["html"]["theme"].append("great-docs-q.scss")
 
         if "shift-heading-level-by" not in config["format"]["html"]:
             config["format"]["html"]["shift-heading-level-by"] = -1

@@ -185,7 +185,7 @@ class __RenderDocCallMixin(RenderDoc):
                 default = repr_obj(el.default)
 
         if self.show_signature_annotation and el.annotation is not None:
-            annotation, equals = f" : {el.annotation}", " = "
+            annotation, equals = f": {el.annotation}", " = "
         else:
             annotation, equals = "", "="
 

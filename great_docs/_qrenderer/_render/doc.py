@@ -20,7 +20,7 @@ from great_docs._renderer.pandoc.blocks import (
     Para,
 )
 from great_docs._renderer.pandoc.components import Attr
-from great_docs._renderer.pandoc.inlines import Inline, Inlines, Link, Span
+from great_docs._renderer.pandoc.inlines import Inline, Inlines, Inlines0, Link, Span
 
 from .._format import (
     HAS_RUFF,
@@ -332,6 +332,7 @@ class __RenderDoc(RenderBase):
             items.extend(
                 [
                     Span(":", Attr(classes=["doc-parameter-annotation-sep"])) if name else None,
+                    " ",
                     Span(annotation, Attr(classes=["doc-parameter-annotation"])),
                 ]
             )
@@ -349,7 +350,7 @@ class __RenderDoc(RenderBase):
             items.extend(
                 [space, equals, space, Span(default, Attr(classes=["doc-parameter-default"]))]
             )
-        return Inlines(items)
+        return Inlines0(items)
 
     def render_title(self) -> BlockContent:
         """

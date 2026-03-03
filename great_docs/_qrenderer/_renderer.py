@@ -24,7 +24,7 @@ class Renderer(_Renderer):
     show_signature: bool = True
     display_name_format: DisplayNameFormat = "doc"
     signature_name_format: DisplayNameFormat = "doc"
-    typing_module_paths: list[str] = field(default_factory=list)  # pyright: ignore[reportUnknownVariableType]
+    typing_module_paths: list[str] = field(default_factory=list[str])
 
     style: str = field(init=False, default="q")
 

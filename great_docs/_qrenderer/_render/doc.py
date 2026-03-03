@@ -390,7 +390,7 @@ class __RenderDoc(RenderBase):
         """
         Render the subject of docstring
         """
-        return Div(Span(self.docstring_subject), Attr(classes=["doc-subject"]))
+        return Div(Para(self.docstring_subject), Attr(classes=["doc-subject"]))
 
     @cached_property
     def docstring_sections_content(self) -> list[tuple[str, AnyDocstringSection]]:

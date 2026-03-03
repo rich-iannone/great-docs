@@ -2,6 +2,7 @@
 // - https://getbootstrap.com/docs/5.3/utilities/spacing/
 // - https://github.com/twbs/bootstrap/blob/main/scss/_variables.scss
 // - https://quarto.org/docs/output-formats/html-themes-more.html
+// - https://getbootstrap.com/docs/5.3/utilities/text
 
 /*-- scss:defaults --*/
 
@@ -21,6 +22,10 @@ $type-symbol-color: mix($primary, $purple-500, 20%);
 $typevar-symbol-color: mix($primary, $yellow-500, 20%);
 $signature-background-color: shade-color(tint-color($primary, 96%), 2%);
 
+// Selectors for similar groups of elements that are created by the renderer
+$docstring-sections: ":is(.doc-parameters, .doc-other-parameters, .doc-returns, .doc-yields, .doc-receives, .doc-raises, .doc-warns, .doc-attributes, .doc-parameter-attributes, .doc-init-parameters, .doc-see-also, .doc-examples)";
+$doc-object-names: "span.doc-object-name:is(.doc-class-name, .doc-method-name, .doc-module-name, .doc-function-name, .doc-alias-name, .doc-attribute-name, .doc-type-name, .doc-typevar)";
+
 a {
    text-decoration: none;
 }
@@ -39,6 +44,15 @@ h5, .h5 {
    @extend .mt-3;
 }
 
+header p {
+   @extend .mb-2;
+}
+
+h2#{$docstring-sections},
+header:has(span.doc-object-name) {
+   border-bottom:  1px solid #DEE2E6;
+}
+
 table {
    @extend .table-bordered;
    @extend .table-striped;
@@ -55,6 +69,7 @@ table {
 .navbar .dropdown-item {
    color: $gray-800;
 }
+
 
 /*---------------------------------- Reference Page -----------------------------------*/
 
@@ -76,17 +91,30 @@ table {
 /*------------------------------------- API Page --------------------------------------*/
 
 // docstring object-name
+header span.doc-object-name {
+  font-family: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-size: 1.25rem;
+}
 
 .doc-object span.doc-object-name:not(h1.title > span) {
-   opacity: 0.85;
+  opacity: 0.85;
+}
+
+.doc-subject > p {
+  font-style: italic;
 }
 
 // docstring object symbols
 .content code.doc-symbol {
-   font-size: 0.9rem;
+  font-size: 0.9rem;
 }
 
 // docstring signatures
+.doc-signature.doc-class::before,
+.doc-signature.doc-method::before {
+  content: "USAGE";
+}
+
 .doc-signature > div:first-child {
    background-color: $signature-background-color;
 }
@@ -112,7 +140,6 @@ table {
 
 // docstring sections with definition-items
 
-$docstring-sections: ":is(.doc-parameters, .doc-other-parameters, .doc-returns, .doc-yields, .doc-receives, .doc-raises, .doc-warns, .doc-attributes, .doc-parameter-attributes, .doc-init-parameters, .doc-see-also)";
 
 #{$docstring-sections} dl > dt {
   font-weight: normal;
@@ -121,7 +148,6 @@ $docstring-sections: ":is(.doc-parameters, .doc-other-parameters, .doc-returns, 
 #{$docstring-sections} dl > dd {
   @extend .mt-1;
   @extend .mb-0;
-  @extend .ms-5;
 }
 
 #{$docstring-sections} dl > dt:not(:first-child) {
@@ -146,11 +172,9 @@ $docstring-sections: ":is(.doc-parameters, .doc-other-parameters, .doc-returns, 
 // Definitions that are code
 #{$docstring-sections} dt code,
 .doc-signature > p > code {
-   @extend .p-2;
    display: block;
    font-weight: normal;
    color: var(--quarto-hl-ot-color);
-   background-color: $signature-background-color;
 }
 
 .doc-text dt code {
@@ -173,6 +197,15 @@ section.doc-methods > section.doc-method {
    backgroud-color: cyan;
 }
 
+// docstring section parameters
+#{$docstring-sections} .doc-parameter-name {
+  font-weight: bold;
+}
+
+h2#{$docstring-sections} {
+  font-size: 1.375rem;
+}
+
 // sidebar
 .sidebar nav li > a > code {
    color: $code-color;
@@ -180,7 +213,6 @@ section.doc-methods > section.doc-method {
    padding: 0.075rem 0.075rem;
 }
 
-$doc-object-names: "span.doc-object-name:is(.doc-class-name, .doc-method-name, .doc-module-name, .doc-function-name, .doc-alias-name, .doc-attribute-name, .doc-type-name, .doc-typevar)";
 #{$doc-object-names}::before {
   @extend .px-1;
   font-size: 0.9rem;
@@ -193,49 +225,49 @@ $doc-object-names: "span.doc-object-name:is(.doc-class-name, .doc-method-name, .
   font-size: 0.55rem;
 }
 
-span.doc-object-name.doc-class-name::before {
+.content span.doc-object-name.doc-class-name::before {
   content: "class";
   color: $class-symbol-color;
   background-color: tint-color($class-symbol-color, 95%);
 }
 
-span.doc-object-name.doc-method-name::before {
+.content span.doc-object-name.doc-method-name::before {
   content: "meth";
   color: $method-symbol-color;
   background-color: tint-color($method-symbol-color, 95%);
 }
 
-span.doc-object-name.doc-function-name::before {
+.content span.doc-object-name.doc-function-name::before {
   content: "func";
   color: $function-symbol-color;
   background-color: tint-color($function-symbol-color, 95%);
 }
 
-span.doc-object-name.doc-attribute-name::before {
+.content span.doc-object-name.doc-attribute-name::before {
   content: "attr";
   color: $attribute-symbol-color;
   background-color: tint-color($attribute-symbol-color, 95%);
 }
 
-span.doc-object-name.doc-module-name::before {
+.content span.doc-object-name.doc-module-name::before {
   content: "mod";
   color: $module-symbol-color;
   background-color: tint-color($module-symbol-color, 95%);
 }
 
-span.doc-object-name.doc-alias-name::before {
+.content span.doc-object-name.doc-alias-name::before {
   content: "alias";
   color: $alias-symbol-color;
   background-color: tint-color($alias-symbol-color, 95%);
 }
 
-span.doc-object-name.doc-type-name::before {
+.content span.doc-object-name.doc-type-name::before {
   content: "type";
   color: $type-symbol-color;
   background-color: tint-color($type-symbol-color, 95%);
 }
 
-span.doc-object-name.doc-typevar-name::before {
+.content span.doc-object-name.doc-typevar-name::before {
   content: "typevar";
   color: $typevar-symbol-color;
   background-color: tint-color($typevar-symbol-color, 95%);
@@ -279,6 +311,12 @@ span.doc-object-name.doc-typevar-name::before {
 
 .content .doc-labels > .doc-label-protocol::after {
   content: "Protocol";
+}
+
+// Adorn callables with ()
+
+span.doc-method-name::after {
+  content: "()";
 }
 
 /*-- scss:functions --*/

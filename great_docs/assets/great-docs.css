@@ -365,15 +365,16 @@ a.sidebar-item-toggle.text-start > i {
     background-color: #FAFAFD;
 }
 
-/* Sidebar API items: monospace font with smart line-breaking for long names */
+/* Sidebar API items: monospace font with smart line-breaking for long names.
+   Line breaks are controlled by <wbr> tags inserted by sidebar-wrap.js;
+   overflow-wrap is intentionally NOT set so the browser only breaks at
+   those designated points (not in the middle of words). */
 #quarto-sidebar .sidebar-item-text {
     font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     font-size: 0.85em;
     display: block;
     max-width: 100%;
     white-space: normal;
-    overflow-wrap: break-word;
-    word-wrap: break-word;
     hyphens: none;
 }
 
@@ -384,8 +385,6 @@ a.sidebar-item-text.sidebar-link.text-start > span {
     color: dimgray;
     font-family: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     font-size: 1em;
-    overflow-wrap: break-word;
-    word-wrap: break-word;
     hyphens: none;
 }
 

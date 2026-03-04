@@ -45,24 +45,20 @@
 
         var result = document.createDocumentFragment();
         // Pattern: split around ".", "_", "(", and camelCase transitions
-        var parts = text.split(/([._()])|(?<=[a-z])(?=[A-Z])/);
-        for (var i = 0; i < parts.length; i++) {
-            var part = parts[i];
-            if (part === undefined || part === '') continue;
-            result.appendChild(document.createTextNode(part));
-            // Insert <wbr> after delimiter characters (., _, ()
-            if (part === '.' || part === '_' || part === '(') {
+        // Two camelCase lookarounds:
+        //   (?<=[a-z])(?=[A-Z])       – lowercase-to-uppercase: "Duck|DB"
+        //   (?<=[A-Z])(?=[A-Z][a-z])  – end of acronym run:    "DB|Document"
+        var parts = text.split(/([._()])|(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/);
+        // Filter out empty/undefined entries produced by the regex split
+        var filtered = parts.filter(function (p) { return p !== undefined && p !== ''; });
+        for (var i = 0; i < filtered.length; i++) {
+            result.appendChild(document.createTextNode(filtered[i]));
+            // Insert <wbr> between every pair of adjacent parts.
+            // Each split boundary is a valid break opportunity (dot, underscore,
+            // paren, or camelCase transition), so a <wbr> between every pair
+            // covers all cases — including acronym→word boundaries like DB|Document.
+            if (i < filtered.length - 1) {
                 result.appendChild(document.createElement('wbr'));
-            }
-            // For camelCase splits, the split itself is the break point;
-            // insert <wbr> before the next piece (which starts with uppercase)
-            // — the split already placed them adjacently, so we add <wbr>
-            // between the lowercase-ending piece and uppercase-starting piece.
-            if (i + 1 < parts.length) {
-                var next = parts[i + 1];
-                if (next && /^[A-Z]/.test(next) && /[a-z]$/.test(part)) {
-                    result.appendChild(document.createElement('wbr'));
-                }
             }
         }
         return result;
@@ -80,9 +76,9 @@
             var span = spans[i];
             var text = span.textContent;
             if (!text) continue;
-            // Only process items that contain separator characters or camelCase
-            // (skip plain short words like "API", "Classes", etc.)
-            if (!/[._()]/.test(text) && !/[a-z][A-Z]/.test(text)) continue;
+            // Only process items that contain separator characters or camelCase /
+            // acronym boundaries (skip plain short words like "API", "Classes")
+            if (!/[._()]/.test(text) && !/[a-z][A-Z]/.test(text) && !/[A-Z]{2,}[a-z]/.test(text)) continue;
             // Replace the text content with smart-break nodes
             var fragment = insertSmartBreaks(text);
             span.textContent = '';

@@ -102,18 +102,23 @@ funding:
 # -----------------------
 # Explicit control over API reference organization
 reference:
-  - title: Classes
-    desc: Core classes and types
-    contents:
-      - name: GreatDocs
-        members: false
+  desc: >-
+    The API reference for Great Docs is organized around the `GreatDocs` class,
+    which provides all of the methods needed to initialize, build, and deploy
+    documentation sites.
+  sections:
+    - title: Classes
+      desc: Core classes and types
+      contents:
+        - name: GreatDocs
+          members: false
 
-  - title: GreatDocs Methods
-    desc: Methods for the GreatDocs class
-    contents:
-      - GreatDocs.install
-      - GreatDocs.uninstall
-      - GreatDocs.build
-      - GreatDocs.preview
-      - GreatDocs.check_links
-      - GreatDocs.spell_check
+    - title: GreatDocs Methods
+      desc: Methods for the GreatDocs class
+      contents:
+        - GreatDocs.install
+        - GreatDocs.uninstall
+        - GreatDocs.build
+        - GreatDocs.preview
+        - GreatDocs.check_links
+        - GreatDocs.spell_check

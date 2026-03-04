@@ -133,6 +133,10 @@ def _toml_value(v: Any) -> str:
         return "true" if v else "false"
     if isinstance(v, int | float):
         return str(v)
+    if isinstance(v, dict):
+        # Inline table: {key = "value", ...}
+        parts = [f"{k} = {_toml_value(val)}" for k, val in v.items()]
+        return "{" + ", ".join(parts) + "}"
     if isinstance(v, list):
         inner = ", ".join(_toml_value(i) for i in v)
         return f"[{inner}]"

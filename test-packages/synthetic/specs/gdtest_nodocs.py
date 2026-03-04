@@ -4,6 +4,7 @@ gdtest_nodocs — Objects with no docstrings at all.
 Dimensions: A1, B1, C4, D4, E6, F6, G1, H7
 Focus: 3 functions + 1 class, all with empty or missing docstrings.
        Tests graceful handling when no docstrings are found.
+       Also tests that the page footer text is not pulled into headers.
 """
 
 SPEC = {
@@ -15,6 +16,10 @@ SPEC = {
             "name": "gdtest-nodocs",
             "version": "0.1.0",
             "description": "A synthetic test package with no docstrings",
+            "authors": [
+                {"name": "Alice Tester"},
+                {"name": "Bob Builder"},
+            ],
         },
         "build-system": {
             "requires": ["setuptools"],

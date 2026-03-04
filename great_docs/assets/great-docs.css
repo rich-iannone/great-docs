@@ -15,6 +15,8 @@ h1, h2 {
 /* Reduce top margin on reference page object titles */
 h2.title {
     margin-top: 0.5rem;
+    border-bottom: none;
+    padding-bottom: 0;
 }
 
 .table a {
@@ -201,6 +203,8 @@ dd > ol > li::marker {
 /* API reference section headings (Parameters, Returns, Examples, etc.) */
 h2.doc-section {
     font-size: 22px;
+    border-bottom: none;
+    padding-bottom: 0;
 }
 
 /* Ensure parameter descriptions are indented within doc sections */

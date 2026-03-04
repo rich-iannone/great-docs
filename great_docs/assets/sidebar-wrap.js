@@ -51,13 +51,35 @@
         var parts = text.split(/([._()])|(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/);
         // Filter out empty/undefined entries produced by the regex split
         var filtered = parts.filter(function (p) { return p !== undefined && p !== ''; });
+
+        // Merge parentheses onto preceding tokens to prevent orphan ")" or "()"
+        // e.g. ["directory", "(", ")"] → ["directory()"]
+        var merged = [];
         for (var i = 0; i < filtered.length; i++) {
-            result.appendChild(document.createTextNode(filtered[i]));
+            if (filtered[i] === '(' && i + 1 < filtered.length && filtered[i + 1] === ')') {
+                // "()" pair: attach to preceding token
+                if (merged.length > 0) {
+                    merged[merged.length - 1] += '()';
+                } else {
+                    merged.push('()');
+                }
+                i++; // skip the ")"
+            } else if (filtered[i] === ')') {
+                // lone ")": attach to preceding token
+                if (merged.length > 0) {
+                    merged[merged.length - 1] += ')';
+                } else {
+                    merged.push(')');
+                }
+            } else {
+                merged.push(filtered[i]);
+            }
+        }
+
+        for (var i = 0; i < merged.length; i++) {
+            result.appendChild(document.createTextNode(merged[i]));
             // Insert <wbr> between every pair of adjacent parts.
-            // Each split boundary is a valid break opportunity (dot, underscore,
-            // paren, or camelCase transition), so a <wbr> between every pair
-            // covers all cases — including acronym→word boundaries like DB|Document.
-            if (i < filtered.length - 1) {
+            if (i < merged.length - 1) {
                 result.appendChild(document.createElement('wbr'));
             }
         }

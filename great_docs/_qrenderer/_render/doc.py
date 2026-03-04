@@ -17,6 +17,7 @@ from great_docs._renderer.pandoc.blocks import (
     DefinitionList,
     Div,
     Header,
+    InlineContent,
     Para,
 )
 from great_docs._renderer.pandoc.components import Attr
@@ -219,30 +220,10 @@ class __RenderDoc(RenderBase):
         Render the signature of the object being documented
         """
 
-    def render_labels(self) -> Span | Literal[""]:
+    @cached_property
+    def _labels(self) -> Span | Literal[""]:
         """
         Render code for the labels that annotate the object names
-
-        The rendered markup has no content. You can style it with CSS or override
-        this method to output something different. Nothing is rendered if there are
-        no labels. If there is more than one label, each label has its own markup code.
-
-        Markup and Styling
-        ------------------
-        Returns a structure containing the label codes:
-
-        +-----------+-----------------+----------------------------------------------------------+
-        | Component | HTML Element    | CSS Selector                                             |
-        +===========+=================+==========================================================+
-        | Wrapper   | `<span>`{.html} | `.doc-content .doc-labels`{.css}                         |
-        +-----------+-----------------+----------------------------------------------------------+
-        | Label     | `<span>`{.html} | 1. `.doc-content .doc-labels > .doc-label`{.css}         |
-        |           |                 | 2. `.doc-content .doc-labels > .doc-label-{name}`{.css}  |
-        +-----------+-----------------+----------------------------------------------------------+
-
-        `{name}` is any of the following: `staticmethod`, `classmethod`,
-        `abstractmethod`, `cached`, `property,` `typing.overload`, `protocol`
-        Replace `.doc-content` with `.sidebar` to also target the labels in the sidebar.
         """
         if not self.labels:
             return ""
@@ -252,6 +233,43 @@ class __RenderDoc(RenderBase):
             for label in self.labels
         ]
         return Span(labels, Attr(classes=["doc-labels"]))
+
+    @cached_property
+    def _title(self) -> InlineContent:
+        return Span(
+            self.display_name,
+            Attr(classes=["doc-object-name", f"doc-{self.kind}-name"]),
+        )
+
+    def render_title(self) -> BlockContent:
+        """
+        Render the header of a docstring, including any anchors
+
+        The title includes markup for labels You can style it with CSS or override
+        this method to output something different.
+
+
+        Markup and Styling
+        ------------------
+        Create markup that includes the name of the object and labels that apply to it.
+        e.g.
+
+        ```html
+        <h2>
+            <span class="doc-object-name doc-attribute-name">
+                SomeClass.value
+            </span>
+            <span class="doc-labels">
+                <span class="doc-label doc-label-property"></span>
+            </span>
+        </h2>
+        ```
+
+        You can target these classes in main content (with `.content`) or the sidebar
+        with (`.sidebar`). The markup for the labels is not rendered if there are no
+        labels. If there is more than one label, each label has its own class code.
+        """
+        return Header(level=self.level, content=Inlines([self._title, self._labels]))
 
     def render_annotation(self, annotation: Annotation | None = None) -> str:
         """
@@ -353,29 +371,6 @@ class __RenderDoc(RenderBase):
                 [space, equals, space, Span(default, Attr(classes=["doc-parameter-default"]))]
             )
         return Inlines0(items)
-
-    def render_title(self) -> BlockContent:
-        """
-        Render the header of a docstring, including any anchors
-        """
-        name = (
-            Span(
-                self.display_name,
-                Attr(classes=["doc-object-name", f"doc-{self.kind}-name"]),
-            )
-            if self.show_object_name
-            else None
-        )
-
-        classes = ["title", "doc-object", f"doc-{self.kind}"]
-        if hasattr(self.obj, "members") and self.obj.members:
-            classes.append("doc-has-member-docs")
-
-        return Header(
-            level=self.level,
-            content=Inlines([name, self.render_labels()]),
-            attr=Attr(identifier=self.obj.path, classes=classes),
-        )
 
     @cached_property
     def docstring_subject(self) -> str | None:

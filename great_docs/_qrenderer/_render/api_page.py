@@ -1,33 +1,31 @@
 from __future__ import annotations
 
-from copy import copy
 from functools import cached_property
 from typing import TYPE_CHECKING, cast
 
+from great_docs._qrenderer._render.mixin_page import RenderPageMixin
 from great_docs._renderer.pandoc.inlines import Link
 
 from ..._renderer.pandoc.blocks import (
     BlockContent,
     Blocks,
     DefinitionItem,
-    Header,
 )
 from .._format import markdown_escape
-from .._pandoc.blocks import quarto_title
+from .._pandoc.blocks import Meta
 from .base import RenderBase
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from ..._renderer.layout import Page
-    from ..typing import RenderObjType
     from .doc import RenderDoc
 
 # NOTE: While quartodoc has Page.summary attribute, at the moment it is not used
 # so self.page.summary is None, always.
 
 
-class __RenderAPIPage(RenderBase):
+class __RenderAPIPage(RenderPageMixin, RenderBase):
     """
     Render an API Page object (layout.Page)
     """
@@ -51,7 +49,7 @@ class __RenderAPIPage(RenderBase):
         from . import get_render_type
 
         level = self.level if self._has_one_object else self.level + 1
-        render_objs: list[RenderObjType] = [
+        render_objs: list[RenderDoc] = [
             get_render_type(c)(
                 c,
                 self.renderer,
@@ -60,25 +58,23 @@ class __RenderAPIPage(RenderBase):
             )
             for c in self.page.contents
         ]
+
+        # For a top level object, the title will be created by
+        # this api-page as front-matter, rather than a regular header.
+        for obj in render_objs:
+            if obj.level == 1:
+                self.show_title = False
+
         return render_objs
 
-    def render_title(self) -> BlockContent:
-        """
-        Render the title/header of a docstring, including any anchors
-        """
-        title = ""
-        # If a page documents a single object, lift-up the title of
-        # that object to be the quarto-title of the page.
-        if self._has_one_object:
-            body = cast("Blocks", self.body)
-            if body.elements:
-                rendered_obj = cast("RenderDoc", body.elements[0])
-                rendered_obj.show_title = False
-                title = cast("Header", copy(rendered_obj.title))
-        elif self.page.summary:
-            title = Header(self.level, markdown_escape(self.page.summary.name))
-
-        return quarto_title(title)
+    def render_metadata(self) -> BlockContent:
+        # Derive the title of the page from the first (top-level) object
+        obj = self.render_objs[0]
+        title, labels = obj._title, obj._labels  # pyright: ignore[reportPrivateUsage]
+        return Meta({
+            "title": f"{title}{labels}",
+            "body-classes": "doc-api-page",
+        })
 
     def render_body(self) -> BlockContent:
         """

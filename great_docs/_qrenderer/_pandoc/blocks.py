@@ -81,16 +81,3 @@ class RenderedDocObject(Block):
     def __str__(self):
         lst = [b for b in (self.title, self.signature, self.body) if b]
         return str(Blocks(lst))
-
-
-def quarto_title(title: Header | str) -> Block:
-    """
-    Return a quarto-title block
-    """
-    if isinstance(title, str):
-        title = Header(1, markdown_escape(title))
-    return RawHTMLBlockTag(
-        "header",
-        Div(title, Attr(classes=["quarto-title"])),
-        Attr("title-block-header", classes=["quarto-title-block", "default"]),
-    )

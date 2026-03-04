@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
+from great_docs._qrenderer._pandoc.blocks import Meta
+from great_docs._qrenderer._render.mixin_page import RenderPageMixin
 from great_docs._renderer.pandoc.blocks import (
     Blocks,
-    Header,
 )
-from great_docs._renderer.pandoc.components import Attr
 
 from .base import RenderBase
 
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from great_docs._renderer.pandoc.blocks import BlockContent
 
 
-class __RenderReferencePage(RenderBase):
+class __RenderReferencePage(RenderPageMixin, RenderBase):
     """
     Render the API Reference Page
     """
@@ -32,16 +32,11 @@ class __RenderReferencePage(RenderBase):
 
         self.options = self.layout.options
 
-    def render_title(self) -> BlockContent:
-        """
-        The title of the reference page
-
-        Notes
-        -----
-        This method is currently ignored and overriding it will not give a
-        useful result.
-        """
-        return Header(1, self.layout.title, Attr(classes=["doc", "doc-index"])),
+    def render_metadata(self) -> BlockContent:
+        return Meta({
+            "title": self.layout.title,
+            "body-classes": "doc-reference",
+        })
 
     def render_body(self) -> BlockContent:
         """

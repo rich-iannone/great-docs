@@ -1699,6 +1699,11 @@ for html_file in html_files:
 
     # First pass: find the header end, title, sourcecode, and the first <p> tag after sourceCode
     for i, line in enumerate(content):
+        # Stop searching at end of main content to avoid picking up footer text
+        # (e.g. "Developed by ..." from page-footer) as a false description
+        if "</main>" in line:
+            break
+
         # Find where the header ends
         if "</header>" in line:
             header_end_line = i

@@ -336,14 +336,33 @@ class Config:
     def reference(self) -> list[dict[str, Any]]:
         """Get the API reference configuration (explicit section ordering).
 
-        Returns only when the value is a list of section dicts.  A plain dict
-        (e.g. ``{"title": "API Docs"}``) is treated as metadata, not as
-        explicit sections, and returns an empty list.
+        Supports two forms in great-docs.yml:
+
+        1. List form (sections directly)::
+
+            reference:
+              - title: Core
+                contents: [...]
+
+        2. Dict form with embedded sections::
+
+            reference:
+              title: "API Docs"
+              desc: "..."
+              sections:
+                - title: Core
+                  contents: [...]
+
+        Returns the list of section dicts, or an empty list when no
+        explicit sections are configured (triggering auto-discovery).
         """
         val = self.get("reference", [])
         if isinstance(val, list):
             return val
-        # A dict value is a title/metadata override, not section definitions
+        if isinstance(val, dict):
+            sections = val.get("sections")
+            if isinstance(sections, list):
+                return sections
         return []
 
     @property

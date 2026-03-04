@@ -453,6 +453,35 @@ def test_R1_pages_have_doc_description(pkg_name: str):
         )
 
 
+@requires_bs4
+@pytest.mark.parametrize("pkg_name", _PKGS_WITH_REF_PAGES)
+def test_R1_footer_text_not_in_header(pkg_name: str):
+    """Footer text (e.g. 'Developed by ...') must never appear in doc-description.
+
+    When an object has no docstring, the post-render script must not pick up
+    <p> tags from the page footer and move them into the title area.
+    Regression test for the "footer-in-header" bug.
+    """
+    ref = _ref_dir(pkg_name)
+    for page_path in ref.glob("*.html"):
+        if page_path.name == "index.html":
+            continue
+
+        soup = _load_html(page_path)
+
+        desc = soup.select_one("p.doc-description")
+        if desc is None:
+            continue
+
+        desc_text = desc.get_text().strip().lower()
+        assert "developed by" not in desc_text, (
+            f"{page_path.name}: footer text 'Developed by ...' leaked into doc-description"
+        )
+        assert "supported by" not in desc_text, (
+            f"{page_path.name}: footer text 'Supported by ...' leaked into doc-description"
+        )
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # R2: Docstring Rendering — parameters, returns, raises, examples
 # ═══════════════════════════════════════════════════════════════════════════════

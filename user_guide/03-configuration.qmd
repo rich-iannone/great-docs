@@ -477,6 +477,20 @@ reference:
 
 If no `reference` config is provided, Great Docs auto-generates sections from discovered exports.
 
+### Page Title and Description
+
+You can set a custom heading and introductory paragraph for the API reference index page:
+
+```{.yaml filename="great-docs.yml"}
+reference:
+  title: "API Docs"
+  desc: >-
+    Complete reference for all public classes and functions
+    available in this package.
+```
+
+The `title` replaces the default "Reference" text in both the page heading and the navbar. The `desc` appears as a paragraph below the heading, before the section listings. If omitted, the heading defaults to "Reference" with no introductory text.
+
 ## Complete Example
 
 Here's a comprehensive configuration demonstrating all available options:
@@ -536,6 +550,11 @@ sections:
     type: blog
 
 # API Reference Structure
+# Use a dict for custom title/desc with auto-discovered sections:
+#   reference:
+#     title: "API Reference"
+#     desc: "Complete reference for the library's public API."
+# Or use a list for explicit section ordering:
 reference:
   - title: Core Classes
     desc: Main classes for the library

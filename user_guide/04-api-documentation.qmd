@@ -171,6 +171,26 @@ reference:
 
 Items appear in the order listed within each section. This explicit configuration gives you complete control over how your API documentation is organized.
 
+### Custom Title and Description
+
+You can customize the heading and introductory text of the API reference page using the `title` and `desc` keys:
+
+```{.yaml filename="great-docs.yml"}
+reference:
+  title: "API Docs"
+  desc: >
+    Welcome to the API documentation. This reference covers all public
+    classes and functions available in the package.
+```
+
+When set, the `title` replaces the default "Reference" heading on the API index page and in the navigation bar. The `desc` text appears as a paragraph immediately below the heading, providing context before the section listings. Sections are auto-generated from your package's public API.
+
+If neither `title` nor `desc` is set, the page heading defaults to "Reference" with no introductory text.
+
+:::{.callout-note}
+The `title`/`desc` form and the explicit section list form are separate ways to use the `reference` key. Use `reference:` as a dict (with `title` and `desc`) for a custom heading with auto-discovered sections, or as a list of section dicts for full control over organization.
+:::
+
 ### Controlling Method Documentation
 
 By default, class methods are documented inline on the class page. To exclude methods from documentation (for example, if you want to document them separately elsewhere), use `members: false`:

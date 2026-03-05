@@ -355,6 +355,92 @@ class GreatDocs:
 
         return None
 
+    def _detect_logo(self) -> dict[str, str] | None:
+        """
+        Scan conventional paths for logo files.
+
+        Looks for logo files in the project root using common naming
+        conventions. If a matching file is found, returns a normalized
+        logo dict. Also checks for dark-mode variants automatically.
+
+        Returns
+        -------
+        dict | None
+            A dict with ``light`` (and optionally ``dark``) keys pointing
+            to paths relative to the project root, or ``None`` if no logo
+            file was found.
+        """
+        package_root = self._find_package_root()
+        package_name = self._detect_package_name() or ""
+        importable = package_name.replace("-", "_")
+
+        # Candidate paths for the primary (light) logo, in priority order
+        candidates = [
+            "logo.svg",
+            "logo.png",
+            "assets/logo.svg",
+            "assets/logo.png",
+            "docs/assets/logo.svg",
+            "docs/assets/logo.png",
+        ]
+        # Package-name variants
+        if package_name:
+            candidates.extend(
+                [
+                    f"{package_name}_logo.svg",
+                    f"{package_name}_logo.png",
+                    f"assets/{package_name}_logo.svg",
+                    f"assets/{package_name}_logo.png",
+                ]
+            )
+        if importable and importable != package_name:
+            candidates.extend(
+                [
+                    f"{importable}_logo.svg",
+                    f"{importable}_logo.png",
+                    f"assets/{importable}_logo.svg",
+                    f"assets/{importable}_logo.png",
+                ]
+            )
+        # Also try logo-light naming convention
+        candidates.extend(
+            [
+                "assets/logo-light.svg",
+                "assets/logo-light.png",
+            ]
+        )
+
+        found_path: str | None = None
+        for candidate in candidates:
+            full = package_root / candidate
+            if full.is_file():
+                found_path = candidate
+                break
+
+        if found_path is None:
+            return None
+
+        # Build the result dict
+        result: dict[str, str] = {"light": found_path}
+
+        # Check for a dark variant alongside the found file
+        light_p = Path(found_path)
+        stem = light_p.stem.replace("-light", "")
+        parent = str(light_p.parent) if str(light_p.parent) != "." else ""
+
+        for ext in [light_p.suffix]:  # same extension first
+            dark_name = f"{stem}-dark{ext}"
+            dark_candidate = f"{parent}/{dark_name}" if parent else dark_name
+            if (package_root / dark_candidate).is_file():
+                result["dark"] = dark_candidate
+                break
+
+        # If no separate dark variant, use the same file for both
+        if "dark" not in result:
+            result["dark"] = found_path
+
+        return result
+
     def _normalize_package_name(self, package_name: str) -> str:
         """
         Convert a package name to its importable form.
@@ -724,6 +810,11 @@ class GreatDocs:
 
         # Funding organization
         metadata["funding"] = self._config.funding
+
+        # Logo & favicon configuration
+        metadata["logo"] = self._config.logo
+        metadata["logo_show_title"] = self._config.logo_show_title
+        metadata["favicon"] = self._config.favicon
 
         return metadata
 
@@ -5829,6 +5920,18 @@ dynamic: {dynamic_str}
 # exclude:
 #   - InternalClass
 #   - helper_function
+
+# Logo & Favicon
+# ---------------
+# Point to a single logo file (replaces the text title in the navbar):
+# logo: assets/logo.svg
+#
+# For light/dark variants:
+# logo:
+#   light: assets/logo-light.svg
+#   dark: assets/logo-dark.svg
+#
+# To show the text title alongside the logo, add: show_title: true
 {authors_section}
 {funding_yaml}
 {site_yaml}
@@ -5928,6 +6031,18 @@ jupyter: python3
                 "# exclude:",
                 "#   - InternalClass",
                 "#   - helper_function",
+                "",
+                "# Logo & Favicon",
+                "# ---------------",
+                "# Point to a single logo file (replaces the text title in the navbar):",
+                "# logo: assets/logo.svg",
+                "#",
+                "# For light/dark variants:",
+                "# logo:",
+                "#   light: assets/logo-light.svg",
+                "#   dark: assets/logo-dark.svg",
+                "#",
+                "# To show the text title alongside the logo, add: show_title: true",
                 "",
             ]
         )
@@ -7302,6 +7417,73 @@ toc: false
                     for item in config["website"]["navbar"]["left"]
                     if not (isinstance(item, dict) and item.get("text") == "Home")
                 ]
+
+        # --- Logo & favicon injection ---
+        logo_config = self._config.logo
+        if logo_config is None:
+            # Auto-detect logo from conventional paths
+            logo_config = self._detect_logo()
+
+        if logo_config is not None:
+            package_root = self._find_package_root()
+            navbar = config["website"]["navbar"]
+
+            # Copy logo files into the Quarto project directory
+            light_src = package_root / logo_config["light"]
+            if light_src.is_file():
+                light_dest_name = light_src.name
+                # Avoid name collision: prefix with "logo-light" if needed
+                if logo_config.get("dark") and logo_config["dark"] != logo_config["light"]:
+                    if light_dest_name == Path(logo_config["dark"]).name:
+                        light_dest_name = f"logo-light{light_src.suffix}"
+                shutil.copy2(light_src, self.project_path / light_dest_name)
+                navbar["logo"] = light_dest_name
+            else:
+                print(f"Warning: Logo file not found: {light_src}")
+
+            # Dark variant
+            dark_path = logo_config.get("dark")
+            if dark_path and dark_path != logo_config["light"]:
+                dark_src = package_root / dark_path
+                if dark_src.is_file():
+                    dark_dest_name = dark_src.name
+                    shutil.copy2(dark_src, self.project_path / dark_dest_name)
+                    navbar["logo-dark"] = dark_dest_name
+                else:
+                    print(f"Warning: Dark logo file not found: {dark_src}")
+
+            # Alt text (for accessibility)
+            alt_text = logo_config.get("alt")
+            if not alt_text:
+                # Fall back to display name or package name
+                alt_text = self._config.display_name or self._detect_package_name() or ""
+            if alt_text:
+                navbar["logo-alt"] = alt_text
+
+            # Logo href (defaults to site root)
+            logo_href = logo_config.get("href")
+            if logo_href:
+                navbar["logo-href"] = logo_href
+
+            # Suppress the text title in the navbar unless show_title is True
+            if not self._config.logo_show_title:
+                navbar["title"] = False
+
+            # Favicon: use explicit config, or copy the light logo as favicon.svg
+            favicon_config = self._config.favicon
+            if favicon_config is not None:
+                # User supplied explicit favicon
+                icon_src_path = favicon_config.get("icon")
+                if icon_src_path:
+                    fav_src = package_root / icon_src_path
+                    if fav_src.is_file():
+                        shutil.copy2(fav_src, self.project_path / fav_src.name)
+                        config["website"]["favicon"] = fav_src.name
+                    else:
+                        print(f"Warning: Favicon file not found: {fav_src}")
+            elif light_src.is_file() and light_src.suffix.lower() == ".svg":
+                # Auto-use SVG logo as favicon (browsers support SVG favicons)
+                config["website"]["favicon"] = light_dest_name
 
         # Add GitHub widget script to page if using widget style
         if owner and repo and github_style == "widget":

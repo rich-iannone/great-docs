@@ -73,6 +73,16 @@ DEFAULT_CONFIG: dict[str, Any] = {
     # API Reference configuration (explicit section ordering)
     # If not provided, auto-generates sections from discovered exports
     "reference": [],
+    # Logo configuration
+    # str: path to a single logo file (used for all contexts)
+    # dict: {"light": "...", "dark": "...", "alt": "...", "height": "...", "href": "...", "show_title": False}
+    # None: auto-detect from conventional paths, or skip if nothing found
+    "logo": None,
+    # Favicon configuration
+    # str: path to a single favicon file
+    # dict: {"icon": "...", "apple_touch": "...", "og_image": "..."}
+    # None: auto-generate from logo, or skip if no logo
+    "favicon": None,
 }
 
 
@@ -415,6 +425,54 @@ class Config:
         """Get the Jupyter kernel for executing code cells."""
         return self.get("jupyter", "python3")
 
+    @property
+    def logo(self) -> dict[str, Any] | None:
+        """Get the normalized logo configuration.
+
+        Returns
+        -------
+        dict | None
+            Normalized logo dict with at least ``light`` key, or ``None`` if
+            no logo is configured.  A bare string in ``great-docs.yml`` is
+            expanded to ``{"light": "<path>", "dark": "<path>"}``.
+        """
+        raw = self.get("logo")
+        if raw is None:
+            return None
+        if isinstance(raw, str):
+            return {"light": raw, "dark": raw}
+        if isinstance(raw, dict):
+            return raw
+        return None
+
+    @property
+    def logo_show_title(self) -> bool:
+        """Whether to show the text title alongside the logo."""
+        logo = self.logo
+        if isinstance(logo, dict):
+            return bool(logo.get("show_title", False))
+        return False
+
+    @property
+    def favicon(self) -> dict[str, Any] | None:
+        """Get the normalized favicon configuration.
+
+        Returns
+        -------
+        dict | None
+            Normalized favicon dict with at least ``icon`` key, or ``None``
+            if no favicon is explicitly configured (auto-generation may still
+            produce one from the logo).
+        """
+        raw = self.get("favicon")
+        if raw is None:
+            return None
+        if isinstance(raw, str):
+            return {"icon": raw}
+        if isinstance(raw, dict):
+            return raw
+        return None
+
     def exists(self) -> bool:
         """Check if the configuration file exists."""
         return self.config_path.exists()
@@ -486,6 +544,18 @@ def create_default_config() -> str:
 # exclude:
 #   - InternalClass
 #   - helper_function
+
+# Logo & Favicon
+# ---------------
+# Point to a single logo file (replaces the text title in the navbar):
+# logo: assets/logo.svg
+#
+# For light/dark variants:
+# logo:
+#   light: assets/logo-light.svg
+#   dark: assets/logo-dark.svg
+#
+# To show the text title alongside the logo, add: show_title: true
 
 # GitHub Integration
 # ------------------

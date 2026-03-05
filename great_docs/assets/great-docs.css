@@ -305,7 +305,7 @@ summary::marker {
 }
 
 #navbarCollapse > ul.navbar-nav.navbar-nav-scroll.me-auto > li > a {
-    color: white;
+    color: var(--gd-navbar-text);
     font-weight: bold;
 }
 
@@ -337,7 +337,7 @@ a.sidebar-item-toggle.text-start > i {
 .navbar-title {
     font-family: Inter, Roboto, "Helvetica Neue", "Arial Nova", "Nimbus Sans", Arial, sans-serif;
     font-weight: bold;
-    color: white;
+    color: var(--gd-navbar-text);
     border-style: solid;
     border-width: 2px;
     border-radius: 8px;
@@ -351,8 +351,8 @@ a.sidebar-item-toggle.text-start > i {
 .version-badge {
     font-size: 0.65em;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.75);
-    background-color: rgba(255, 255, 255, 0.15);
+    color: rgba(0, 0, 0, 0.55);
+    background-color: rgba(0, 0, 0, 0.08);
     border-radius: 4px;
     padding: 1px 6px;
     margin-left: 6px;
@@ -408,7 +408,8 @@ a.sidebar-item-text.sidebar-link.text-start > span {
 }
 
 .navbar {
-	background: #2d2d2d;
+	background: var(--gd-navbar-bg);
+	border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .nav-link.active {
@@ -416,6 +417,29 @@ a.sidebar-item-text.sidebar-link.text-start > span {
     text-decoration-thickness: 2px;
     text-decoration-color: rgba(101, 180, 237, 0.75);
     text-underline-offset: 4px;
+}
+
+/* Light-mode navbar overrides (counteract Bootstrap data-bs-theme="dark") */
+body.quarto-light .navbar .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(0,0,0,0.65)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+body.quarto-light .navbar .aa-DetachedSearchButton,
+body.quarto-light .navbar .aa-DetachedSearchButton svg,
+body.quarto-light .navbar .aa-SubmitButton,
+body.quarto-light .navbar .aa-SubmitButton svg {
+    color: var(--gd-navbar-text) !important;
+    fill: var(--gd-navbar-text);
+}
+
+body.quarto-light .navbar .quarto-navbar-tools button,
+body.quarto-light .navbar .quarto-navbar-tools .quarto-navigation-tool {
+    color: var(--gd-navbar-text);
+}
+
+body.quarto-light .navbar .quarto-navbar-tools button:hover,
+body.quarto-light .navbar .quarto-navbar-tools .quarto-navigation-tool:hover {
+    background-color: rgba(0, 0, 0, 0.06);
 }
 
 #navbarCollapse > ul.navbar-nav.navbar-nav-scroll.ms-auto > li {
@@ -603,23 +627,23 @@ a.sidebar-item-text.sidebar-link.text-start > span {
     align-items: center;
     gap: 6px;
     padding: 6px 10px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.15);
     border-radius: 6px;
-    color: white;
+    color: var(--gd-navbar-text);
     cursor: pointer;
     transition: all 0.2s ease;
     font-size: 13px;
 }
 
 .gh-widget-trigger:hover {
-    background: rgba(255, 255, 255, 0.18);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.10);
+    border-color: rgba(0, 0, 0, 0.25);
 }
 
 .gh-widget-open .gh-widget-trigger {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.35);
+    background: rgba(0, 0, 0, 0.12);
+    border-color: rgba(0, 0, 0, 0.25);
 }
 
 .gh-icon {
@@ -1177,22 +1201,22 @@ h1.title.cli-title {
     width: 34px;
     height: 34px;
     padding: 0;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.15);
     border-radius: 6px;
-    color: white;
+    color: var(--gd-navbar-text);
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .dark-mode-toggle:hover {
-    background: rgba(255, 255, 255, 0.18);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.10);
+    border-color: rgba(0, 0, 0, 0.25);
 }
 
 .dark-mode-toggle:focus {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.15);
 }
 
 .dark-mode-toggle svg {
@@ -1225,7 +1249,8 @@ h1.title.cli-title {
     --gd-code-color: rgb(18, 18, 18);
     --gd-blockquote-bg: #E8E8E8;
     --gd-sidebar-bg: #FAFAFD;
-    --gd-navbar-bg: #2d2d2d;
+    --gd-navbar-bg: #e3f2fd;
+    --gd-navbar-text: #2d2d2d;
     --gd-footer-text: rgb(48, 48, 48);
     --gd-highlight-color: rgba(255, 243, 205, 0.5);
     --gd-active-link: rgb(244, 121, 0);
@@ -1262,6 +1287,7 @@ body.quarto-dark {
     --gd-blockquote-bg: #2a2a2a;
     --gd-sidebar-bg: #1e1e1e;
     --gd-navbar-bg: #1a1a1a;
+    --gd-navbar-text: #e0e0e0;
     --gd-footer-text: #b0b0b0;
     --gd-highlight-color: rgba(255, 193, 7, 0.2);
     --gd-active-link: #ff9f43;
@@ -1699,6 +1725,10 @@ body.quarto-dark .navbar {
 
 body.quarto-dark .navbar-brand img {
     /* no border overrides needed */
+}
+
+body.quarto-dark .navbar-title {
+    color: var(--gd-navbar-text);
 }
 
 body.quarto-dark .version-badge {

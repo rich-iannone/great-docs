@@ -438,7 +438,7 @@ class Builder:
         render_interlinks: bool = False,
         _fast_inventory=False,
     ):
-        self.layout = self.load_layout(title, sections=sections, package=package, options=options)
+        self.layout = self.load_layout(title, desc=desc, sections=sections, package=package, options=options)
 
         self.package = package
         self.version = None
@@ -468,9 +468,9 @@ class Builder:
 
         self._fast_inventory = _fast_inventory
 
-    def load_layout(self, title: str, sections: dict, package: str, options=None):
+    def load_layout(self, title: str, desc: str, sections: dict, package: str, options=None):
         try:
-            return layout.Layout(title, sections=sections, package=package, options=options)
+            return layout.Layout(title, desc, sections=sections, package=package, options=options)
         except (ValueError, TypeError) as e:
             raise ValueError(str(e)) from None
 

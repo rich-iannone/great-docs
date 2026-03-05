@@ -51,6 +51,7 @@ class MISSING(_Base):
 class Layout(_Structural):
     """The layout of an API doc, which may include many pages."""
     title: str = "API Reference"
+    description: Optional[str] = None
     sections: list[Section] = field(default_factory=list["Section"])
     package: Union[str, None, MISSING] = field(default_factory=MISSING)
     options: Optional[AutoOptions] = None

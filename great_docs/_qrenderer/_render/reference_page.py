@@ -4,8 +4,10 @@ from typing import TYPE_CHECKING, cast
 
 from great_docs._qrenderer._pandoc.blocks import Meta
 from great_docs._qrenderer._render.mixin_page import RenderPageMixin
+from great_docs._renderer.pandoc.components import Attr
 from great_docs._renderer.pandoc.blocks import (
     Blocks,
+    Div,
 )
 
 from .base import RenderBase
@@ -31,6 +33,16 @@ class __RenderReferencePage(RenderPageMixin, RenderBase):
         """The package being documented """
 
         self.options = self.layout.options
+
+    def render_description(self) -> BlockContent:
+        """
+        Render the description of the reference page
+        """
+        return (
+            Div(self.layout.description, Attr(classes=["doc-description"]))
+            if self.layout.description
+            else None
+        )
 
     def render_metadata(self) -> BlockContent:
         return Meta({

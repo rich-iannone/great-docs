@@ -1295,6 +1295,57 @@ def test_R4_rst_tables_converted(pkg_name: str):
 
 
 @requires_bs4
+def test_R4_logo_replaces_title():
+    """Logo config injects navbar logo and suppresses the text title."""
+    pkg = "gdtest_logo"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    cfg = _load_quarto_yml(pkg)
+    navbar = cfg.get("website", {}).get("navbar", {})
+
+    # Logo files should be referenced in the navbar
+    assert navbar.get("logo") == "logo.svg", "navbar.logo should be logo.svg"
+    assert navbar.get("logo-dark") == "logo-dark.svg", "navbar.logo-dark should be logo-dark.svg"
+
+    # Text title should be suppressed
+    assert navbar.get("title") is False, "navbar.title should be False when logo is set"
+
+    # Alt text should fall back to display_name
+    assert navbar.get("logo-alt") == "Logo Test", "logo-alt should be the display_name"
+
+    # SVG favicon should be auto-set from the logo
+    assert cfg.get("website", {}).get("favicon") == "logo.svg", "favicon should be logo.svg"
+
+    # Logo files should exist in the build directory
+    build_dir = _RENDERED_DIR / pkg / "great-docs"
+    assert (build_dir / "logo.svg").exists(), "logo.svg should be copied to build dir"
+    assert (build_dir / "logo-dark.svg").exists(), "logo-dark.svg should be copied to build dir"
+
+
+@requires_bs4
+def test_R4_logo_in_rendered_html():
+    """Rendered HTML should contain the logo image in the navbar."""
+    pkg = "gdtest_logo"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    index = _site_dir(pkg) / "index.html"
+    soup = _load_html(index)
+
+    # Find the navbar logo image
+    navbar = soup.select_one("nav.navbar")
+    if navbar is None:
+        pytest.skip("No navbar found")
+
+    logo_img = navbar.select_one("img.navbar-logo")
+    assert logo_img is not None, "Navbar should contain an <img class='navbar-logo'>"
+    assert "logo" in (logo_img.get("src", "") or "").lower(), (
+        "Logo img src should reference the logo file"
+    )
+
+
+@requires_bs4
 def test_R4_display_name_in_title():
     """Config display_name appears in the site navbar/title."""
     pkg = "gdtest_display_name"

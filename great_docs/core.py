@@ -1278,8 +1278,16 @@ class GreatDocs:
                     else:
                         index_href = f"{slug}/index.qmd"
 
-                # Add sidebar
+                # Add sidebar (skipped for single-page sections)
                 self._add_section_sidebar(title, slug, copied, has_user_index, generate_index)
+
+                # For single-page sections (no sidebar), inject a body class so
+                # CSS can expand the content area into the sidebar space.
+                content_pages = [p for p in copied if p["filename"] != "index.qmd"]
+                has_index = has_user_index or generate_index
+                sidebar_items = (1 if has_index else 0) + len(content_pages)
+                if sidebar_items <= 1:
+                    self._inject_section_body_class(slug, copied, dest_dir)
 
             # Add navbar link
             navbar_after = section_cfg.get("navbar_after")
@@ -1624,6 +1632,12 @@ class GreatDocs:
                 }
             )
 
+        # Skip sidebar when a section has only a single page — the lone item
+        # provides no navigation value and wastes horizontal space.  Without a
+        # sidebar entry the page content expands into the full width.
+        if len(contents) <= 1:
+            return
+
         sidebar_config = {
             "id": sidebar_id,
             "title": title,
@@ -1637,6 +1651,45 @@ class GreatDocs:
         config["website"]["sidebar"] = sidebar
 
         self._write_quarto_yml(quarto_yml, config)
+
+    def _inject_section_body_class(
+        self,
+        slug: str,
+        pages: list[dict],
+        dest_dir: Path,
+    ) -> None:
+        """
+        Add ``body-classes: gd-section-no-sidebar`` to frontmatter of every page
+        in a single-page section so CSS can expand the content area.
+        """
+        for page in pages:
+            qmd_path = dest_dir / page["filename"]
+            if not qmd_path.exists():
+                continue
+
+            content = qmd_path.read_text(encoding="utf-8")
+            if not content.startswith("---"):
+                continue
+
+            parts = content.split("---", 2)
+            if len(parts) < 3:
+                continue
+
+            try:
+                fm = yaml.safe_load(parts[1])
+                if not isinstance(fm, dict):
+                    continue
+            except yaml.YAMLError:
+                continue
+
+            # Merge body-classes
+            existing = fm.get("body-classes", "")
+            classes = existing.split() if existing else []
+            if "gd-section-no-sidebar" not in classes:
+                classes.append("gd-section-no-sidebar")
+                fm["body-classes"] = " ".join(classes)
+                parts[1] = "\n" + yaml.dump(fm, default_flow_style=False, sort_keys=False)
+                qmd_path.write_text("---".join(parts), encoding="utf-8")
 
     def _add_section_to_navbar(
         self,

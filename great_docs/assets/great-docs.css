@@ -365,6 +365,27 @@ a.sidebar-item-toggle.text-start > i {
     background-color: #FAFAFD;
 }
 
+/* ── Single-page section: expand content into sidebar space ──
+   When a custom section has only one page the left sidebar is omitted.
+   Shift the content column leftward so it occupies the sidebar area too,
+   keeping the TOC on the right intact. */
+@media (min-width: 992px) {
+    body.gd-section-no-sidebar #quarto-content {
+        grid-template-columns:
+            [screen-start] 1.5em
+            [screen-start-inset] 4.65fr
+            [page-start page-start-inset body-start-outset body-start] 1.5em
+            [body-content-start] minmax(500px, calc(1050px - 3em))
+            [body-content-end] 1.5em
+            [body-end] 35px
+            [body-end-outset] minmax(75px, 145px)
+            [page-end-inset] 35px
+            [page-end] 5fr
+            [screen-end-inset] 1.5em
+            [screen-end] !important;
+    }
+}
+
 /* Sidebar API items: monospace font with smart line-breaking for long names.
    Line breaks are controlled by <wbr> tags inserted by sidebar-wrap.js;
    overflow-wrap is intentionally NOT set so the browser only breaks at

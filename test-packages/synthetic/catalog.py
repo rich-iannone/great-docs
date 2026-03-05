@@ -207,6 +207,7 @@ ALL_PACKAGES: list[str] = [
     "gdtest_sec_with_ref",  # 74
     "gdtest_sec_deep",  # 75
     "gdtest_sec_index_opt",  # 75b
+    "gdtest_sec_sidebar_single",  # 75c
     # 76–85: Reference config
     "gdtest_ref_explicit",  # 76
     "gdtest_ref_members_false",  # 77
@@ -402,6 +403,7 @@ DIMENSIONS: dict[str, dict[str, str]] = {
     "N6": {"axis": "sections", "label": "Multiple sections"},
     "N7": {"axis": "sections", "label": "navbar_after"},
     "N8": {"axis": "sections", "label": "Section index opt-in"},
+    "N9": {"axis": "sections", "label": "Single-page sidebar hide"},
     # Reference axes
     "P1": {"axis": "reference", "label": "Explicit reference"},
     "P2": {"axis": "reference", "label": "members: false"},
@@ -1366,6 +1368,11 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "Section index opt-in: Examples section with index: true gets a "
         "card-based index page; Tutorials section without index (default) "
         "has navbar linking directly to the first page."
+    ),
+    "gdtest_sec_sidebar_single": (
+        "Section sidebar for single-page sections. Has a 2-page Guides "
+        "section (sidebar visible) and a 1-page FAQ section (sidebar "
+        "should be hidden, content takes full width)."
     ),
     # ── 76–85: Reference config ───────────────────────────────────────────
     "gdtest_ref_explicit": (

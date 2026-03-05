@@ -50,8 +50,9 @@ class MISSING(_Base):
 @dataclass
 class Layout(_Structural):
     """The layout of an API doc, which may include many pages."""
-
-    sections: list = field(default_factory=list)
+    title: str = "API Reference"
+    description: Optional[str] = None
+    sections: list[Section] = field(default_factory=list["Section"])
     package: Union[str, None, MISSING] = field(default_factory=MISSING)
     options: Optional[AutoOptions] = None
 
@@ -94,7 +95,7 @@ class Section(_Structural):
     subtitle: Optional[str] = None
     desc: Optional[str] = None
     package: Union[str, None, MISSING] = field(default_factory=MISSING)
-    contents: list = field(default_factory=list)
+    contents: list[Union[DocClass, DocFunction, DocAttribute, DocModule, Page]] = field(default_factory=list["Union[DocClass, DocFunction, DocAttribute, DocModule, Page]"])
     options: Optional[AutoOptions] = None
 
     def __post_init__(self):
@@ -121,7 +122,7 @@ class Page(_Structural):
     package: Union[str, None, MISSING] = field(default_factory=MISSING)
     summary: Optional[SummaryDetails] = None
     flatten: bool = False
-    contents: list = field(default_factory=list)
+    contents: list[Union[DocClass, DocFunction, DocAttribute, DocModule]] = field(default_factory=list["Union[DocClass, DocFunction, DocAttribute, DocModule]"])
 
     @property
     def obj(self):
@@ -312,7 +313,7 @@ class DocClass(Doc):
     """Document a python class."""
 
     kind: str = "class"
-    members: list = field(default_factory=list)
+    members: list[Union[DocClass, DocFunction, DocAttribute]] = field(default_factory=list["Union[DocClass, DocFunction, DocAttribute]"])
     flat: bool = False
 
 
@@ -328,7 +329,7 @@ class DocModule(Doc):
     """Document a python module."""
 
     kind: str = "module"
-    members: list = field(default_factory=list)
+    members: list[Union[DocClass, DocFunction, DocAttribute, DocModule]] = field(default_factory=list["Union[DocClass, DocFunction, DocAttribute, DocModule]"])
     flat: bool = False
 
 

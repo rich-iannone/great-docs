@@ -250,6 +250,9 @@ ALL_PACKAGES: list[str] = [
     "gdtest_long_names",  # 108
     # 109: Logo & favicon integration
     "gdtest_logo",  # 109
+    # 110–111: Hero section
+    "gdtest_hero_basic",  # 110
+    "gdtest_hero_readme_badges",  # 111
 ]
 
 
@@ -1504,6 +1507,17 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "via great-docs.yml config. Tests that the logo replaces the text "
         "title in the navbar (navbar.title: false), copies logo files into "
         "the build directory, and sets the SVG as favicon."
+    ),
+    # ── 110–111: Hero section ─────────────────────────────────────────────
+    "gdtest_hero_basic": (
+        "Hero section with logo, name, tagline, and top-of-file badges. "
+        "Tests that providing a logo config auto-enables the hero section "
+        "on the landing page with badge extraction from the README."
+    ),
+    "gdtest_hero_readme_badges": (
+        "Hero section from a README with centered-div badges. Tests the "
+        'Pointblank-style <div align="center"> pattern where badges are '
+        "extracted from inside a centered block and the block is stripped."
     ),
 }
 

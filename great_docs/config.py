@@ -83,6 +83,12 @@ DEFAULT_CONFIG: dict[str, Any] = {
     # dict: {"icon": "...", "apple_touch": "...", "og_image": "..."}
     # None: auto-generate from logo, or skip if no logo
     "favicon": None,
+    # Hero section configuration for the landing page
+    # None: auto-enable when a logo is configured
+    # True/False: force enable/disable
+    # dict: {"enabled": bool, "logo": str|dict|false, "logo_height": str,
+    #        "name": str|false, "tagline": str|false, "badges": "auto"|list|false}
+    "hero": None,
 }
 
 
@@ -452,6 +458,99 @@ class Config:
         if isinstance(logo, dict):
             return bool(logo.get("show_title", False))
         return False
+
+    @property
+    def hero_enabled(self) -> bool:
+        """Whether the hero section is enabled.
+
+        Auto-enables when a logo is configured and ``hero`` is not
+        explicitly set to ``False``.
+        """
+        raw = self.get("hero")
+        if raw is False:
+            return False
+        if raw is True or isinstance(raw, dict):
+            if isinstance(raw, dict) and raw.get("enabled") is False:
+                return False
+            return True
+        # None (default): auto-enable when logo exists
+        return self.logo is not None
+
+    @property
+    def hero(self) -> dict[str, Any]:
+        """Get the resolved hero configuration dict.
+
+        Returns a dict with keys: enabled, logo, logo_height, name,
+        tagline, badges.  Missing keys are filled with defaults.
+        """
+        raw = self.get("hero")
+        if isinstance(raw, dict):
+            return raw
+        return {}
+
+    @property
+    def hero_logo(self) -> str | dict | None:
+        """Get the hero logo, falling back to the top-level logo config.
+
+        Returns ``None`` when hero logo is explicitly suppressed (``false``).
+        """
+        hero = self.hero
+        val = hero.get("logo") if hero else None
+        if val is False:
+            return None
+        if val is not None:
+            return val
+        # Fall back to top-level logo
+        return self.logo
+
+    @property
+    def hero_logo_height(self) -> str:
+        """Get the hero logo max-height CSS value."""
+        hero = self.hero
+        return hero.get("logo_height", "200px") if hero else "200px"
+
+    @property
+    def hero_name(self) -> str | None:
+        """Get the hero name, falling back to display_name.
+
+        Returns ``None`` when explicitly suppressed (``false``).
+        """
+        hero = self.hero
+        val = hero.get("name") if hero else None
+        if val is False:
+            return None
+        if val is not None:
+            return val
+        return self.display_name
+
+    @property
+    def hero_tagline(self) -> str | None:
+        """Get the hero tagline.
+
+        Returns ``None`` when explicitly suppressed (``false``).
+        Auto-resolved from package metadata in core.py.
+        """
+        hero = self.hero
+        val = hero.get("tagline") if hero else None
+        if val is False:
+            return None
+        return val
+
+    @property
+    def hero_badges(self) -> str | list | None:
+        """Get the hero badges config.
+
+        Returns ``"auto"`` (default, extract from README), an explicit list
+        of badge dicts, or ``None`` (disabled).
+        """
+        hero = self.hero
+        val = hero.get("badges") if hero else None
+        if val is False:
+            return None
+        if val is not None:
+            return val
+        # Default: auto-extract from README
+        return "auto"
 
     @property
     def favicon(self) -> dict[str, Any] | None:

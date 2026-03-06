@@ -3210,6 +3210,9 @@ class GreatDocs:
         # Build the metadata margin sidebar
         margin_content = self._build_metadata_margin()
 
+        # Build hero section for blended homepage
+        hero_html, _ = self._build_hero_section()
+
         # Split content into frontmatter and body. Headings are NOT bumped
         # here, unlike _create_index_from_readme, because UG pages already
         # have a frontmatter title. Quarto absorbs the first body `#`
@@ -3236,13 +3239,21 @@ class GreatDocs:
 
         body = re.sub(r"^#\s+[^\n]*\n?", "", body, count=1, flags=re.MULTILINE)
 
+        # Build hero block for insertion
+        hero_block = ""
+        if hero_html:
+            hero_block = f"""```{{=html}}
+{hero_html}```
+
+"""
+
         # Reassemble with margin content inserted after frontmatter
         if margin_content:
             blended_content = (
-                f"{frontmatter_block}\n::: {{.gd-meta-sidebar}}\n{margin_content}\n:::\n\n{body}"
+                f"{frontmatter_block}\n{hero_block}::: {{.gd-meta-sidebar}}\n{margin_content}\n:::\n\n{body}"
             )
         else:
-            blended_content = f"{frontmatter_block}\n{body}"
+            blended_content = f"{frontmatter_block}\n{hero_block}{body}"
 
         # Write to index.qmd at the site root
         index_qmd = self.project_path / "index.qmd"
@@ -6504,6 +6515,213 @@ jupyter: python3
 
         return "\n".join(lines) + "\n"
 
+    def _extract_badges_from_content(self, content: str) -> tuple[list[dict], str]:
+        """Extract badge image-links from the top of README/index content.
+
+        Scans the first block of contiguous badge lines for Markdown
+        ``[![alt](img)](url)`` patterns whose image URL matches known badge
+        hosts (shields.io, GitHub Actions, repostatus.org, etc.).
+
+        Parameters
+        ----------
+        content
+            Raw Markdown content (after any YAML frontmatter has been
+            stripped).
+
+        Returns
+        -------
+        tuple[list[dict], str]
+            ``(badges, cleaned_content)`` — a list of badge dicts (keys:
+            ``url``, ``img``, ``alt``) and the content with the contiguous
+            badge block removed from the top.
+        """
+        import re
+
+        badge_hosts = (
+            "img.shields.io",
+            "badge.fury.io",
+            "github.com/",  # GitHub Actions badge URLs contain /badge.svg
+            "codecov.io",
+            "readthedocs.org",
+            "repostatus.org",
+            "pepy.tech",
+            "pyopensci.org",
+            "zenodo.org/badge",
+            "www.contributor-covenant.org",
+        )
+
+        # Pattern: [![alt](img_url)](link_url)
+        md_badge_re = re.compile(
+            r"\[!\[([^\]]*)\]\(([^)]+)\)\]\(([^)]+)\)"
+        )
+
+        badges: list[dict] = []
+        lines = content.split("\n")
+        badge_end_idx = 0  # index of first non-badge line after the badge block
+
+        # Find the badge block: contiguous lines at the top that contain badge
+        # patterns (skip leading blank lines and the first `# Title` heading)
+        started = False
+        for i, line in enumerate(lines):
+            stripped = line.strip()
+
+            # Skip leading blank lines
+            if not started and not stripped:
+                continue
+
+            # Skip leading h1 heading (e.g. ``# Package Name``)
+            if not started and stripped.startswith("# "):
+                started = True
+                continue
+
+            # Once we've passed the heading, look for badge lines
+            if not started and stripped:
+                started = True
+
+            # Blank line between badge rows is OK
+            if started and not stripped:
+                # Peek ahead to see if more badges follow
+                has_more_badges = False
+                for j in range(i + 1, min(i + 3, len(lines))):
+                    if md_badge_re.search(lines[j]):
+                        has_more_badges = True
+                        break
+                if has_more_badges:
+                    badge_end_idx = i + 1
+                    continue
+                else:
+                    break
+
+            # Check for badge markdown patterns in this line
+            found_in_line = md_badge_re.findall(stripped)
+            if found_in_line:
+                for alt, img, url in found_in_line:
+                    # Filter: img must match a known badge host
+                    if any(host in img for host in badge_hosts):
+                        badges.append({"alt": alt, "img": img, "url": url})
+                badge_end_idx = i + 1
+            elif started:
+                # Non-blank, non-badge line — end of badge block
+                break
+
+        # Build cleaned content with the badge block removed
+        if badges and badge_end_idx > 0:
+            # Remove lines up to badge_end_idx, but keep the h1 heading
+            kept_before: list[str] = []
+            for i in range(badge_end_idx):
+                stripped = lines[i].strip()
+                if stripped.startswith("# "):
+                    kept_before.append(lines[i])
+
+            remaining = lines[badge_end_idx:]
+            cleaned = "\n".join(kept_before + remaining)
+            # Strip leading blank lines from the join point
+            cleaned = cleaned.lstrip("\n")
+            if kept_before:
+                # Re-add a single blank line after heading
+                heading = kept_before[0]
+                rest = "\n".join(remaining).lstrip("\n")
+                cleaned = heading + "\n\n" + rest
+        else:
+            cleaned = content
+
+        return badges, cleaned
+
+    def _build_hero_section(
+        self,
+        readme_content: str | None = None,
+    ) -> tuple[str, str | None]:
+        """Build the hero section HTML and optionally clean badges from content.
+
+        Parameters
+        ----------
+        readme_content
+            Raw README/index Markdown content. When provided and badge
+            auto-extraction is enabled, badges are extracted and the cleaned
+            content is returned.
+
+        Returns
+        -------
+        tuple[str, str | None]
+            ``(hero_html, cleaned_content)`` — the hero HTML block (empty
+            string when hero is disabled) and the cleaned README content
+            (``None`` when no cleaning was performed).
+        """
+        if not self._config.hero_enabled:
+            return "", None
+
+        metadata = self._get_package_metadata()
+
+        # ── Logo ────────────────────────────────────────────────────
+        logo_config = self._config.hero_logo
+        logo_height = self._config.hero_logo_height
+        logo_html = ""
+
+        if logo_config:
+            if isinstance(logo_config, dict):
+                light = logo_config.get("light")
+                dark = logo_config.get("dark")
+                alt = logo_config.get("alt", "Logo")
+
+                if light and dark and light != dark:
+                    logo_html = (
+                        f'<img src="{light}" alt="{alt}" class="gd-hero-logo d-block mx-auto gd-only-light" style="max-height:{logo_height}" />\n'
+                        f'<img src="{dark}" alt="{alt}" class="gd-hero-logo d-block mx-auto gd-only-dark" style="max-height:{logo_height}" />'
+                    )
+                elif light:
+                    logo_html = f'<img src="{light}" alt="{alt}" class="gd-hero-logo d-block mx-auto" style="max-height:{logo_height}" />'
+            elif isinstance(logo_config, str):
+                logo_html = f'<img src="{logo_config}" alt="Logo" class="gd-hero-logo d-block mx-auto" style="max-height:{logo_height}" />'
+
+        # ── Name ────────────────────────────────────────────────────
+        hero_name = self._config.hero_name
+        if hero_name is None:
+            # Fallback to package name from metadata
+            hero_name = metadata.get("name") or self._detect_package_name()
+        name_html = f'<p class="gd-hero-name">{hero_name}</p>' if hero_name else ""
+
+        # ── Tagline ─────────────────────────────────────────────────
+        tagline = self._config.hero_tagline
+        if tagline is None:
+            tagline = metadata.get("description", "")
+        tagline_html = (
+            f'<p class="gd-hero-tagline">{tagline}</p>' if tagline else ""
+        )
+
+        # ── Badges ──────────────────────────────────────────────────
+        badges_config = self._config.hero_badges
+        badges: list[dict] = []
+        cleaned_content = None
+
+        if badges_config == "auto" and readme_content:
+            badges, cleaned = self._extract_badges_from_content(readme_content)
+            if badges:
+                cleaned_content = cleaned
+        elif isinstance(badges_config, list):
+            badges = badges_config
+
+        badges_html = ""
+        if badges:
+            badge_items = []
+            for b in badges:
+                alt = b.get("alt", "")
+                img = b.get("img", "")
+                url = b.get("url", "")
+                if url:
+                    badge_items.append(f'<a href="{url}"><img alt="{alt}" src="{img}" /></a>')
+                else:
+                    badge_items.append(f'<img alt="{alt}" src="{img}" />')
+            badges_html = '<div class="gd-hero-badges">\n' + "\n".join(badge_items) + "\n</div>"
+
+        # ── Assemble ────────────────────────────────────────────────
+        parts = [p for p in [logo_html, name_html, tagline_html, badges_html] if p]
+        if not parts:
+            return "", None
+
+        hero_html = '<div class="gd-hero">\n' + "\n".join(parts) + "\n</div>\n\n"
+
+        return hero_html, cleaned_content
+
     def _build_metadata_margin(self) -> str:
         """
         Build the `.column-margin` metadata sidebar content for the homepage.
@@ -7127,6 +7345,27 @@ title: "Authors and Citation"
             if source_file.suffix.lower() == ".rst":
                 readme_content = self._convert_rst_to_markdown(source_file)
 
+        # Build hero section (must run before heading adjustment so badge
+        # extraction works on original markdown)
+        hero_html, cleaned_content = self._build_hero_section(readme_content)
+        if cleaned_content is not None:
+            readme_content = cleaned_content
+
+        # If hero displays the package name, strip a matching first heading
+        # to avoid visual duplication
+        if hero_html and self._config.hero_enabled:
+            import re as _re
+
+            hero_name = self._config.hero_name
+            if hero_name is None:
+                metadata = self._get_package_metadata()
+                hero_name = metadata.get("name") or self._detect_package_name()
+            if hero_name:
+                first_h1 = _re.match(r"^#\s+(.+)$", readme_content.strip(), _re.MULTILINE)
+                if first_h1 and first_h1.group(1).strip().lower() == hero_name.strip().lower():
+                    readme_content = readme_content.replace(first_h1.group(0), "", 1).lstrip("\n")
+
+        if source_file is not None:
             # Adjust heading levels: bump all headings up by one level
             # This prevents h1 from becoming paragraphs and keeps proper hierarchy
             # Replace headings from highest to lowest level to avoid double-replacement
@@ -7158,13 +7397,21 @@ section.level2:first-of-type > h2:first-child,
         # Create a qmd file with the README content
         # Use empty title so "Home" doesn't appear on landing page
         # Add margin content in a special div that Quarto will place in the margin
+        # Prepend hero section (raw HTML block) when enabled
+        hero_block = ""
+        if hero_html:
+            hero_block = f"""```{{=html}}
+{hero_html}```
+
+"""
+
         if margin_content:
             qmd_content = f"""---
 title: ""
 toc: false
 ---
 
-{first_heading_style}::: {{.column-margin}}
+{first_heading_style}{hero_block}::: {{.column-margin}}
 {margin_content}
 :::
 
@@ -7176,7 +7423,7 @@ title: ""
 toc: false
 ---
 
-{first_heading_style}{readme_content}
+{first_heading_style}{hero_block}{readme_content}
 """
 
         with open(index_qmd, "w", encoding="utf-8") as f:

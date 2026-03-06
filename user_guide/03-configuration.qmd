@@ -209,9 +209,9 @@ dynamic: false
 
 ### When to Set `dynamic: false`
 
-- Your package has cyclic aliases or complex re-export patterns
-- The build fails with `AttributeError` during introspection
-- You're documenting a compiled extension (PyO3/Rust/Cython)
+- your package has cyclic aliases or complex re-export patterns
+- the build fails with `AttributeError` during introspection
+- you're documenting a compiled extension (PyO3/Rust/Cython)
 
 ## GitHub Integration
 
@@ -279,9 +279,97 @@ dark_mode_toggle: false
 
 When enabled, the toggle appears in the navbar and:
 
-- Detects the user's system color scheme preference on first visit
-- Persists the user's choice in local storage
-- Provides instant switching without page reload
+- detects the user's system color scheme preference on first visit
+- persists the user's choice in local storage
+- provides instant switching without page reload
+
+## Logo
+
+Great Docs can display a logo in the navbar instead of the plain-text package name. Logos are automatically detected from conventional file locations, or you can configure them explicitly.
+
+### Auto-Detection
+
+If you place logo files in your project using common naming conventions, Great Docs will find and use them automatically (no configuration needed):
+
+```
+my-package/
+├── logo.svg              # Primary logo
+├── assets/
+│   ├── logo.svg          # Also auto-detected
+│   └── logo-dark.svg     # Dark-mode variant
+```
+
+Auto-detection checks these paths (in priority order):
+
+1. `logo.svg` / `logo.png` (project root)
+2. `assets/logo.svg` / `assets/logo.png`
+3. `docs/assets/logo.svg` / `docs/assets/logo.png`
+4. `{package_name}_logo.svg` / `{package_name}_logo.png`
+
+If a file named `logo-dark.svg` (or `{stem}-dark.{ext}`) exists alongside the primary logo, it is automatically used for dark mode.
+
+### Explicit Configuration
+
+For full control, configure the logo in `great-docs.yml`:
+
+```{.yaml filename="great-docs.yml"}
+logo:
+  light: assets/logo.svg
+  dark: assets/logo-dark.svg
+```
+
+You can also set additional options:
+
+```{.yaml filename="great-docs.yml"}
+logo:
+  light: assets/logo.svg
+  dark: assets/logo-dark.svg
+  alt: My Package         # Alt text (defaults to display_name)
+  href: https://example.com  # Logo link target (defaults to site root)
+
+logo_show_title: true      # Show text title alongside logo (default: false)
+```
+
+### What Happens When a Logo Is Set
+
+When a logo is configured (or auto-detected):
+
+- the logo image replaces the text title in the navbar
+- a dark-mode variant is used automatically when the user switches themes
+- the text title is hidden by default (set `logo_show_title: true` to show both)
+- favicons are generated automatically from the logo (see below)
+
+## Favicon
+
+Great Docs automatically generates a complete set of favicons for your site. If a logo is configured, favicons are derived from it with no extra setup needed. You can also specify a dedicated favicon image.
+
+### Automatic Generation from Logo
+
+When a logo is set, Great Docs generates all standard favicon formats automatically:
+
+| File | Purpose |
+|------|---------|
+| `favicon.ico` | Classic favicon (16, 32, and 48px embedded) |
+| `favicon.svg` | Modern browsers (SVG, infinite scaling) |
+| `favicon-16x16.png` | Small icon contexts |
+| `favicon-32x32.png` | Standard tab icon |
+| `apple-touch-icon.png` | iOS home screen (180×180) |
+
+These files are created in the build directory and proper `<link>` tags are injected into every page's `<head>`.
+
+### Dedicated Favicon
+
+If you want a different image for your favicon (e.g., a simplified icon rather than the full logo), set the `favicon` option:
+
+```{.yaml filename="great-docs.yml"}
+favicon: assets/favicon.svg
+```
+
+This generates the same set of raster variants as the logo-based approach, but uses your dedicated favicon source image instead. Both SVG and PNG source files are supported.
+
+### Non-Square Source Images
+
+Source images don't need to be perfectly square. Non-square images are automatically centered on a transparent canvas, preserving the original aspect ratio. This means wide logos won't be distorted, rather they'll be padded with transparency above and below.
 
 ## User Guide Directory
 
@@ -534,6 +622,12 @@ sidebar_filter:
 
 # Dark Mode
 dark_mode_toggle: true
+
+# Logo & Favicon
+logo:
+  light: assets/logo.svg
+  dark: assets/logo-dark.svg
+favicon: assets/favicon.svg  # Optional: dedicated favicon image
 
 # User Guide Directory
 # user_guide: docs/guides

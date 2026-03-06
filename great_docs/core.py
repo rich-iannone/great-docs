@@ -500,14 +500,11 @@ class GreatDocs:
                 elif size == 180:
                     result["apple-touch-icon"] = name
 
-            # Generate ICO with 16+32 sizes embedded
-            ico_16 = master.resize((16, 16), Image.Resampling.LANCZOS)
-            ico_32 = master.resize((32, 32), Image.Resampling.LANCZOS)
-            ico_16.save(
+            # Generate ICO with multiple sizes embedded
+            master.save(
                 dest_dir / "favicon.ico",
                 format="ICO",
-                sizes=[(16, 16), (32, 32)],
-                append_images=[ico_32],
+                sizes=[(16, 16), (32, 32), (48, 48)],
             )
             result["icon"] = "favicon.ico"
 
@@ -531,14 +528,11 @@ class GreatDocs:
                 elif size == 180:
                     result["apple-touch-icon"] = name
 
-            # Generate ICO
-            ico_16 = master.resize((16, 16), Image.Resampling.LANCZOS)
-            ico_32 = master.resize((32, 32), Image.Resampling.LANCZOS)
-            ico_16.save(
+            # Generate ICO with multiple sizes embedded
+            master.save(
                 dest_dir / "favicon.ico",
                 format="ICO",
-                sizes=[(16, 16), (32, 32)],
-                append_images=[ico_32],
+                sizes=[(16, 16), (32, 32), (48, 48)],
             )
             result["icon"] = "favicon.ico"
             result["icon-32"] = "favicon-32x32.png"

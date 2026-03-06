@@ -2297,6 +2297,17 @@ html:not(.theme-loaded) *::after {
     margin-bottom: 1.5rem;
 }
 
+/* When a column-margin sidebar is present, Quarto adds page-full to <main>
+   which sets all children to grid-column: body-content-start / page-end via
+   .page-columns.page-full > *.  This causes body text and centered content
+   to spill into the right margin area (overlapping the sidebar).
+   Constrain every child back to the body-content column; the .column-margin
+   element keeps its body-end / page-end placement via !important in Quarto's
+   own CSS. */
+main.content.page-columns.page-full > * {
+    grid-column: body-content-start / body-content-end;
+}
+
 .gd-hero-logo {
     display: block;
     width: auto;

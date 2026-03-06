@@ -7439,7 +7439,7 @@ title: ""
 toc: false
 ---
 
-{first_heading_style}{hero_block}::: {{.gd-meta-sidebar}}
+{first_heading_style}{hero_block}::: {{.column-margin}}
 {margin_content}
 :::
 

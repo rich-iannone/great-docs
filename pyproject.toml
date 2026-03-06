@@ -37,6 +37,8 @@ dependencies = [
     "pygments>=2.0.0",
     "requests>=2.25.0",
     "pyspellchecker>=0.7.0",
+    "Pillow>=9.0.0",
+    "cairosvg>=2.5.0",
 ]
 
 [project.optional-dependencies]
@@ -53,6 +55,7 @@ dev = [
 docs = [
     "jupyter>=1.0.0",
 ]
+
 
 [project.urls]
 Homepage = "https://github.com/rich-iannone/great-docs"

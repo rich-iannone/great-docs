@@ -7674,6 +7674,10 @@ toc: false
             # Inject <link> tags for extra favicon assets
             if generated:
                 favicon_links: list[str] = []
+                if generated.get("icon") and generated["icon"].endswith(".ico"):
+                    favicon_links.append(
+                        '<link rel="icon" type="image/x-icon" href="favicon.ico" sizes="48x48">'
+                    )
                 if generated.get("icon-svg"):
                     favicon_links.append(
                         '<link rel="icon" type="image/svg+xml" href="favicon.svg">'

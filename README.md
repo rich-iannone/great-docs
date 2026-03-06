@@ -1,6 +1,12 @@
 # Great Docs
 
-Beautiful documentation sites for Python packages.
+[![Python versions](https://img.shields.io/pypi/pyversions/great-docs.svg)](https://pypi.org/project/great-docs/)
+[![PyPI](https://img.shields.io/pypi/v/great-docs?logo=python&logoColor=white&color=orange)](https://pypi.org/project/great-docs/)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/great-docs)](https://pypistats.org/packages/great-docs)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://choosealicense.com/licenses/mit/)
+[![CI Build](https://github.com/rich-iannone/great-docs/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/rich-iannone/great-docs/actions/workflows/tests.yml)
+[![Repo Status](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.1%20adopted-ff69b4.svg)](https://www.contributor-covenant.org/version/2/1/code_of_conduct.html)
 
 Great Docs automatically creates professional documentation with auto-generated API references, CLI documentation, smart navigation, and modern styling.
 

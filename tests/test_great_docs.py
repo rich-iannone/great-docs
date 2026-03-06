@@ -6450,3 +6450,94 @@ class TestFaviconLinkInjection:
             config = self._build_with_favicon(tmp_dir, create_logo=True)
 
             assert config.get("website", {}).get("favicon") == "favicon.ico"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Badge Extraction from README Content
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestExtractBadgesFromContent:
+    """Tests for _extract_badges_from_content (top-of-file and centered-div strategies)."""
+
+    def _make_builder(self):
+        """Create a minimal GreatDocs instance for calling _extract_badges_from_content."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            (tmp / "pyproject.toml").write_text('[project]\nname = "test-pkg"\nversion = "0.1.0"\n')
+            (tmp / "test_pkg").mkdir()
+            (tmp / "test_pkg" / "__init__.py").write_text('"""Test."""\n')
+            builder = GreatDocs(str(tmp))
+        return builder
+
+    def test_top_of_file_badges_extracted(self):
+        """Badges right after the heading are extracted."""
+        content = (
+            "# My Package\n"
+            "\n"
+            "[![PyPI](https://img.shields.io/badge/pypi-v1-blue)](https://pypi.org/p)\n"
+            "[![License](https://img.shields.io/badge/license-MIT-green)](https://mit.edu)\n"
+            "\n"
+            "Some body text.\n"
+        )
+        builder = self._make_builder()
+        badges, cleaned = builder._extract_badges_from_content(content)
+
+        assert len(badges) == 2
+        assert badges[0]["alt"] == "PyPI"
+        assert "img.shields.io" in badges[0]["img"]
+        # Heading preserved, badges stripped, body preserved
+        assert "# My Package" in cleaned
+        assert "Some body text." in cleaned
+        assert "img.shields.io" not in cleaned
+
+    def test_centered_div_badges_extracted(self):
+        """Badges inside <div align="center"> are extracted and the entire div is stripped."""
+        content = (
+            "> [!TIP]\n"
+            "> Install via pip.\n"
+            "\n"
+            '<div align="center">\n'
+            '<img src="logo.png" width="350">\n'
+            "<br />\n"
+            "*A cool tagline*\n"
+            "<br />\n"
+            "[![PyPI](https://img.shields.io/badge/pypi-v1-blue)](https://pypi.org)\n"
+            "[![CI](https://img.shields.io/badge/ci-pass-green)](https://github.com/ci)\n"
+            "[![Coverage](https://codecov.io/badge.svg)](https://codecov.io)\n"
+            "</div>\n"
+            "\n"
+            "Body text after.\n"
+        )
+        builder = self._make_builder()
+        badges, cleaned = builder._extract_badges_from_content(content)
+
+        assert len(badges) == 3
+        assert badges[0]["alt"] == "PyPI"
+        assert badges[2]["alt"] == "Coverage"
+        # Entire div block removed
+        assert "<div" not in cleaned
+        assert "</div>" not in cleaned
+        assert "logo.png" not in cleaned
+        assert "cool tagline" not in cleaned
+        # Surrounding content preserved
+        assert "Install via pip" in cleaned
+        assert "Body text after." in cleaned
+
+    def test_no_badges_returns_original(self):
+        """Content without badges returns empty list and original content."""
+        content = "# Title\n\nJust text, no badges.\n"
+        builder = self._make_builder()
+        badges, cleaned = builder._extract_badges_from_content(content)
+
+        assert badges == []
+        assert cleaned == content
+
+    def test_non_badge_images_in_div_ignored(self):
+        """A centered div without badge host URLs is not stripped."""
+        content = '<div align="center">\n<img src="hero.png">\n</div>\n\nBody text.\n'
+        builder = self._make_builder()
+        badges, cleaned = builder._extract_badges_from_content(content)
+
+        assert badges == []
+        assert "<div" in cleaned

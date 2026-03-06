@@ -2914,3 +2914,113 @@ def test_R4_ug_with_images_renders_img_tags():
     # Should have <img> tags for the SVG assets
     imgs = soup.find_all("img")
     assert len(imgs) >= 1, "Page should have at least one <img> tag for assets"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# R4: Hero Section
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@requires_bs4
+def test_R4_hero_basic_has_hero_div():
+    """Landing page should contain the hero section div when logo is configured."""
+    pkg = "gdtest_hero_basic"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    index = _site_dir(pkg) / "index.html"
+    soup = _load_html(index)
+
+    hero = soup.select_one("div.gd-hero")
+    assert hero is not None, "Landing page should have a <div class='gd-hero'>"
+
+    # Should contain the logo image
+    logo_img = hero.select_one("img.gd-hero-logo")
+    assert logo_img is not None, "Hero should contain a logo <img>"
+
+    # Should contain the package name
+    name_el = hero.select_one(".gd-hero-name")
+    assert name_el is not None, "Hero should contain the package name"
+    assert "Hero Basic" in name_el.get_text(), "Hero name should match display_name"
+
+    # Should contain badges extracted from the README
+    badges_div = hero.select_one(".gd-hero-badges")
+    assert badges_div is not None, "Hero should contain a badges div"
+    badge_imgs = badges_div.find_all("img")
+    assert len(badge_imgs) >= 2, f"Expected ≥2 badge images, got {len(badge_imgs)}"
+
+
+@requires_bs4
+def test_R4_hero_basic_badges_stripped_from_body():
+    """Badges extracted into the hero should not appear in the landing page body."""
+    pkg = "gdtest_hero_basic"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    index = _site_dir(pkg) / "index.html"
+    soup = _load_html(index)
+
+    # The main content area should not contain raw badge markdown after extraction.
+    # Find the main content div (after the hero) — Quarto uses #quarto-document-content.
+    content_div = soup.select_one("#quarto-document-content")
+    if content_div is None:
+        pytest.skip("No #quarto-document-content found")
+
+    # Remove the hero section from our inspection copy
+    hero = content_div.select_one("div.gd-hero")
+    if hero:
+        hero.decompose()
+
+    # Remove source tree / file viewer sections that show raw file content
+    for details in content_div.select("details.tree-file"):
+        details.decompose()
+
+    body_text = content_div.get_text()
+    body_html = str(content_div)
+
+    # Badges should not appear in the remaining body
+    assert "img.shields.io" not in body_html, "Badge URLs should be stripped from the body content"
+    # But body content should still be present
+    assert "Features" in body_text, "Body content should still contain 'Features'"
+
+
+@requires_bs4
+def test_R4_hero_readme_badges_centered_div_stripped():
+    """A README with <div align=center> badges should have the div stripped and badges in hero."""
+    pkg = "gdtest_hero_readme_badges"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    index = _site_dir(pkg) / "index.html"
+    soup = _load_html(index)
+
+    # Hero section should exist with badges
+    hero = soup.select_one("div.gd-hero")
+    assert hero is not None, "Landing page should have a <div class='gd-hero'>"
+
+    badges_div = hero.select_one(".gd-hero-badges")
+    assert badges_div is not None, "Hero should contain a badges div"
+    badge_imgs = badges_div.find_all("img")
+    assert len(badge_imgs) >= 3, f"Expected ≥3 badges from centered div, got {len(badge_imgs)}"
+
+    # Check the main content area (excluding hero and source tree viewer)
+    content_div = soup.select_one("#quarto-document-content")
+    if content_div is None:
+        pytest.skip("No #quarto-document-content found")
+
+    hero_in_content = content_div.select_one("div.gd-hero")
+    if hero_in_content:
+        hero_in_content.decompose()
+    for details in content_div.select("details.tree-file"):
+        details.decompose()
+
+    remaining_html = str(content_div)
+    # The centered-div hero image should be stripped from the body
+    assert "hero-image.png" not in remaining_html, (
+        "The centered-div hero image should be stripped from the body"
+    )
+
+    # Body content after the div should still be present
+    body_text = content_div.get_text()
+    assert "Overview" in body_text, "Body content after the centered div should be preserved"
+    assert "Validates data" in body_text, "Feature descriptions should be preserved"

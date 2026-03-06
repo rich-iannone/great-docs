@@ -106,7 +106,7 @@ class GreatDocs:
         gitignore_path.write_text(gitignore_content, encoding="utf-8")
 
         # Create index.qmd from README.md or user_guide files
-        self._create_index_from_readme()
+        self._create_index_from_readme(force_rebuild=True)
 
         # Note: User guide files are copied by _process_user_guide() during build
         # which handles stripping numeric prefixes for clean URLs
@@ -6665,13 +6665,13 @@ jupyter: python3
 
                 if light and dark and light != dark:
                     logo_html = (
-                        f'<img src="{light}" alt="{alt}" class="gd-hero-logo d-block mx-auto gd-only-light" style="max-height:{logo_height}" />\n'
-                        f'<img src="{dark}" alt="{alt}" class="gd-hero-logo d-block mx-auto gd-only-dark" style="max-height:{logo_height}" />'
+                        f'<img src="{light}" alt="{alt}" class="gd-hero-logo gd-only-light" style="max-height:{logo_height}" />\n'
+                        f'<img src="{dark}" alt="{alt}" class="gd-hero-logo gd-only-dark" style="max-height:{logo_height}" />'
                     )
                 elif light:
-                    logo_html = f'<img src="{light}" alt="{alt}" class="gd-hero-logo d-block mx-auto" style="max-height:{logo_height}" />'
+                    logo_html = f'<img src="{light}" alt="{alt}" class="gd-hero-logo" style="max-height:{logo_height}" />'
             elif isinstance(logo_config, str):
-                logo_html = f'<img src="{logo_config}" alt="Logo" class="gd-hero-logo d-block mx-auto" style="max-height:{logo_height}" />'
+                logo_html = f'<img src="{logo_config}" alt="Logo" class="gd-hero-logo" style="max-height:{logo_height}" />'
 
         # ── Name ────────────────────────────────────────────────────
         hero_name = self._config.hero_name
@@ -7868,6 +7868,24 @@ toc: false
                     dark_dest_name = dark_src.name
                     shutil.copy2(dark_src, self.project_path / dark_dest_name)
                     navbar["logo-dark"] = dark_dest_name
+
+                    # Ensure the dark logo is included as a resource so Quarto
+                    # copies it to _site (needed for custom dark-mode toggle)
+                    if "resources" not in config["project"]:
+                        config["project"]["resources"] = []
+                    if dark_dest_name not in config["project"]["resources"]:
+                        config["project"]["resources"].append(dark_dest_name)
+
+                    # Inject a meta tag so dark-mode-toggle.js can find the
+                    # dark logo path and fix the navbar <img> src at runtime
+                    dark_logo_meta = {
+                        "text": f'<meta name="gd-logo-dark" content="{dark_dest_name}">'
+                    }
+                    header_list = config["format"]["html"].setdefault(
+                        "include-in-header", []
+                    )
+                    if not any("gd-logo-dark" in str(h) for h in header_list):
+                        header_list.append(dark_logo_meta)
                 else:
                     print(f"Warning: Dark logo file not found: {dark_src}")
 

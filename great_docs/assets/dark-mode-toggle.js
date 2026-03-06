@@ -225,9 +225,42 @@
     }
 
     /**
+     * Fix the navbar dark-logo src from a <meta> tag.
+     * Quarto's logo-dark config is ignored without a paired dark theme,
+     * so both .light-content and .dark-content imgs point to the same file.
+     * We read the correct dark logo path from <meta name="gd-logo-dark">
+     * and patch the src at runtime.
+     */
+    function fixNavbarDarkLogo() {
+        var meta = document.querySelector('meta[name="gd-logo-dark"]');
+        if (!meta) return;
+        var darkFilename = meta.getAttribute('content');
+        if (!darkFilename) return;
+
+        // Resolve the dark logo path relative to the light logo's directory,
+        // so sub-pages (e.g. user-guide/page.html) get the correct "../" prefix.
+        var lightImg = document.querySelector('.navbar-logo.light-content');
+        var darkSrc = darkFilename;
+        if (lightImg && lightImg.getAttribute('src')) {
+            var lightSrc = lightImg.getAttribute('src');
+            var lastSlash = lightSrc.lastIndexOf('/');
+            if (lastSlash >= 0) {
+                darkSrc = lightSrc.substring(0, lastSlash + 1) + darkFilename;
+            }
+        }
+
+        document.querySelectorAll('.navbar-logo.dark-content').forEach(function(img) {
+            img.src = darkSrc;
+        });
+    }
+
+    /**
      * Initialize dark mode functionality
      */
     function init() {
+        // Fix navbar dark logo src before applying theme
+        fixNavbarDarkLogo();
+
         // Apply theme to body now that DOM is ready
         const theme = getCurrentTheme();
         applyTheme(theme);

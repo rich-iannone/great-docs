@@ -309,17 +309,29 @@ summary::marker {
     font-weight: bold;
 }
 
+/* --- Disable sidebar section collapsing --- */
+
+/* Prevent the section heading text from triggering collapse */
 a.sidebar-item-text.sidebar-link.text-start[data-bs-toggle="collapse"] {
     pointer-events: none;
     cursor: default;
 }
 
-div.sidebar-item-container {
-    cursor: default !important;
+/* Hide the chevron toggle element entirely */
+a.sidebar-item-toggle.text-start {
+    display: none !important;
 }
 
-a.sidebar-item-toggle.text-start > i {
-    color: #FAFAFD;
+/* Keep all sidebar sections permanently expanded */
+#quarto-sidebar ul.collapse.sidebar-section {
+    display: block !important;
+    visibility: visible !important;
+    height: auto !important;
+}
+
+/* Remove pointer cursor from sidebar containers */
+div.sidebar-item-container {
+    cursor: default !important;
 }
 
 #quarto-sidebar a.sidebar-item-text.sidebar-link.active {
@@ -1727,9 +1739,7 @@ body.quarto-dark a.sidebar-item-text.sidebar-link.text-start > span {
     color: #9e9e9e;
 }
 
-body.quarto-dark a.sidebar-item-toggle.text-start > i {
-    color: #9e9e9e;
-}
+/* Toggle already hidden via display:none above; no dark-mode override needed */
 
 body.quarto-dark .sidebar-tools-collapse {
     color: var(--gd-text-muted);

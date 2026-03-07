@@ -432,6 +432,11 @@ a.sidebar-item-text.sidebar-link.text-start > span {
 }
 
 #quarto-sidebar .sidebar-item .menu-text {
+    font-size: 14px;
+}
+
+/* Keep reference sidebar items at the smaller size */
+.gd-ref-sidebar #quarto-sidebar .sidebar-item .menu-text {
     font-size: 12px;
 }
 

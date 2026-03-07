@@ -2324,6 +2324,63 @@ def process_cli_reference_pages():
 process_cli_reference_pages()
 
 
+def disable_sidebar_collapse():
+    """
+    Strip Bootstrap collapse attributes from sidebar section toggles and ensure
+    all sidebar sections remain permanently expanded.
+
+    Removes data-bs-toggle, data-bs-target, aria-expanded, and role attributes
+    from sidebar collapse triggers. Also removes the collapse class from sidebar
+    section <ul> elements and removes the chevron toggle <a> elements entirely.
+    """
+    html_files = glob.glob("_site/**/*.html", recursive=True)
+    modified_count = 0
+
+    for html_file in html_files:
+        with open(html_file, "r") as f:
+            content = f.read()
+
+        original = content
+
+        # Remove the chevron toggle <a> elements entirely
+        content = re.sub(
+            r'\s*<a class="sidebar-item-toggle text-start"[^>]*>.*?</a>\s*',
+            "\n",
+            content,
+            flags=re.DOTALL,
+        )
+
+        # Strip data-bs-toggle="collapse" and data-bs-target from section heading links
+        content = re.sub(
+            r'(<a class="sidebar-item-text sidebar-link text-start")'
+            r'\s+data-bs-toggle="collapse"'
+            r'\s+data-bs-target="#[^"]*"'
+            r'\s+role="navigation"'
+            r'\s+aria-expanded="[^"]*"',
+            r"\1",
+            content,
+        )
+
+        # Remove 'collapse' class from sidebar section <ul> elements
+        # e.g. class="collapse list-unstyled sidebar-section depth1 show"
+        # becomes class="list-unstyled sidebar-section depth1 show"
+        content = re.sub(
+            r'(<ul id="quarto-sidebar-section-\d+" class=")collapse\s+',
+            r"\1",
+            content,
+        )
+
+        if content != original:
+            with open(html_file, "w") as f:
+                f.write(content)
+            modified_count += 1
+
+    print(f"Disabled sidebar collapse in {modified_count} HTML files")
+
+
+disable_sidebar_collapse()
+
+
 def fix_script_paths():
     """
     Fix relative script paths for HTML files in subdirectories.

@@ -339,7 +339,6 @@ div.sidebar-item-container {
     background-color: rgba(0, 0, 0, 0.04);
     border-radius: 6px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-    padding: 3px 0 3px 10px;
 }
 
 #quarto-sidebar a.sidebar-item-text.sidebar-link.active {
@@ -1752,7 +1751,6 @@ body.quarto-dark #quarto-sidebar .sidebar-link[href]:hover {
     background-color: transparent;
     border-radius: 6px;
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
-    padding: 3px 0 3px 10px;
 }
 
 body.quarto-dark #quarto-sidebar a.sidebar-item-text.sidebar-link.active {

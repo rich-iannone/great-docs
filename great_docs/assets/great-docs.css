@@ -398,17 +398,21 @@ div.sidebar-item-container {
     }
 }
 
-/* Sidebar API items: monospace font with smart line-breaking for long names.
+/* Sidebar items: base styling with smart line-breaking for long names.
    Line breaks are controlled by <wbr> tags inserted by sidebar-wrap.js;
    overflow-wrap is intentionally NOT set so the browser only breaks at
    those designated points (not in the middle of words). */
 #quarto-sidebar .sidebar-item-text {
-    font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     font-size: 0.85em;
     display: block;
     max-width: 100%;
     white-space: normal;
     hyphens: none;
+}
+
+/* API/CLI reference sidebar items: monospace font for code-style names */
+.gd-ref-sidebar #quarto-sidebar .sidebar-item-text {
+    font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 /* Keep section headers (categories) in their original sans-serif uppercase style */

@@ -2470,3 +2470,34 @@ def fix_script_paths():
 
 
 fix_script_paths()
+
+
+def inject_sidebar_body_classes():
+    """
+    Inject a `gd-ref-sidebar` class on the <body> tag for API/CLI reference pages.
+
+    This allows CSS to scope monospace sidebar fonts to reference pages while
+    keeping the default sans-serif font for user-guide, recipe, and other pages.
+    """
+    print("Injecting sidebar body classes...")
+    count = 0
+
+    for html_file in all_html_files:
+        rel_path = os.path.relpath(html_file, "_site")
+        # Match pages under reference/ (covers both API and CLI reference)
+        if not rel_path.startswith("reference" + os.sep) and rel_path != "reference":
+            continue
+
+        with open(html_file, "r") as f:
+            content = f.read()
+
+        new_content = content.replace('<body class="', '<body class="gd-ref-sidebar ', 1)
+        if new_content != content:
+            with open(html_file, "w") as f:
+                f.write(new_content)
+            count += 1
+
+    print(f"Injected gd-ref-sidebar class in {count} reference HTML files")
+
+
+inject_sidebar_body_classes()

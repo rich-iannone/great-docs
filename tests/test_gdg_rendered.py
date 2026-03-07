@@ -3024,3 +3024,202 @@ def test_R4_hero_readme_badges_centered_div_stripped():
     body_text = content_div.get_text()
     assert "Overview" in body_text, "Body content after the centered div should be preserved"
     assert "Validates data" in body_text, "Feature descriptions should be preserved"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# R4: Hero Section Variants
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@requires_bs4
+def test_R4_hero_disabled_no_hero_div():
+    """Setting hero: false should prevent the hero section from appearing."""
+    pkg = "gdtest_hero_disabled"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    soup = _load_html(_site_dir(pkg) / "index.html")
+    hero = soup.select_one("div.gd-hero")
+    assert hero is None, "hero: false should suppress the hero section"
+
+    # Navbar should still have the logo
+    nav_logo = soup.select_one(".navbar-logo")
+    assert nav_logo is not None, "Navbar logo should still be present"
+
+
+@requires_bs4
+def test_R4_hero_custom_overrides():
+    """Hero sub-options should override defaults (name, tagline, height, badges)."""
+    pkg = "gdtest_hero_custom"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    soup = _load_html(_site_dir(pkg) / "index.html")
+    hero = soup.select_one("div.gd-hero")
+    assert hero is not None, "Hero should be present"
+
+    # Custom name (not the display_name "Default Display Name")
+    name_el = hero.select_one(".gd-hero-name")
+    assert name_el is not None
+    assert name_el.get_text().strip() == "Custom Hero Name"
+
+    # Custom tagline (not the pyproject description)
+    tagline = hero.select_one(".gd-hero-tagline")
+    assert tagline is not None
+    assert "completely custom tagline" in tagline.get_text()
+
+    # Custom logo height
+    logo = hero.select_one("img.gd-hero-logo")
+    assert logo is not None
+    assert "120px" in logo.get("style", "")
+
+    # Badges suppressed
+    badges = hero.select_one(".gd-hero-badges")
+    assert badges is None, "badges: false should suppress badges"
+
+
+@requires_bs4
+def test_R4_hero_wordmark_separate_logos():
+    """Hero should use wordmark logo while navbar uses lettermark."""
+    pkg = "gdtest_hero_wordmark"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    soup = _load_html(_site_dir(pkg) / "index.html")
+    hero = soup.select_one("div.gd-hero")
+    assert hero is not None, "Hero should be present"
+
+    # Hero should have two logo images (light + dark wordmark)
+    hero_logos = hero.select("img.gd-hero-logo")
+    assert len(hero_logos) == 2, "Hero should have light and dark wordmark logos"
+
+    # Check hero logos are the wordmark
+    hero_srcs = {img.get("src", "") for img in hero_logos}
+    assert any("wordmark.svg" in s for s in hero_srcs), "Hero should use wordmark.svg"
+    assert any("wordmark-dark.svg" in s for s in hero_srcs), "Hero should use wordmark-dark.svg"
+
+    # Check light/dark CSS classes
+    classes = [" ".join(img.get("class", [])) for img in hero_logos]
+    assert any("gd-only-light" in c for c in classes), "Light wordmark should have gd-only-light"
+    assert any("gd-only-dark" in c for c in classes), "Dark wordmark should have gd-only-dark"
+
+    # Navbar should use the lettermark (not wordmark)
+    nav_logo = soup.select_one(".navbar-logo")
+    assert nav_logo is not None
+    assert "lettermark" in nav_logo.get("src", ""), "Navbar should use lettermark"
+
+
+@requires_bs4
+def test_R4_hero_no_logo_text_only():
+    """hero.logo: false should suppress the logo but keep name/tagline/badges."""
+    pkg = "gdtest_hero_no_logo"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    soup = _load_html(_site_dir(pkg) / "index.html")
+    hero = soup.select_one("div.gd-hero")
+    assert hero is not None, "Hero should be present"
+
+    # No logo image in the hero
+    hero_logos = hero.select("img.gd-hero-logo")
+    assert len(hero_logos) == 0, "hero.logo: false should suppress the logo image"
+
+    # Name and tagline should still be present
+    name_el = hero.select_one(".gd-hero-name")
+    assert name_el is not None, "Name should still be shown"
+
+    tagline = hero.select_one(".gd-hero-tagline")
+    assert tagline is not None, "Tagline should still be shown"
+
+    # Badges should still be auto-extracted
+    badges = hero.select_one(".gd-hero-badges")
+    assert badges is not None, "Badges should still be shown"
+
+
+@requires_bs4
+def test_R4_hero_explicit_badges_list():
+    """Explicit badge list should appear in hero instead of auto-extracted ones."""
+    pkg = "gdtest_hero_explicit_badges"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    soup = _load_html(_site_dir(pkg) / "index.html")
+    hero = soup.select_one("div.gd-hero")
+    assert hero is not None, "Hero should be present"
+
+    badges = hero.select_one(".gd-hero-badges")
+    assert badges is not None, "Badges div should be present"
+
+    badge_imgs = badges.select("img")
+    assert len(badge_imgs) == 2, "Should have exactly 2 explicit badges"
+
+    # Check the explicit badges are displayed
+    alts = {img.get("alt", "") for img in badge_imgs}
+    assert "Custom Badge" in alts, "Custom Badge should appear"
+    assert "Status" in alts, "Status badge should appear"
+
+    # The README badge ("README Badge") should NOT be in the hero
+    assert "README Badge" not in alts, "README badges should not be auto-extracted"
+
+
+@requires_bs4
+def test_R4_hero_index_qmd_source():
+    """Hero should work when landing page source is index.qmd (not README)."""
+    pkg = "gdtest_hero_index_qmd"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    soup = _load_html(_site_dir(pkg) / "index.html")
+    hero = soup.select_one("div.gd-hero")
+    assert hero is not None, "Hero should be present from index.qmd source"
+
+    # Logo should be present
+    logo = hero.select_one("img.gd-hero-logo")
+    assert logo is not None, "Logo should be present"
+
+    # Name should be present
+    name_el = hero.select_one(".gd-hero-name")
+    assert name_el is not None
+
+    # Badges should be auto-extracted from index.qmd
+    badges = hero.select_one(".gd-hero-badges")
+    assert badges is not None, "Badges should be auto-extracted from index.qmd"
+
+    # Body content from index.qmd should be preserved
+    body_text = soup.get_text()
+    assert "Overview" in body_text, "index.qmd body content should be preserved"
+
+
+@requires_bs4
+def test_R4_hero_auto_logo_detection():
+    """Auto-detected logo-hero.svg / logo-hero-dark.svg in assets/ should
+    be used without explicit hero.logo config."""
+    pkg = "gdtest_hero_auto_logo"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    soup = _load_html(_site_dir(pkg) / "index.html")
+    hero = soup.select_one("div.gd-hero")
+    assert hero is not None, "Hero should be present via auto-detected hero logo"
+
+    # Hero should have two logo images (light + dark)
+    hero_logos = hero.select("img.gd-hero-logo")
+    assert len(hero_logos) == 2, "Hero should have light and dark auto-detected logos"
+
+    # Check hero logos are the auto-detected hero files (not the navbar logo)
+    hero_srcs = {img.get("src", "") for img in hero_logos}
+    assert any("logo-hero" in s and "dark" not in s for s in hero_srcs), (
+        "Hero should use logo-hero.svg"
+    )
+    assert any("logo-hero-dark" in s for s in hero_srcs), "Hero should use logo-hero-dark.svg"
+
+    # Check light/dark CSS classes
+    classes = [" ".join(img.get("class", [])) for img in hero_logos]
+    assert any("gd-only-light" in c for c in classes), "Light logo should have gd-only-light"
+    assert any("gd-only-dark" in c for c in classes), "Dark logo should have gd-only-dark"
+
+    # Navbar should use the regular logo.svg (not the hero logo)
+    nav_logo = soup.select_one(".navbar-logo")
+    assert nav_logo is not None
+    nav_src = nav_logo.get("src", "")
+    assert "logo-hero" not in nav_src, "Navbar should NOT use the hero logo"

@@ -2842,6 +2842,20 @@ def generate_markdown_pages():
                 main_html,
             )
 
+            # Remove parameter-* spans (parameter-name, parameter-annotation, etc.)
+            main_html = re.sub(
+                r'<span\s+class="parameter-[^"]*"[^>]*>(.*?)</span>',
+                r"\1",
+                main_html,
+            )
+
+            # Trim leading/trailing whitespace inside <code> tags (left by span removal)
+            main_html = re.sub(
+                r"<code>\s*(.*?)\s*</code>",
+                r"<code>\1</code>",
+                main_html,
+            )
+
             # ── 4. Convert with pandoc ───────────────────────────────────
             result = subprocess.run(
                 ["quarto", "pandoc", "-f", "html", "-t", "gfm", "--wrap=none"],
@@ -2875,7 +2889,7 @@ def generate_markdown_pages():
 
             # Remove leftover <span> tags with parameter/annotation classes
             md_content = re.sub(
-                r'<span\s+class="parameter-[^"]*">(.*?)</span>',
+                r'<span\s+class="parameter-[^"]*"[^>]*>(.*?)</span>',
                 r"\1",
                 md_content,
             )

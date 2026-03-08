@@ -356,6 +356,57 @@ announcement: false
 
 Or simply remove the `announcement` key entirely — no banner is shown by default.
 
+## Animated Gradient Presets
+
+Both the announcement banner and the navbar support animated gradient backgrounds. Gradients shift slowly across the element, creating a subtle, eye-catching effect. Each preset includes paired light-mode and dark-mode color palettes.
+
+### Available Presets
+
+| Preset | Description |
+|--------|-------------|
+| `ocean` | Cool blues and teals |
+| `sunset` | Warm oranges and pinks |
+| `aurora` | Green → blue → purple sweep |
+| `berry` | Purples and magentas |
+| `slate` | Subtle cool grays |
+| `flame` | Bold reds and oranges |
+| `midnight` | Deep blues and indigos |
+| `teal` | Fresh teals and cyans |
+
+### Gradient on the Announcement Banner
+
+Add a `style` key to the announcement config:
+
+```{.yaml filename="great-docs.yml"}
+announcement:
+  content: "Version 2.0 is now available!"
+  style: ocean
+```
+
+When `style` is set, it overrides the solid-color `type` background with the animated gradient. The `type` key is still used for semantic class names but has no visual effect on the background when a gradient is active.
+
+### Gradient on the Navbar
+
+Use the top-level `navbar_style` key:
+
+```{.yaml filename="great-docs.yml"}
+navbar_style: sunset
+```
+
+This applies the animated gradient to the site's top navigation bar. All navbar text, links, and icons are automatically adjusted to white for readability.
+
+### Combining Both
+
+You can use the same or different presets for the banner and navbar:
+
+```{.yaml filename="great-docs.yml"}
+announcement:
+  content: "New release!"
+  style: ocean
+
+navbar_style: ocean
+```
+
 ## Logo
 
 Great Docs can display a logo in the navbar instead of the plain-text package name. Logos are automatically detected from conventional file locations, or you can configure them explicitly.

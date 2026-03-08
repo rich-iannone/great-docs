@@ -2458,6 +2458,14 @@ def fix_script_paths():
             content = content.replace(old_theme_init, new_theme_init)
             modified = True
 
+        # Fix copy-page.js path
+        old_copy_page = '<script src="copy-page.js"></script>'
+        new_copy_page = f'<script src="{prefix}copy-page.js"></script>'
+
+        if old_copy_page in content:
+            content = content.replace(old_copy_page, new_copy_page)
+            modified = True
+
         if modified:
             with open(html_file, "w") as file:
                 file.write(content)

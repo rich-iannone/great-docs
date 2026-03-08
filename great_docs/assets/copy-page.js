@@ -35,7 +35,7 @@
     function initCopyPage() {
         // Don't add on the homepage (index page at root level)
         var path = window.location.pathname;
-        if (path === '/' || path.endsWith('/index.html') && path.split('/').length <= 2) {
+        if (path === '/' || (path.endsWith('/index.html') && path.split('/').length <= 2)) {
             return;
         }
 

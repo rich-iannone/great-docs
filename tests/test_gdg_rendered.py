@@ -3493,3 +3493,247 @@ def test_copy_page_md_url_derivable_from_html():
         # The .md should have meaningful content (not empty)
         content = md_file.read_text(encoding="utf-8").strip()
         assert len(content) > 50, f"{md_file.name} is too short ({len(content)} chars)"
+
+
+# ── Dedicated Markdown-Page Tests (per-package) ─────────────────────────────
+#
+# Each test below targets a specific GDG synthetic package so that the
+# coverage scorer credits the package with a DED (dedicated) test.
+
+
+def test_md_big_class_method_pages():
+    """gdtest_big_class: method .md pages have correct structure.
+
+    Each method page for DataProcessor should have a heading, USAGE code
+    block, Parameters, and Returns sections in clean Markdown.
+    """
+    pkg = "gdtest_big_class"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+
+    # The class page itself should exist
+    class_md = ref / "DataProcessor.md"
+    assert class_md.exists(), "DataProcessor.md missing"
+    class_content = class_md.read_text(encoding="utf-8")
+    assert "## DataProcessor" in class_content
+    assert "``` python" in class_content, "Class page should have Python code blocks"
+    assert "## Parameters" in class_content
+    assert "## Examples" in class_content
+
+    # Method pages should exist and have proper structure
+    method_md = ref / "DataProcessor.transform.md"
+    assert method_md.exists(), "DataProcessor.transform.md missing"
+    method_content = method_md.read_text(encoding="utf-8")
+    assert "## DataProcessor.transform()" in method_content
+    assert "USAGE" in method_content
+    assert "``` python" in method_content
+    assert "## Parameters" in method_content
+    assert "## Returns" in method_content
+    # Returns should show the type
+    assert "`DataProcessor`" in method_content
+
+    # At least 8 method .md files should exist (big class has many methods)
+    method_mds = [f for f in ref.glob("DataProcessor.*.md")]
+    assert len(method_mds) >= 8, f"Expected ≥8 method .md files, found {len(method_mds)}"
+
+    # No HTML artifacts in any method page
+    for md_file in method_mds:
+        content = md_file.read_text(encoding="utf-8")
+        assert "<span" not in content, f"{md_file.name}: leftover <span> HTML"
+        assert "<div" not in content, f"{md_file.name}: leftover <div> HTML"
+
+
+def test_md_ref_sectioned_index_has_sections():
+    """gdtest_ref_sectioned: reference index.md preserves section headings.
+
+    The sectioned reference index groups functions under headings like
+    Constructors, Transformers, Validators, Utilities.  The .md version
+    should keep those headings and use .md links (not .html).
+    """
+    pkg = "gdtest_ref_sectioned"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    index_md = ref / "index.md"
+    assert index_md.exists(), "reference/index.md missing"
+
+    content = index_md.read_text(encoding="utf-8")
+
+    # All four section headings should be present
+    for heading in ("## Constructors", "## Transformers", "## Validators", "## Utilities"):
+        assert heading in content, f"Missing section heading: {heading}"
+
+    # Links should use .md extension, not .html
+    assert ".md" in content, "Links should use .md extension"
+    assert ".html" not in content, "Links should NOT use .html extension"
+
+    # Specific function links should be present
+    for func in (
+        "create_widget",
+        "create_layout",
+        "resize",
+        "rotate",
+        "check_bounds",
+        "check_type",
+        "to_string",
+        "from_string",
+    ):
+        assert func in content, f"Missing function link: {func}"
+
+    # Each linked function should have its own .md file
+    for func in ("create_widget", "resize", "check_bounds", "to_string"):
+        func_md = ref / f"{func}.md"
+        assert func_md.exists(), f"{func}.md missing"
+
+
+def test_md_ug_with_code_executable_blocks():
+    """gdtest_ug_with_code: executable code blocks get correct language hints.
+
+    Quarto executable cells ({python}) produce different HTML than static
+    fenced code blocks.  Both should produce ``` python fences in the .md.
+    """
+    pkg = "gdtest_ug_with_code"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    site = _site_dir(pkg)
+    tutorial_md = site / "user-guide" / "tutorial.md"
+    assert tutorial_md.exists(), "user-guide/tutorial.md missing"
+
+    content = tutorial_md.read_text(encoding="utf-8")
+
+    # Both the executable and static code blocks should start with ``` python
+    python_fences = [line for line in content.splitlines() if line.strip().startswith("``` python")]
+    assert len(python_fences) >= 2, f"Expected ≥2 ``` python fences, found {len(python_fences)}"
+
+    # Should NOT have ``` sourceCode (the bug we fixed)
+    assert "``` sourceCode" not in content, (
+        "Executable code blocks should use ``` python, not ``` sourceCode"
+    )
+
+    # The output from the executable block should be present
+    assert "[2, 4, 6]" in content, "Executable output missing"
+
+    # The fenced block content should be present
+    assert "transform" in content
+
+
+def test_md_namespace_ug_nested_dirs():
+    """gdtest_namespace_ug: .md files are generated in nested user-guide dirs.
+
+    This package has user-guide/getting-started/ and user-guide/advanced/
+    subdirectories.  The .md generation should traverse into all of them.
+    """
+    pkg = "gdtest_namespace_ug"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    site = _site_dir(pkg)
+    ug = site / "user-guide"
+
+    # Top-level user-guide index
+    assert (ug / "index.md").exists(), "user-guide/index.md missing"
+
+    # Nested getting-started pages
+    gs = ug / "getting-started"
+    assert (gs / "index.md").exists(), "getting-started/index.md missing"
+    assert (gs / "installation.md").exists(), "getting-started/installation.md missing"
+    assert (gs / "quickstart.md").exists(), "getting-started/quickstart.md missing"
+
+    # Nested advanced pages
+    adv = ug / "advanced"
+    assert (adv / "index.md").exists(), "advanced/index.md missing"
+    assert (adv / "configuration.md").exists(), "advanced/configuration.md missing"
+    assert (adv / "deployment.md").exists(), "advanced/deployment.md missing"
+
+    # Reference .md files should also exist
+    ref = _ref_dir(pkg)
+    assert (ref / "index.md").exists(), "reference/index.md missing"
+    assert (ref / "initialize.md").exists(), "reference/initialize.md missing"
+    assert (ref / "shutdown.md").exists(), "reference/shutdown.md missing"
+
+    # Total .md count: 10 (all HTML pages minus homepage)
+    all_mds = list(site.rglob("*.md"))
+    assert len(all_mds) == 10, f"Expected 10 .md files, found {len(all_mds)}"
+
+
+def test_md_cli_name_subcommand_pages():
+    """gdtest_cli_name: CLI subcommand .md pages exist under reference/cli/.
+
+    This package has CLI docs with a main command and subcommands.
+    The .md conversion should handle these pages in the cli/ subdirectory.
+    """
+    pkg = "gdtest_cli_name"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    site = _site_dir(pkg)
+    cli_dir = site / "reference" / "cli"
+
+    # CLI index page
+    cli_index = cli_dir / "index.md"
+    assert cli_index.exists(), "reference/cli/index.md missing"
+    cli_content = cli_index.read_text(encoding="utf-8")
+    assert "gdtest-cli-name" in cli_content, "CLI name missing from index"
+    assert "Commands:" in cli_content, "Commands section missing"
+    assert "run" in cli_content
+    assert "status" in cli_content
+
+    # Subcommand pages
+    run_md = cli_dir / "run.md"
+    assert run_md.exists(), "reference/cli/run.md missing"
+    run_content = run_md.read_text(encoding="utf-8")
+    assert "gdtest-cli-name run" in run_content
+
+    status_md = cli_dir / "status.md"
+    assert status_md.exists(), "reference/cli/status.md missing"
+
+    # API reference .md files should also exist alongside CLI docs
+    ref = _ref_dir(pkg)
+    assert (ref / "process.md").exists(), "reference/process.md missing"
+    assert (ref / "summarize.md").exists(), "reference/summarize.md missing"
+
+
+def test_md_rst_mixed_dirs_clean_output():
+    """gdtest_rst_mixed_dirs: RST-sourced docs produce clean .md without HTML.
+
+    This package uses RST docstrings.  The .md pages should have Parameters
+    and Returns sections with proper Markdown formatting (no HTML artifacts
+    from RST directive processing).
+    """
+    pkg = "gdtest_rst_mixed_dirs"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+
+    # Reference index
+    assert (ref / "index.md").exists(), "reference/index.md missing"
+
+    # Check a representative function page
+    func_md = ref / "process_v2.md"
+    assert func_md.exists(), "process_v2.md missing"
+
+    content = func_md.read_text(encoding="utf-8")
+    assert "## process_v2()" in content
+    assert "USAGE" in content
+    assert "``` python" in content
+    assert "## Parameters" in content
+    assert "## Returns" in content
+    # Type annotation should be clean
+    assert "`list`" in content
+
+    # No leftover HTML in any ref .md file
+    for md_file in ref.glob("*.md"):
+        if md_file.name == "index.md":
+            continue
+        md_content = md_file.read_text(encoding="utf-8")
+        assert "<span" not in md_content, f"{md_file.name}: leftover <span>"
+        assert "<div" not in md_content, f"{md_file.name}: leftover <div>"
+        # Should have proper section structure
+        assert "## Parameters" in md_content or "## Returns" in md_content, (
+            f"{md_file.name}: missing Parameters or Returns section"
+        )

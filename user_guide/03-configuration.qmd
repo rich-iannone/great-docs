@@ -283,6 +283,27 @@ When enabled, the toggle appears in the navbar and:
 - persists the user's choice in local storage
 - provides instant switching without page reload
 
+## Markdown Pages
+
+Every HTML page gets a companion `.md` file generated automatically. A small widget appears in the top-right corner of each page allowing visitors to **copy** the page content as Markdown or **view** the raw `.md` file. This is enabled by default:
+
+```{.yaml filename="great-docs.yml"}
+markdown_pages: true   # Enable/disable (default: true)
+```
+
+To disable both the `.md` generation and the copy/view widget:
+
+```{.yaml filename="great-docs.yml"}
+markdown_pages: false
+```
+
+To generate `.md` pages but hide the widget:
+
+```{.yaml filename="great-docs.yml"}
+markdown_pages:
+  widget: false
+```
+
 ## Logo
 
 Great Docs can display a logo in the navbar instead of the plain-text package name. Logos are automatically detected from conventional file locations, or you can configure them explicitly.

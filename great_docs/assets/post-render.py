@@ -2686,7 +2686,7 @@ def generate_markdown_pages():
                 return f"<pre><code>{code_content}</code></pre>"
 
             main_html = re.sub(
-                r'<div\s+[^>]*class="sourceCode"[^>]*>\s*<pre[^>]*>.*?</pre>\s*</div>',
+                r'<div\s+[^>]*class="sourceCode[^"]*"[^>]*>\s*<pre[^>]*>.*?</pre>\s*</div>',
                 _rewrite_code_block,
                 main_html,
                 flags=re.DOTALL,

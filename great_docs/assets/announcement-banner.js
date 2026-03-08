@@ -41,7 +41,7 @@
   banner.style.cssText =
     "background:" + scheme.bg + ";color:" + scheme.fg +
     ";text-align:center;padding:8px 40px;font-size:0.92em;" +
-    "position:relative;z-index:1040;";
+    "position:relative;";
 
   // Content (optionally wrapped in a link)
   var inner;

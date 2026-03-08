@@ -33,12 +33,6 @@
      * Create and inject the copy-page widget.
      */
     function initCopyPage() {
-        // Don't add on the homepage (index page at root level)
-        var path = window.location.pathname;
-        if (path === '/' || (path.endsWith('/index.html') && path.split('/').length <= 2)) {
-            return;
-        }
-
         // Find the title block header to position the button
         var titleBlock = document.getElementById('title-block-header');
         if (!titleBlock) return;

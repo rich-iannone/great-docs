@@ -2480,6 +2480,24 @@ def fix_script_paths():
 fix_script_paths()
 
 
+# Remove copy-page widget from the root index page (homepage).
+# The homepage is not a documentation page and has no .md companion.
+root_index = os.path.join("_site", "index.html")
+if os.path.isfile(root_index):
+    with open(root_index, "r", encoding="utf-8") as f:
+        root_html = f.read()
+    # Remove the copy-page.js script tag (with any relative prefix)
+    cleaned = re.sub(
+        r'<script src="([./ ]*?)copy-page\.js"></script>\n?',
+        "",
+        root_html,
+    )
+    if cleaned != root_html:
+        with open(root_index, "w", encoding="utf-8") as f:
+            f.write(cleaned)
+        print("Removed copy-page widget from homepage")
+
+
 def inject_sidebar_body_classes():
     """
     Inject a `gd-ref-sidebar` class on the <body> tag for API/CLI reference pages.

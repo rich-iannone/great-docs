@@ -16,6 +16,7 @@
   var type = meta.getAttribute("data-type") || "info";
   var dismissable = meta.getAttribute("data-dismissable") !== "false";
   var url = meta.getAttribute("data-url") || "";
+  var style = meta.getAttribute("data-style") || "";
 
   // Build a storage key from the banner content so a *new* announcement
   // is shown even if the user dismissed a previous one.
@@ -37,11 +38,22 @@
   // ── build banner element ──
   var banner = document.createElement("div");
   banner.className = "gd-announcement-banner gd-announcement-" + type;
+  if (style) {
+    banner.className += " gd-gradient-" + style;
+  }
   banner.setAttribute("role", "status");
-  banner.style.cssText =
-    "background:" + scheme.bg + ";color:" + scheme.fg +
-    ";text-align:center;padding:8px 40px;font-size:0.92em;" +
-    "position:relative;";
+
+  if (style) {
+    // Gradient preset — background/color come from CSS class
+    banner.style.cssText =
+      "text-align:center;padding:8px 40px;font-size:0.92em;position:relative;";
+  } else {
+    // Solid colour from type map
+    banner.style.cssText =
+      "background:" + scheme.bg + ";color:" + scheme.fg +
+      ";text-align:center;padding:8px 40px;font-size:0.92em;" +
+      "position:relative;";
+  }
 
   // Content (optionally wrapped in a link)
   var inner;

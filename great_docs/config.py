@@ -100,6 +100,8 @@ DEFAULT_CONFIG: dict[str, Any] = {
     # dict: {"content": str, "type": "info"|"warning"|"success"|"danger",
     #        "dismissable": bool, "url": str|None}
     "announcement": None,
+    # Navbar gradient preset (e.g., "ocean", "sunset", "aurora", etc.)
+    "navbar_style": None,
 }
 
 
@@ -625,7 +627,7 @@ class Config:
         if raw is None or raw is False:
             return None
         if isinstance(raw, str):
-            return {"content": raw, "type": "info", "dismissable": True, "url": None}
+            return {"content": raw, "type": "info", "dismissable": True, "url": None, "style": None}
         if isinstance(raw, dict):
             content = raw.get("content")
             if not content:
@@ -635,7 +637,16 @@ class Config:
                 "type": raw.get("type", "info"),
                 "dismissable": raw.get("dismissable", True),
                 "url": raw.get("url"),
+                "style": raw.get("style"),
             }
+        return None
+
+    @property
+    def navbar_style(self) -> str | None:
+        """Get the navbar gradient preset name."""
+        raw = self.get("navbar_style")
+        if raw and isinstance(raw, str):
+            return raw
         return None
 
     def exists(self) -> bool:

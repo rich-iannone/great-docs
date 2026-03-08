@@ -2548,3 +2548,123 @@ html[data-bs-theme="dark"] .gd-announcement-danger {
     background: #b02a37 !important;
 }
 
+/* ── Animated Gradient Presets ── */
+
+@keyframes gd-gradient-shift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Shared gradient base */
+.gd-gradient-ocean,
+.gd-gradient-sunset,
+.gd-gradient-aurora,
+.gd-gradient-berry,
+.gd-gradient-slate,
+.gd-gradient-flame,
+.gd-gradient-midnight,
+.gd-gradient-teal {
+    background-size: 400% 400% !important;
+    animation: gd-gradient-shift 15s ease infinite;
+    color: #ffffff !important;
+    border-bottom-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* — Ocean — */
+.gd-gradient-ocean {
+    background: linear-gradient(-45deg, #0077b6, #00b4d8, #48cae4, #0096c7) !important;
+}
+html[data-bs-theme="dark"] .gd-gradient-ocean {
+    background: linear-gradient(-45deg, #023e8a, #0077b6, #005f73, #0096c7) !important;
+}
+
+/* — Sunset — */
+.gd-gradient-sunset {
+    background: linear-gradient(-45deg, #ff6b35, #f7931e, #e85d75, #c94277) !important;
+}
+html[data-bs-theme="dark"] .gd-gradient-sunset {
+    background: linear-gradient(-45deg, #cc4a1a, #c7760f, #b84a5f, #a33560) !important;
+}
+
+/* — Aurora — */
+.gd-gradient-aurora {
+    background: linear-gradient(-45deg, #06d6a0, #118ab2, #7209b7, #3a0ca3) !important;
+}
+html[data-bs-theme="dark"] .gd-gradient-aurora {
+    background: linear-gradient(-45deg, #048a65, #0c6a8a, #52077d, #2a0978) !important;
+}
+
+/* — Berry — */
+.gd-gradient-berry {
+    background: linear-gradient(-45deg, #7b2d8e, #c2185b, #e040fb, #9c27b0) !important;
+}
+html[data-bs-theme="dark"] .gd-gradient-berry {
+    background: linear-gradient(-45deg, #561e64, #8b1140, #a02db3, #6e1a7d) !important;
+}
+
+/* — Slate — */
+.gd-gradient-slate {
+    background: linear-gradient(-45deg, #546e7a, #78909c, #607d8b, #455a64) !important;
+}
+html[data-bs-theme="dark"] .gd-gradient-slate {
+    background: linear-gradient(-45deg, #37474f, #455a64, #3e525e, #263238) !important;
+}
+
+/* — Flame — */
+.gd-gradient-flame {
+    background: linear-gradient(-45deg, #e65100, #ff6d00, #ff8f00, #d84315) !important;
+}
+html[data-bs-theme="dark"] .gd-gradient-flame {
+    background: linear-gradient(-45deg, #bf360c, #e65100, #ef6c00, #b71c1c) !important;
+}
+
+/* — Midnight — */
+.gd-gradient-midnight {
+    background: linear-gradient(-45deg, #1a237e, #283593, #311b92, #4527a0) !important;
+}
+html[data-bs-theme="dark"] .gd-gradient-midnight {
+    background: linear-gradient(-45deg, #0d1244, #141b55, #1a0f52, #261560) !important;
+}
+
+/* — Teal — */
+.gd-gradient-teal {
+    background: linear-gradient(-45deg, #009688, #26a69a, #00897b, #00bfa5) !important;
+}
+html[data-bs-theme="dark"] .gd-gradient-teal {
+    background: linear-gradient(-45deg, #00695c, #00796b, #004d40, #00897b) !important;
+}
+
+/* Navbar text overrides when a gradient preset is active */
+.navbar[class*="gd-gradient-"] {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+.navbar[class*="gd-gradient-"] .nav-link,
+.navbar[class*="gd-gradient-"] .navbar-brand .navbar-title {
+    color: #ffffff !important;
+}
+.navbar[class*="gd-gradient-"] .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+}
+.navbar[class*="gd-gradient-"] .nav-link.active {
+    text-decoration-color: rgba(255, 255, 255, 0.75) !important;
+}
+.navbar[class*="gd-gradient-"] .navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+.navbar[class*="gd-gradient-"] .navbar-toggler-icon {
+    filter: invert(1);
+}
+.navbar[class*="gd-gradient-"] .bi {
+    color: #ffffff !important;
+}
+
+/* Banner link/dismiss overrides for gradient presets */
+.gd-announcement-banner[class*="gd-gradient-"] a {
+    color: #ffffff !important;
+}
+.gd-announcement-banner[class*="gd-gradient-"] button {
+    color: #ffffff !important;
+}
+

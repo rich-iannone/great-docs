@@ -93,6 +93,8 @@ class GreatDocs:
             js_files.append("copy-page.js")
         if self._config.announcement:
             js_files.append("announcement-banner.js")
+        if self._config.navbar_style:
+            js_files.append("navbar-style.js")
         for js_file in js_files:
             js_src = self.assets_path / js_file
             if js_src.exists():
@@ -8366,13 +8368,15 @@ toc: false
             ann_type = html_mod.escape(announcement.get("type", "info"))
             ann_dismissable = "true" if announcement.get("dismissable", True) else "false"
             ann_url = html_mod.escape(announcement.get("url") or "")
+            ann_style = html_mod.escape(announcement.get("style") or "")
 
             ann_meta_tag = (
                 f'<meta name="gd-announcement"'
                 f' data-content="{ann_content}"'
                 f' data-type="{ann_type}"'
                 f' data-dismissable="{ann_dismissable}"'
-                f' data-url="{ann_url}">'
+                f' data-url="{ann_url}"'
+                f' data-style="{ann_style}">'
             )
 
             # Add meta tag to header (replace any existing announcement meta)
@@ -8399,6 +8403,33 @@ toc: false
             resources_list = config["project"].setdefault("resources", [])
             if "announcement-banner.js" not in resources_list:
                 resources_list.append("announcement-banner.js")
+
+        # Add navbar gradient style if configured
+        navbar_style = self._config.navbar_style
+        if navbar_style:
+            import html as html_mod_nb
+
+            nb_preset = html_mod_nb.escape(str(navbar_style))
+            nb_meta_tag = f'<meta name="gd-navbar-style" data-preset="{nb_preset}">'
+
+            header_list = config["format"]["html"].setdefault("include-in-header", [])
+            if isinstance(header_list, str):
+                header_list = [header_list]
+                config["format"]["html"]["include-in-header"] = header_list
+            header_list[:] = [h for h in header_list if "gd-navbar-style" not in str(h)]
+            header_list.append({"text": nb_meta_tag})
+
+            after_body = config["format"]["html"].setdefault("include-after-body", [])
+            if isinstance(after_body, str):
+                after_body = [after_body]
+                config["format"]["html"]["include-after-body"] = after_body
+            nb_script_entry = {"text": '<script src="navbar-style.js"></script>'}
+            if not any("navbar-style" in str(item) for item in after_body):
+                after_body.append(nb_script_entry)
+
+            resources_list = config["project"].setdefault("resources", [])
+            if "navbar-style.js" not in resources_list:
+                resources_list.append("navbar-style.js")
 
         # Write package metadata JSON for post-render version badge injection.
         # The version and release date come from the latest GitHub Release so

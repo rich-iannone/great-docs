@@ -334,14 +334,26 @@ div.sidebar-item-container {
     cursor: default !important;
 }
 
-/* Hover effect for clickable sidebar links (not section headers) */
-#quarto-sidebar .sidebar-link[href]:hover {
+/* Hover effect for clickable sidebar links (not section headers).
+   Uses a ::before pseudo-element so hover never shifts layout. */
+#quarto-sidebar .sidebar-link[href] {
+    position: relative;
+}
+
+#quarto-sidebar .sidebar-link[href]::before {
+    content: "";
+    position: absolute;
+    inset: -3px -8px -3px -10px;
     border-radius: 6px;
-    box-shadow:
-        inset 0 0 0 100px rgba(0, 0, 0, 0.04),   /* fill: extends the bg */
-        0 1px 4px rgba(0, 0, 0, 0.10);             /* outer subtle shadow */
-    padding: 4px 10px 4px 10px;
-    margin: -4px -10px -4px -10px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    pointer-events: none;
+    background-color: rgba(0, 0, 0, 0.04);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.10);
+}
+
+#quarto-sidebar .sidebar-link[href]:hover::before {
+    opacity: 1;
 }
 
 #quarto-sidebar a.sidebar-item-text.sidebar-link.active {
@@ -1750,10 +1762,9 @@ body.quarto-dark #quarto-sidebar .sidebar-item-text:hover {
 }
 
 /* Hover effect for clickable sidebar links in dark mode */
-body.quarto-dark #quarto-sidebar .sidebar-link[href]:hover {
-    box-shadow:
-        inset 0 0 0 100px rgba(255, 255, 255, 0.04),  /* fill */
-        inset 0 0 0 1px rgba(255, 255, 255, 0.15);    /* border outline */
+body.quarto-dark #quarto-sidebar .sidebar-link[href]::before {
+    background-color: rgba(255, 255, 255, 0.04);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
 }
 
 body.quarto-dark #quarto-sidebar a.sidebar-item-text.sidebar-link.active {

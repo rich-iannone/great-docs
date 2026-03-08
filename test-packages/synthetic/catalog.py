@@ -260,6 +260,9 @@ ALL_PACKAGES: list[str] = [
     "gdtest_hero_explicit_badges",  # 116
     "gdtest_hero_index_qmd",  # 117
     "gdtest_hero_auto_logo",  # 118
+    # 119–120: Markdown pages config
+    "gdtest_md_disabled",  # 119
+    "gdtest_md_no_widget",  # 120
 ]
 
 
@@ -365,6 +368,8 @@ DIMENSIONS: dict[str, dict[str, str]] = {
     "K20": {"axis": "config", "label": "user_guide: list"},
     "K21": {"axis": "config", "label": "changelog config"},
     "K22": {"axis": "config", "label": "reference config"},
+    "K23": {"axis": "config", "label": "markdown_pages: false"},
+    "K24": {"axis": "config", "label": "markdown_pages widget: false"},
     # Docstring richness axes
     "L1": {"axis": "docstring", "label": ".. versionadded::"},
     "L2": {"axis": "docstring", "label": ".. deprecated::"},

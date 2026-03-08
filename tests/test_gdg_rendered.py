@@ -3737,3 +3737,148 @@ def test_md_rst_mixed_dirs_clean_output():
         assert "## Parameters" in md_content or "## Returns" in md_content, (
             f"{md_file.name}: missing Parameters or Returns section"
         )
+
+
+# -- gdtest_md_disabled dedicated tests ----------------------------------------
+
+
+def test_md_disabled_no_md_files():
+    """gdtest_md_disabled: No .md files when markdown_pages is false."""
+    pkg = "gdtest_md_disabled"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    site = _site_dir(pkg)
+    md_files = list(site.rglob("*.md"))
+    assert md_files == [], f"Expected no .md files but found: {md_files}"
+
+
+def test_md_disabled_no_copy_page_script():
+    """gdtest_md_disabled: No copy-page.js script tag in HTML pages."""
+    pkg = "gdtest_md_disabled"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for html_file in ref.glob("*.html"):
+        content = html_file.read_text(encoding="utf-8")
+        assert "copy-page.js" not in content, (
+            f"{html_file.name}: copy-page.js should not be referenced"
+        )
+
+
+def test_md_disabled_config_written():
+    """gdtest_md_disabled: great-docs.yml has markdown_pages: false."""
+    pkg = "gdtest_md_disabled"
+    gd_yml = _RENDERED_DIR / pkg / "great-docs.yml"
+    if not gd_yml.exists():
+        pytest.skip("great-docs.yml not found")
+
+    import yaml
+
+    cfg = yaml.safe_load(gd_yml.read_text(encoding="utf-8"))
+    assert cfg["markdown_pages"] is False
+
+
+def test_md_disabled_gd_options():
+    """gdtest_md_disabled: _gd_options.json has markdown_pages: false."""
+    pkg = "gdtest_md_disabled"
+    opts_path = _RENDERED_DIR / pkg / "great-docs" / "_gd_options.json"
+    if not opts_path.exists():
+        pytest.skip("_gd_options.json not found")
+
+    import json
+
+    opts = json.loads(opts_path.read_text(encoding="utf-8"))
+    assert opts["markdown_pages"] is False
+
+
+def test_md_disabled_html_pages_still_exist():
+    """gdtest_md_disabled: HTML reference pages are still generated."""
+    pkg = "gdtest_md_disabled"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "index.html").exists(), "reference/index.html missing"
+    assert (ref / "compute.html").exists(), "reference/compute.html missing"
+    assert (ref / "validate.html").exists(), "reference/validate.html missing"
+
+
+# -- gdtest_md_no_widget dedicated tests ---------------------------------------
+
+
+def test_md_no_widget_md_files_exist():
+    """gdtest_md_no_widget: .md files generated even with widget disabled."""
+    pkg = "gdtest_md_no_widget"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "index.md").exists(), "reference/index.md missing"
+    assert (ref / "encode.md").exists(), "reference/encode.md missing"
+    assert (ref / "decode.md").exists(), "reference/decode.md missing"
+
+
+def test_md_no_widget_md_content_quality():
+    """gdtest_md_no_widget: .md files have proper Markdown content."""
+    pkg = "gdtest_md_no_widget"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    encode_md = ref / "encode.md"
+    if not encode_md.exists():
+        pytest.skip("encode.md not found")
+
+    content = encode_md.read_text(encoding="utf-8")
+    assert "## encode()" in content
+    assert "``` python" in content
+    assert "## Parameters" in content
+    assert "## Returns" in content
+    assert "`str`" in content or "`bytes`" in content
+
+
+def test_md_no_widget_no_copy_page_script():
+    """gdtest_md_no_widget: No copy-page.js script tag in HTML pages."""
+    pkg = "gdtest_md_no_widget"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for html_file in ref.glob("*.html"):
+        content = html_file.read_text(encoding="utf-8")
+        assert "copy-page.js" not in content, (
+            f"{html_file.name}: copy-page.js should not be referenced"
+        )
+
+
+def test_md_no_widget_config_written():
+    """gdtest_md_no_widget: great-docs.yml has markdown_pages dict form."""
+    pkg = "gdtest_md_no_widget"
+    gd_yml = _RENDERED_DIR / pkg / "great-docs.yml"
+    if not gd_yml.exists():
+        pytest.skip("great-docs.yml not found")
+
+    import yaml
+
+    cfg = yaml.safe_load(gd_yml.read_text(encoding="utf-8"))
+    assert isinstance(cfg["markdown_pages"], dict)
+    assert cfg["markdown_pages"]["widget"] is False
+
+
+def test_md_no_widget_gd_options():
+    """gdtest_md_no_widget: _gd_options.json has markdown_pages: true.
+
+    When only the widget is disabled, .md generation is still enabled,
+    so markdown_pages should be true in the options file.
+    """
+    pkg = "gdtest_md_no_widget"
+    opts_path = _RENDERED_DIR / pkg / "great-docs" / "_gd_options.json"
+    if not opts_path.exists():
+        pytest.skip("_gd_options.json not found")
+
+    import json
+
+    opts = json.loads(opts_path.read_text(encoding="utf-8"))
+    assert opts["markdown_pages"] is True

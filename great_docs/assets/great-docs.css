@@ -514,6 +514,12 @@ body.quarto-light .navbar .quarto-navbar-tools .quarto-navigation-tool:hover {
     zoom: 60%;
 }
 
+.nav-footer {
+    border-top-style: solid;
+    border-top-width: 1px;
+    border-top-color: #AAAAAA40;
+}
+
 .nav-footer-left {
     color: rgb(48, 48, 48);
 }
@@ -521,6 +527,7 @@ body.quarto-light .navbar .quarto-navbar-tools .quarto-navigation-tool:hover {
 .nav-footer-center {
     color: rgb(48, 48, 48);
     text-wrap: balance;
+    padding-bottom: 20px;
 }
 
 .nav-footer-right {

@@ -2110,6 +2110,14 @@ body.quarto-dark .gh-widget-trigger:hover {
     border-color: rgba(255, 255, 255, 0.25);
 }
 
+/* Suppress the nav-link hover background that wraps the GitHub widget */
+body.quarto-dark .nav-item:has(#github-widget) > a:hover,
+body.quarto-dark .nav-item:has(#github-widget) .nav-link:hover {
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
 body.quarto-dark .gh-dropdown {
     background: var(--gd-bg-secondary);
     border-color: var(--gd-border-color);
@@ -2678,6 +2686,9 @@ html[data-bs-theme="dark"] .navbar[class*="gd-gradient-"] .navbar-brand .navbar-
 html[data-bs-theme="dark"] .navbar[class*="gd-gradient-"] .nav-link:hover {
     background-color: rgba(255, 255, 255, 0.2) !important;
     color: #ffffff !important;
+}
+html[data-bs-theme="dark"] .navbar[class*="gd-gradient-"] .nav-item:has(#github-widget) .nav-link:hover {
+    background-color: transparent !important;
 }
 html[data-bs-theme="dark"] .navbar[class*="gd-gradient-"] .nav-link.active {
     text-decoration-color: rgba(255, 255, 255, 0.75) !important;

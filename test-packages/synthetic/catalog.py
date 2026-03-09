@@ -267,6 +267,19 @@ ALL_PACKAGES: list[str] = [
     "gdtest_announce_simple",  # 121
     "gdtest_announce_dict",  # 122
     "gdtest_announce_disabled",  # 123
+    # 124–135: Gradient presets & navbar style
+    "gdtest_gradient_ocean",  # 124
+    "gdtest_gradient_sunset",  # 125
+    "gdtest_gradient_aurora",  # 126
+    "gdtest_gradient_berry",  # 127
+    "gdtest_gradient_slate",  # 128
+    "gdtest_gradient_flame",  # 129
+    "gdtest_gradient_midnight",  # 130
+    "gdtest_gradient_teal",  # 131
+    "gdtest_gradient_navbar",  # 132
+    "gdtest_gradient_both",  # 133
+    "gdtest_gradient_mixed",  # 134
+    "gdtest_gradient_no_dismiss",  # 135
 ]
 
 
@@ -377,6 +390,18 @@ DIMENSIONS: dict[str, dict[str, str]] = {
     "K25": {"axis": "config", "label": "announcement: string"},
     "K26": {"axis": "config", "label": "announcement: dict"},
     "K27": {"axis": "config", "label": "announcement: false"},
+    "K28": {"axis": "config", "label": "gradient: ocean"},
+    "K29": {"axis": "config", "label": "gradient: sunset"},
+    "K30": {"axis": "config", "label": "gradient: aurora"},
+    "K31": {"axis": "config", "label": "gradient: berry"},
+    "K32": {"axis": "config", "label": "gradient: slate"},
+    "K33": {"axis": "config", "label": "gradient: flame"},
+    "K34": {"axis": "config", "label": "gradient: midnight"},
+    "K35": {"axis": "config", "label": "gradient: teal"},
+    "K36": {"axis": "config", "label": "navbar_style only"},
+    "K37": {"axis": "config", "label": "gradient: both same"},
+    "K38": {"axis": "config", "label": "gradient: mixed presets"},
+    "K39": {"axis": "config", "label": "gradient: no dismiss"},
     # Docstring richness axes
     "L1": {"axis": "docstring", "label": ".. versionadded::"},
     "L2": {"axis": "docstring", "label": ".. deprecated::"},

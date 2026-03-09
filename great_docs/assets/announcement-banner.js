@@ -79,14 +79,35 @@
       "opacity:0.8;padding:0 4px;line-height:1;";
     btn.textContent = "\u00d7"; // ×
     btn.addEventListener("click", function () {
+      var h = banner.offsetHeight;
       banner.remove();
       sessionStorage.setItem(storageKey, "1");
+      // Shrink body padding back down
+      var cur = parseFloat(
+        window.getComputedStyle(document.body).paddingTop
+      ) || 0;
+      document.body.style.paddingTop = Math.max(0, cur - h) + "px";
     });
     banner.appendChild(btn);
   }
 
-  // ── insert before everything else in <body> ──
-  document.body.insertBefore(banner, document.body.firstChild);
+  // ── insert into the fixed header, above the navbar ──
+  var header = document.getElementById("quarto-header");
+  if (header && header.firstChild) {
+    header.insertBefore(banner, header.firstChild);
+  } else {
+    // Fallback: prepend to body
+    document.body.insertBefore(banner, document.body.firstChild);
+  }
+
+  // Adjust body padding to account for the banner height
+  requestAnimationFrame(function () {
+    var bannerHeight = banner.offsetHeight;
+    var currentPadding = parseFloat(
+      window.getComputedStyle(document.body).paddingTop
+    ) || 0;
+    document.body.style.paddingTop = (currentPadding + bannerHeight) + "px";
+  });
 
   // Simple string hash for storage key uniqueness
   function hashCode(str) {

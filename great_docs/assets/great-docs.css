@@ -2686,11 +2686,7 @@ html[data-bs-theme="dark"] .gd-announcement-banner[class*="gd-gradient-"] button
    preset colour palette as the navbar/banner gradients but at
    very low opacity, creating a soft "glow" that fades out. */
 
-#quarto-content[class*="gd-content-glow-"] {
-    position: relative;
-}
-#quarto-content[class*="gd-content-glow-"]::before {
-    content: "";
+.gd-content-glow {
     position: fixed;
     top: 0;
     left: 0;
@@ -2703,73 +2699,67 @@ html[data-bs-theme="dark"] .gd-announcement-banner[class*="gd-gradient-"] button
     -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
 }
 
-/* Ensure content sits above the glow */
-#quarto-content[class*="gd-content-glow-"] > * {
-    position: relative;
-    z-index: 1;
-}
-
 /* — Content glow: Sky — */
-#quarto-content.gd-content-glow-sky::before {
+.gd-content-glow.gd-content-glow-sky {
     background: radial-gradient(ellipse 80% 60% at 50% 0%, #c5e8f7, transparent);
 }
-html[data-bs-theme="dark"] #quarto-content.gd-content-glow-sky::before {
+html[data-bs-theme="dark"] .gd-content-glow.gd-content-glow-sky {
     background: radial-gradient(ellipse 80% 60% at 50% 0%, #023e8a, transparent);
 }
 
 /* — Content glow: Peach — */
-#quarto-content.gd-content-glow-peach::before {
+.gd-content-glow.gd-content-glow-peach {
     background: radial-gradient(ellipse 80% 60% at 50% 0%, #ffddc1, transparent);
 }
-html[data-bs-theme="dark"] #quarto-content.gd-content-glow-peach::before {
+html[data-bs-theme="dark"] .gd-content-glow.gd-content-glow-peach {
     background: radial-gradient(ellipse 80% 60% at 50% 0%, #cc4a1a, transparent);
 }
 
 /* — Content glow: Prism — */
-#quarto-content.gd-content-glow-prism::before {
+.gd-content-glow.gd-content-glow-prism {
     background: radial-gradient(ellipse 80% 60% at 50% 0%, #d0e8f5, transparent);
 }
-html[data-bs-theme="dark"] #quarto-content.gd-content-glow-prism::before {
+html[data-bs-theme="dark"] .gd-content-glow.gd-content-glow-prism {
     background: radial-gradient(ellipse 80% 60% at 50% 0%, #0c6a8a, transparent);
 }
 
 /* — Content glow: Lilac — */
-#quarto-content.gd-content-glow-lilac::before {
+.gd-content-glow.gd-content-glow-lilac {
     background: radial-gradient(ellipse 80% 60% at 50% 0%, #e8d0f0, transparent);
 }
-html[data-bs-theme="dark"] #quarto-content.gd-content-glow-lilac::before {
+html[data-bs-theme="dark"] .gd-content-glow.gd-content-glow-lilac {
     background: radial-gradient(ellipse 80% 60% at 50% 0%, #561e64, transparent);
 }
 
 /* — Content glow: Slate — */
-#quarto-content.gd-content-glow-slate::before {
+.gd-content-glow.gd-content-glow-slate {
     background: radial-gradient(ellipse 80% 60% at 50% 0%, #dde2e6, transparent);
 }
-html[data-bs-theme="dark"] #quarto-content.gd-content-glow-slate::before {
+html[data-bs-theme="dark"] .gd-content-glow.gd-content-glow-slate {
     background: radial-gradient(ellipse 80% 60% at 50% 0%, #37474f, transparent);
 }
 
 /* — Content glow: Honey — */
-#quarto-content.gd-content-glow-honey::before {
+.gd-content-glow.gd-content-glow-honey {
     background: radial-gradient(ellipse 80% 60% at 50% 0%, #ffe0c2, transparent);
 }
-html[data-bs-theme="dark"] #quarto-content.gd-content-glow-honey::before {
+html[data-bs-theme="dark"] .gd-content-glow.gd-content-glow-honey {
     background: radial-gradient(ellipse 80% 60% at 50% 0%, #bf360c, transparent);
 }
 
 /* — Content glow: Dusk — */
-#quarto-content.gd-content-glow-dusk::before {
+.gd-content-glow.gd-content-glow-dusk {
     background: radial-gradient(ellipse 80% 60% at 50% 0%, #d8daf0, transparent);
 }
-html[data-bs-theme="dark"] #quarto-content.gd-content-glow-dusk::before {
+html[data-bs-theme="dark"] .gd-content-glow.gd-content-glow-dusk {
     background: radial-gradient(ellipse 80% 60% at 50% 0%, #141b55, transparent);
 }
 
 /* — Content glow: Mint — */
-#quarto-content.gd-content-glow-mint::before {
+.gd-content-glow.gd-content-glow-mint {
     background: radial-gradient(ellipse 80% 60% at 50% 0%, #ccece8, transparent);
 }
-html[data-bs-theme="dark"] #quarto-content.gd-content-glow-mint::before {
+html[data-bs-theme="dark"] .gd-content-glow.gd-content-glow-mint {
     background: radial-gradient(ellipse 80% 60% at 50% 0%, #00695c, transparent);
 }
 

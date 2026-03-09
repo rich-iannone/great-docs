@@ -33,6 +33,8 @@
 
   var content = document.getElementById("quarto-content");
   if (content) {
-    content.classList.add("gd-content-glow-" + preset);
+    var glow = document.createElement("div");
+    glow.className = "gd-content-glow gd-content-glow-" + preset;
+    document.body.appendChild(glow);
   }
 })();

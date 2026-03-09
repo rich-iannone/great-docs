@@ -1,19 +1,19 @@
 """
-gdtest_gradient_ocean — Announcement banner with ocean gradient preset.
+gdtest_gradient_sky — Announcement banner with sky gradient preset.
 
 Dimensions: K28
-Focus: style: ocean applies animated gradient class to the banner.
+Focus: style: sky applies animated gradient class to the banner.
 """
 
 SPEC = {
-    "name": "gdtest_gradient_ocean",
-    "description": "Tests announcement banner with ocean gradient preset",
+    "name": "gdtest_gradient_sky",
+    "description": "Tests announcement banner with sky gradient preset",
     "dimensions": ["K28"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-gradient-ocean",
+            "name": "gdtest-gradient-sky",
             "version": "0.1.0",
-            "description": "Test ocean gradient preset",
+            "description": "Test sky gradient preset",
         },
         "build-system": {
             "requires": ["setuptools"],
@@ -22,13 +22,13 @@ SPEC = {
     },
     "config": {
         "announcement": {
-            "content": "Ocean gradient test banner!",
-            "style": "ocean",
+            "content": "Sky gradient test banner!",
+            "style": "sky",
         },
     },
     "files": {
-        "gdtest_gradient_ocean/__init__.py": '''\
-            """Package testing ocean gradient preset."""
+        "gdtest_gradient_sky/__init__.py": '''\
+            """Package testing sky gradient preset."""
 
             __version__ = "0.1.0"
             __all__ = ["dive", "surface"]

@@ -22,8 +22,8 @@ SPEC = {
     },
     "config": {
         "announcement": {
-            "content": "Permanent flame banner!",
-            "style": "flame",
+            "content": "Permanent honey banner!",
+            "style": "honey",
             "dismissable": False,
         },
     },

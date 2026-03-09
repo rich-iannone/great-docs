@@ -1,19 +1,19 @@
 """
-gdtest_gradient_sunset — Announcement banner with sunset gradient preset.
+gdtest_gradient_peach — Announcement banner with peach gradient preset.
 
 Dimensions: K29
-Focus: style: sunset applies animated gradient class to the banner.
+Focus: style: peach applies animated gradient class to the banner.
 """
 
 SPEC = {
-    "name": "gdtest_gradient_sunset",
-    "description": "Tests announcement banner with sunset gradient preset",
+    "name": "gdtest_gradient_peach",
+    "description": "Tests announcement banner with peach gradient preset",
     "dimensions": ["K29"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-gradient-sunset",
+            "name": "gdtest-gradient-peach",
             "version": "0.1.0",
-            "description": "Test sunset gradient preset",
+            "description": "Test peach gradient preset",
         },
         "build-system": {
             "requires": ["setuptools"],
@@ -22,13 +22,13 @@ SPEC = {
     },
     "config": {
         "announcement": {
-            "content": "Sunset gradient test banner!",
-            "style": "sunset",
+            "content": "Peach gradient test banner!",
+            "style": "peach",
         },
     },
     "files": {
-        "gdtest_gradient_sunset/__init__.py": '''\
-            """Package testing sunset gradient preset."""
+        "gdtest_gradient_peach/__init__.py": '''\
+            """Package testing peach gradient preset."""
 
             __version__ = "0.1.0"
             __all__ = ["glow", "fade"]

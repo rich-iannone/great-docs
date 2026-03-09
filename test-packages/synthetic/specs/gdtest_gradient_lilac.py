@@ -1,19 +1,19 @@
 """
-gdtest_gradient_berry — Announcement banner with berry gradient preset.
+gdtest_gradient_lilac — Announcement banner with lilac gradient preset.
 
 Dimensions: K31
-Focus: style: berry applies animated gradient class to the banner.
+Focus: style: lilac applies animated gradient class to the banner.
 """
 
 SPEC = {
-    "name": "gdtest_gradient_berry",
-    "description": "Tests announcement banner with berry gradient preset",
+    "name": "gdtest_gradient_lilac",
+    "description": "Tests announcement banner with lilac gradient preset",
     "dimensions": ["K31"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-gradient-berry",
+            "name": "gdtest-gradient-lilac",
             "version": "0.1.0",
-            "description": "Test berry gradient preset",
+            "description": "Test lilac gradient preset",
         },
         "build-system": {
             "requires": ["setuptools"],
@@ -22,13 +22,13 @@ SPEC = {
     },
     "config": {
         "announcement": {
-            "content": "Berry gradient test banner!",
-            "style": "berry",
+            "content": "Lilac gradient test banner!",
+            "style": "lilac",
         },
     },
     "files": {
-        "gdtest_gradient_berry/__init__.py": '''\
-            """Package testing berry gradient preset."""
+        "gdtest_gradient_lilac/__init__.py": '''\
+            """Package testing lilac gradient preset."""
 
             __version__ = "0.1.0"
             __all__ = ["pick", "blend"]
@@ -36,12 +36,12 @@ SPEC = {
 
             def pick(variety: str) -> str:
                 """
-                Pick a berry variety.
+                Pick a lilac variety.
 
                 Parameters
                 ----------
                 variety
-                    Name of the berry.
+                    Name of the lilac.
 
                 Returns
                 -------
@@ -58,7 +58,7 @@ SPEC = {
                 Parameters
                 ----------
                 berries
-                    List of berry names.
+                    List of lilac names.
 
                 Returns
                 -------

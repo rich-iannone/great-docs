@@ -1,19 +1,19 @@
 """
-gdtest_gradient_aurora — Announcement banner with aurora gradient preset.
+gdtest_gradient_prism — Announcement banner with prism gradient preset.
 
 Dimensions: K30
-Focus: style: aurora applies animated gradient class to the banner.
+Focus: style: prism applies animated gradient class to the banner.
 """
 
 SPEC = {
-    "name": "gdtest_gradient_aurora",
-    "description": "Tests announcement banner with aurora gradient preset",
+    "name": "gdtest_gradient_prism",
+    "description": "Tests announcement banner with prism gradient preset",
     "dimensions": ["K30"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-gradient-aurora",
+            "name": "gdtest-gradient-prism",
             "version": "0.1.0",
-            "description": "Test aurora gradient preset",
+            "description": "Test prism gradient preset",
         },
         "build-system": {
             "requires": ["setuptools"],
@@ -22,13 +22,13 @@ SPEC = {
     },
     "config": {
         "announcement": {
-            "content": "Aurora gradient test banner!",
-            "style": "aurora",
+            "content": "Prism gradient test banner!",
+            "style": "prism",
         },
     },
     "files": {
-        "gdtest_gradient_aurora/__init__.py": '''\
-            """Package testing aurora gradient preset."""
+        "gdtest_gradient_prism/__init__.py": '''\
+            """Package testing prism gradient preset."""
 
             __version__ = "0.1.0"
             __all__ = ["shimmer", "pulse"]

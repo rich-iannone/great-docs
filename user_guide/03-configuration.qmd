@@ -364,14 +364,14 @@ Both the announcement banner and the navbar support animated gradient background
 
 | Preset | Description |
 |--------|-------------|
-| `ocean` | Cool blues and teals |
-| `sunset` | Warm oranges and pinks |
-| `aurora` | Green → blue → purple sweep |
-| `berry` | Purples and magentas |
-| `slate` | Subtle cool grays |
-| `flame` | Bold reds and oranges |
-| `midnight` | Deep blues and indigos |
-| `teal` | Fresh teals and cyans |
+| `sky` | Soft sky blues |
+| `peach` | Peach and blush |
+| `prism` | Mint, sky, and lavender |
+| `lilac` | Lilac and pink |
+| `slate` | Cool grays |
+| `honey` | Warm cream and apricot |
+| `dusk` | Soft lavender-blue |
+| `mint` | Pale aqua |
 
 ### Gradient on the Announcement Banner
 
@@ -380,7 +380,7 @@ Add a `style` key to the announcement config:
 ```{.yaml filename="great-docs.yml"}
 announcement:
   content: "Version 2.0 is now available!"
-  style: ocean
+  style: sky
 ```
 
 When `style` is set, it overrides the solid-color `type` background with the animated gradient. The `type` key is still used for semantic class names but has no visual effect on the background when a gradient is active.
@@ -390,10 +390,10 @@ When `style` is set, it overrides the solid-color `type` background with the ani
 Use the top-level `navbar_style` key:
 
 ```{.yaml filename="great-docs.yml"}
-navbar_style: sunset
+navbar_style: peach
 ```
 
-This applies the animated gradient to the site's top navigation bar. All navbar text, links, and icons are automatically adjusted to white for readability.
+This applies the animated gradient to the site's top navigation bar. In dark mode, text and icons are automatically adjusted to white for readability.
 
 ### Combining Both
 
@@ -402,9 +402,9 @@ You can use the same or different presets for the banner and navbar:
 ```{.yaml filename="great-docs.yml"}
 announcement:
   content: "New release!"
-  style: ocean
+  style: sky
 
-navbar_style: ocean
+navbar_style: sky
 ```
 
 ## Logo

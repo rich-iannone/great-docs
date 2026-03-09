@@ -2,7 +2,7 @@
 gdtest_gradient_mixed — Different gradient presets on banner vs navbar.
 
 Dimensions: K38
-Focus: banner uses berry preset, navbar uses midnight — they differ.
+Focus: banner uses lilac preset, navbar uses dusk — they differ.
 """
 
 SPEC = {
@@ -22,10 +22,10 @@ SPEC = {
     },
     "config": {
         "announcement": {
-            "content": "Berry banner, midnight navbar!",
-            "style": "berry",
+            "content": "Lilac banner, dusk navbar!",
+            "style": "lilac",
         },
-        "navbar_style": "midnight",
+        "navbar_style": "dusk",
     },
     "files": {
         "gdtest_gradient_mixed/__init__.py": '''\

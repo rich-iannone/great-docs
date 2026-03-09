@@ -1,19 +1,19 @@
 """
-gdtest_gradient_midnight — Announcement banner with midnight gradient preset.
+gdtest_gradient_dusk — Announcement banner with dusk gradient preset.
 
 Dimensions: K34
-Focus: style: midnight applies animated gradient class to the banner.
+Focus: style: dusk applies animated gradient class to the banner.
 """
 
 SPEC = {
-    "name": "gdtest_gradient_midnight",
-    "description": "Tests announcement banner with midnight gradient preset",
+    "name": "gdtest_gradient_dusk",
+    "description": "Tests announcement banner with dusk gradient preset",
     "dimensions": ["K34"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-gradient-midnight",
+            "name": "gdtest-gradient-dusk",
             "version": "0.1.0",
-            "description": "Test midnight gradient preset",
+            "description": "Test dusk gradient preset",
         },
         "build-system": {
             "requires": ["setuptools"],
@@ -22,13 +22,13 @@ SPEC = {
     },
     "config": {
         "announcement": {
-            "content": "Midnight gradient test banner!",
-            "style": "midnight",
+            "content": "Dusk gradient test banner!",
+            "style": "dusk",
         },
     },
     "files": {
-        "gdtest_gradient_midnight/__init__.py": '''\
-            """Package testing midnight gradient preset."""
+        "gdtest_gradient_dusk/__init__.py": '''\
+            """Package testing dusk gradient preset."""
 
             __version__ = "0.1.0"
             __all__ = ["dream", "wake"]

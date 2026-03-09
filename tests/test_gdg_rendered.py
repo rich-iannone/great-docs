@@ -4035,14 +4035,14 @@ def test_R4_announce_disabled_no_js_file():
 # ── Per-preset banner tests (parameterized) ──────────────────────────────────
 
 _GRADIENT_PRESETS = [
-    ("gdtest_gradient_ocean", "ocean"),
-    ("gdtest_gradient_sunset", "sunset"),
-    ("gdtest_gradient_aurora", "aurora"),
-    ("gdtest_gradient_berry", "berry"),
+    ("gdtest_gradient_sky", "sky"),
+    ("gdtest_gradient_peach", "peach"),
+    ("gdtest_gradient_prism", "prism"),
+    ("gdtest_gradient_lilac", "lilac"),
     ("gdtest_gradient_slate", "slate"),
-    ("gdtest_gradient_flame", "flame"),
-    ("gdtest_gradient_midnight", "midnight"),
-    ("gdtest_gradient_teal", "teal"),
+    ("gdtest_gradient_honey", "honey"),
+    ("gdtest_gradient_dusk", "dusk"),
+    ("gdtest_gradient_mint", "mint"),
 ]
 
 
@@ -4120,13 +4120,13 @@ def test_R5_gradient_on_all_pages(pkg, preset):
 
 
 def test_R5_navbar_meta_tag():
-    """gdtest_gradient_navbar: gd-navbar-style meta tag with preset=sunset."""
+    """gdtest_gradient_navbar: gd-navbar-style meta tag with preset=peach."""
     pkg = "gdtest_gradient_navbar"
     if not _has_rendered_site(pkg):
         pytest.skip(f"{pkg} not rendered")
     content = (_site_dir(pkg) / "index.html").read_text(encoding="utf-8")
     assert 'name="gd-navbar-style"' in content
-    assert 'data-preset="sunset"' in content
+    assert 'data-preset="peach"' in content
 
 
 def test_R5_navbar_script_loaded():
@@ -4170,21 +4170,21 @@ def test_R5_navbar_quarto_resources():
 
 
 def test_R5_both_banner_style():
-    """gdtest_gradient_both: banner has data-style=aurora."""
+    """gdtest_gradient_both: banner has data-style=prism."""
     pkg = "gdtest_gradient_both"
     if not _has_rendered_site(pkg):
         pytest.skip(f"{pkg} not rendered")
     content = (_site_dir(pkg) / "index.html").read_text(encoding="utf-8")
-    assert 'data-style="aurora"' in content
+    assert 'data-style="prism"' in content
 
 
 def test_R5_both_navbar_style():
-    """gdtest_gradient_both: navbar meta tag has preset=aurora."""
+    """gdtest_gradient_both: navbar meta tag has preset=prism."""
     pkg = "gdtest_gradient_both"
     if not _has_rendered_site(pkg):
         pytest.skip(f"{pkg} not rendered")
     content = (_site_dir(pkg) / "index.html").read_text(encoding="utf-8")
-    assert 'data-preset="aurora"' in content
+    assert 'data-preset="prism"' in content
 
 
 def test_R5_both_js_files():
@@ -4199,22 +4199,22 @@ def test_R5_both_js_files():
 # ── Mixed presets (different banner vs navbar) ───────────────────────────────
 
 
-def test_R5_mixed_banner_berry():
-    """gdtest_gradient_mixed: banner has data-style=berry."""
+def test_R5_mixed_banner_lilac():
+    """gdtest_gradient_mixed: banner has data-style=lilac."""
     pkg = "gdtest_gradient_mixed"
     if not _has_rendered_site(pkg):
         pytest.skip(f"{pkg} not rendered")
     content = (_site_dir(pkg) / "index.html").read_text(encoding="utf-8")
-    assert 'data-style="berry"' in content
+    assert 'data-style="lilac"' in content
 
 
-def test_R5_mixed_navbar_midnight():
-    """gdtest_gradient_mixed: navbar meta tag has preset=midnight."""
+def test_R5_mixed_navbar_dusk():
+    """gdtest_gradient_mixed: navbar meta tag has preset=dusk."""
     pkg = "gdtest_gradient_mixed"
     if not _has_rendered_site(pkg):
         pytest.skip(f"{pkg} not rendered")
     content = (_site_dir(pkg) / "index.html").read_text(encoding="utf-8")
-    assert 'data-preset="midnight"' in content
+    assert 'data-preset="dusk"' in content
 
 
 def test_R5_mixed_both_js_deployed():
@@ -4230,12 +4230,12 @@ def test_R5_mixed_both_js_deployed():
 
 
 def test_R5_no_dismiss_style():
-    """gdtest_gradient_no_dismiss: banner has data-style=flame."""
+    """gdtest_gradient_no_dismiss: banner has data-style=honey."""
     pkg = "gdtest_gradient_no_dismiss"
     if not _has_rendered_site(pkg):
         pytest.skip(f"{pkg} not rendered")
     content = (_site_dir(pkg) / "index.html").read_text(encoding="utf-8")
-    assert 'data-style="flame"' in content
+    assert 'data-style="honey"' in content
 
 
 def test_R5_no_dismiss_dismissable_false():

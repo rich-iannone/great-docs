@@ -1,19 +1,19 @@
 """
-gdtest_gradient_flame — Announcement banner with flame gradient preset.
+gdtest_gradient_honey — Announcement banner with honey gradient preset.
 
 Dimensions: K33
-Focus: style: flame applies animated gradient class to the banner.
+Focus: style: honey applies animated gradient class to the banner.
 """
 
 SPEC = {
-    "name": "gdtest_gradient_flame",
-    "description": "Tests announcement banner with flame gradient preset",
+    "name": "gdtest_gradient_honey",
+    "description": "Tests announcement banner with honey gradient preset",
     "dimensions": ["K33"],
     "pyproject_toml": {
         "project": {
-            "name": "gdtest-gradient-flame",
+            "name": "gdtest-gradient-honey",
             "version": "0.1.0",
-            "description": "Test flame gradient preset",
+            "description": "Test honey gradient preset",
         },
         "build-system": {
             "requires": ["setuptools"],
@@ -22,13 +22,13 @@ SPEC = {
     },
     "config": {
         "announcement": {
-            "content": "Flame gradient test banner!",
-            "style": "flame",
+            "content": "Honey gradient test banner!",
+            "style": "honey",
         },
     },
     "files": {
-        "gdtest_gradient_flame/__init__.py": '''\
-            """Package testing flame gradient preset."""
+        "gdtest_gradient_honey/__init__.py": '''\
+            """Package testing honey gradient preset."""
 
             __version__ = "0.1.0"
             __all__ = ["ignite", "extinguish"]
@@ -53,7 +53,7 @@ SPEC = {
 
             def extinguish() -> str:
                 """
-                Extinguish the flame.
+                Extinguish the honey.
 
                 Returns
                 -------

@@ -22,10 +22,10 @@ SPEC = {
     },
     "config": {
         "announcement": {
-            "content": "Unified aurora gradient!",
-            "style": "aurora",
+            "content": "Unified prism gradient!",
+            "style": "prism",
         },
-        "navbar_style": "aurora",
+        "navbar_style": "prism",
     },
     "files": {
         "gdtest_gradient_both/__init__.py": '''\

@@ -25,7 +25,7 @@ SPEC = {
             "content": "Plain banner, gradient navbar!",
             "type": "info",
         },
-        "navbar_style": "sunset",
+        "navbar_style": "peach",
     },
     "files": {
         "gdtest_gradient_navbar/__init__.py": '''\

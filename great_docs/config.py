@@ -100,8 +100,11 @@ DEFAULT_CONFIG: dict[str, Any] = {
     # dict: {"content": str, "type": "info"|"warning"|"success"|"danger",
     #        "dismissable": bool, "url": str|None}
     "announcement": None,
-    # Navbar gradient preset (e.g., "ocean", "sunset", "aurora", etc.)
+    # Navbar gradient preset (e.g., "sky", "peach", "lilac", etc.)
     "navbar_style": None,
+    # Content area gradient preset (same preset names as navbar_style)
+    # Adds a subtle radial glow at the top of the main content area
+    "content_style": None,
 }
 
 
@@ -645,6 +648,14 @@ class Config:
     def navbar_style(self) -> str | None:
         """Get the navbar gradient preset name."""
         raw = self.get("navbar_style")
+        if raw and isinstance(raw, str):
+            return raw
+        return None
+
+    @property
+    def content_style(self) -> str | None:
+        """Get the content area gradient preset name."""
+        raw = self.get("content_style")
         if raw and isinstance(raw, str):
             return raw
         return None

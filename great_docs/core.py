@@ -95,6 +95,8 @@ class GreatDocs:
             js_files.append("announcement-banner.js")
         if self._config.navbar_style:
             js_files.append("navbar-style.js")
+        if self._config.content_style:
+            js_files.append("content-style.js")
         for js_file in js_files:
             js_src = self.assets_path / js_file
             if js_src.exists():
@@ -8430,6 +8432,33 @@ toc: false
             resources_list = config["project"].setdefault("resources", [])
             if "navbar-style.js" not in resources_list:
                 resources_list.append("navbar-style.js")
+
+        # Add content area gradient glow if configured
+        content_style = self._config.content_style
+        if content_style:
+            import html as html_mod_cs
+
+            cs_preset = html_mod_cs.escape(str(content_style))
+            cs_meta_tag = f'<meta name="gd-content-style" data-preset="{cs_preset}">'
+
+            header_list = config["format"]["html"].setdefault("include-in-header", [])
+            if isinstance(header_list, str):
+                header_list = [header_list]
+                config["format"]["html"]["include-in-header"] = header_list
+            header_list[:] = [h for h in header_list if "gd-content-style" not in str(h)]
+            header_list.append({"text": cs_meta_tag})
+
+            after_body = config["format"]["html"].setdefault("include-after-body", [])
+            if isinstance(after_body, str):
+                after_body = [after_body]
+                config["format"]["html"]["include-after-body"] = after_body
+            cs_script_entry = {"text": '<script src="content-style.js"></script>'}
+            if not any("content-style" in str(item) for item in after_body):
+                after_body.append(cs_script_entry)
+
+            resources_list = config["project"].setdefault("resources", [])
+            if "content-style.js" not in resources_list:
+                resources_list.append("content-style.js")
 
         # Write package metadata JSON for post-render version badge injection.
         # The version and release date come from the latest GitHub Release so

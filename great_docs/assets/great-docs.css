@@ -299,6 +299,11 @@ summary::marker {
 
 #quarto-margin-sidebar nav ul li  {
     padding-top: 3px;
+    color: #595959;
+}
+
+#quarto-margin-sidebar nav ul li a {
+    color: #595959;
 }
 
 #navbarCollapse > ul.navbar-nav.navbar-nav-scroll.me-auto > li > a:hover {

@@ -2473,6 +2473,30 @@ def fix_script_paths():
             content = content.replace(old_copy_page, new_copy_page)
             modified = True
 
+        # Fix announcement-banner.js path
+        old_ann_banner = '<script src="announcement-banner.js"></script>'
+        new_ann_banner = f'<script src="{prefix}announcement-banner.js"></script>'
+
+        if old_ann_banner in content:
+            content = content.replace(old_ann_banner, new_ann_banner)
+            modified = True
+
+        # Fix navbar-style.js path
+        old_nb_style = '<script src="navbar-style.js"></script>'
+        new_nb_style = f'<script src="{prefix}navbar-style.js"></script>'
+
+        if old_nb_style in content:
+            content = content.replace(old_nb_style, new_nb_style)
+            modified = True
+
+        # Fix content-style.js path
+        old_cs_style = '<script src="content-style.js"></script>'
+        new_cs_style = f'<script src="{prefix}content-style.js"></script>'
+
+        if old_cs_style in content:
+            content = content.replace(old_cs_style, new_cs_style)
+            modified = True
+
         if modified:
             with open(html_file, "w") as file:
                 file.write(content)

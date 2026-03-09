@@ -104,6 +104,8 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "navbar_style": None,
     # Content area gradient preset (same preset names as navbar_style)
     # Adds a subtle radial glow at the top of the main content area
+    # str: preset name (applies to all pages)
+    # dict: {"preset": str, "pages": "all"|"homepage"}
     "content_style": None,
 }
 
@@ -653,11 +655,21 @@ class Config:
         return None
 
     @property
-    def content_style(self) -> str | None:
-        """Get the content area gradient preset name."""
+    def content_style(self) -> dict[str, str] | None:
+        """Get the normalized content area gradient configuration."""
         raw = self.get("content_style")
-        if raw and isinstance(raw, str):
-            return raw
+        if raw is None or raw is False:
+            return None
+        if isinstance(raw, str):
+            return {"preset": raw, "pages": "all"}
+        if isinstance(raw, dict):
+            preset = raw.get("preset")
+            if not preset or not isinstance(preset, str):
+                return None
+            pages = raw.get("pages", "all")
+            if pages not in ("all", "homepage"):
+                pages = "all"
+            return {"preset": preset, "pages": pages}
         return None
 
     def exists(self) -> bool:

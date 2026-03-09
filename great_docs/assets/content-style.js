@@ -14,6 +14,15 @@
   var preset = meta.getAttribute("data-preset") || "";
   if (!preset) return;
 
+  var pages = meta.getAttribute("data-pages") || "all";
+
+  if (pages === "homepage") {
+    var path = window.location.pathname;
+    if (path !== "/" && !path.endsWith("/index.html") && path !== "/index.html") {
+      return;
+    }
+  }
+
   var content = document.getElementById("quarto-content");
   if (content) {
     content.classList.add("gd-content-glow-" + preset);

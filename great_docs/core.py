@@ -95,7 +95,7 @@ class GreatDocs:
             js_files.append("announcement-banner.js")
         if self._config.navbar_style:
             js_files.append("navbar-style.js")
-        if self._config.content_style:
+        if self._config.content_style is not None:
             js_files.append("content-style.js")
         for js_file in js_files:
             js_src = self.assets_path / js_file
@@ -8438,8 +8438,11 @@ toc: false
         if content_style:
             import html as html_mod_cs
 
-            cs_preset = html_mod_cs.escape(str(content_style))
-            cs_meta_tag = f'<meta name="gd-content-style" data-preset="{cs_preset}">'
+            cs_preset = html_mod_cs.escape(str(content_style["preset"]))
+            cs_pages = html_mod_cs.escape(str(content_style["pages"]))
+            cs_meta_tag = (
+                f'<meta name="gd-content-style" data-preset="{cs_preset}" data-pages="{cs_pages}">'
+            )
 
             header_list = config["format"]["html"].setdefault("include-in-header", [])
             if isinstance(header_list, str):

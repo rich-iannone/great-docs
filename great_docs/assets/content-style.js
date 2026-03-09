@@ -17,8 +17,16 @@
   var pages = meta.getAttribute("data-pages") || "all";
 
   if (pages === "homepage") {
-    var path = window.location.pathname;
-    if (path !== "/" && !path.endsWith("/index.html") && path !== "/index.html") {
+    // Normalize: strip trailing /index.html or trailing /
+    var path = window.location.pathname
+      .replace(/\/index\.html$/i, "/")
+      .replace(/\/+$/, "");
+    // The homepage is the site root. For GitHub Pages deployed at /repo-name/,
+    // the root has exactly one segment (e.g., "/great-docs").  For custom
+    // domains it's "" (empty after stripping "/").  Any deeper path means
+    // we're on a subpage.
+    var segments = path.split("/").filter(Boolean);
+    if (segments.length > 1) {
       return;
     }
   }

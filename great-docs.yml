@@ -9,7 +9,7 @@
 announcement:
   content: "Official launch on posit-dev coming soon, along with the first PyPI release!"
   type: info
-  style: sky
+  style: lilac
   dismissable: true
 
 # Navbar Style

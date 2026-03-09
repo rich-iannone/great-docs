@@ -2686,12 +2686,9 @@ html[data-bs-theme="dark"] .gd-announcement-banner[class*="gd-gradient-"] button
    preset colour palette as the navbar/banner gradients but at
    very low opacity, creating a soft "glow" that fades out. */
 
-#quarto-content[class*="gd-content-glow-"] {
-    position: relative;
-}
 #quarto-content[class*="gd-content-glow-"]::before {
     content: "";
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;

@@ -284,6 +284,12 @@ ALL_PACKAGES: list[str] = [
     "gdtest_header_text",  # 136
     "gdtest_header_list",  # 137
     "gdtest_header_file",  # 138
+    # 139–143: Navbar solid color with APCA contrast
+    "gdtest_navbar_color",  # 139
+    "gdtest_navbar_color_light",  # 140
+    "gdtest_navbar_color_dark",  # 141
+    "gdtest_navbar_color_same",  # 142
+    "gdtest_navbar_color_split",  # 143
 ]
 
 
@@ -409,6 +415,11 @@ DIMENSIONS: dict[str, dict[str, str]] = {
     "K40": {"axis": "config", "label": "include_in_header: string"},
     "K41": {"axis": "config", "label": "include_in_header: list"},
     "K42": {"axis": "config", "label": "include_in_header: file"},
+    "K43": {"axis": "config", "label": "navbar_color (APCA)"},
+    "K44": {"axis": "config", "label": "navbar_color: light only"},
+    "K45": {"axis": "config", "label": "navbar_color: dark only"},
+    "K46": {"axis": "config", "label": "navbar_color: same both modes"},
+    "K47": {"axis": "config", "label": "navbar_color: split warm/cool"},
     # Docstring richness axes
     "L1": {"axis": "docstring", "label": ".. versionadded::"},
     "L2": {"axis": "docstring", "label": ".. deprecated::"},
@@ -1604,6 +1615,31 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "Auto-detect hero logo files from conventional paths. Tests that "
         "placing logo-hero.svg and logo-hero-dark.svg in assets/ causes "
         "the hero to use those files without explicit hero.logo config."
+    ),
+    "gdtest_navbar_color": (
+        "Visual showcase of navbar_color with the APCA contrast algorithm. "
+        "Uses per-mode colors (charcoal light, indigo dark) and displays a "
+        "swatch grid of 97 colors with APCA-chosen text colors."
+    ),
+    "gdtest_navbar_color_light": (
+        "Tests navbar_color applied to light mode only. Dark mode keeps its "
+        "default navbar styling. Light mode gets a deep blue-gray (#1b2838) "
+        "background with APCA-chosen white text."
+    ),
+    "gdtest_navbar_color_dark": (
+        "Tests navbar_color applied to dark mode only. Light mode keeps its "
+        "default navbar styling. Dark mode gets a pale mint (#b2dfdb) "
+        "background with APCA-chosen black text."
+    ),
+    "gdtest_navbar_color_same": (
+        "Tests navbar_color as a plain string (steelblue) so the same color "
+        "applies in both light and dark modes. APCA selects white text for "
+        "steelblue's mid-tone blue."
+    ),
+    "gdtest_navbar_color_split": (
+        "Tests navbar_color with contrasting per-mode choices: dark warm "
+        "brown (#3e2723, white text) in light mode and pale sky blue "
+        "(#bbdefb, black text) in dark mode."
     ),
 }
 

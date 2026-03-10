@@ -8477,6 +8477,117 @@ toc: false
             if "navbar-style.js" not in resources_list:
                 resources_list.append("navbar-style.js")
 
+        # Add navbar solid color if configured (ignored when `navbar_style` is set)
+        navbar_color = self._config.navbar_color
+        if navbar_color:
+            from great_docs.contrast import ideal_text_color, parse_color
+
+            css_parts: list[str] = []
+
+            for mode in ("light", "dark"):
+                bg = navbar_color.get(mode)
+                if not bg:
+                    continue
+                try:
+                    r, g, b = parse_color(bg)
+                except ValueError:
+                    continue
+
+                bg_hex = f"#{r:02x}{g:02x}{b:02x}"
+                text_hex = ideal_text_color(bg)
+                # Determine if elements on the navbar should look "light" or "dark"
+                is_light_fg = text_hex.lower() in ("#ffffff", "#fff", "white")
+
+                if is_light_fg:
+                    # Light text elements on a dark-ish background
+                    hover_bg = "rgba(255, 255, 255, 0.15)"
+                    border_col = "rgba(255, 255, 255, 0.15)"
+                    btn_bg = "rgba(255, 255, 255, 0.08)"
+                    btn_border = "rgba(255, 255, 255, 0.15)"
+                    btn_hover_bg = "rgba(255, 255, 255, 0.12)"
+                    btn_hover_border = "rgba(255, 255, 255, 0.25)"
+                    active_underline = "rgba(255, 255, 255, 0.75)"
+                    toggler_stroke = "%23e0e0e0"
+                else:
+                    # Dark text elements on a light background
+                    hover_bg = "rgba(0, 0, 0, 0.08)"
+                    border_col = "rgba(0, 0, 0, 0.08)"
+                    btn_bg = "rgba(0, 0, 0, 0.06)"
+                    btn_border = "rgba(0, 0, 0, 0.15)"
+                    btn_hover_bg = "rgba(0, 0, 0, 0.10)"
+                    btn_hover_border = "rgba(0, 0, 0, 0.25)"
+                    active_underline = "rgba(0, 0, 0, 0.45)"
+                    toggler_stroke = "rgba(0,0,0,0.65)"
+
+                if mode == "light":
+                    selector = "body.quarto-light"
+                else:
+                    selector = ":is(html, body).quarto-dark"
+
+                css_parts.append(f"""{selector} {{
+    --gd-navbar-bg: {bg_hex};
+    --gd-navbar-text: {text_hex};
+}}
+{selector} .navbar {{
+    background: {bg_hex} !important;
+    border-bottom: 1px solid {border_col};
+}}
+{selector} .navbar .navbar-title,
+{selector} .navbar .nav-link {{
+    color: {text_hex} !important;
+}}
+{selector} .navbar .nav-link:hover {{
+    background-color: {hover_bg} !important;
+    color: {text_hex} !important;
+}}
+{selector} .navbar .nav-item:has(#github-widget) .nav-link:hover {{
+    background-color: transparent !important;
+}}
+{selector} .navbar .nav-link.active {{
+    text-decoration-color: {active_underline} !important;
+}}
+{selector} .navbar .dark-mode-toggle,
+{selector} #quarto-search .aa-DetachedSearchButton {{
+    background: {btn_bg};
+    border-color: {btn_border};
+    color: {text_hex};
+}}
+{selector} .navbar .dark-mode-toggle:hover,
+{selector} #quarto-search .aa-DetachedSearchButton:hover {{
+    background: {btn_hover_bg};
+    border-color: {btn_hover_border};
+}}
+{selector} .navbar .quarto-navbar-tools button,
+{selector} .navbar .quarto-navbar-tools .quarto-navigation-tool {{
+    color: {text_hex};
+}}
+{selector} .navbar .quarto-navbar-tools button:hover,
+{selector} .navbar .quarto-navbar-tools .quarto-navigation-tool:hover {{
+    background-color: {hover_bg};
+}}
+{selector} .navbar .navbar-toggler-icon {{
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='{toggler_stroke}' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+}}
+{selector} .navbar .bi,
+{selector} .navbar .aa-SubmitIcon {{
+    color: {text_hex} !important;
+}}
+{selector} .navbar .version-badge {{
+    color: {text_hex};
+    opacity: 0.75;
+    background-color: {btn_bg};
+}}""")
+
+            if css_parts:
+                navbar_color_css = "\n".join(css_parts)
+                style_tag = f"<style>\n/* Great Docs: navbar_color overrides */\n{navbar_color_css}\n</style>"
+                after_body = config["format"]["html"].setdefault("include-after-body", [])
+                if isinstance(after_body, str):
+                    after_body = [after_body]
+                    config["format"]["html"]["include-after-body"] = after_body
+                after_body[:] = [h for h in after_body if "navbar_color overrides" not in str(h)]
+                after_body.append({"text": style_tag})
+
         # Add content area gradient glow if configured
         content_style = self._config.content_style
         if content_style:

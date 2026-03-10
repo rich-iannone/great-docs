@@ -102,6 +102,12 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "announcement": None,
     # Navbar gradient preset (e.g., "sky", "peach", "lilac", etc.)
     "navbar_style": None,
+    # Navbar solid background color (CSS color: hex, named, etc.)
+    # str: same color for both light and dark mode
+    # dict: {"light": str, "dark": str} for per-mode colors
+    # Text color is automatically chosen (light or dark) for contrast using APCA.
+    # Overridden when navbar_style (gradient) is set.
+    "navbar_color": None,
     # Content area gradient preset (same preset names as navbar_style)
     # Adds a subtle radial glow at the top of the main content area
     # str: preset name (applies to all pages)
@@ -678,6 +684,32 @@ class Config:
         raw = self.get("navbar_style")
         if raw and isinstance(raw, str):
             return raw
+        return None
+
+    @property
+    def navbar_color(self) -> dict[str, str] | None:
+        """Get the normalized navbar color configuration.
+
+        Returns
+        -------
+        dict[str, str] | None
+            A dict with `"light"` and/or `"dark"` keys mapping to CSS color strings. Returns `None`
+            when not configured or when `navbar_style` (gradient) takes precedence.
+        """
+        if self.navbar_style:
+            return None
+        raw = self.get("navbar_color")
+        if raw is None or raw is False:
+            return None
+        if isinstance(raw, str):
+            return {"light": raw, "dark": raw}
+        if isinstance(raw, dict):
+            result: dict[str, str] = {}
+            for key in ("light", "dark"):
+                val = raw.get(key)
+                if val and isinstance(val, str):
+                    result[key] = val
+            return result if result else None
         return None
 
     @property

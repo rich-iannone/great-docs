@@ -2769,7 +2769,7 @@ html[data-bs-theme="dark"] .navbar[class*="gd-gradient-"] .navbar-toggler {
     color: #e0e0e0 !important;
 }
 html[data-bs-theme="dark"] .navbar[class*="gd-gradient-"] .navbar-toggler-icon {
-    filter: invert(1);
+    filter: none;
 }
 html[data-bs-theme="dark"] .navbar[class*="gd-gradient-"] .bi {
     color: #ffffff !important;

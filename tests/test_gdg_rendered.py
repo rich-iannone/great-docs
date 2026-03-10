@@ -2360,11 +2360,11 @@ def test_R4_config_combo_a_display_name_and_authors():
     cfg = _load_quarto_yml(pkg)
     assert cfg["website"]["title"] == "Combo A Toolkit", "Website title should use display_name"
 
-    # Check authors in page-footer
+    # Check authors in page-footer (names use &nbsp; to prevent line breaks)
     footer = cfg.get("website", {}).get("page-footer", {})
     footer_center = footer.get("center", "")
-    assert "Alice Smith" in footer_center, "Footer should mention Alice Smith"
-    assert "Bob Jones" in footer_center, "Footer should mention Bob Jones"
+    assert "Alice&nbsp;Smith" in footer_center, "Footer should mention Alice Smith"
+    assert "Bob&nbsp;Jones" in footer_center, "Footer should mention Bob Jones"
 
     # Check landing page has display_name
     index = _site_dir(pkg) / "index.html"

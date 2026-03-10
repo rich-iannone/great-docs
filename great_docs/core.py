@@ -8329,12 +8329,14 @@ toc: false
                 # Format names, making them links if they have a homepage
                 formatted_names: list[str] = []
                 for name in author_names:
+                    # Use non-breaking spaces so each name stays on one line
+                    display_name = name.replace(" ", "&nbsp;")
                     if name in author_homepages:
                         formatted_names.append(
-                            f'<a href="{author_homepages[name]}"><strong>{name}</strong></a>'
+                            f'<a href="{author_homepages[name]}"><strong>{display_name}</strong></a>'
                         )
                     else:
-                        formatted_names.append(f"<strong>{name}</strong>")
+                        formatted_names.append(f"<strong>{display_name}</strong>")
 
                 # Format as "Developed by Name1 and Name2." or "Developed by Name1, Name2, and Name3."
                 if len(formatted_names) == 1:
@@ -8358,10 +8360,14 @@ toc: false
                 if funding and isinstance(funding, dict) and funding.get("name"):
                     funder_name = funding["name"]
                     funder_url = funding.get("homepage", "")
+                    # Use non-breaking spaces so the funder name stays on one line
+                    funder_display = funder_name.replace(" ", "&nbsp;")
                     if funder_url:
-                        funder_label = f'<a href="{funder_url}"><strong>{funder_name}</strong></a>'
+                        funder_label = (
+                            f'<a href="{funder_url}"><strong>{funder_display}</strong></a>'
+                        )
                     else:
-                        funder_label = f"<strong>{funder_name}</strong>"
+                        funder_label = f"<strong>{funder_display}</strong>"
                     footer_html += f" Supported by {funder_label}."
 
                 config["website"]["page-footer"] = {"center": footer_html}
@@ -8372,10 +8378,14 @@ toc: false
                 if funding and isinstance(funding, dict) and funding.get("name"):
                     funder_name = funding["name"]
                     funder_url = funding.get("homepage", "")
+                    # Use non-breaking spaces so the funder name stays on one line
+                    funder_display = funder_name.replace(" ", "&nbsp;")
                     if funder_url:
-                        funder_label = f'<a href="{funder_url}"><strong>{funder_name}</strong></a>'
+                        funder_label = (
+                            f'<a href="{funder_url}"><strong>{funder_display}</strong></a>'
+                        )
                     else:
-                        funder_label = f"<strong>{funder_name}</strong>"
+                        funder_label = f"<strong>{funder_display}</strong>"
                     config["website"]["page-footer"] = {"center": f"Supported by {funder_label}."}
 
         # Add "Supported by Posit" badge if funding name contains "Posit" as a word

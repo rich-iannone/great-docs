@@ -407,6 +407,13 @@ div.sidebar-item-container {
     background-color: #FAFAFD50;
 }
 
+/* On mobile the sidebar overlays page content, so remove transparency */
+@media (max-width: 991.98px) {
+    #quarto-sidebar {
+        background-color: #FAFAFD;
+    }
+}
+
 /* ── Single-page section: expand content into sidebar space ──
    When a custom section has only one page the left sidebar is omitted.
    Shift the content column leftward so it occupies the sidebar area too,

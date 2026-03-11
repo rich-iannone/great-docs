@@ -1,0 +1,346 @@
+// Ref:
+// - https://getbootstrap.com/docs/5.3/utilities/spacing/
+// - https://github.com/twbs/bootstrap/blob/main/scss/_variables.scss
+// - https://quarto.org/docs/output-formats/html-themes-more.html
+// - https://getbootstrap.com/docs/5.3/utilities/text
+
+/*-- scss:defaults --*/
+
+/*-- scss:mixins --*/
+$headings-font-weight: 300 !default;
+$table-striped-bg: mix($primary, #FDFDFD, 2%);
+$table-striped-order: even;
+
+/*-- scss:rules --*/
+$label-class-color: mix($primary, $indigo-500, 20%);
+$label-method-color: mix($primary, $cyan-600, 20%);
+$label-function-color: mix($primary, $pink-700, 20%);
+$label-exception-color: mix($primary, $red-600, 20%);
+$label-property-color: mix($primary, $teal-600, 20%);
+$label-constant-color: mix($primary, $orange-500, 20%);
+$label-typealias-color: mix($primary, $yellow-500, 20%);
+
+$signature-background-color: shade-color(tint-color($primary, 96%), 2%);
+
+$font-family-monospace: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+// Selectors for similar groups of elements that are created by the renderer
+$docstring-sections: ":is(.doc-parameters, .doc-other-parameters, .doc-returns, .doc-yields, .doc-receives, .doc-raises, .doc-warns, .doc-attributes, .doc-parameter-attributes, .doc-init-parameters, .doc-see-also, .doc-examples)";
+$doc-object-names: "span.doc-object-name:is(.doc-class-name, .doc-method-name, .doc-module-name, .doc-function-name, .doc-alias-name, .doc-attribute-name, .doc-type-name, .doc-typevar)";
+
+a {
+   text-decoration: none;
+}
+
+
+// Set headings boldness back to the bootstrap default.
+// quarto changes it for h1, h2, h3!
+h1, .h2, h2, .h2, h3, .h3 {
+   @extend .fw-medium;
+}
+
+h5, .h5 {
+   @extend .mt-3;
+}
+
+header p {
+   @extend .mb-2;
+}
+
+table {
+   @extend .table-bordered;
+   @extend .table-striped;
+}
+
+.table > tbody {
+   // quarto adds a bottom color that is different from the border color,
+   // that looks good the default
+   border-bottom-color: $table-border-color;
+}
+
+// The default background color for the dropdown is
+// off-white and it washes out the text color.
+.navbar .dropdown-item {
+   color: $gray-800;
+}
+
+
+/*---------------------------------- Reference Page -----------------------------------*/
+.doc-reference section.doc-group > dl {
+  @extend .table;
+  border-top-style: dashed;
+  border-bottom-style: dashed;
+  padding-top: 0.5em;
+}
+
+.doc-reference section.doc-group > dl > dt {
+  margin-left: 0px !important;
+}
+
+.doc-reference dd > p:last-child {
+  margin-bottom: 0;
+}
+
+.doc-reference dt a {
+  color: inherit;
+  text-decoration: underline;
+  font-weight: bold;
+  font-family: $font-family-monospace;
+  font-size: 0.875em;
+  text-underline-offset: 0.25em;
+  text-decoration-thickness: 0.125em;
+  word-break: initial;
+}
+
+/*------------------------------------- API Page --------------------------------------*/
+
+// docstring object-name
+header span.doc-object-name {
+  font-family: $font-family-monospace;
+  font-size: 1.25rem;
+}
+
+.doc-object span.doc-object-name:not(h1.title > span) {
+  opacity: 0.85;
+}
+
+.doc-subject > p {
+  font-style: italic;
+}
+
+// docstring object symbols
+.content code.doc-symbol {
+  font-size: 0.9rem;
+}
+
+// docstring signatures
+.doc-usage-source {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.doc-usage-source p {
+  margin-bottom: 0rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+
+.doc-usage-source > p:first-child {
+  color: #AAA;
+}
+
+.doc-usage-source a {
+  color: steelblue !important;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.doc-signature div.sourceCode {
+  margin-top: 0.15rem;
+}
+
+.doc-signature > div:first-child {
+   background-color: $signature-background-color;
+}
+
+.doc-signature code {
+   max-height: 20rem;
+   overflow: auto;
+}
+
+.doc-signature > p:first-child {
+   @extend .my-3;
+   border-radius: 0.25rem;
+}
+
+.doc-signature > p:first-child code {
+   @extend .p-2;
+   display: block;
+}
+
+.doc-signature > p:first-child code a {
+   color: $primary;
+}
+
+.doc-text:has(+section) {
+  margin-bottom: 2rem;
+}
+
+// docstring sections with definition-items
+
+#{$docstring-sections} dl > dt {
+  font-weight: normal;
+}
+
+#{$docstring-sections} dl > dd {
+  @extend .mb-0;
+}
+
+#{$docstring-sections} dl > dt:not(:first-child) {
+  @extend .mt-3;
+}
+
+#{$docstring-sections} dl > dd > table {
+   min-width: 33%;
+   width: 0;
+}
+
+#{$docstring-sections} dl > dd > table > thead {
+   border-top: 0rem solid $border-color;
+   border-bottom: 0.15em solid $border-color;
+}
+
+#{$docstring-sections} dl > dd > table td {
+   @extend .px-2;
+   @extend .py-1;
+}
+
+// Definitions that are code
+#{$docstring-sections} dt code,
+.doc-signature > p > code {
+   display: block;
+   font-weight: normal;
+   color: var(--quarto-hl-ot-color);
+}
+
+.doc-text dt code {
+   @extend .p-1;
+   font-weight: normal;
+   color: var(--quarto-hl-ot-color);
+   background-color: $signature-background-color;
+}
+
+#{$docstring-sections} dt code a,
+.doc-signature > p > code a {
+   color: $primary;
+}
+
+// docstring spacing and indentation
+section.doc-attributes > section.doc-attribute,
+section.doc-methods > section.doc-method {
+   @extend .ps-4;
+   border-left: 0.025rem solid $gray-500;
+   backgroud-color: cyan;
+}
+
+// docstring section parameters
+#{$docstring-sections} .doc-parameter-name {
+  font-weight: bold;
+}
+
+h2#{$docstring-sections} {
+  font-size: 1.295rem;
+}
+
+// sidebar
+.sidebar nav li > a > code {
+   color: $code-color;
+   background-color: $gray-100;
+   padding: 0.075rem 0.075rem;
+}
+
+#{$doc-object-names}::before {
+  @extend .px-1;
+  font-size: 0.9rem;
+  font-family: monospace;
+  margin-right: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.sidebar #{$doc-object-names}::before {
+  font-size: 0.55rem;
+}
+
+// docstring object labels
+$all_labels: (
+  class,
+  namedtuple,
+  typeddict,
+  protocol,
+  abc,
+  enum,
+  method,
+  classmethod,
+  staticmethod,
+  function,
+  exception,
+  property,
+  constant,
+  typealias
+);
+$class-like-labels: (class, namedtuple, typeddict, protocol, abc, enum);
+$method-like-labels: (method, classmethod, staticmethod);
+
+.content span.doc-label::after {
+  @extend .fw-normal;
+  @extend .small;
+  @extend code;
+  font-size: 0.785rem;
+  padding: 0.125rem 0.25rem;
+  margin-left: 1rem;
+  vertical-align: middle;
+  border-radius: 0.25rem;
+  border-width: 1px;
+  border-style: solid;
+}
+
+@each $label in $all_labels {
+  .content span.doc-label-#{$label}::after {
+    content: "#{$label}";
+  }
+}
+
+.content {
+  @each $label in $class-like-labels {
+    span.doc-label-#{$label}::after {
+      color: $label-class-color;
+      border-color: $label-class-color;
+      background-color: tint-color($label-class-color, 95%);
+    }
+  }
+}
+
+.content {
+  @each $label in $method-like-labels {
+    span.doc-label-#{$label}::after {
+      color: $label-method-color;
+      border-color: $label-method-color;
+      background-color: tint-color($label-method-color, 95%);
+    }
+  }
+}
+
+.content span.doc-label-function::after {
+  color: $label-function-color;
+  border-color: $label-function-color;
+  background-color: tint-color($label-function-color, 95%);
+}
+
+.content span.doc-label-property::after {
+  color: $label-property-color;
+  border-color: $label-property-color;
+  background-color: tint-color($label-property-color, 95%);
+}
+
+.content span.doc-label-constant::after {
+  color: $label-constant-color;
+  border-color: $label-constant-color;
+  background-color: tint-color($label-constant-color, 95%);
+}
+
+.content span.doc-label-typealias::after {
+  color: $label-typealias-color;
+  border-color: $label-typealias-color;
+  background-color: tint-color($label-typealias-color, 95%);
+}
+
+// Adorn callables with ()
+span.doc-method-name::after,
+dt a.doc-method-name::after {
+  content: "()";
+}
+
+/*-- scss:functions --*/
+
+/*-- scss:uses --*/

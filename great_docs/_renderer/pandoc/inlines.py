@@ -25,6 +25,7 @@ __all__ = (
     "Image",
     "Inline",
     "Inlines",
+    "Inlines0",
     "Link",
     "Span",
     "Str",
@@ -61,6 +62,19 @@ class Inlines(Inline):
         if not self.elements:
             return ""
         return join_inline_content(self.elements)
+
+
+@dataclass
+class Inlines0(Inline):
+    """
+    Tight Inline (rendered without space in-between)
+    """
+    elements: Optional[Sequence[InlineContent]] = None
+
+    def __str__(self):
+        if not self.elements:
+            return ""
+        return join_inline_content(self.elements, "")
 
 
 @dataclass
@@ -153,8 +167,8 @@ class Image(Inline):
 # Helper functions
 
 
-def join_inline_content(content: Sequence[InlineContent]) -> str:
-    return SEP.join(inlinecontent_to_str(c) for c in content if c)
+def join_inline_content(content: Sequence[InlineContent], sep:str = SEP) -> str:
+    return sep.join(inlinecontent_to_str(c) for c in content if c)
 
 
 def inlinecontent_to_str(content: Optional[InlineContent]):

@@ -7959,6 +7959,11 @@ toc: false
         config["format"]["html"]["toc-depth"] = site_settings.get("toc-depth", 2)
         config["format"]["html"]["toc-title"] = site_settings.get("toc-title", "On this page")
 
+        if "great-docs-q.scss" not in config["format"]["html"]["theme"]:
+            if isinstance(config["format"]["html"]["theme"], str):
+                config["format"]["html"]["theme"] = [config["format"]["html"]["theme"]]
+            config["format"]["html"]["theme"].append("great-docs-q.scss")
+
         if "shift-heading-level-by" not in config["format"]["html"]:
             config["format"]["html"]["shift-heading-level-by"] = -1
 

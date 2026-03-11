@@ -1618,21 +1618,6 @@ for html_file in html_files:
             # Determine whether this item should get ()
             obj_type = object_types.get(item_name_from_file)
 
-            if obj_type:
-                # Metadata available — only add () for functions/methods
-                should_add_parens = obj_type in _CALLABLE_TYPES
-            else:
-                # Fallback heuristic (original behaviour)
-                should_add_parens = "." in h1_content or (
-                    h1_content and not h1_content[0].isupper()
-                )
-
-            if should_add_parens:
-                # Strip HTML tags to check plain text for existing ()
-                _plain = re.sub(r"<[^>]+>", "", h1_content).strip()
-                if not _plain.endswith("()"):
-                    h1_content += "()"
-
             # Replace the h1 tag with the modified content
             content[i] = line[:start] + h1_content + line[end:]
 

@@ -1,6 +1,28 @@
 # Great Docs Configuration
 # See https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html
 
+# Announcement Banner
+# -------------------
+# Site-wide banner above the navbar.
+# Simple form: announcement: "Your message here"
+# Dict form with options:
+announcement:
+  content: "Official launch on posit-dev coming soon, along with the first PyPI release!"
+  type: info
+  style: lilac
+  dismissable: true
+
+# Navbar Style
+# ------------
+# Animated gradient preset for the top navigation bar.
+# Available presets: sky, peach, prism, lilac, slate, honey, dusk, mint
+navbar_style: sky
+
+# Subtle radial gradient glow at the top of the main content area.
+# Available presets: sky, peach, prism, lilac, slate, honey, dusk, mint
+# Use a string for all pages, or dict with pages: "homepage" to limit scope.
+content_style: lilac
+
 # Exclusions
 # ----------
 # Items to exclude from auto-documentation (affects 'init' and 'scan')
@@ -14,6 +36,8 @@ exclude:
 logo:
   light: assets/logo.svg
   dark: assets/logo-dark.svg
+
+favicon: assets/favicon.svg
 
 # GitHub Integration
 # ------------------

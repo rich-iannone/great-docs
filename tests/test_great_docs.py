@@ -756,6 +756,8 @@ def test_config_defaults():
         assert config.cli_module is None
         assert config.cli_name is None
         assert config.dark_mode_toggle is True
+        assert config.markdown_pages is True
+        assert config.markdown_pages_widget is True
         assert config.reference == []
         assert config.authors == []
 
@@ -3915,6 +3917,7 @@ def test_process_sections_idempotent():
         ex_dir = project_path / "examples"
         ex_dir.mkdir()
         (ex_dir / "page.qmd").write_text('---\ntitle: "Page"\n---\n\nContent\n')
+        (ex_dir / "page2.qmd").write_text('---\ntitle: "Page 2"\n---\n\nMore\n')
 
         docs = GreatDocs(project_path=tmp_dir)
         docs._process_sections()
@@ -6017,3 +6020,752 @@ class TestRendererIsNonCallableClass:
         obj.labels = set()
         obj.bases = ["StrEnum"]
         assert _is_non_callable_class(obj) is True
+
+
+# ============================================================================
+# Favicon Tests
+# ============================================================================
+
+# Minimal valid SVG for testing (64x64 blue square)
+_MINIMAL_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">'
+    '<rect width="64" height="64" fill="#318BFC"/>'
+    "</svg>"
+)
+
+# Non-square SVG (200x100)
+_WIDE_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100">'
+    '<rect width="200" height="100" fill="#318BFC"/>'
+    "</svg>"
+)
+
+
+class TestFitToSquare:
+    """Tests for GreatDocs._fit_to_square()."""
+
+    def test_square_image_unchanged_dimensions(self):
+        """A square image should remain square with the requested size."""
+        from PIL import Image
+
+        img = Image.new("RGBA", (100, 100), (255, 0, 0, 255))
+        result = GreatDocs._fit_to_square(img, 64)
+        assert result.size == (64, 64)
+
+    def test_wide_image_padded_to_square(self):
+        """A wide image should be padded vertically to become square."""
+        from PIL import Image
+
+        img = Image.new("RGBA", (200, 100), (255, 0, 0, 255))
+        result = GreatDocs._fit_to_square(img, 200)
+        assert result.size == (200, 200)
+        # Top-left corner should be transparent (padding)
+        assert result.getpixel((0, 0))[3] == 0
+        # Center should be opaque (the image)
+        assert result.getpixel((100, 100))[3] == 255
+
+    def test_tall_image_padded_to_square(self):
+        """A tall image should be padded horizontally to become square."""
+        from PIL import Image
+
+        img = Image.new("RGBA", (100, 200), (0, 255, 0, 255))
+        result = GreatDocs._fit_to_square(img, 200)
+        assert result.size == (200, 200)
+        # Left edge should be transparent (padding)
+        assert result.getpixel((0, 100))[3] == 0
+        # Center should be opaque
+        assert result.getpixel((100, 100))[3] == 255
+
+    def test_output_is_rgba(self):
+        """Output should always be RGBA regardless of input mode."""
+        from PIL import Image
+
+        img = Image.new("RGB", (50, 50), (0, 0, 255))
+        result = GreatDocs._fit_to_square(img, 64)
+        assert result.mode == "RGBA"
+
+    def test_downscale_preserves_aspect_ratio(self):
+        """A large image should be scaled down to fit within the target size."""
+        from PIL import Image
+
+        img = Image.new("RGBA", (400, 200), (255, 0, 0, 255))
+        result = GreatDocs._fit_to_square(img, 100)
+        assert result.size == (100, 100)
+
+
+class TestGenerateFaviconsSvg:
+    """Tests for _generate_favicons with SVG source."""
+
+    def test_svg_generates_all_files(self):
+        """SVG source should produce ico, svg, 16px, 32px, and apple-touch-icon."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            svg_file = tmp / "logo.svg"
+            svg_file.write_text(_MINIMAL_SVG)
+
+            dest = tmp / "output"
+            dest.mkdir()
+
+            docs = GreatDocs(project_path=tmp_dir)
+            result = docs._generate_favicons(svg_file, dest)
+
+            assert result["icon"] == "favicon.ico"
+            assert result["icon-svg"] == "favicon.svg"
+            assert result["icon-16"] == "favicon-16x16.png"
+            assert result["icon-32"] == "favicon-32x32.png"
+            assert result["apple-touch-icon"] == "apple-touch-icon.png"
+
+    def test_svg_files_exist_on_disk(self):
+        """All generated favicon files should actually exist."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            svg_file = tmp / "logo.svg"
+            svg_file.write_text(_MINIMAL_SVG)
+
+            dest = tmp / "output"
+            dest.mkdir()
+
+            docs = GreatDocs(project_path=tmp_dir)
+            docs._generate_favicons(svg_file, dest)
+
+            assert (dest / "favicon.ico").exists()
+            assert (dest / "favicon.svg").exists()
+            assert (dest / "favicon-16x16.png").exists()
+            assert (dest / "favicon-32x32.png").exists()
+            assert (dest / "apple-touch-icon.png").exists()
+
+    def test_svg_png_sizes_correct(self):
+        """Generated PNGs should have the correct pixel dimensions."""
+        from PIL import Image
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            svg_file = tmp / "logo.svg"
+            svg_file.write_text(_MINIMAL_SVG)
+
+            dest = tmp / "output"
+            dest.mkdir()
+
+            docs = GreatDocs(project_path=tmp_dir)
+            docs._generate_favicons(svg_file, dest)
+
+            assert Image.open(dest / "favicon-16x16.png").size == (16, 16)
+            assert Image.open(dest / "favicon-32x32.png").size == (32, 32)
+            assert Image.open(dest / "apple-touch-icon.png").size == (180, 180)
+
+    def test_svg_copied_as_favicon_svg(self):
+        """The SVG source should be copied verbatim as favicon.svg."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            svg_file = tmp / "logo.svg"
+            svg_file.write_text(_MINIMAL_SVG)
+
+            dest = tmp / "output"
+            dest.mkdir()
+
+            docs = GreatDocs(project_path=tmp_dir)
+            docs._generate_favicons(svg_file, dest)
+
+            assert (dest / "favicon.svg").read_text() == _MINIMAL_SVG
+
+    def test_non_square_svg_generates_square_favicons(self):
+        """A non-square SVG should produce square favicons via padding."""
+        from PIL import Image
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            svg_file = tmp / "wide-logo.svg"
+            svg_file.write_text(_WIDE_SVG)
+
+            dest = tmp / "output"
+            dest.mkdir()
+
+            docs = GreatDocs(project_path=tmp_dir)
+            result = docs._generate_favicons(svg_file, dest)
+
+            # All outputs should be square
+            assert result["icon"] == "favicon.ico"
+            for name in ["favicon-16x16.png", "favicon-32x32.png", "apple-touch-icon.png"]:
+                img = Image.open(dest / name)
+                assert img.size[0] == img.size[1], f"{name} should be square"
+
+
+class TestGenerateFaviconsPng:
+    """Tests for _generate_favicons with PNG source."""
+
+    def test_png_generates_all_raster_files(self):
+        """PNG source should produce ico, 16px, 32px, and apple-touch-icon."""
+        from PIL import Image
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            png_file = tmp / "logo.png"
+            Image.new("RGBA", (128, 128), (255, 0, 0, 255)).save(png_file, "PNG")
+
+            dest = tmp / "output"
+            dest.mkdir()
+
+            docs = GreatDocs(project_path=tmp_dir)
+            result = docs._generate_favicons(png_file, dest)
+
+            assert result["icon"] == "favicon.ico"
+            assert result["icon-16"] == "favicon-16x16.png"
+            assert result["icon-32"] == "favicon-32x32.png"
+            assert result["apple-touch-icon"] == "apple-touch-icon.png"
+
+    def test_png_does_not_produce_svg(self):
+        """PNG source should not produce a favicon.svg."""
+        from PIL import Image
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            png_file = tmp / "logo.png"
+            Image.new("RGBA", (64, 64), (0, 0, 255, 255)).save(png_file, "PNG")
+
+            dest = tmp / "output"
+            dest.mkdir()
+
+            docs = GreatDocs(project_path=tmp_dir)
+            result = docs._generate_favicons(png_file, dest)
+
+            assert "icon-svg" not in result
+            assert not (dest / "favicon.svg").exists()
+
+    def test_png_files_exist_on_disk(self):
+        """All generated files from PNG source should exist."""
+        from PIL import Image
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            png_file = tmp / "logo.png"
+            Image.new("RGBA", (128, 128), (255, 0, 0, 255)).save(png_file, "PNG")
+
+            dest = tmp / "output"
+            dest.mkdir()
+
+            docs = GreatDocs(project_path=tmp_dir)
+            docs._generate_favicons(png_file, dest)
+
+            assert (dest / "favicon.ico").exists()
+            assert (dest / "favicon-16x16.png").exists()
+            assert (dest / "favicon-32x32.png").exists()
+            assert (dest / "apple-touch-icon.png").exists()
+
+    def test_png_sizes_correct(self):
+        """Generated PNGs from PNG source should have correct dimensions."""
+        from PIL import Image
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            png_file = tmp / "logo.png"
+            Image.new("RGBA", (256, 256), (0, 128, 0, 255)).save(png_file, "PNG")
+
+            dest = tmp / "output"
+            dest.mkdir()
+
+            docs = GreatDocs(project_path=tmp_dir)
+            docs._generate_favicons(png_file, dest)
+
+            assert Image.open(dest / "favicon-16x16.png").size == (16, 16)
+            assert Image.open(dest / "favicon-32x32.png").size == (32, 32)
+            assert Image.open(dest / "apple-touch-icon.png").size == (180, 180)
+
+    def test_non_square_png_generates_square_favicons(self):
+        """A non-square PNG should produce square favicons via padding."""
+        from PIL import Image
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            png_file = tmp / "wide-logo.png"
+            Image.new("RGBA", (200, 100), (255, 0, 0, 255)).save(png_file, "PNG")
+
+            dest = tmp / "output"
+            dest.mkdir()
+
+            docs = GreatDocs(project_path=tmp_dir)
+            result = docs._generate_favicons(png_file, dest)
+
+            assert result["icon"] == "favicon.ico"
+            for name in ["favicon-16x16.png", "favicon-32x32.png", "apple-touch-icon.png"]:
+                img = Image.open(dest / name)
+                assert img.size[0] == img.size[1], f"{name} should be square"
+
+
+class TestGenerateFaviconsUnsupported:
+    """Tests for _generate_favicons with unsupported formats."""
+
+    def test_unsupported_extension_returns_empty(self):
+        """An unsupported file extension should return an empty dict."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            gif_file = tmp / "logo.gif"
+            gif_file.write_text("not a real gif")
+
+            dest = tmp / "output"
+            dest.mkdir()
+
+            docs = GreatDocs(project_path=tmp_dir)
+            result = docs._generate_favicons(gif_file, dest)
+
+            assert result == {}
+
+
+class TestFaviconConfigNormalization:
+    """Tests for Config.favicon property normalization."""
+
+    def test_favicon_none_when_not_set(self):
+        """Favicon should be None when not configured."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            config_file = Path(tmp_dir) / "great-docs.yml"
+            config_file.write_text("display_name: Test\n")
+            config = Config(Path(tmp_dir))
+            assert config.favicon is None
+
+    def test_favicon_string_normalized_to_dict(self):
+        """A string favicon config should be normalized to {'icon': str}."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            config_file = Path(tmp_dir) / "great-docs.yml"
+            config_file.write_text("favicon: assets/favicon.svg\n")
+            config = Config(Path(tmp_dir))
+            assert config.favicon == {"icon": "assets/favicon.svg"}
+
+    def test_favicon_dict_passed_through(self):
+        """A dict favicon config should be returned as-is."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            config_file = Path(tmp_dir) / "great-docs.yml"
+            config_file.write_text("favicon:\n  icon: my-icon.svg\n")
+            config = Config(Path(tmp_dir))
+            assert config.favicon == {"icon": "my-icon.svg"}
+
+    def test_favicon_invalid_type_returns_none(self):
+        """An invalid favicon config type should return None."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            config_file = Path(tmp_dir) / "great-docs.yml"
+            config_file.write_text("favicon:\n  - item1\n  - item2\n")
+            config = Config(Path(tmp_dir))
+            assert config.favicon is None
+
+
+class TestFaviconLinkInjection:
+    """Tests for favicon <link> tag injection into _quarto.yml."""
+
+    def _build_with_favicon(
+        self, tmp_dir: str, favicon_config: str | None = None, create_logo: bool = False
+    ) -> dict:
+        """Helper: set up a project, run _update_quarto_config, return the config."""
+        import yaml
+
+        tmp = Path(tmp_dir)
+
+        # Minimal pyproject.toml
+        (tmp / "pyproject.toml").write_text(
+            '[project]\nname = "test-pkg"\nversion = "0.1.0"\n'
+            '[project.urls]\nRepository = "https://github.com/test/test-pkg"\n'
+        )
+
+        # great-docs.yml
+        yml_lines = ["display_name: Test\n"]
+        if favicon_config:
+            yml_lines.append(favicon_config)
+        (tmp / "great-docs.yml").write_text("".join(yml_lines))
+
+        # Create logo if requested (for auto-detect path)
+        if create_logo:
+            (tmp / "logo.svg").write_text(_MINIMAL_SVG)
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+
+        # Run the config build
+        docs._update_quarto_config()
+
+        # Read the generated _quarto.yml
+        quarto_yml = docs.project_path / "_quarto.yml"
+        with open(quarto_yml) as f:
+            return yaml.safe_load(f)
+
+    def test_auto_detect_injects_link_tags(self):
+        """Auto-detected logo should inject favicon <link> tags."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            config = self._build_with_favicon(tmp_dir, create_logo=True)
+
+            header = config.get("format", {}).get("html", {}).get("include-in-header", [])
+            header_text = " ".join(str(item) for item in header)
+
+            assert "favicon.ico" in header_text
+            assert "favicon.svg" in header_text
+            assert "favicon-32x32.png" in header_text
+            assert "favicon-16x16.png" in header_text
+            assert "apple-touch-icon.png" in header_text
+
+    def test_explicit_favicon_injects_link_tags(self):
+        """Explicit favicon config should also inject <link> tags."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            # Create the favicon source file and a logo (favicon block requires logo)
+            tmp = Path(tmp_dir)
+            (tmp / "assets").mkdir()
+            (tmp / "assets" / "favicon.svg").write_text(_MINIMAL_SVG)
+
+            config = self._build_with_favicon(
+                tmp_dir,
+                favicon_config="favicon: assets/favicon.svg\n",
+                create_logo=True,
+            )
+
+            header = config.get("format", {}).get("html", {}).get("include-in-header", [])
+            header_text = " ".join(str(item) for item in header)
+
+            assert "favicon.ico" in header_text
+            assert "favicon.svg" in header_text
+            assert "favicon-32x32.png" in header_text
+            assert "favicon-16x16.png" in header_text
+            assert "apple-touch-icon.png" in header_text
+
+    def test_no_favicon_no_link_tags(self):
+        """Without logo or favicon config, no <link> tags should be injected."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            config = self._build_with_favicon(tmp_dir)
+
+            header = config.get("format", {}).get("html", {}).get("include-in-header", [])
+            header_text = " ".join(str(item) for item in header)
+
+            assert "favicon" not in header_text
+
+    def test_explicit_favicon_sets_website_favicon(self):
+        """Explicit favicon config should set website.favicon to favicon.ico."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            (tmp / "assets").mkdir()
+            (tmp / "assets" / "favicon.svg").write_text(_MINIMAL_SVG)
+
+            config = self._build_with_favicon(
+                tmp_dir,
+                favicon_config="favicon: assets/favicon.svg\n",
+                create_logo=True,
+            )
+
+            assert config.get("website", {}).get("favicon") == "favicon.ico"
+
+    def test_auto_detect_sets_website_favicon(self):
+        """Auto-detected logo should set website.favicon to favicon.ico."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            config = self._build_with_favicon(tmp_dir, create_logo=True)
+
+            assert config.get("website", {}).get("favicon") == "favicon.ico"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Badge Extraction from README Content
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class TestExtractBadgesFromContent:
+    """Tests for _extract_badges_from_content (top-of-file and centered-div strategies)."""
+
+    def _make_builder(self):
+        """Create a minimal GreatDocs instance for calling _extract_badges_from_content."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            (tmp / "pyproject.toml").write_text('[project]\nname = "test-pkg"\nversion = "0.1.0"\n')
+            (tmp / "test_pkg").mkdir()
+            (tmp / "test_pkg" / "__init__.py").write_text('"""Test."""\n')
+            builder = GreatDocs(str(tmp))
+        return builder
+
+    def test_top_of_file_badges_extracted(self):
+        """Badges right after the heading are extracted."""
+        content = (
+            "# My Package\n"
+            "\n"
+            "[![PyPI](https://img.shields.io/badge/pypi-v1-blue)](https://pypi.org/p)\n"
+            "[![License](https://img.shields.io/badge/license-MIT-green)](https://mit.edu)\n"
+            "\n"
+            "Some body text.\n"
+        )
+        builder = self._make_builder()
+        badges, cleaned, hero_extras = builder._extract_badges_from_content(content)
+
+        assert len(badges) == 2
+        assert badges[0]["alt"] == "PyPI"
+        assert "img.shields.io" in badges[0]["img"]
+        # Heading preserved, badges stripped, body preserved
+        assert "# My Package" in cleaned
+        assert "Some body text." in cleaned
+        assert "img.shields.io" not in cleaned
+        # No hero extras for top-of-file badges
+        assert hero_extras == {}
+
+    def test_centered_div_badges_extracted(self):
+        """Badges inside <div align="center"> are extracted and the entire div is stripped."""
+        content = (
+            "> [!TIP]\n"
+            "> Install via pip.\n"
+            "\n"
+            '<div align="center">\n'
+            '<img src="logo.png" width="350">\n'
+            "<br />\n"
+            "*A cool tagline*\n"
+            "<br />\n"
+            "[![PyPI](https://img.shields.io/badge/pypi-v1-blue)](https://pypi.org)\n"
+            "[![CI](https://img.shields.io/badge/ci-pass-green)](https://github.com/ci)\n"
+            "[![Coverage](https://codecov.io/badge.svg)](https://codecov.io)\n"
+            "</div>\n"
+            "\n"
+            "Body text after.\n"
+        )
+        builder = self._make_builder()
+        badges, cleaned, hero_extras = builder._extract_badges_from_content(content)
+
+        assert len(badges) == 3
+        assert badges[0]["alt"] == "PyPI"
+        assert badges[2]["alt"] == "Coverage"
+        # Entire div block removed
+        assert "<div" not in cleaned
+        assert "</div>" not in cleaned
+        assert "logo.png" not in cleaned
+        assert "cool tagline" not in cleaned
+        # Surrounding content preserved
+        assert "Install via pip" in cleaned
+        assert "Body text after." in cleaned
+        # Hero extras extracted from centered div
+        assert hero_extras["logo_url"] == "logo.png"
+        assert hero_extras["tagline"] == "A cool tagline"
+
+    def test_no_badges_returns_original(self):
+        """Content without badges returns empty list and original content."""
+        content = "# Title\n\nJust text, no badges.\n"
+        builder = self._make_builder()
+        badges, cleaned, hero_extras = builder._extract_badges_from_content(content)
+
+        assert badges == []
+        assert cleaned == content
+        assert hero_extras == {}
+
+    def test_non_badge_images_in_div_ignored(self):
+        """A centered div without badge host URLs is not stripped."""
+        content = '<div align="center">\n<img src="hero.png">\n</div>\n\nBody text.\n'
+        builder = self._make_builder()
+        badges, cleaned, hero_extras = builder._extract_badges_from_content(content)
+
+        assert badges == []
+        assert "<div" in cleaned
+
+    def test_centered_div_linked_logo_extracted(self):
+        """A linked <a><img></a> logo in the centered div is extracted."""
+        content = (
+            '<div align="center">\n'
+            "\n"
+            '<a href="https://example.com/"><img src="https://example.com/logo.svg" width="65%"/></a>\n'
+            "\n"
+            "_Obtain Polars DataFrames of NOAA historical weather data_\n"
+            "\n"
+            "[![PyPI](https://img.shields.io/pypi/pyversions/pkg.svg)](https://pypi.org/project/pkg/)\n"
+            "[![Tests](https://github.com/user/pkg/actions/workflows/tests.yml/badge.svg)](https://github.com/user/pkg/actions)\n"
+            "\n"
+            "</div>\n"
+            "\n"
+            "## Features\n"
+            "Some text.\n"
+        )
+        builder = self._make_builder()
+        badges, cleaned, hero_extras = builder._extract_badges_from_content(content)
+
+        assert len(badges) == 2
+        assert hero_extras["logo_url"] == "https://example.com/logo.svg"
+        assert hero_extras["tagline"] == "Obtain Polars DataFrames of NOAA historical weather data"
+        assert "<div" not in cleaned
+        assert "## Features" in cleaned
+
+
+def test_config_markdown_pages_disabled():
+    """Test that markdown_pages: false excludes copy-page.js from Quarto config."""
+    import yaml
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        config_file = project_path / "great-docs.yml"
+        config_file.write_text("markdown_pages: false\n")
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        # Both should be false
+        assert docs._config.markdown_pages is False
+        assert docs._config.markdown_pages_widget is False
+
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+        docs._update_quarto_config()
+
+        quarto_yml = docs.project_path / "_quarto.yml"
+        with open(quarto_yml, "r") as f:
+            config = yaml.safe_load(f)
+
+        # copy-page.js should NOT be in resources
+        resources = config["project"].get("resources", [])
+        assert "copy-page.js" not in resources
+
+        # copy-page.js should NOT be in include-after-body
+        after_body = config["format"]["html"].get("include-after-body", [])
+        for item in after_body:
+            assert "copy-page" not in str(item)
+
+
+def test_config_markdown_pages_widget_disabled():
+    """Test that markdown_pages: {widget: false} generates .md but hides widget."""
+    import yaml
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        config_file = project_path / "great-docs.yml"
+        config_file.write_text("markdown_pages:\n  widget: false\n")
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        # .md generation enabled, widget disabled
+        assert docs._config.markdown_pages is True
+        assert docs._config.markdown_pages_widget is False
+
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+        docs._update_quarto_config()
+
+        quarto_yml = docs.project_path / "_quarto.yml"
+        with open(quarto_yml, "r") as f:
+            config = yaml.safe_load(f)
+
+        # copy-page.js should NOT be in resources
+        resources = config["project"].get("resources", [])
+        assert "copy-page.js" not in resources
+
+        # copy-page.js should NOT be in include-after-body
+        after_body = config["format"]["html"].get("include-after-body", [])
+        for item in after_body:
+            assert "copy-page" not in str(item)
+
+
+def test_config_markdown_pages_default_enabled():
+    """Test that markdown_pages defaults to true (copy-page.js included)."""
+    import yaml
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+
+        pyproject = project_path / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test"\nversion = "0.1.0"')
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+        docs._update_quarto_config()
+
+        quarto_yml = docs.project_path / "_quarto.yml"
+        with open(quarto_yml, "r") as f:
+            config = yaml.safe_load(f)
+
+        # copy-page.js SHOULD be in resources
+        resources = config["project"].get("resources", [])
+        assert "copy-page.js" in resources
+
+        # copy-page.js SHOULD be in include-after-body
+        after_body = config["format"]["html"].get("include-after-body", [])
+        has_copy_page = any("copy-page" in str(item) for item in after_body)
+        assert has_copy_page
+
+
+class TestPositBadgeInjection:
+    """Tests for automatic 'Supported by Posit' badge injection."""
+
+    def _build_with_funding(self, tmp_dir: str, funding_name: str | None = None) -> dict:
+        """Helper: set up a project with funding config, run _update_quarto_config, return config."""
+        import yaml
+
+        tmp = Path(tmp_dir)
+
+        (tmp / "pyproject.toml").write_text('[project]\nname = "test-pkg"\nversion = "0.1.0"\n')
+
+        yml_lines = ["display_name: Test\n"]
+        if funding_name is not None:
+            yml_lines.append(f"funding:\n  name: {funding_name}\n")
+        (tmp / "great-docs.yml").write_text("".join(yml_lines))
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+        docs._update_quarto_config()
+
+        quarto_yml = docs.project_path / "_quarto.yml"
+        with open(quarto_yml) as f:
+            return yaml.safe_load(f)
+
+    def _header_has_posit_badge(self, config: dict) -> bool:
+        header = config.get("format", {}).get("html", {}).get("include-in-header", [])
+        return any("supported-by-posit" in str(item) for item in header)
+
+    def test_posit_pbc_injects_badge(self):
+        """funding.name = 'Posit, PBC' should inject the badge."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            config = self._build_with_funding(tmp_dir, "Posit, PBC")
+            assert self._header_has_posit_badge(config)
+
+    def test_posit_software_pbc_injects_badge(self):
+        """funding.name = 'Posit Software, PBC' should inject the badge."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            config = self._build_with_funding(tmp_dir, "Posit Software, PBC")
+            assert self._header_has_posit_badge(config)
+
+    def test_posit_alone_injects_badge(self):
+        """funding.name = 'Posit' should inject the badge."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            config = self._build_with_funding(tmp_dir, "Posit")
+            assert self._header_has_posit_badge(config)
+
+    def test_posit_case_insensitive(self):
+        """funding.name = 'posit' (lowercase) should inject the badge."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            config = self._build_with_funding(tmp_dir, "posit")
+            assert self._header_has_posit_badge(config)
+
+    def test_no_funding_no_badge(self):
+        """No funding config should not inject the badge."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            config = self._build_with_funding(tmp_dir, None)
+            assert not self._header_has_posit_badge(config)
+
+    def test_non_posit_funder_no_badge(self):
+        """funding.name = 'Acme Corp' should not inject the badge."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            config = self._build_with_funding(tmp_dir, "Acme Corp")
+            assert not self._header_has_posit_badge(config)
+
+    def test_posit_as_substring_no_badge(self):
+        """funding.name = 'Compositor Labs' should not inject the badge (word boundary)."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            config = self._build_with_funding(tmp_dir, "Compositor Labs")
+            assert not self._header_has_posit_badge(config)
+
+    def test_no_duplicate_badge(self):
+        """Running _update_quarto_config twice should not duplicate the badge."""
+        import yaml
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+
+            (tmp / "pyproject.toml").write_text('[project]\nname = "test-pkg"\nversion = "0.1.0"\n')
+            (tmp / "great-docs.yml").write_text("display_name: Test\nfunding:\n  name: Posit\n")
+
+            docs = GreatDocs(project_path=tmp_dir)
+            docs.project_path.mkdir(parents=True, exist_ok=True)
+            docs._update_quarto_config()
+            docs._update_quarto_config()  # second run
+
+            quarto_yml = docs.project_path / "_quarto.yml"
+            with open(quarto_yml) as f:
+                config = yaml.safe_load(f)
+
+            header = config.get("format", {}).get("html", {}).get("include-in-header", [])
+            badge_count = sum(1 for item in header if "supported-by-posit" in str(item))
+            assert badge_count == 1

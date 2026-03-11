@@ -276,7 +276,10 @@ summary::marker {
 }
 
 #toc-title {
-    font-size: 16px;
+    font-weight: 600;
+    font-size: 15px;
+    color: dimgray;
+    text-transform: uppercase;
 }
 
 #toc-title > ul {
@@ -296,6 +299,11 @@ summary::marker {
 
 #quarto-margin-sidebar nav ul li  {
     padding-top: 3px;
+    color: #595959;
+}
+
+#quarto-margin-sidebar nav ul li a {
+    color: #595959;
 }
 
 #navbarCollapse > ul.navbar-nav.navbar-nav-scroll.me-auto > li > a:hover {
@@ -309,17 +317,51 @@ summary::marker {
     font-weight: bold;
 }
 
+/* --- Disable sidebar section collapsing --- */
+
+/* Prevent the section heading text from triggering collapse */
 a.sidebar-item-text.sidebar-link.text-start[data-bs-toggle="collapse"] {
     pointer-events: none;
     cursor: default;
 }
 
+/* Hide the chevron toggle element entirely */
+a.sidebar-item-toggle.text-start {
+    display: none !important;
+}
+
+/* Keep all sidebar sections permanently expanded */
+#quarto-sidebar ul.collapse.sidebar-section {
+    display: block !important;
+    visibility: visible !important;
+    height: auto !important;
+}
+
+/* Remove pointer cursor from sidebar containers */
 div.sidebar-item-container {
     cursor: default !important;
 }
 
-a.sidebar-item-toggle.text-start > i {
-    color: #FAFAFD;
+/* Hover effect for clickable sidebar links (not section headers).
+   Uses a ::before pseudo-element so hover never shifts layout. */
+#quarto-sidebar .sidebar-link[href] {
+    position: relative;
+}
+
+#quarto-sidebar .sidebar-link[href]::before {
+    content: "";
+    position: absolute;
+    inset: -3px -8px -3px -10px;
+    border-radius: 6px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    pointer-events: none;
+    background-color: rgba(0, 0, 0, 0.04);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.10);
+}
+
+#quarto-sidebar .sidebar-link[href]:hover::before {
+    opacity: 1;
 }
 
 #quarto-sidebar a.sidebar-item-text.sidebar-link.active {
@@ -362,20 +404,53 @@ a.sidebar-item-toggle.text-start > i {
 }
 
 #quarto-sidebar {
-    background-color: #FAFAFD;
+    background-color: #FAFAFD50;
 }
 
-/* Sidebar API items: monospace font with smart line-breaking for long names.
+/* On mobile the sidebar overlays page content, so remove transparency */
+@media (max-width: 991.98px) {
+    #quarto-sidebar {
+        background-color: #FAFAFD;
+    }
+}
+
+/* ── Single-page section: expand content into sidebar space ──
+   When a custom section has only one page the left sidebar is omitted.
+   Shift the content column leftward so it occupies the sidebar area too,
+   keeping the TOC on the right intact. */
+@media (min-width: 992px) {
+    body.gd-section-no-sidebar #quarto-content {
+        grid-template-columns:
+            [screen-start] 1.5em
+            [screen-start-inset] 4.65fr
+            [page-start page-start-inset body-start-outset body-start] 1.5em
+            [body-content-start] minmax(500px, calc(1050px - 3em))
+            [body-content-end] 1.5em
+            [body-end] 35px
+            [body-end-outset] minmax(75px, 145px)
+            [page-end-inset] 35px
+            [page-end] 5fr
+            [screen-end-inset] 1.5em
+            [screen-end] !important;
+    }
+}
+
+/* Sidebar items: base styling with smart line-breaking for long names.
    Line breaks are controlled by <wbr> tags inserted by sidebar-wrap.js;
    overflow-wrap is intentionally NOT set so the browser only breaks at
    those designated points (not in the middle of words). */
 #quarto-sidebar .sidebar-item-text {
-    font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-family: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     font-size: 0.85em;
     display: block;
     max-width: 100%;
     white-space: normal;
     hyphens: none;
+}
+
+/* API/CLI reference sidebar items: monospace font for code-style names */
+.gd-ref-sidebar #quarto-sidebar .sidebar-item-text {
+    font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 /* Keep section headers (categories) in their original sans-serif uppercase style */
@@ -395,6 +470,11 @@ a.sidebar-item-text.sidebar-link.text-start > span {
 }
 
 #quarto-sidebar .sidebar-item .menu-text {
+    font-size: 15px;
+}
+
+/* Keep reference sidebar items at the smaller size */
+.gd-ref-sidebar #quarto-sidebar .sidebar-item .menu-text {
     font-size: 12px;
 }
 
@@ -424,7 +504,49 @@ body.quarto-light .navbar .navbar-toggler-icon {
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(0,0,0,0.65)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
 }
 
-body.quarto-light .navbar .aa-DetachedSearchButton,
+/* Search button - styled to match dark-mode toggle and GitHub widget */
+#quarto-search .aa-DetachedSearchButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+    color: var(--gd-navbar-text);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#quarto-search .aa-DetachedSearchButton:hover {
+    background: rgba(0, 0, 0, 0.10);
+    border-color: rgba(0, 0, 0, 0.25);
+}
+
+#quarto-search .aa-DetachedSearchButton:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.15);
+}
+
+#quarto-search .aa-DetachedSearchButton .aa-DetachedSearchButtonIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.navbar #quarto-search.type-overlay .aa-Autocomplete svg.aa-SubmitIcon {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    color: currentColor;
+}
+
+#quarto-search .aa-DetachedSearchButton .aa-DetachedSearchButtonPlaceholder {
+    display: none;
+}
+
 body.quarto-light .navbar .aa-DetachedSearchButton svg,
 body.quarto-light .navbar .aa-SubmitButton,
 body.quarto-light .navbar .aa-SubmitButton svg {
@@ -450,8 +572,20 @@ body.quarto-light .navbar .quarto-navbar-tools .quarto-navigation-tool:hover {
     zoom: 60%;
 }
 
+.nav-footer {
+    border-top-style: solid;
+    border-top-width: 1px;
+    border-top-color: #AAAAAA40;
+}
+
 .nav-footer-left {
     color: rgb(48, 48, 48);
+}
+
+.nav-footer-center {
+    color: rgb(48, 48, 48);
+    text-wrap: balance;
+    padding-bottom: 20px;
 }
 
 .nav-footer-right {
@@ -465,8 +599,7 @@ body.quarto-light .navbar .quarto-navbar-tools .quarto-navigation-tool:hover {
         padding-right: calc((100vw - 900px) / 2);
     }
 
-    .nav-footer-left {
-        margin-left: 1rem;
+    .nav-footer-center {
         margin-top: 0.5rem;
     }
 }
@@ -486,20 +619,19 @@ body.quarto-light .navbar .quarto-navbar-tools .quarto-navigation-tool:hover {
 }
 
 /* Footer author links styling */
-.nav-footer-left a {
+.nav-footer-center a {
     color: inherit;
     text-decoration: underline;
     text-underline-offset: 2px;
     text-decoration-thickness: 1px;
 }
 
-.nav-footer-left a:hover {
+.nav-footer-center a:hover {
     text-decoration-thickness: 2px;
 }
 
-/* Page navigation (prev/next) at bottom of pages - use code font for API names */
+/* Page navigation (prev/next) at bottom of pages */
 .nav-page-text {
-    font-family: var(--bs-font-monospace);
     font-size: 0.875em;
 }
 
@@ -1698,6 +1830,12 @@ body.quarto-dark #quarto-sidebar .sidebar-item-text:hover {
     color: var(--gd-text-primary);
 }
 
+/* Hover effect for clickable sidebar links in dark mode */
+body.quarto-dark #quarto-sidebar .sidebar-link[href]::before {
+    background-color: rgba(255, 255, 255, 0.04);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
 body.quarto-dark #quarto-sidebar a.sidebar-item-text.sidebar-link.active {
     color: var(--gd-active-link);
 }
@@ -1706,9 +1844,7 @@ body.quarto-dark a.sidebar-item-text.sidebar-link.text-start > span {
     color: #9e9e9e;
 }
 
-body.quarto-dark a.sidebar-item-toggle.text-start > i {
-    color: #9e9e9e;
-}
+/* Toggle already hidden via display:none above; no dark-mode override needed */
 
 body.quarto-dark .sidebar-tools-collapse {
     color: var(--gd-text-muted);
@@ -1898,10 +2034,25 @@ body.quarto-dark #quarto-search input {
     color: var(--gd-text-primary);
 }
 
-body.quarto-dark #quarto-search .aa-SubmitButton,
-body.quarto-dark #quarto-search .aa-DetachedSearchButton {
+body.quarto-dark #quarto-search .aa-SubmitButton {
     background-color: transparent;
     color: var(--gd-text-muted);
+}
+
+body.quarto-dark #quarto-search .aa-DetachedSearchButton {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #e0e0e0;
+}
+
+body.quarto-dark #quarto-search .aa-DetachedSearchButton:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+body.quarto-dark #quarto-search .aa-DetachedSearchButton:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15);
 }
 
 body.quarto-dark .navbar .quarto-navbar-tools button,
@@ -1913,6 +2064,20 @@ body.quarto-dark .navbar .quarto-navbar-tools .quarto-navigation-tool {
 body.quarto-dark .navbar .quarto-navbar-tools button:hover,
 body.quarto-dark .navbar .quarto-navbar-tools .quarto-navigation-tool:hover {
     background-color: rgba(255, 255, 255, 0.1);
+}
+
+body.quarto-dark .navbar .navbar-toggler {
+    border: none;
+    --bs-navbar-toggler-focus-width: 0;
+}
+
+body.quarto-dark .navbar .navbar-toggler:focus {
+    box-shadow: none;
+    outline: none;
+}
+
+body.quarto-dark .navbar .navbar-toggler .navbar-toggler-icon {
+    --bs-navbar-toggler-icon-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%23e0e0e0' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
 }
 
 body.quarto-dark .aa-Panel {
@@ -2021,6 +2186,14 @@ body.quarto-dark .gh-widget-trigger {
 body.quarto-dark .gh-widget-trigger:hover {
     background: rgba(255, 255, 255, 0.12);
     border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Suppress the nav-link hover background that wraps the GitHub widget */
+body.quarto-dark .nav-item:has(#github-widget) > a:hover,
+body.quarto-dark .nav-item:has(#github-widget) .nav-link:hover {
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
 }
 
 body.quarto-dark .gh-dropdown {
@@ -2258,13 +2431,459 @@ html:not(.theme-loaded) *::after {
 /* Home page layout: widen main content since there's no left sidebar */
 /* On home page, expand content to use the space normally reserved for left sidebar */
 @media (min-width: 992px) {
-    body[data-page="index"] #quarto-document-content > section:not(.column-margin) {
+    body[data-page="index"] #quarto-document-content > section:not(.column-margin),
+    body[data-page="index"] #quarto-document-content > .gd-hero,
+    body[data-page="index"] #quarto-document-content > p {
         grid-column: page-start-inset / body-content-end !important;
     }
 
     /* Keep the column-margin where it should be */
     body[data-page="index"] .column-margin {
         grid-column: body-end / page-end !important;
+    }
+}
+
+/* ── Hero Section ─────────────────────────────────────── */
+
+.gd-hero {
+    text-align: center;
+    padding: 2.5rem 1rem 2rem;
+    margin-bottom: 1.5rem;
+}
+
+/* When a column-margin sidebar is present, Quarto adds page-full to <main>
+   which sets all children to grid-column: body-content-start / page-end via
+   .page-columns.page-full > *.  This causes body text and centered content
+   to spill into the right margin area (overlapping the sidebar).
+   Constrain every child back to the body-content column; the .column-margin
+   element keeps its body-end / page-end placement via !important in Quarto's
+   own CSS. */
+main.content.page-columns.page-full > * {
+    grid-column: body-content-start / body-content-end;
+}
+
+.gd-hero-logo {
+    display: block;
+    width: auto;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 1.25rem;
+}
+
+.gd-hero-name {
+    font-size: 3rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    line-height: 1.15;
+}
+
+.gd-hero-tagline {
+    font-size: 1.35rem;
+    max-width: 600px;
+    margin: 0 auto 1rem;
+    color: var(--bs-secondary-color, #6c757d);
+    line-height: 1.4;
+    text-wrap: balance;
+}
+
+.gd-hero-badges {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.gd-hero-badges img {
+    height: 20px;
+}
+
+/* Dark-mode hero logo switching */
+.gd-hero .gd-only-dark  { display: none !important; }
+
+[data-bs-theme="dark"] .gd-hero .gd-only-light { display: none !important; }
+[data-bs-theme="dark"] .gd-hero .gd-only-dark  { display: block !important; margin-left: auto; margin-right: auto; }
+
+/* Dark-mode navbar logo switching
+   Scope to html[...] so Quarto's nav[data-bs-theme="dark"] (dark navbar
+   background in the flatly theme) doesn't trigger these rules in light mode. */
+html[data-bs-theme="dark"] .navbar-logo.light-content { display: none !important; }
+html[data-bs-theme="dark"] .navbar-logo.dark-content  { display: inline !important; }
+
+/* Reduce top margin on first heading after hero */
+.gd-hero + section.level1 > h1:first-child,
+.gd-hero + section.level2 > h2:first-child {
+    margin-top: 0.5rem !important;
+}
+
+/* ── Hero Responsive ──────────────────────────────────── */
+
+@media (max-width: 768px) {
+    .gd-hero {
+        padding: 1.5rem 0.75rem 1.25rem;
+    }
+    .gd-hero-logo {
+        max-height: 140px !important;
+    }
+    .gd-hero-name {
+        font-size: 2.25rem;
+    }
+    .gd-hero-tagline {
+        font-size: 1.1rem;
+    }
+}
+
+/* ============================================================================
+   Copy-Page Widget
+   ============================================================================ */
+
+/* Container – floats top-right of the content area */
+.gd-copy-page {
+    float: right;
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+    margin-left: 12px;
+    position: relative;
+    z-index: 5;
+}
+
+/* Shared button / link styling */
+.gd-copy-page-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    background: #f6f8fa;
+    color: #57606a;
+    font-size: 12px;
+    font-family: inherit;
+    line-height: 1.4;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+
+.gd-copy-page-btn:hover {
+    background: #eaeef2;
+    border-color: #b8bfc6;
+    color: #24292f;
+    text-decoration: none;
+}
+
+.gd-copy-page-btn:active {
+    background: #d8dee4;
+}
+
+/* Success flash */
+.gd-copy-page-btn.gd-copy-success {
+    border-color: #2da44e;
+    color: #1a7f37;
+    background: #dafbe1;
+}
+
+/* View-as-Markdown link */
+a.gd-view-md-btn {
+    color: #57606a;
+}
+a.gd-view-md-btn:hover {
+    color: #24292f;
+}
+
+/* ── Dark mode ── */
+html[data-bs-theme="dark"] .gd-copy-page-btn {
+    background: #21262d;
+    border-color: #30363d;
+    color: #8b949e;
+}
+html[data-bs-theme="dark"] .gd-copy-page-btn:hover {
+    background: #30363d;
+    border-color: #484f58;
+    color: #c9d1d9;
+}
+html[data-bs-theme="dark"] .gd-copy-page-btn:active {
+    background: #3a424a;
+}
+html[data-bs-theme="dark"] .gd-copy-page-btn.gd-copy-success {
+    border-color: #238636;
+    color: #3fb950;
+    background: #0d1117;
+}
+html[data-bs-theme="dark"] a.gd-view-md-btn {
+    color: #8b949e;
+}
+html[data-bs-theme="dark"] a.gd-view-md-btn:hover {
+    color: #c9d1d9;
+}
+
+/* ── Mobile: icon only ── */
+@media (max-width: 768px) {
+    .gd-copy-page {
+        float: none;
+        margin-left: 0;
+        margin-bottom: 10px;
+    }
+    .gd-copy-page-label {
+        display: none;
+    }
+    .gd-copy-page-btn {
+        padding: 4px 6px;
+    }
+}
+
+/* ── Announcement Banner ── */
+.gd-announcement-banner {
+    font-family: var(--bs-body-font-family, system-ui, -apple-system, sans-serif);
+    line-height: 1.5;
+    letter-spacing: 0.01em;
+}
+.gd-announcement-banner a {
+    font-weight: 600;
+}
+.gd-announcement-banner a:hover {
+    opacity: 0.85;
+}
+/* Dark mode overrides */
+html[data-bs-theme="dark"] .gd-announcement-info {
+    background: #1a5bb5 !important;
+}
+html[data-bs-theme="dark"] .gd-announcement-warning {
+    background: #d4a800 !important;
+}
+html[data-bs-theme="dark"] .gd-announcement-success {
+    background: #126b3d !important;
+}
+html[data-bs-theme="dark"] .gd-announcement-danger {
+    background: #b02a37 !important;
+}
+
+/* ── Animated Gradient Presets ── */
+
+@keyframes gd-gradient-shift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Shared gradient base */
+.gd-gradient-sky,
+.gd-gradient-peach,
+.gd-gradient-prism,
+.gd-gradient-lilac,
+.gd-gradient-slate,
+.gd-gradient-honey,
+.gd-gradient-dusk,
+.gd-gradient-mint {
+    background-size: 400% 400% !important;
+    animation: gd-gradient-shift 15s ease infinite;
+    border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Dark mode: white text on rich gradients */
+html[data-bs-theme="dark"] .gd-gradient-sky,
+html[data-bs-theme="dark"] .gd-gradient-peach,
+html[data-bs-theme="dark"] .gd-gradient-prism,
+html[data-bs-theme="dark"] .gd-gradient-lilac,
+html[data-bs-theme="dark"] .gd-gradient-slate,
+html[data-bs-theme="dark"] .gd-gradient-honey,
+html[data-bs-theme="dark"] .gd-gradient-dusk,
+html[data-bs-theme="dark"] .gd-gradient-mint {
+    color: #ffffff !important;
+    border-bottom-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* — Sky (light: soft sky blues) — */
+.gd-gradient-sky {
+    background: linear-gradient(-45deg, #d0ecf9, #e0f4ff, #c5e8f7, #b8e0f5) !important;
+}
+html[data-bs-theme="dark"] .gd-gradient-sky {
+    background: linear-gradient(-45deg, #023e8a, #0077b6, #005f73, #0096c7) !important;
+}
+
+/* — Peach (light: peach and blush) — */
+.gd-gradient-peach {
+    background: linear-gradient(-45deg, #ffddc1, #ffe4cc, #fdd0d8, #fbc4d4) !important;
+}
+html[data-bs-theme="dark"] .gd-gradient-peach {
+    background: linear-gradient(-45deg, #cc4a1a, #c7760f, #b84a5f, #a33560) !important;
+}
+
+/* — Prism (light: mint, sky, lavender) — */
+.gd-gradient-prism {
+    background: linear-gradient(-45deg, #c4f0e0, #d0e8f5, #e4d4f4, #d8cef0) !important;
+}
+html[data-bs-theme="dark"] .gd-gradient-prism {
+    background: linear-gradient(-45deg, #048a65, #0c6a8a, #52077d, #2a0978) !important;
+}
+
+/* — Lilac (light: lilac and pink) — */
+.gd-gradient-lilac {
+    background: linear-gradient(-45deg, #e8d0f0, #f5d0e0, #f0d4f8, #eac8ee) !important;
+}
+html[data-bs-theme="dark"] .gd-gradient-lilac {
+    background: linear-gradient(-45deg, #561e64, #8b1140, #a02db3, #6e1a7d) !important;
+}
+
+/* — Slate (light: cool grays) — */
+.gd-gradient-slate {
+    background: linear-gradient(-45deg, #e0e4e8, #eceff1, #dde2e6, #d5dadf) !important;
+}
+html[data-bs-theme="dark"] .gd-gradient-slate {
+    background: linear-gradient(-45deg, #37474f, #455a64, #3e525e, #263238) !important;
+}
+
+/* — Honey (light: warm cream and apricot) — */
+.gd-gradient-honey {
+    background: linear-gradient(-45deg, #ffe0c2, #ffedcc, #ffe5b4, #ffd6a8) !important;
+}
+html[data-bs-theme="dark"] .gd-gradient-honey {
+    background: linear-gradient(-45deg, #bf360c, #e65100, #ef6c00, #b71c1c) !important;
+}
+
+/* — Dusk (light: soft lavender-blue) — */
+.gd-gradient-dusk {
+    background: linear-gradient(-45deg, #d8daf0, #dddff5, #d4d0ee, #dad4f2) !important;
+}
+html[data-bs-theme="dark"] .gd-gradient-dusk {
+    background: linear-gradient(-45deg, #0d1244, #141b55, #1a0f52, #261560) !important;
+}
+
+/* — Mint (light: pale aqua) — */
+.gd-gradient-mint {
+    background: linear-gradient(-45deg, #ccece8, #d5f0ec, #c4e8e4, #d0f2ee) !important;
+}
+html[data-bs-theme="dark"] .gd-gradient-mint {
+    background: linear-gradient(-45deg, #00695c, #00796b, #004d40, #00897b) !important;
+}
+
+/* Navbar text overrides when a gradient preset is active — dark mode only */
+html[data-bs-theme="dark"] .navbar[class*="gd-gradient-"] {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+html[data-bs-theme="dark"] .navbar[class*="gd-gradient-"] .nav-link,
+html[data-bs-theme="dark"] .navbar[class*="gd-gradient-"] .navbar-brand .navbar-title {
+    color: #ffffff !important;
+}
+html[data-bs-theme="dark"] .navbar[class*="gd-gradient-"] .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+}
+html[data-bs-theme="dark"] .navbar[class*="gd-gradient-"] .nav-item:has(#github-widget) .nav-link:hover {
+    background-color: transparent !important;
+}
+html[data-bs-theme="dark"] .navbar[class*="gd-gradient-"] .nav-link.active {
+    text-decoration-color: rgba(255, 255, 255, 0.75) !important;
+}
+html[data-bs-theme="dark"] .navbar[class*="gd-gradient-"] .navbar-toggler {
+    border: none !important;
+    color: #e0e0e0 !important;
+}
+html[data-bs-theme="dark"] .navbar[class*="gd-gradient-"] .navbar-toggler-icon {
+    filter: none;
+}
+html[data-bs-theme="dark"] .navbar[class*="gd-gradient-"] .bi {
+    color: #ffffff !important;
+}
+
+/* Banner link/dismiss overrides for gradient presets — dark mode only */
+html[data-bs-theme="dark"] .gd-announcement-banner[class*="gd-gradient-"] a {
+    color: #ffffff !important;
+}
+html[data-bs-theme="dark"] .gd-announcement-banner[class*="gd-gradient-"] button {
+    color: #ffffff !important;
+}
+
+/* ── Content Area Gradient Glow ── */
+/* ── Multi-pulse content glow ──
+   Three overlapping radial-gradient pulses that drift independently,
+   creating an organic, subtly animated glow at the top of the page.
+   Each pulse has its own center, size, speed, and opacity curve. */
+
+@keyframes gd-glow-drift-1 {
+    0%   { transform: translateX(0%) scale(1);     opacity: 0.6;  }
+    25%  { transform: translateX(5%) scale(1.08);   opacity: 0.42; }
+    50%  { transform: translateX(-3%) scale(1.02);  opacity: 0.55; }
+    75%  { transform: translateX(2%) scale(1.05);   opacity: 0.38; }
+    100% { transform: translateX(0%) scale(1);     opacity: 0.6;  }
+}
+@keyframes gd-glow-drift-2 {
+    0%   { transform: translateX(0%) scale(1);     opacity: 0.45; }
+    30%  { transform: translateX(-6%) scale(1.1);   opacity: 0.58; }
+    60%  { transform: translateX(4%) scale(0.96);   opacity: 0.35; }
+    100% { transform: translateX(0%) scale(1);     opacity: 0.45; }
+}
+@keyframes gd-glow-drift-3 {
+    0%   { transform: translateX(0%) scale(1);     opacity: 0.35; }
+    35%  { transform: translateX(3%) scale(1.12);   opacity: 0.52; }
+    70%  { transform: translateX(-5%) scale(1.04);  opacity: 0.28; }
+    100% { transform: translateX(0%) scale(1);     opacity: 0.35; }
+}
+
+/* Container — fixed overlay with vertical fade-out mask */
+.gd-content-glow {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 600px;
+    pointer-events: none;
+    z-index: 0;
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+}
+
+/* Shared pulse layer */
+.gd-glow-pulse {
+    position: absolute;
+    inset: 0;
+}
+
+/* Pulse 1 — large, left-of-centre, slowest */
+.gd-glow-pulse-1 {
+    background: radial-gradient(ellipse 65% 55% at 28% 0%, var(--gd-glow-color), transparent);
+    animation: gd-glow-drift-1 23s ease-in-out infinite;
+    opacity: 0.6;
+}
+
+/* Pulse 2 — medium, right-of-centre */
+.gd-glow-pulse-2 {
+    background: radial-gradient(ellipse 50% 45% at 62% 5%, var(--gd-glow-color), transparent);
+    animation: gd-glow-drift-2 19s ease-in-out infinite;
+    opacity: 0.45;
+}
+
+/* Pulse 3 — smaller, far-right, subtlest */
+.gd-glow-pulse-3 {
+    background: radial-gradient(ellipse 45% 50% at 85% 0%, var(--gd-glow-color), transparent);
+    animation: gd-glow-drift-3 27s ease-in-out infinite;
+    opacity: 0.35;
+}
+
+/* ── Preset colour tokens ── */
+.gd-content-glow-sky   { --gd-glow-color: #c5e8f7; }
+.gd-content-glow-peach { --gd-glow-color: #ffddc1; }
+.gd-content-glow-prism { --gd-glow-color: #d0e8f5; }
+.gd-content-glow-lilac { --gd-glow-color: #e8d0f0; }
+.gd-content-glow-slate { --gd-glow-color: #dde2e6; }
+.gd-content-glow-honey { --gd-glow-color: #ffe0c2; }
+.gd-content-glow-dusk  { --gd-glow-color: #d8daf0; }
+.gd-content-glow-mint  { --gd-glow-color: #ccece8; }
+
+html[data-bs-theme="dark"] .gd-content-glow-sky   { --gd-glow-color: #023e8a; }
+html[data-bs-theme="dark"] .gd-content-glow-peach { --gd-glow-color: #cc4a1a; }
+html[data-bs-theme="dark"] .gd-content-glow-prism { --gd-glow-color: #0c6a8a; }
+html[data-bs-theme="dark"] .gd-content-glow-lilac { --gd-glow-color: #561e64; }
+html[data-bs-theme="dark"] .gd-content-glow-slate { --gd-glow-color: #37474f; }
+html[data-bs-theme="dark"] .gd-content-glow-honey { --gd-glow-color: #bf360c; }
+html[data-bs-theme="dark"] .gd-content-glow-dusk  { --gd-glow-color: #141b55; }
+html[data-bs-theme="dark"] .gd-content-glow-mint  { --gd-glow-color: #00695c; }
+
+/* Sticky navbar on desktop — disable headroom hide-on-scroll for non-mobile */
+@media (min-width: 992px) {
+    header.headroom--unpinned {
+        transform: translateY(0%) !important;
     }
 }
 

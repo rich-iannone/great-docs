@@ -207,6 +207,7 @@ ALL_PACKAGES: list[str] = [
     "gdtest_sec_with_ref",  # 74
     "gdtest_sec_deep",  # 75
     "gdtest_sec_index_opt",  # 75b
+    "gdtest_sec_sidebar_single",  # 75c
     # 76–85: Reference config
     "gdtest_ref_explicit",  # 76
     "gdtest_ref_members_false",  # 77
@@ -249,6 +250,46 @@ ALL_PACKAGES: list[str] = [
     "gdtest_long_names",  # 108
     # 109: Logo & favicon integration
     "gdtest_logo",  # 109
+    # 110–117: Hero section
+    "gdtest_hero_basic",  # 110
+    "gdtest_hero_readme_badges",  # 111
+    "gdtest_hero_disabled",  # 112
+    "gdtest_hero_custom",  # 113
+    "gdtest_hero_wordmark",  # 114
+    "gdtest_hero_no_logo",  # 115
+    "gdtest_hero_explicit_badges",  # 116
+    "gdtest_hero_index_qmd",  # 117
+    "gdtest_hero_auto_logo",  # 118
+    # 119–120: Markdown pages config
+    "gdtest_md_disabled",  # 119
+    "gdtest_md_no_widget",  # 120
+    # 121–123: Announcement banner
+    "gdtest_announce_simple",  # 121
+    "gdtest_announce_dict",  # 122
+    "gdtest_announce_disabled",  # 123
+    # 124–135: Gradient presets & navbar style
+    "gdtest_gradient_sky",  # 124
+    "gdtest_gradient_peach",  # 125
+    "gdtest_gradient_prism",  # 126
+    "gdtest_gradient_lilac",  # 127
+    "gdtest_gradient_slate",  # 128
+    "gdtest_gradient_honey",  # 129
+    "gdtest_gradient_dusk",  # 130
+    "gdtest_gradient_mint",  # 131
+    "gdtest_gradient_navbar",  # 132
+    "gdtest_gradient_both",  # 133
+    "gdtest_gradient_mixed",  # 134
+    "gdtest_gradient_no_dismiss",  # 135
+    # 136–138: include_in_header
+    "gdtest_header_text",  # 136
+    "gdtest_header_list",  # 137
+    "gdtest_header_file",  # 138
+    # 139–143: Navbar solid color with APCA contrast
+    "gdtest_navbar_color",  # 139
+    "gdtest_navbar_color_light",  # 140
+    "gdtest_navbar_color_dark",  # 141
+    "gdtest_navbar_color_same",  # 142
+    "gdtest_navbar_color_split",  # 143
 ]
 
 
@@ -354,6 +395,31 @@ DIMENSIONS: dict[str, dict[str, str]] = {
     "K20": {"axis": "config", "label": "user_guide: list"},
     "K21": {"axis": "config", "label": "changelog config"},
     "K22": {"axis": "config", "label": "reference config"},
+    "K23": {"axis": "config", "label": "markdown_pages: false"},
+    "K24": {"axis": "config", "label": "markdown_pages widget: false"},
+    "K25": {"axis": "config", "label": "announcement: string"},
+    "K26": {"axis": "config", "label": "announcement: dict"},
+    "K27": {"axis": "config", "label": "announcement: false"},
+    "K28": {"axis": "config", "label": "gradient: sky"},
+    "K29": {"axis": "config", "label": "gradient: peach"},
+    "K30": {"axis": "config", "label": "gradient: prism"},
+    "K31": {"axis": "config", "label": "gradient: lilac"},
+    "K32": {"axis": "config", "label": "gradient: slate"},
+    "K33": {"axis": "config", "label": "gradient: honey"},
+    "K34": {"axis": "config", "label": "gradient: dusk"},
+    "K35": {"axis": "config", "label": "gradient: mint"},
+    "K36": {"axis": "config", "label": "navbar_style only"},
+    "K37": {"axis": "config", "label": "gradient: both same"},
+    "K38": {"axis": "config", "label": "gradient: mixed presets"},
+    "K39": {"axis": "config", "label": "gradient: no dismiss"},
+    "K40": {"axis": "config", "label": "include_in_header: string"},
+    "K41": {"axis": "config", "label": "include_in_header: list"},
+    "K42": {"axis": "config", "label": "include_in_header: file"},
+    "K43": {"axis": "config", "label": "navbar_color (APCA)"},
+    "K44": {"axis": "config", "label": "navbar_color: light only"},
+    "K45": {"axis": "config", "label": "navbar_color: dark only"},
+    "K46": {"axis": "config", "label": "navbar_color: same both modes"},
+    "K47": {"axis": "config", "label": "navbar_color: split warm/cool"},
     # Docstring richness axes
     "L1": {"axis": "docstring", "label": ".. versionadded::"},
     "L2": {"axis": "docstring", "label": ".. deprecated::"},
@@ -402,6 +468,7 @@ DIMENSIONS: dict[str, dict[str, str]] = {
     "N6": {"axis": "sections", "label": "Multiple sections"},
     "N7": {"axis": "sections", "label": "navbar_after"},
     "N8": {"axis": "sections", "label": "Section index opt-in"},
+    "N9": {"axis": "sections", "label": "Single-page sidebar hide"},
     # Reference axes
     "P1": {"axis": "reference", "label": "Explicit reference"},
     "P2": {"axis": "reference", "label": "members: false"},
@@ -1367,6 +1434,11 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "card-based index page; Tutorials section without index (default) "
         "has navbar linking directly to the first page."
     ),
+    "gdtest_sec_sidebar_single": (
+        "Section sidebar for single-page sections. Has a 2-page Guides "
+        "section (sidebar visible) and a 1-page FAQ section (sidebar "
+        "should be hidden, content takes full width)."
+    ),
     # ── 76–85: Reference config ───────────────────────────────────────────
     "gdtest_ref_explicit": (
         "Reference config with explicit contents list defining which objects "
@@ -1497,6 +1569,77 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "via great-docs.yml config. Tests that the logo replaces the text "
         "title in the navbar (navbar.title: false), copies logo files into "
         "the build directory, and sets the SVG as favicon."
+    ),
+    # ── 110–117: Hero section ─────────────────────────────────────────────
+    "gdtest_hero_basic": (
+        "Hero section with logo, name, tagline, and top-of-file badges. "
+        "Tests that providing a logo config auto-enables the hero section "
+        "on the landing page with badge extraction from the README."
+    ),
+    "gdtest_hero_readme_badges": (
+        "Hero section from a README with centered-div badges. Tests the "
+        'Pointblank-style <div align="center"> pattern where badges are '
+        "extracted from inside a centered block and the block is stripped."
+    ),
+    "gdtest_hero_disabled": (
+        "Hero section explicitly disabled via hero: false. Tests that "
+        "setting hero: false prevents the hero from appearing even when "
+        "a logo is configured (which would normally auto-enable it)."
+    ),
+    "gdtest_hero_custom": (
+        "Hero with custom name, tagline, logo_height, and badges suppressed. "
+        "Tests that individual hero sub-options override defaults: custom name "
+        "instead of display_name, custom tagline, and badges: false."
+    ),
+    "gdtest_hero_wordmark": (
+        "Separate hero wordmark logo (light/dark) from navbar lettermark. "
+        "Tests that hero.logo can specify a different image with light/dark "
+        "variants from the top-level logo used in the navbar."
+    ),
+    "gdtest_hero_no_logo": (
+        "Hero with logo suppressed via hero.logo: false. Tests that the "
+        "hero section still renders name, tagline, and badges even when "
+        "the hero-specific logo is disabled."
+    ),
+    "gdtest_hero_explicit_badges": (
+        "Hero with an explicit badge list instead of auto-extraction. "
+        "Tests that providing a list under hero.badges displays those "
+        "explicit badges rather than extracting from the README."
+    ),
+    "gdtest_hero_index_qmd": (
+        "Hero section from an index.qmd source file. Tests that hero "
+        "generation works identically when the landing page source is "
+        "index.qmd rather than README.md."
+    ),
+    "gdtest_hero_auto_logo": (
+        "Auto-detect hero logo files from conventional paths. Tests that "
+        "placing logo-hero.svg and logo-hero-dark.svg in assets/ causes "
+        "the hero to use those files without explicit hero.logo config."
+    ),
+    "gdtest_navbar_color": (
+        "Visual showcase of navbar_color with the APCA contrast algorithm. "
+        "Uses per-mode colors (charcoal light, indigo dark) and displays a "
+        "swatch grid of 97 colors with APCA-chosen text colors."
+    ),
+    "gdtest_navbar_color_light": (
+        "Tests navbar_color applied to light mode only. Dark mode keeps its "
+        "default navbar styling. Light mode gets a deep blue-gray (#1b2838) "
+        "background with APCA-chosen white text."
+    ),
+    "gdtest_navbar_color_dark": (
+        "Tests navbar_color applied to dark mode only. Light mode keeps its "
+        "default navbar styling. Dark mode gets a pale mint (#b2dfdb) "
+        "background with APCA-chosen black text."
+    ),
+    "gdtest_navbar_color_same": (
+        "Tests navbar_color as a plain string (steelblue) so the same color "
+        "applies in both light and dark modes. APCA selects white text for "
+        "steelblue's mid-tone blue."
+    ),
+    "gdtest_navbar_color_split": (
+        "Tests navbar_color with contrasting per-mode choices: dark warm "
+        "brown (#3e2723, white text) in light mode and pale sky blue "
+        "(#bbdefb, black text) in dark mode."
     ),
 }
 

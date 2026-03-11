@@ -124,10 +124,39 @@
         }
     }
 
+    /**
+     * Disable sidebar section collapsing by stripping Bootstrap collapse
+     * data attributes and ensuring all sections stay expanded.
+     */
+    function disableSidebarCollapse() {
+        var sidebar = document.getElementById('quarto-sidebar');
+        if (!sidebar) return;
+
+        // Remove data-bs-toggle/target from all sidebar collapse triggers
+        var triggers = sidebar.querySelectorAll('[data-bs-toggle="collapse"]');
+        for (var i = 0; i < triggers.length; i++) {
+            triggers[i].removeAttribute('data-bs-toggle');
+            triggers[i].removeAttribute('data-bs-target');
+            triggers[i].removeAttribute('aria-expanded');
+            triggers[i].removeAttribute('role');
+        }
+
+        // Ensure all collapsible sections are permanently shown
+        var sections = sidebar.querySelectorAll('ul.collapse.sidebar-section');
+        for (var j = 0; j < sections.length; j++) {
+            sections[j].classList.remove('collapse');
+            sections[j].classList.add('show');
+        }
+    }
+
     // Run after DOM is ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', processSidebar);
+        document.addEventListener('DOMContentLoaded', function() {
+            processSidebar();
+            disableSidebarCollapse();
+        });
     } else {
         processSidebar();
+        disableSidebarCollapse();
     }
 })();

@@ -83,6 +83,44 @@ DEFAULT_CONFIG: dict[str, Any] = {
     # dict: {"icon": "...", "apple_touch": "...", "og_image": "..."}
     # None: auto-generate from logo, or skip if no logo
     "favicon": None,
+    # Hero section configuration for the landing page
+    # None: auto-enable when a logo is configured
+    # True/False: force enable/disable
+    # dict: {"enabled": bool, "logo": str|dict|false, "logo_height": str,
+    #        "name": str|false, "tagline": str|false, "badges": "auto"|list|false}
+    "hero": None,
+    # Markdown pages (.md generation + copy-page widget)
+    # True (default): generate .md pages and show the copy/view widget.
+    # False: disable both.
+    # Dict form: {"widget": False} generates .md pages but hides the widget.
+    "markdown_pages": True,
+    # Announcement banner (site-wide banner above the navbar)
+    # None/False: no banner (default)
+    # str: banner message text (plain text or inline HTML)
+    # dict: {"content": str, "type": "info"|"warning"|"success"|"danger",
+    #        "dismissable": bool, "url": str|None}
+    "announcement": None,
+    # Navbar gradient preset (e.g., "sky", "peach", "lilac", etc.)
+    "navbar_style": None,
+    # Navbar solid background color (CSS color: hex, named, etc.)
+    # str: same color for both light and dark mode
+    # dict: {"light": str, "dark": str} for per-mode colors
+    # Text color is automatically chosen (light or dark) for contrast using APCA.
+    # Overridden when navbar_style (gradient) is set.
+    "navbar_color": None,
+    # Content area gradient preset (same preset names as navbar_style)
+    # Adds a subtle radial glow at the top of the main content area
+    # str: preset name (applies to all pages)
+    # dict: {"preset": str, "pages": "all"|"homepage"}
+    "content_style": None,
+    # Custom HTML to include in the <head> of every page
+    # str: inline HTML text (e.g., a <script> or <link> tag)
+    # list[str | dict]: list of inline text strings or {"text": ...} / {"file": ...} entries
+    "include_in_header": [],
+    # Renderer style for API reference pages
+    # "classic" (default): current markdown renderer + full post-render processing
+    # "q": new structured qrenderer with semantic CSS (from _qrenderer)
+    "renderer": "classic",
 }
 
 
@@ -261,9 +299,39 @@ class Config:
         return self.get("dark_mode_toggle", True)
 
     @property
+    def markdown_pages(self) -> bool:
+        """Check if Markdown page generation is enabled."""
+        val = self.get("markdown_pages", True)
+        if isinstance(val, dict):
+            return val.get("enabled", True)
+        return bool(val)
+
+    @property
+    def markdown_pages_widget(self) -> bool:
+        """Check if the copy-page widget is shown (requires markdown_pages)."""
+        val = self.get("markdown_pages", True)
+        if isinstance(val, dict):
+            return val.get("widget", True) and val.get("enabled", True)
+        return bool(val)
+
+    @property
     def parser(self) -> str:
         """Get the docstring parser format (numpy, google, or sphinx)."""
         return self.get("parser", "numpy")
+
+    @property
+    def renderer(self) -> str:
+        """Get the renderer style: 'classic' (default) or 'q'."""
+        val = self.get("renderer", "classic")
+        if val not in ("classic", "q"):
+            print(f"Warning: Unknown renderer '{val}', falling back to 'classic'")
+            return "classic"
+        return val
+
+    @property
+    def use_qrenderer(self) -> bool:
+        """Check if the new qrenderer is active."""
+        return self.renderer == "q"
 
     @property
     def dynamic(self) -> bool:
@@ -454,6 +522,111 @@ class Config:
         return False
 
     @property
+    def hero_enabled(self) -> bool:
+        """Whether the hero section is enabled.
+
+        Auto-enables when a logo is configured and ``hero`` is not
+        explicitly set to ``False``.
+        """
+        raw = self.get("hero")
+        if raw is False:
+            return False
+        if raw is True or isinstance(raw, dict):
+            if isinstance(raw, dict) and raw.get("enabled") is False:
+                return False
+            return True
+        # None (default): auto-enable when logo exists
+        return self.logo is not None
+
+    @property
+    def hero_explicitly_disabled(self) -> bool:
+        """Whether the hero was explicitly turned off by the user."""
+        raw = self.get("hero")
+        if raw is False:
+            return True
+        if isinstance(raw, dict) and raw.get("enabled") is False:
+            return True
+        return False
+
+    @property
+    def hero(self) -> dict[str, Any]:
+        """Get the resolved hero configuration dict.
+
+        Returns a dict with keys: enabled, logo, logo_height, name,
+        tagline, badges.  Missing keys are filled with defaults.
+        """
+        raw = self.get("hero")
+        if isinstance(raw, dict):
+            return raw
+        return {}
+
+    @property
+    def hero_logo(self) -> str | dict | None | bool:
+        """Get the explicit hero logo config.
+
+        Returns the hero-specific logo value only.  Returns ``False``
+        when explicitly suppressed, ``None`` when not configured.
+        The full fallback chain (auto-detected hero logos, navbar logo)
+        is handled in ``core._build_hero_section``.
+        """
+        hero = self.hero
+        val = hero.get("logo") if hero else None
+        if val is False:
+            return False
+        if val is not None:
+            return val
+        return None
+
+    @property
+    def hero_logo_height(self) -> str:
+        """Get the hero logo max-height CSS value."""
+        hero = self.hero
+        return hero.get("logo_height", "200px") if hero else "200px"
+
+    @property
+    def hero_name(self) -> str | None:
+        """Get the hero name, falling back to display_name.
+
+        Returns ``None`` when explicitly suppressed (``false``).
+        """
+        hero = self.hero
+        val = hero.get("name") if hero else None
+        if val is False:
+            return None
+        if val is not None:
+            return val
+        return self.display_name
+
+    @property
+    def hero_tagline(self) -> str | None:
+        """Get the hero tagline.
+
+        Returns ``None`` when explicitly suppressed (``false``).
+        Auto-resolved from package metadata in core.py.
+        """
+        hero = self.hero
+        val = hero.get("tagline") if hero else None
+        if val is False:
+            return None
+        return val
+
+    @property
+    def hero_badges(self) -> str | list | None:
+        """Get the hero badges config.
+
+        Returns ``"auto"`` (default, extract from README), an explicit list
+        of badge dicts, or ``None`` (disabled).
+        """
+        hero = self.hero
+        val = hero.get("badges") if hero else None
+        if val is False:
+            return None
+        if val is not None:
+            return val
+        # Default: auto-extract from README
+        return "auto"
+
+    @property
     def favicon(self) -> dict[str, Any] | None:
         """Get the normalized favicon configuration.
 
@@ -471,6 +644,108 @@ class Config:
             return {"icon": raw}
         if isinstance(raw, dict):
             return raw
+        return None
+
+    @property
+    def announcement(self) -> dict[str, Any] | None:
+        """Get the normalized announcement banner configuration.
+
+        Returns
+        -------
+        dict | None
+            Normalized dict with keys: content, type, dismissable, url.
+            Returns None if no announcement is configured.
+        """
+        raw = self.get("announcement")
+        if raw is None or raw is False:
+            return None
+        if isinstance(raw, str):
+            return {"content": raw, "type": "info", "dismissable": True, "url": None, "style": None}
+        if isinstance(raw, dict):
+            content = raw.get("content")
+            if not content:
+                return None
+            return {
+                "content": content,
+                "type": raw.get("type", "info"),
+                "dismissable": raw.get("dismissable", True),
+                "url": raw.get("url"),
+                "style": raw.get("style"),
+            }
+        return None
+
+    @property
+    def include_in_header(self) -> list[dict[str, str]]:
+        """Get the normalized include-in-header entries.
+
+        Returns a list of Quarto-compatible include-in-header items
+        (each a dict with either a "text" or "file" key).
+        """
+        raw = self.get("include_in_header", [])
+        if raw is None:
+            return []
+        if isinstance(raw, str):
+            return [{"text": raw}]
+        if isinstance(raw, list):
+            result: list[dict[str, str]] = []
+            for item in raw:
+                if isinstance(item, str):
+                    result.append({"text": item})
+                elif isinstance(item, dict):
+                    result.append(item)
+            return result
+        return []
+
+    @property
+    def navbar_style(self) -> str | None:
+        """Get the navbar gradient preset name."""
+        raw = self.get("navbar_style")
+        if raw and isinstance(raw, str):
+            return raw
+        return None
+
+    @property
+    def navbar_color(self) -> dict[str, str] | None:
+        """Get the normalized navbar color configuration.
+
+        Returns
+        -------
+        dict[str, str] | None
+            A dict with `"light"` and/or `"dark"` keys mapping to CSS color strings. Returns `None`
+            when not configured or when `navbar_style` (gradient) takes precedence.
+        """
+        if self.navbar_style:
+            return None
+        raw = self.get("navbar_color")
+        if raw is None or raw is False:
+            return None
+        if isinstance(raw, str):
+            return {"light": raw, "dark": raw}
+        if isinstance(raw, dict):
+            result: dict[str, str] = {}
+            for key in ("light", "dark"):
+                val = raw.get(key)
+                if val and isinstance(val, str):
+                    result[key] = val
+            return result if result else None
+        return None
+
+    @property
+    def content_style(self) -> dict[str, str] | None:
+        """Get the normalized content area gradient configuration."""
+        raw = self.get("content_style")
+        if raw is None or raw is False:
+            return None
+        if isinstance(raw, str):
+            return {"preset": raw, "pages": "all"}
+        if isinstance(raw, dict):
+            preset = raw.get("preset")
+            if not preset or not isinstance(preset, str):
+                return None
+            pages = raw.get("pages", "all")
+            if pages not in ("all", "homepage"):
+                pages = "all"
+            return {"preset": preset, "pages": pages}
         return None
 
     def exists(self) -> bool:
@@ -613,6 +888,16 @@ def create_default_config() -> str:
 # ----------------
 # Enable/disable the dark mode toggle in navbar (default: true)
 # dark_mode_toggle: true
+
+# Markdown Pages
+# --------------
+# Generate .md companions for every HTML page and show a copy/view-as-Markdown
+# widget on each page.  Set to false to disable both (default: true).
+# markdown_pages: true
+#
+# To generate .md pages but hide the widget:
+# markdown_pages:
+#   widget: false
 
 # User Guide
 # ----------

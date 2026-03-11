@@ -47,13 +47,11 @@ class GreatDocs:
         # Whether API reference was successfully configured (set during build)
         self._has_api_reference = True
 
-        # Grab this package information for the renderer.
-        # Sometime after the transition, this info should be calculated outside this
-        # class.
-        _, _, url = self._get_github_repo_info()
-        metadata = self._get_package_metadata()
-        os.environ["GITHUB_REPO_URL"] = str(url)
-        os.environ["GIT_REF"] = self._detect_git_ref()
+        # Set environment variables needed by the qrenderer (only when active)
+        if self._config.use_qrenderer:
+            _, _, url = self._get_github_repo_info()
+            os.environ["GITHUB_REPO_URL"] = str(url)
+            os.environ["GIT_REF"] = self._detect_git_ref()
 
     def _prepare_build_directory(self) -> None:
         """
@@ -83,20 +81,19 @@ class GreatDocs:
         post_render_dst = scripts_dir / "post-render.py"
         shutil.copy2(post_render_src, post_render_dst)
 
-        # Copy _renderer.py
-        renderer_src = self.assets_path / "_renderer.py"
-        renderer_dst = self.project_path / "_renderer.py"
-        shutil.copy2(renderer_src, renderer_dst)
-
         # Copy CSS file
         css_src = self.assets_path / "great-docs.css"
         css_dst = self.project_path / "great-docs.css"
         shutil.copy2(css_src, css_dst)
 
-        # Copy CSS file
-        scss_src = self.assets_path / "great-docs-q.scss"
-        scss_dst = self.project_path / "great-docs-q.scss"
-        shutil.copy2(scss_src, scss_dst)
+        # Copy qrenderer assets only when renderer: "q" is active
+        if self._config.use_qrenderer:
+            renderer_src = self.assets_path / "_renderer.py"
+            if renderer_src.exists():
+                shutil.copy2(renderer_src, self.project_path / "_renderer.py")
+            scss_src = self.assets_path / "great-docs-q.scss"
+            if scss_src.exists():
+                shutil.copy2(scss_src, self.project_path / "great-docs-q.scss")
 
         # Copy JavaScript files
         js_files = [
@@ -107,6 +104,14 @@ class GreatDocs:
             "dark-mode-toggle.js",
             "theme-init.js",
         ]
+        if self._config.markdown_pages_widget:
+            js_files.append("copy-page.js")
+        if self._config.announcement:
+            js_files.append("announcement-banner.js")
+        if self._config.navbar_style:
+            js_files.append("navbar-style.js")
+        if self._config.content_style is not None:
+            js_files.append("content-style.js")
         for js_file in js_files:
             js_src = self.assets_path / js_file
             if js_src.exists():
@@ -124,13 +129,22 @@ class GreatDocs:
         gitignore_path.write_text(gitignore_content, encoding="utf-8")
 
         # Create index.qmd from README.md or user_guide files
-        self._create_index_from_readme()
+        self._create_index_from_readme(force_rebuild=True)
 
         # Note: User guide files are copied by _process_user_guide() during build
         # which handles stripping numeric prefixes for clean URLs
 
         # Create _quarto.yml configuration
         self._update_quarto_config()
+
+        # Write options JSON for the post-render script
+        gd_options = {
+            "markdown_pages": self._config.markdown_pages,
+            "renderer": self._config.renderer,
+        }
+        gd_options_path = self.project_path / "_gd_options.json"
+        with open(gd_options_path, "w") as f:
+            json.dump(gd_options, f)
 
         # Add API reference configuration
         # (auto-skips if no documentable exports are found)
@@ -377,16 +391,14 @@ class GreatDocs:
         """
         Scan conventional paths for logo files.
 
-        Looks for logo files in the project root using common naming
-        conventions. If a matching file is found, returns a normalized
-        logo dict. Also checks for dark-mode variants automatically.
+        Looks for logo files in the project root using common naming conventions. If a matching file
+        is found, returns a normalized logo dict. Also checks for dark-mode variants automatically.
 
         Returns
         -------
         dict | None
-            A dict with ``light`` (and optionally ``dark``) keys pointing
-            to paths relative to the project root, or ``None`` if no logo
-            file was found.
+            A dict with `light` (and optionally `dark`) keys pointing to paths relative to the
+            project root, or `None` if no logo file was found.
         """
         package_root = self._find_package_root()
         package_name = self._detect_package_name() or ""
@@ -458,6 +470,182 @@ class GreatDocs:
             result["dark"] = found_path
 
         return result
+
+    def _detect_hero_logo(self) -> dict[str, str] | None:
+        """
+        Scan conventional paths for hero-specific logo files.
+
+        Looks for ``logo-hero.*`` files in the project root and ``assets/``
+        directory.  If a light/dark pair is found (``logo-hero-light.*`` and
+        ``logo-hero-dark.*``), both are returned.
+
+        Returns
+        -------
+        dict | None
+            A dict with ``light`` (and optionally ``dark``) keys, or ``None``
+            if no hero logo file was found.
+        """
+        package_root = self._find_package_root()
+
+        # Candidate paths in priority order
+        candidates = [
+            "logo-hero.svg",
+            "logo-hero.png",
+            "assets/logo-hero.svg",
+            "assets/logo-hero.png",
+            "logo-hero-light.svg",
+            "logo-hero-light.png",
+            "assets/logo-hero-light.svg",
+            "assets/logo-hero-light.png",
+        ]
+
+        found_path: str | None = None
+        for candidate in candidates:
+            if (package_root / candidate).is_file():
+                found_path = candidate
+                break
+
+        if found_path is None:
+            return None
+
+        result: dict[str, str] = {"light": found_path}
+
+        # Check for a dark variant alongside the found file
+        light_p = Path(found_path)
+        stem = light_p.stem.replace("-light", "")
+        parent = str(light_p.parent) if str(light_p.parent) != "." else ""
+
+        dark_name = f"{stem}-dark{light_p.suffix}"
+        dark_candidate = f"{parent}/{dark_name}" if parent else dark_name
+        if (package_root / dark_candidate).is_file():
+            result["dark"] = dark_candidate
+
+        # If no separate dark variant, use the same file for both
+        if "dark" not in result:
+            result["dark"] = found_path
+
+        return result
+
+    def _generate_favicons(self, logo_src: Path, dest_dir: Path) -> dict[str, str]:
+        """
+        Generate favicon files from a source logo image.
+
+        Produces raster favicons from SVG or PNG sources using cairosvg and Pillow. For SVG sources,
+        cairosvg rasterizes to PNG first, then Pillow creates the multi-size ICO and
+        apple-touch-icon. For PNG sources, Pillow resizes directly.
+
+        Parameters
+        ----------
+        logo_src
+            Absolute path to the source logo file (SVG or PNG).
+        dest_dir
+            Directory to write generated favicon files into.
+
+        Returns
+        -------
+        dict[str, str]
+            Mapping of purpose to filename (relative to dest_dir). Possible keys: `"icon"` (primary
+            favicon), `"icon-svg"`, `"icon-32"`, `"icon-16"`, `"apple-touch-icon"`. Only includes
+            files that were successfully generated.
+        """
+        import io
+
+        import cairosvg
+        from PIL import Image
+
+        result: dict[str, str] = {}
+        suffix = logo_src.suffix.lower()
+
+        print(f"Favicon: generating from {logo_src.name}")
+
+        # --- SVG source ---
+        if suffix == ".svg":
+            # Always copy the SVG as favicon.svg (modern browsers support it)
+            shutil.copy2(logo_src, dest_dir / "favicon.svg")
+            result["icon-svg"] = "favicon.svg"
+            result["icon"] = "favicon.svg"
+
+            # Rasterize SVG → PNG preserving aspect ratio, then resize
+            png_data = cairosvg.svg2png(url=str(logo_src), scale=4)
+            raw = Image.open(io.BytesIO(png_data))
+
+            # Fit into a square canvas with transparent padding
+            master = self._fit_to_square(raw, 512)
+
+            # Generate standard favicon sizes
+            for size, name in [
+                (16, "favicon-16x16.png"),
+                (32, "favicon-32x32.png"),
+                (180, "apple-touch-icon.png"),
+            ]:
+                resized = master.resize((size, size), Image.Resampling.LANCZOS)
+                resized.save(dest_dir / name, "PNG")
+                if size == 16:
+                    result["icon-16"] = name
+                elif size == 32:
+                    result["icon-32"] = name
+                elif size == 180:
+                    result["apple-touch-icon"] = name
+
+            # Generate ICO with multiple sizes embedded
+            master.save(
+                dest_dir / "favicon.ico",
+                format="ICO",
+                sizes=[(16, 16), (32, 32), (48, 48)],
+            )
+            result["icon"] = "favicon.ico"
+
+        # --- PNG source ---
+        elif suffix == ".png":
+            raw = Image.open(logo_src)
+            # Fit into a square canvas with transparent padding
+            master = self._fit_to_square(raw, max(raw.size))
+
+            for size, name in [
+                (16, "favicon-16x16.png"),
+                (32, "favicon-32x32.png"),
+                (180, "apple-touch-icon.png"),
+            ]:
+                resized = master.resize((size, size), Image.Resampling.LANCZOS)
+                resized.save(dest_dir / name, "PNG")
+                if size == 16:
+                    result["icon-16"] = name
+                elif size == 32:
+                    result["icon-32"] = name
+                elif size == 180:
+                    result["apple-touch-icon"] = name
+
+            # Generate ICO with multiple sizes embedded
+            master.save(
+                dest_dir / "favicon.ico",
+                format="ICO",
+                sizes=[(16, 16), (32, 32), (48, 48)],
+            )
+            result["icon"] = "favicon.ico"
+            result["icon-32"] = "favicon-32x32.png"
+
+        if result:
+            files = ", ".join(dict.fromkeys(result.values()))
+            print(f"Favicon: created {files}")
+
+        return result
+
+    @staticmethod
+    def _fit_to_square(img: "Image.Image", size: int) -> "Image.Image":
+        """Fit an image into a square canvas, preserving aspect ratio.
+
+        The image is scaled to fit within ``size x size``, then centered
+        on a transparent canvas of exactly ``size x size``.
+        """
+        from PIL import Image
+
+        img = img.convert("RGBA")
+        img.thumbnail((size, size), Image.Resampling.LANCZOS)
+        canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+        x = (size - img.width) // 2
+        y = (size - img.height) // 2
+        canvas.paste(img, (x, y), img)
+        return canvas
 
     def _normalize_package_name(self, package_name: str) -> str:
         """
@@ -825,6 +1013,10 @@ class GreatDocs:
 
         # Dark mode toggle
         metadata["dark_mode_toggle_enabled"] = self._config.dark_mode_toggle
+
+        # Markdown pages (.md generation + copy-page widget)
+        metadata["markdown_pages"] = self._config.markdown_pages
+        metadata["markdown_pages_widget"] = self._config.markdown_pages_widget
 
         # Funding organization
         metadata["funding"] = self._config.funding
@@ -1296,8 +1488,16 @@ class GreatDocs:
                     else:
                         index_href = f"{slug}/index.qmd"
 
-                # Add sidebar
+                # Add sidebar (skipped for single-page sections)
                 self._add_section_sidebar(title, slug, copied, has_user_index, generate_index)
+
+                # For single-page sections (no sidebar), inject a body class so
+                # CSS can expand the content area into the sidebar space.
+                content_pages = [p for p in copied if p["filename"] != "index.qmd"]
+                has_index = has_user_index or generate_index
+                sidebar_items = (1 if has_index else 0) + len(content_pages)
+                if sidebar_items <= 1:
+                    self._inject_section_body_class(slug, copied, dest_dir)
 
             # Add navbar link
             navbar_after = section_cfg.get("navbar_after")
@@ -1642,6 +1842,12 @@ class GreatDocs:
                 }
             )
 
+        # Skip sidebar when a section has only a single page — the lone item
+        # provides no navigation value and wastes horizontal space.  Without a
+        # sidebar entry the page content expands into the full width.
+        if len(contents) <= 1:
+            return
+
         sidebar_config = {
             "id": sidebar_id,
             "title": title,
@@ -1655,6 +1861,45 @@ class GreatDocs:
         config["website"]["sidebar"] = sidebar
 
         self._write_quarto_yml(quarto_yml, config)
+
+    def _inject_section_body_class(
+        self,
+        slug: str,
+        pages: list[dict],
+        dest_dir: Path,
+    ) -> None:
+        """
+        Add `body-classes: gd-section-no-sidebar` to frontmatter of every page in a single-page
+        section so CSS can expand the content area.
+        """
+        for page in pages:
+            qmd_path = dest_dir / page["filename"]
+            if not qmd_path.exists():
+                continue
+
+            content = qmd_path.read_text(encoding="utf-8")
+            if not content.startswith("---"):
+                continue
+
+            parts = content.split("---", 2)
+            if len(parts) < 3:
+                continue
+
+            try:
+                fm = yaml.safe_load(parts[1])
+                if not isinstance(fm, dict):
+                    continue
+            except yaml.YAMLError:
+                continue
+
+            # Merge body-classes
+            existing = fm.get("body-classes", "")
+            classes = existing.split() if existing else []
+            if "gd-section-no-sidebar" not in classes:
+                classes.append("gd-section-no-sidebar")
+                fm["body-classes"] = " ".join(classes)
+                parts[1] = "\n" + yaml.dump(fm, default_flow_style=False, sort_keys=False)
+                qmd_path.write_text("---".join(parts), encoding="utf-8")
 
     def _add_section_to_navbar(
         self,
@@ -2074,6 +2319,7 @@ class GreatDocs:
         lines.append("---")
         lines.append(f'title: "{title}"')
         lines.append("sidebar: cli-reference")
+        lines.append("page-navigation: false")
         lines.append("---")
         lines.append("")
 
@@ -3049,18 +3295,21 @@ class GreatDocs:
             content = f.read()
 
         # Inject toc: false into frontmatter (bread-crumbs: false is already set
-        # by _copy_user_guide_to_docs).  Keep the original frontmatter title so
+        # by _copy_user_guide_to_docs). Keep the original frontmatter title so
         # Quarto renders a proper title-block header matching other UG pages.
         content = self._add_frontmatter_option(content, "toc", False)
 
         # Build the metadata margin sidebar
         margin_content = self._build_metadata_margin()
 
-        # Split content into frontmatter and body.  Headings are NOT bumped
+        # Build hero section for blended homepage
+        hero_html, _ = self._build_hero_section()
+
+        # Split content into frontmatter and body. Headings are NOT bumped
         # here, unlike _create_index_from_readme, because UG pages already
-        # have a frontmatter title.  Quarto absorbs the first body ``#``
-        # heading (matching the title) and ``shift-heading-level-by: -1``
-        # promotes the remaining ``##`` → ``<h1>``, ``###`` → ``<h2>``, etc.
+        # have a frontmatter title. Quarto absorbs the first body `#`
+        # heading (matching the title) and `shift-heading-level-by: -1`
+        # promotes the remaining `##` → `<h1>`, `###` → `<h2>`, etc.
         # — exactly the same as every other UG page.
         if content.startswith("---"):
             parts = content.split("---", 2)
@@ -3074,21 +3323,27 @@ class GreatDocs:
             frontmatter_block = ""
             body = content
 
-        # Strip the first ``# …`` heading from the body.  The frontmatter
-        # ``title`` already provides the title-block heading; keeping the
-        # body ``#`` would render as a duplicate paragraph because
-        # ``shift-heading-level-by: -1`` demotes it below heading level.
+        # Strip the first `# …` heading from the body. The frontmatter
+        # `title` already provides the title-block heading; keeping the
+        # body `#` would render as a duplicate paragraph because
+        # `shift-heading-level-by: -1` demotes it below heading level.
         import re
 
         body = re.sub(r"^#\s+[^\n]*\n?", "", body, count=1, flags=re.MULTILINE)
 
+        # Build hero block for insertion
+        hero_block = ""
+        if hero_html:
+            hero_block = f"""```{{=html}}
+{hero_html}```
+
+"""
+
         # Reassemble with margin content inserted after frontmatter
         if margin_content:
-            blended_content = (
-                f"{frontmatter_block}\n::: {{.gd-meta-sidebar}}\n{margin_content}\n:::\n\n{body}"
-            )
+            blended_content = f"{frontmatter_block}\n{hero_block}::: {{.gd-meta-sidebar}}\n{margin_content}\n:::\n\n{body}"
         else:
-            blended_content = f"{frontmatter_block}\n{body}"
+            blended_content = f"{frontmatter_block}\n{hero_block}{body}"
 
         # Write to index.qmd at the site root
         index_qmd = self.project_path / "index.qmd"
@@ -6350,6 +6605,310 @@ jupyter: python3
 
         return "\n".join(lines) + "\n"
 
+    def _extract_badges_from_content(self, content: str) -> tuple[list[dict], str, dict]:
+        """Extract badge image-links and hero elements from README/index content.
+
+        Supports two common README layouts:
+
+        1. **Top-of-file badges** — bare ``[![alt](img)](url)`` lines right
+           after the first heading.
+        2. **Centered-div badges** — badges inside a
+           ``<div align="center">`` block (common in repos like Pointblank,
+           Great Tables, etc.).  When this layout is detected, the entire
+           centered block (hero image, italic tagline, and badges) is
+           stripped because the hero section replaces it.  The logo image
+           and tagline text are returned so the hero section can use them.
+
+        Parameters
+        ----------
+        content
+            Raw Markdown content (after any YAML frontmatter has been
+            stripped).
+
+        Returns
+        -------
+        tuple[list[dict], str, dict]
+            ``(badges, cleaned_content, hero_extras)`` — a list of badge
+            dicts (keys: ``url``, ``img``, ``alt``), the content with the
+            badge block removed, and a dict of extracted hero elements
+            (optional keys: ``logo_url``, ``tagline``).
+        """
+        import re
+
+        badge_hosts = (
+            "img.shields.io",
+            "badge.fury.io",
+            "github.com/",  # GitHub Actions badge URLs contain /badge.svg
+            "codecov.io",
+            "readthedocs.org",
+            "repostatus.org",
+            "pepy.tech",
+            "pyopensci.org",
+            "zenodo.org/badge",
+            "www.contributor-covenant.org",
+            "deepwiki.com",
+            "static.pepy.tech",
+        )
+
+        # Pattern: [![alt](img_url)](link_url)
+        md_badge_re = re.compile(r"\[!\[([^\]]*)\]\(([^)]+)\)\]\(([^)]+)\)")
+
+        # ── Strategy 1: centered-div badges ─────────────────────────
+        # Look for <div align="center"> containing badge markdown.
+        center_div_re = re.compile(r'^<div\s+align=["\']center["\']', re.IGNORECASE)
+        # Patterns for extracting hero elements from centered divs
+        # HTML <a><img></a> (linked logo image)
+        linked_img_re = re.compile(
+            r'<a\s[^>]*href="([^"]+)"[^>]*>\s*<img\s[^>]*src="([^"]+)"[^>]*/?>\s*</a>',
+            re.IGNORECASE,
+        )
+        # Bare <img> tag (logo image without link)
+        bare_img_re = re.compile(
+            r'<img\s[^>]*src="([^"]+)"[^>]*/?>',
+            re.IGNORECASE,
+        )
+        # Italic tagline: *text* or _text_
+        italic_re = re.compile(r"^[*_](.+)[*_]$")
+
+        lines = content.split("\n")
+        div_start = None
+        div_end = None
+
+        for i, line in enumerate(lines):
+            if center_div_re.match(line.strip()):
+                # Found a centered div — scan forward for badges and hero elements
+                div_badges: list[dict] = []
+                hero_extras: dict = {}
+                for j in range(i + 1, len(lines)):
+                    sline = lines[j].strip()
+                    if sline == "</div>":
+                        div_end = j
+                        break
+
+                    # Collect badges
+                    for alt, img, url in md_badge_re.findall(sline):
+                        if any(host in img for host in badge_hosts):
+                            div_badges.append({"alt": alt, "img": img, "url": url})
+
+                    # Extract logo image (HTML <a><img> or bare <img>),
+                    # but skip lines that are markdown badge patterns
+                    if "logo_url" not in hero_extras and not md_badge_re.search(sline):
+                        linked_match = linked_img_re.search(sline)
+                        if linked_match:
+                            hero_extras["logo_url"] = linked_match.group(2)
+                        else:
+                            bare_match = bare_img_re.search(sline)
+                            if bare_match:
+                                hero_extras["logo_url"] = bare_match.group(1)
+
+                    # Extract italic tagline
+                    if "tagline" not in hero_extras:
+                        italic_match = italic_re.match(sline)
+                        if italic_match:
+                            hero_extras["tagline"] = italic_match.group(1)
+
+                if div_badges and div_end is not None:
+                    div_start = i
+                    # Remove the entire centered div block
+                    remaining = lines[:div_start] + lines[div_end + 1 :]
+                    cleaned = "\n".join(remaining)
+                    # Collapse excess blank lines at the splice point
+                    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+                    return div_badges, cleaned, hero_extras
+
+                # Not a badge div — keep scanning for other centered divs
+                continue
+
+        # ── Strategy 2: top-of-file badges ──────────────────────────
+        badges: list[dict] = []
+        badge_end_idx = 0
+
+        started = False
+        for i, line in enumerate(lines):
+            stripped = line.strip()
+
+            if not started and not stripped:
+                continue
+
+            if not started and stripped.startswith("# "):
+                started = True
+                continue
+
+            if not started and stripped:
+                started = True
+
+            if started and not stripped:
+                has_more_badges = False
+                for j in range(i + 1, min(i + 3, len(lines))):
+                    if md_badge_re.search(lines[j]):
+                        has_more_badges = True
+                        break
+                if has_more_badges:
+                    badge_end_idx = i + 1
+                    continue
+                else:
+                    break
+
+            found_in_line = md_badge_re.findall(stripped)
+            if found_in_line:
+                for alt, img, url in found_in_line:
+                    if any(host in img for host in badge_hosts):
+                        badges.append({"alt": alt, "img": img, "url": url})
+                badge_end_idx = i + 1
+            elif started:
+                break
+
+        if badges and badge_end_idx > 0:
+            kept_before: list[str] = []
+            for i in range(badge_end_idx):
+                stripped = lines[i].strip()
+                if stripped.startswith("# "):
+                    kept_before.append(lines[i])
+
+            remaining = lines[badge_end_idx:]
+            cleaned = "\n".join(kept_before + remaining)
+            cleaned = cleaned.lstrip("\n")
+            if kept_before:
+                heading = kept_before[0]
+                rest = "\n".join(remaining).lstrip("\n")
+                cleaned = heading + "\n\n" + rest
+        else:
+            cleaned = content
+
+        return badges, cleaned, {}
+
+    def _build_hero_section(
+        self,
+        readme_content: str | None = None,
+    ) -> tuple[str, str | None]:
+        """Build the hero section HTML and optionally clean badges from content.
+
+        Parameters
+        ----------
+        readme_content
+            Raw README/index Markdown content. When provided and badge
+            auto-extraction is enabled, badges are extracted and the cleaned
+            content is returned.
+
+        Returns
+        -------
+        tuple[str, str | None]
+            ``(hero_html, cleaned_content)`` — the hero HTML block (empty
+            string when hero is disabled) and the cleaned README content
+            (``None`` when no cleaning was performed).
+        """
+        if self._config.hero_explicitly_disabled:
+            return "", None
+
+        # ── Early badge + hero extraction from README ───────────────
+        # This must happen before the auto-enable check so we can
+        # use README hero elements (logo, tagline) to decide whether
+        # to auto-enable.
+        badges_config = self._config.hero_badges
+        badges: list[dict] = []
+        cleaned_content = None
+        readme_hero: dict = {}
+
+        if badges_config == "auto" and readme_content:
+            badges, cleaned, readme_hero = self._extract_badges_from_content(readme_content)
+            if badges:
+                cleaned_content = cleaned
+        elif isinstance(badges_config, list):
+            badges = badges_config
+
+        if not self._config.hero_enabled:
+            # Not explicitly enabled and no config-level logo — auto-enable
+            # if hero logo files are detected on disk or README has hero content.
+            if self._detect_hero_logo() is None and not readme_hero:
+                return "", None
+
+        metadata = self._get_package_metadata()
+
+        # ── Logo ────────────────────────────────────────────────────
+        logo_config = self._config.hero_logo
+        logo_height = self._config.hero_logo_height
+        logo_html = ""
+
+        # Fallback chain: explicit hero.logo → auto-detected hero logo
+        # → explicit top-level logo → auto-detected navbar logo
+        if logo_config is None:
+            logo_config = self._detect_hero_logo()
+        if logo_config is None:
+            logo_config = self._config.logo
+        if logo_config is None:
+            logo_config = self._detect_logo()
+        if logo_config is None and readme_hero.get("logo_url"):
+            logo_config = readme_hero["logo_url"]
+        if logo_config is False:
+            logo_config = None
+
+        # Copy auto-detected logo files into the build dir so the HTML
+        # references resolve.  Files under assets/ are already copied by
+        # _copy_assets; root-level files need an explicit copy.
+        if logo_config and isinstance(logo_config, dict):
+            package_root = self._find_package_root()
+            for key in ("light", "dark"):
+                rel = logo_config.get(key)
+                if rel and not rel.startswith("assets/"):
+                    src = package_root / rel
+                    if src.is_file():
+                        dest = self.project_path / rel
+                        dest.parent.mkdir(parents=True, exist_ok=True)
+                        if not dest.exists():
+                            shutil.copy2(src, dest)
+
+        if logo_config:
+            if isinstance(logo_config, dict):
+                light = logo_config.get("light")
+                dark = logo_config.get("dark")
+                alt = logo_config.get("alt", "Logo")
+
+                if light and dark and light != dark:
+                    logo_html = (
+                        f'<img src="{light}" alt="{alt}" class="gd-hero-logo gd-only-light" style="max-height:{logo_height}" />\n'
+                        f'<img src="{dark}" alt="{alt}" class="gd-hero-logo gd-only-dark" style="max-height:{logo_height}" />'
+                    )
+                elif light:
+                    logo_html = f'<img src="{light}" alt="{alt}" class="gd-hero-logo" style="max-height:{logo_height}" />'
+            elif isinstance(logo_config, str):
+                logo_html = f'<img src="{logo_config}" alt="Logo" class="gd-hero-logo" style="max-height:{logo_height}" />'
+
+        # ── Name ────────────────────────────────────────────────────
+        hero_name = self._config.hero_name
+        if hero_name is None:
+            # Fallback to package name from metadata
+            hero_name = metadata.get("name") or self._detect_package_name()
+        name_html = f'<p class="gd-hero-name">{hero_name}</p>' if hero_name else ""
+
+        # ── Tagline ─────────────────────────────────────────────────
+        tagline = self._config.hero_tagline
+        if tagline is None:
+            tagline = readme_hero.get("tagline") or metadata.get("description", "")
+        tagline_html = f'<p class="gd-hero-tagline">{tagline}</p>' if tagline else ""
+
+        # ── Badges ──────────────────────────────────────────────────
+        badges_html = ""
+        if badges:
+            badge_items = []
+            for b in badges:
+                alt = b.get("alt", "")
+                img = b.get("img", "")
+                url = b.get("url", "")
+                if url:
+                    badge_items.append(f'<a href="{url}"><img alt="{alt}" src="{img}" /></a>')
+                else:
+                    badge_items.append(f'<img alt="{alt}" src="{img}" />')
+            badges_html = '<div class="gd-hero-badges">\n' + "\n".join(badge_items) + "\n</div>"
+
+        # ── Assemble ────────────────────────────────────────────────
+        parts = [p for p in [logo_html, name_html, tagline_html, badges_html] if p]
+        if not parts:
+            return "", None
+
+        hero_html = '<div class="gd-hero">\n' + "\n".join(parts) + "\n</div>\n\n"
+
+        return hero_html, cleaned_content
+
     def _build_metadata_margin(self) -> str:
         """
         Build the `.column-margin` metadata sidebar content for the homepage.
@@ -6973,6 +7532,27 @@ title: "Authors and Citation"
             if source_file.suffix.lower() == ".rst":
                 readme_content = self._convert_rst_to_markdown(source_file)
 
+        # Build hero section (must run before heading adjustment so badge
+        # extraction works on original markdown)
+        hero_html, cleaned_content = self._build_hero_section(readme_content)
+        if cleaned_content is not None:
+            readme_content = cleaned_content
+
+        # If hero displays the package name, strip a matching first heading
+        # to avoid visual duplication
+        if hero_html and self._config.hero_enabled:
+            import re as _re
+
+            hero_name = self._config.hero_name
+            if hero_name is None:
+                metadata = self._get_package_metadata()
+                hero_name = metadata.get("name") or self._detect_package_name()
+            if hero_name:
+                first_h1 = _re.match(r"^#\s+(.+)$", readme_content.strip(), _re.MULTILINE)
+                if first_h1 and first_h1.group(1).strip().lower() == hero_name.strip().lower():
+                    readme_content = readme_content.replace(first_h1.group(0), "", 1).lstrip("\n")
+
+        if source_file is not None:
             # Adjust heading levels: bump all headings up by one level
             # This prevents h1 from becoming paragraphs and keeps proper hierarchy
             # Replace headings from highest to lowest level to avoid double-replacement
@@ -7004,13 +7584,21 @@ section.level2:first-of-type > h2:first-child,
         # Create a qmd file with the README content
         # Use empty title so "Home" doesn't appear on landing page
         # Add margin content in a special div that Quarto will place in the margin
+        # Prepend hero section (raw HTML block) when enabled
+        hero_block = ""
+        if hero_html:
+            hero_block = f"""```{{=html}}
+{hero_html}```
+
+"""
+
         if margin_content:
             qmd_content = f"""---
 title: ""
 toc: false
 ---
 
-{first_heading_style}::: {{.column-margin}}
+{first_heading_style}{hero_block}::: {{.column-margin}}
 {margin_content}
 :::
 
@@ -7022,7 +7610,7 @@ title: ""
 toc: false
 ---
 
-{first_heading_style}{readme_content}
+{first_heading_style}{hero_block}{readme_content}
 """
 
         with open(index_qmd, "w", encoding="utf-8") as f:
@@ -7107,12 +7695,19 @@ toc: false
         # Use the importable name (actual module name) for the package field
         ref_title = self._config.reference_title or "Reference"
         ref_desc = self._config.reference_desc
+
+        # Select renderer based on config: "classic" (default) or "q" (new qrenderer)
+        if self._config.use_qrenderer:
+            renderer_config = {"style": "_renderer.py"}
+        else:
+            renderer_config = {"style": "markdown", "table_style": "description-list"}
+
         api_ref_config = {
             "package": importable_name,
             "dir": "reference",
             "title": ref_title,
             "style": "pkgdown",
-            "renderer": {"style": "_renderer.py"},
+            "renderer": renderer_config,
         }
         if ref_desc:
             api_ref_config["desc"] = ref_desc
@@ -7329,13 +7924,16 @@ toc: false
             config["project"]["resources"] = [config["project"]["resources"]]
 
         # Ensure JS files are included as resources
-        for js_file in [
+        js_resource_files = [
             "github-widget.js",
             "sidebar-filter.js",
             "sidebar-wrap.js",
             "dark-mode-toggle.js",
             "theme-init.js",
-        ]:
+        ]
+        if self._config.markdown_pages_widget:
+            js_resource_files.append("copy-page.js")
+        for js_file in js_resource_files:
             if js_file not in config["project"]["resources"]:
                 config["project"]["resources"].append(js_file)
 
@@ -7376,6 +7974,11 @@ toc: false
             config["format"]["html"]["include-in-header"] = [
                 config["format"]["html"]["include-in-header"]
             ]
+
+        # Merge user-provided include-in-header entries from great-docs.yml
+        for entry in self._config.include_in_header:
+            if entry not in config["format"]["html"]["include-in-header"]:
+                config["format"]["html"]["include-in-header"].append(entry)
 
         # Add Font Awesome CDN if not already present
         fa_cdn = '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">'
@@ -7472,6 +8075,22 @@ toc: false
                     dark_dest_name = dark_src.name
                     shutil.copy2(dark_src, self.project_path / dark_dest_name)
                     navbar["logo-dark"] = dark_dest_name
+
+                    # Ensure the dark logo is included as a resource so Quarto
+                    # copies it to _site (needed for custom dark-mode toggle)
+                    if "resources" not in config["project"]:
+                        config["project"]["resources"] = []
+                    if dark_dest_name not in config["project"]["resources"]:
+                        config["project"]["resources"].append(dark_dest_name)
+
+                    # Inject a meta tag so dark-mode-toggle.js can find the
+                    # dark logo path and fix the navbar <img> src at runtime
+                    dark_logo_meta = {
+                        "text": f'<meta name="gd-logo-dark" content="{dark_dest_name}">'
+                    }
+                    header_list = config["format"]["html"].setdefault("include-in-header", [])
+                    if not any("gd-logo-dark" in str(h) for h in header_list):
+                        header_list.append(dark_logo_meta)
                 else:
                     print(f"Warning: Dark logo file not found: {dark_src}")
 
@@ -7492,21 +8111,63 @@ toc: false
             if not self._config.logo_show_title:
                 navbar["title"] = False
 
-            # Favicon: use explicit config, or copy the light logo as favicon.svg
+            # Favicon: use explicit config, or auto-generate from logo
             favicon_config = self._config.favicon
+            generated: dict[str, str] = {}
             if favicon_config is not None:
-                # User supplied explicit favicon
+                # User supplied explicit favicon — generate raster variants too
                 icon_src_path = favicon_config.get("icon")
                 if icon_src_path:
                     fav_src = package_root / icon_src_path
                     if fav_src.is_file():
-                        shutil.copy2(fav_src, self.project_path / fav_src.name)
-                        config["website"]["favicon"] = fav_src.name
+                        generated = self._generate_favicons(fav_src, self.project_path)
+                        if generated.get("icon"):
+                            config["website"]["favicon"] = generated["icon"]
+                        else:
+                            # Fallback: just copy the file
+                            shutil.copy2(fav_src, self.project_path / fav_src.name)
+                            config["website"]["favicon"] = fav_src.name
                     else:
                         print(f"Warning: Favicon file not found: {fav_src}")
-            elif light_src.is_file() and light_src.suffix.lower() == ".svg":
-                # Auto-use SVG logo as favicon (browsers support SVG favicons)
-                config["website"]["favicon"] = light_dest_name
+            elif light_src.is_file():
+                # Auto-generate favicons from the logo
+                generated = self._generate_favicons(light_src, self.project_path)
+                if generated.get("icon"):
+                    config["website"]["favicon"] = generated["icon"]
+
+            # Inject <link> tags for extra favicon assets
+            if generated:
+                favicon_links: list[str] = []
+                if generated.get("icon") and generated["icon"].endswith(".ico"):
+                    favicon_links.append(
+                        '<link rel="icon" type="image/x-icon" href="favicon.ico" sizes="48x48">'
+                    )
+                if generated.get("icon-svg"):
+                    favicon_links.append(
+                        '<link rel="icon" type="image/svg+xml" href="favicon.svg">'
+                    )
+                if generated.get("icon-32"):
+                    favicon_links.append(
+                        '<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">'
+                    )
+                if generated.get("icon-16"):
+                    favicon_links.append(
+                        '<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">'
+                    )
+                if generated.get("apple-touch-icon"):
+                    favicon_links.append(
+                        '<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">'
+                    )
+
+                if favicon_links:
+                    header_items = config["format"]["html"].get("include-in-header", [])
+                    if isinstance(header_items, str):
+                        header_items = [header_items]
+                    for link_tag in favicon_links:
+                        entry = {"text": link_tag}
+                        if not any(link_tag in str(item) for item in header_items):
+                            header_items.append(entry)
+                    config["format"]["html"]["include-in-header"] = header_items
 
         # Add GitHub widget script to page if using widget style
         if owner and repo and github_style == "widget":
@@ -7527,6 +8188,22 @@ toc: false
                 )
                 if not has_gh_widget:
                     config["format"]["html"]["include-after-body"].append(gh_script_entry)
+
+        # Add copy-page widget script (if markdown_pages widget is enabled)
+        if metadata.get("markdown_pages_widget", True):
+            if "include-after-body" not in config["format"]["html"]:
+                config["format"]["html"]["include-after-body"] = []
+            elif isinstance(config["format"]["html"]["include-after-body"], str):
+                config["format"]["html"]["include-after-body"] = [
+                    config["format"]["html"]["include-after-body"]
+                ]
+
+            copy_page_entry = {"text": '<script src="copy-page.js"></script>'}
+            has_copy_page = any(
+                "copy-page" in str(item) for item in config["format"]["html"]["include-after-body"]
+            )
+            if not has_copy_page:
+                config["format"]["html"]["include-after-body"].append(copy_page_entry)
 
         # Add sidebar smart-wrap script (inserts <wbr> for pretty line breaks)
         if "include-after-body" not in config["format"]["html"]:
@@ -7682,10 +8359,14 @@ toc: false
                 # Format names, making them links if they have a homepage
                 formatted_names: list[str] = []
                 for name in author_names:
+                    # Use non-breaking spaces so each name stays on one line
+                    display_name = name.replace(" ", "&nbsp;")
                     if name in author_homepages:
-                        formatted_names.append(f'<a href="{author_homepages[name]}">{name}</a>')
+                        formatted_names.append(
+                            f'<a href="{author_homepages[name]}"><strong>{display_name}</strong></a>'
+                        )
                     else:
-                        formatted_names.append(name)
+                        formatted_names.append(f"<strong>{display_name}</strong>")
 
                 # Format as "Developed by Name1 and Name2." or "Developed by Name1, Name2, and Name3."
                 if len(formatted_names) == 1:
@@ -7708,16 +8389,264 @@ toc: false
                 funding = metadata.get("funding")
                 if funding and isinstance(funding, dict) and funding.get("name"):
                     funder_name = funding["name"]
-                    footer_html += f" Supported by {funder_name}."
+                    funder_url = funding.get("homepage", "")
+                    # Use non-breaking spaces so the funder name stays on one line
+                    funder_display = funder_name.replace(" ", "&nbsp;")
+                    if funder_url:
+                        funder_label = (
+                            f'<a href="{funder_url}"><strong>{funder_display}</strong></a>'
+                        )
+                    else:
+                        funder_label = f"<strong>{funder_display}</strong>"
+                    footer_html += f" Supported by {funder_label}."
 
-                config["website"]["page-footer"] = {"left": footer_html}
+                config["website"]["page-footer"] = {"center": footer_html}
 
             else:
                 # No authors: still emit a footer if funding is configured
                 funding = metadata.get("funding")
                 if funding and isinstance(funding, dict) and funding.get("name"):
                     funder_name = funding["name"]
-                    config["website"]["page-footer"] = {"left": f"Supported by {funder_name}."}
+                    funder_url = funding.get("homepage", "")
+                    # Use non-breaking spaces so the funder name stays on one line
+                    funder_display = funder_name.replace(" ", "&nbsp;")
+                    if funder_url:
+                        funder_label = (
+                            f'<a href="{funder_url}"><strong>{funder_display}</strong></a>'
+                        )
+                    else:
+                        funder_label = f"<strong>{funder_display}</strong>"
+                    config["website"]["page-footer"] = {"center": f"Supported by {funder_label}."}
+
+        # Add "Supported by Posit" badge if funding name contains "Posit" as a word
+        funding = metadata.get("funding")
+        if funding and isinstance(funding, dict) and funding.get("name"):
+            if re.search(r"\bPosit\b", funding["name"], re.IGNORECASE):
+                header_list = config["format"]["html"].setdefault("include-in-header", [])
+                if isinstance(header_list, str):
+                    header_list = [header_list]
+                    config["format"]["html"]["include-in-header"] = header_list
+                posit_badge_script = (
+                    '<script src="https://cdn.jsdelivr.net/gh/posit-dev/'
+                    'supported-by-posit/js/badge.min.js"></script>'
+                )
+                posit_entry = {"text": posit_badge_script}
+                has_posit_badge = any("supported-by-posit" in str(item) for item in header_list)
+                if not has_posit_badge:
+                    header_list.append(posit_entry)
+
+        # Add announcement banner if configured
+        announcement = self._config.announcement
+        if announcement:
+            import html as html_mod
+
+            ann_content = html_mod.escape(announcement["content"])
+            ann_type = html_mod.escape(announcement.get("type", "info"))
+            ann_dismissable = "true" if announcement.get("dismissable", True) else "false"
+            ann_url = html_mod.escape(announcement.get("url") or "")
+            ann_style = html_mod.escape(announcement.get("style") or "")
+
+            ann_meta_tag = (
+                f'<meta name="gd-announcement"'
+                f' data-content="{ann_content}"'
+                f' data-type="{ann_type}"'
+                f' data-dismissable="{ann_dismissable}"'
+                f' data-url="{ann_url}"'
+                f' data-style="{ann_style}">'
+            )
+
+            # Add meta tag to header (replace any existing announcement meta)
+            header_list = config["format"]["html"].setdefault("include-in-header", [])
+            if isinstance(header_list, str):
+                header_list = [header_list]
+                config["format"]["html"]["include-in-header"] = header_list
+            ann_meta_entry = {"text": ann_meta_tag}
+            # Remove any stale announcement meta from a previous build
+            header_list[:] = [h for h in header_list if "gd-announcement" not in str(h)]
+            header_list.append(ann_meta_entry)
+
+            # Add the banner script to after-body
+            after_body = config["format"]["html"].setdefault("include-after-body", [])
+            if isinstance(after_body, str):
+                after_body = [after_body]
+                config["format"]["html"]["include-after-body"] = after_body
+            ann_script_entry = {"text": '<script src="announcement-banner.js"></script>'}
+            if not any("announcement-banner" in str(item) for item in after_body):
+                # Insert at position 0 so the banner script runs first
+                after_body.insert(0, ann_script_entry)
+
+            # Ensure the JS file is in resources
+            resources_list = config["project"].setdefault("resources", [])
+            if "announcement-banner.js" not in resources_list:
+                resources_list.append("announcement-banner.js")
+
+        # Add navbar gradient style if configured
+        navbar_style = self._config.navbar_style
+        if navbar_style:
+            import html as html_mod_nb
+
+            nb_preset = html_mod_nb.escape(str(navbar_style))
+            nb_meta_tag = f'<meta name="gd-navbar-style" data-preset="{nb_preset}">'
+
+            header_list = config["format"]["html"].setdefault("include-in-header", [])
+            if isinstance(header_list, str):
+                header_list = [header_list]
+                config["format"]["html"]["include-in-header"] = header_list
+            header_list[:] = [h for h in header_list if "gd-navbar-style" not in str(h)]
+            header_list.append({"text": nb_meta_tag})
+
+            after_body = config["format"]["html"].setdefault("include-after-body", [])
+            if isinstance(after_body, str):
+                after_body = [after_body]
+                config["format"]["html"]["include-after-body"] = after_body
+            nb_script_entry = {"text": '<script src="navbar-style.js"></script>'}
+            if not any("navbar-style" in str(item) for item in after_body):
+                after_body.append(nb_script_entry)
+
+            resources_list = config["project"].setdefault("resources", [])
+            if "navbar-style.js" not in resources_list:
+                resources_list.append("navbar-style.js")
+
+        # Add navbar solid color if configured (ignored when `navbar_style` is set)
+        navbar_color = self._config.navbar_color
+        if navbar_color:
+            from great_docs.contrast import ideal_text_color, parse_color
+
+            css_parts: list[str] = []
+
+            for mode in ("light", "dark"):
+                bg = navbar_color.get(mode)
+                if not bg:
+                    continue
+                try:
+                    r, g, b = parse_color(bg)
+                except ValueError:
+                    continue
+
+                bg_hex = f"#{r:02x}{g:02x}{b:02x}"
+                text_hex = ideal_text_color(bg)
+                # Determine if elements on the navbar should look "light" or "dark"
+                is_light_fg = text_hex.lower() in ("#ffffff", "#fff", "white")
+
+                if is_light_fg:
+                    # Light text elements on a dark-ish background
+                    hover_bg = "rgba(255, 255, 255, 0.15)"
+                    border_col = "rgba(255, 255, 255, 0.15)"
+                    btn_bg = "rgba(255, 255, 255, 0.08)"
+                    btn_border = "rgba(255, 255, 255, 0.15)"
+                    btn_hover_bg = "rgba(255, 255, 255, 0.12)"
+                    btn_hover_border = "rgba(255, 255, 255, 0.25)"
+                    active_underline = "rgba(255, 255, 255, 0.75)"
+                    toggler_stroke = "%23e0e0e0"
+                else:
+                    # Dark text elements on a light background
+                    hover_bg = "rgba(0, 0, 0, 0.08)"
+                    border_col = "rgba(0, 0, 0, 0.08)"
+                    btn_bg = "rgba(0, 0, 0, 0.06)"
+                    btn_border = "rgba(0, 0, 0, 0.15)"
+                    btn_hover_bg = "rgba(0, 0, 0, 0.10)"
+                    btn_hover_border = "rgba(0, 0, 0, 0.25)"
+                    active_underline = "rgba(0, 0, 0, 0.45)"
+                    toggler_stroke = "rgba(0,0,0,0.65)"
+
+                if mode == "light":
+                    selector = "body.quarto-light"
+                else:
+                    selector = ":is(html, body).quarto-dark"
+
+                css_parts.append(f"""{selector} {{
+    --gd-navbar-bg: {bg_hex};
+    --gd-navbar-text: {text_hex};
+}}
+{selector} .navbar {{
+    background: {bg_hex} !important;
+    border-bottom: 1px solid {border_col};
+}}
+{selector} .navbar .navbar-title,
+{selector} .navbar .nav-link {{
+    color: {text_hex} !important;
+}}
+{selector} .navbar .nav-link:hover {{
+    background-color: {hover_bg} !important;
+    color: {text_hex} !important;
+}}
+{selector} .navbar .nav-item:has(#github-widget) .nav-link:hover {{
+    background-color: transparent !important;
+}}
+{selector} .navbar .nav-link.active {{
+    text-decoration-color: {active_underline} !important;
+}}
+{selector} .navbar .dark-mode-toggle,
+{selector} #quarto-search .aa-DetachedSearchButton {{
+    background: {btn_bg};
+    border-color: {btn_border};
+    color: {text_hex};
+}}
+{selector} .navbar .dark-mode-toggle:hover,
+{selector} #quarto-search .aa-DetachedSearchButton:hover {{
+    background: {btn_hover_bg};
+    border-color: {btn_hover_border};
+}}
+{selector} .navbar .quarto-navbar-tools button,
+{selector} .navbar .quarto-navbar-tools .quarto-navigation-tool {{
+    color: {text_hex};
+}}
+{selector} .navbar .quarto-navbar-tools button:hover,
+{selector} .navbar .quarto-navbar-tools .quarto-navigation-tool:hover {{
+    background-color: {hover_bg};
+}}
+{selector} .navbar .navbar-toggler-icon {{
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='{toggler_stroke}' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+}}
+{selector} .navbar .bi,
+{selector} .navbar .aa-SubmitIcon {{
+    color: {text_hex} !important;
+}}
+{selector} .navbar .version-badge {{
+    color: {text_hex};
+    opacity: 0.75;
+    background-color: {btn_bg};
+}}""")
+
+            if css_parts:
+                navbar_color_css = "\n".join(css_parts)
+                style_tag = f"<style>\n/* Great Docs: navbar_color overrides */\n{navbar_color_css}\n</style>"
+                after_body = config["format"]["html"].setdefault("include-after-body", [])
+                if isinstance(after_body, str):
+                    after_body = [after_body]
+                    config["format"]["html"]["include-after-body"] = after_body
+                after_body[:] = [h for h in after_body if "navbar_color overrides" not in str(h)]
+                after_body.append({"text": style_tag})
+
+        # Add content area gradient glow if configured
+        content_style = self._config.content_style
+        if content_style:
+            import html as html_mod_cs
+
+            cs_preset = html_mod_cs.escape(str(content_style["preset"]))
+            cs_pages = html_mod_cs.escape(str(content_style["pages"]))
+            cs_meta_tag = (
+                f'<meta name="gd-content-style" data-preset="{cs_preset}" data-pages="{cs_pages}">'
+            )
+
+            header_list = config["format"]["html"].setdefault("include-in-header", [])
+            if isinstance(header_list, str):
+                header_list = [header_list]
+                config["format"]["html"]["include-in-header"] = header_list
+            header_list[:] = [h for h in header_list if "gd-content-style" not in str(h)]
+            header_list.append({"text": cs_meta_tag})
+
+            after_body = config["format"]["html"].setdefault("include-after-body", [])
+            if isinstance(after_body, str):
+                after_body = [after_body]
+                config["format"]["html"]["include-after-body"] = after_body
+            cs_script_entry = {"text": '<script src="content-style.js"></script>'}
+            if not any("content-style" in str(item) for item in after_body):
+                after_body.append(cs_script_entry)
+
+            resources_list = config["project"].setdefault("resources", [])
+            if "content-style.js" not in resources_list:
+                resources_list.append("content-style.js")
 
         # Write package metadata JSON for post-render version badge injection.
         # The version and release date come from the latest GitHub Release so
@@ -7833,12 +8762,16 @@ toc: false
         with open(index_path, "r") as f:
             content = f.read()
 
-        # Check if frontmatter already exists; if so, leave it as is
+        # Check if frontmatter already exists; if so, inject page-navigation
         if content.startswith("---"):
+            if "page-navigation:" not in content.split("---", 2)[1]:
+                content = content.replace("---\n", "---\npage-navigation: false\n", 1)
+                with open(index_path, "w") as f:
+                    f.write(content)
             return
 
         # Add minimal frontmatter if none exists
-        content = f"---\n---\n\n{content}"
+        content = f"---\npage-navigation: false\n---\n\n{content}"
 
         # Write updated content
         with open(index_path, "w") as f:
@@ -8615,13 +9548,18 @@ toc: false
         finally:
             os.chdir(original_dir)
 
-    def preview(self) -> None:
+    def preview(self, port: int = 3000) -> None:
         """
         Preview the documentation site locally.
 
-        Opens the built site in the default browser. If the site hasn't been built yet,
-        it will be built first. Use `great-docs build` to rebuild the site if you've
-        made changes.
+        Starts a local HTTP server and opens the built site in the default
+        browser.  If the site hasn't been built yet, it will be built first.
+        Use ``great-docs build`` to rebuild the site if you've made changes.
+
+        Parameters
+        ----------
+        port
+            The port number for the local HTTP server (default ``3000``).
 
         Examples
         --------
@@ -8634,7 +9572,11 @@ toc: false
         docs.preview()
         ```
         """
+        import functools
+        import http.server
+        import socketserver
         import sys
+        import threading
         import webbrowser
 
         print("Previewing documentation...")
@@ -8647,13 +9589,36 @@ toc: false
             print("Site not found, building first...")
             self.build()
 
-        # Open the site in the default browser
-        if index_html.exists():
-            print(f"\n🌐 Opening site in browser: {index_html}")
-            webbrowser.open(f"file://{index_html.absolute()}")
-        else:
+        if not index_html.exists():
             print("❌ Could not find built site")
             sys.exit(1)
+
+        handler = functools.partial(
+            http.server.SimpleHTTPRequestHandler,
+            directory=str(site_path),
+        )
+        # Allow quick restart after Ctrl-C
+        socketserver.TCPServer.allow_reuse_address = True
+
+        try:
+            httpd = socketserver.TCPServer(("", port), handler)
+        except OSError:
+            print(f"❌ Port {port} is already in use. Try a different port.")
+            sys.exit(1)
+
+        url = f"http://localhost:{port}/"
+        print(f"\n🌐 Serving site at {url}")
+        print("   Press Ctrl+C to stop\n")
+
+        # Open browser after a short delay so the server is ready
+        threading.Timer(0.3, webbrowser.open, args=(url,)).start()
+
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            pass
+        finally:
+            httpd.server_close()
 
     def check_links(
         self,

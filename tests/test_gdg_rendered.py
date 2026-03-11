@@ -4349,3 +4349,1450 @@ def test_R4_header_file_quarto_yml():
     header_list = cfg.get("format", {}).get("html", {}).get("include-in-header", [])
     has_file_entry = any(isinstance(item, dict) and "file" in item for item in header_list)
     assert has_file_entry, "File entry missing from include-in-header"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DED: Navbar Color Packages
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@requires_bs4
+def test_DED_navbar_color_css_injected():
+    """gdtest_navbar_color: navbar color CSS custom properties are injected."""
+    pkg = "gdtest_navbar_color"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    content = (_site_dir(pkg) / "index.html").read_text(encoding="utf-8")
+    assert "--gd-navbar" in content, "Navbar color CSS variables not injected"
+
+
+@requires_bs4
+def test_DED_navbar_color_dark_css_injected():
+    """gdtest_navbar_color_dark: dark-only navbar color CSS is injected."""
+    pkg = "gdtest_navbar_color_dark"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    content = (_site_dir(pkg) / "index.html").read_text(encoding="utf-8")
+    assert "--gd-navbar" in content, "Dark navbar color CSS variables not injected"
+
+
+@requires_bs4
+def test_DED_navbar_color_light_css_injected():
+    """gdtest_navbar_color_light: light-only navbar color CSS is injected."""
+    pkg = "gdtest_navbar_color_light"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    content = (_site_dir(pkg) / "index.html").read_text(encoding="utf-8")
+    assert "--gd-navbar" in content, "Light navbar color CSS variables not injected"
+
+
+@requires_bs4
+def test_DED_navbar_color_same_css_injected():
+    """gdtest_navbar_color_same: single-string navbar color CSS is injected."""
+    pkg = "gdtest_navbar_color_same"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    content = (_site_dir(pkg) / "index.html").read_text(encoding="utf-8")
+    assert "--gd-navbar" in content, "Same-mode navbar color CSS not injected"
+
+
+@requires_bs4
+def test_DED_navbar_color_split_css_injected():
+    """gdtest_navbar_color_split: warm/cool split navbar CSS is injected."""
+    pkg = "gdtest_navbar_color_split"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    content = (_site_dir(pkg) / "index.html").read_text(encoding="utf-8")
+    assert "--gd-navbar" in content, "Split navbar color CSS not injected"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DED: Config Combination Packages
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def test_DED_config_combo_c_ref_sections():
+    """gdtest_config_combo_c: reference index shows section titles."""
+    pkg = "gdtest_config_combo_c"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref_index = _ref_dir(pkg) / "index.html"
+    assert ref_index.exists(), "Reference index missing"
+    content = ref_index.read_text(encoding="utf-8")
+    assert "Build Pipeline" in content, "Section 'Build Pipeline' missing from ref index"
+    assert "Operations" in content, "Section 'Operations' missing from ref index"
+
+
+def test_DED_config_combo_c_ref_pages():
+    """gdtest_config_combo_c: explicit reference pages exist."""
+    pkg = "gdtest_config_combo_c"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("build", "deploy", "test", "monitor"):
+        assert (ref / f"{name}.html").exists(), f"Ref page {name}.html missing"
+
+
+def test_DED_config_combo_c_section_dirs():
+    """gdtest_config_combo_c: examples and tutorials section dirs exist."""
+    pkg = "gdtest_config_combo_c"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    site = _site_dir(pkg)
+    assert (site / "examples" / "demo.html").exists(), "examples/demo.html missing"
+    assert (site / "tutorials" / "step1.html").exists(), "tutorials/step1.html missing"
+
+
+@requires_bs4
+def test_DED_config_combo_d_display_name():
+    """gdtest_config_combo_d: display_name override appears in index."""
+    pkg = "gdtest_config_combo_d"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    content = (_site_dir(pkg) / "index.html").read_text(encoding="utf-8")
+    assert "Combo D Toolkit" in content, "Display name 'Combo D Toolkit' missing"
+
+
+def test_DED_config_combo_d_user_guide():
+    """gdtest_config_combo_d: user guide pages exist."""
+    pkg = "gdtest_config_combo_d"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ug = _site_dir(pkg) / "user-guide"
+    assert ug.exists(), "User guide directory missing"
+
+
+def test_DED_config_combo_e_ref_pages():
+    """gdtest_config_combo_e: reference pages exist for sphinx-parsed exports."""
+    pkg = "gdtest_config_combo_e"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("connect", "disconnect", "receive", "send"):
+        assert (ref / f"{name}.html").exists(), f"Ref page {name}.html missing"
+
+
+def test_DED_config_combo_f_ref_pages():
+    """gdtest_config_combo_f: reference pages exist with dynamic=false and exclude."""
+    pkg = "gdtest_config_combo_f"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("analyze", "export", "report"):
+        assert (ref / f"{name}.html").exists(), f"Ref page {name}.html missing"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DED: Config Feature Packages
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@requires_bs4
+def test_DED_config_display_name_and_authors():
+    """gdtest_config_display: display_name and authors appear in index."""
+    pkg = "gdtest_config_display"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    content = (_site_dir(pkg) / "index.html").read_text(encoding="utf-8")
+    assert "Pretty Display Name" in content, "Display name missing"
+    assert "Jane Doe" in content, "Author 'Jane Doe' missing"
+    assert "Open Source Foundation" in content, "Funding org missing"
+
+
+def test_DED_config_exclude_hides_items():
+    """gdtest_config_exclude: excluded items don't have ref pages."""
+    pkg = "gdtest_config_exclude"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "PublicAPI.html").exists(), "PublicAPI page missing"
+    assert (ref / "transform.html").exists(), "transform page missing"
+    assert not (ref / "helper_func.html").exists(), "Excluded helper_func should not have page"
+    assert not (ref / "InternalClass.html").exists(), "Excluded InternalClass should not have page"
+
+
+def test_DED_config_extra_keys_builds():
+    """gdtest_config_extra_keys: site builds despite unrecognized config keys."""
+    pkg = "gdtest_config_extra_keys"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "echo.html").exists(), "echo page missing"
+    assert (ref / "identity.html").exists(), "identity page missing"
+
+
+def test_DED_config_minimal_source_disabled():
+    """gdtest_config_minimal: source disabled means no _source_links.json."""
+    pkg = "gdtest_config_minimal"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    source_links = _RENDERED_DIR / pkg / "great-docs" / "_source_links.json"
+    assert not source_links.exists(), "_source_links.json should not exist when source disabled"
+
+
+def test_DED_config_parser_google():
+    """gdtest_config_parser: ref pages exist with google parser override."""
+    pkg = "gdtest_config_parser"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("connect", "disconnect", "query", "fetch_all"):
+        assert (ref / f"{name}.html").exists(), f"Ref page {name}.html missing"
+
+
+def test_DED_config_reference_sections():
+    """gdtest_config_reference: reference index has named sections."""
+    pkg = "gdtest_config_reference"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref_index = _ref_dir(pkg) / "index.html"
+    content = ref_index.read_text(encoding="utf-8")
+    assert "Core API" in content, "Section 'Core API' missing"
+    assert "Utilities" in content, "Section 'Utilities' missing"
+
+
+def test_DED_config_reference_pages():
+    """gdtest_config_reference: explicit reference pages exist."""
+    pkg = "gdtest_config_reference"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("compute", "analyze", "format_result", "clean_data"):
+        assert (ref / f"{name}.html").exists(), f"Ref page {name}.html missing"
+
+
+def test_DED_config_sections_examples_dir():
+    """gdtest_config_sections: examples section directory exists."""
+    pkg = "gdtest_config_sections"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    examples = _site_dir(pkg) / "examples"
+    assert examples.exists(), "Examples section directory missing"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DED: Source Link Packages
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def test_DED_source_branch_no_links():
+    """gdtest_source_branch: _source_links.json not present (no repo URL)."""
+    pkg = "gdtest_source_branch"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    source_links = _RENDERED_DIR / pkg / "great-docs" / "_source_links.json"
+    # Synthetic packages don't have a real repo, so _source_links.json may not exist
+    ref = _ref_dir(pkg)
+    assert (ref / "read_data.html").exists(), "read_data page missing"
+    assert (ref / "write_data.html").exists(), "write_data page missing"
+
+
+def test_DED_source_path_ref_pages():
+    """gdtest_source_path: reference pages exist with custom source path."""
+    pkg = "gdtest_source_path"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "parse.html").exists(), "parse page missing"
+    assert (ref / "format_output.html").exists(), "format_output page missing"
+
+
+def test_DED_source_title_ref_pages():
+    """gdtest_source_title: reference pages exist with title placement."""
+    pkg = "gdtest_source_title"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "compress.html").exists(), "compress page missing"
+    assert (ref / "decompress.html").exists(), "decompress page missing"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DED: Dynamic & Sidebar & Jupyter Config Packages
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def test_DED_dynamic_false_ref_pages():
+    """gdtest_dynamic_false: site builds with dynamic=false."""
+    pkg = "gdtest_dynamic_false"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "greet.html").exists(), "greet page missing"
+    assert (ref / "farewell.html").exists(), "farewell page missing"
+
+
+def test_DED_sidebar_disabled_builds():
+    """gdtest_sidebar_disabled: site builds with sidebar_filter.enabled=false."""
+    pkg = "gdtest_sidebar_disabled"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    assert (_site_dir(pkg) / "index.html").exists(), "Index page missing"
+    assert _ref_dir(pkg).exists(), "Reference dir missing"
+
+
+def test_DED_sidebar_min_items_builds():
+    """gdtest_sidebar_min_items: site builds with sidebar_filter.min_items=3."""
+    pkg = "gdtest_sidebar_min_items"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("func_w", "func_x", "func_y", "func_z"):
+        assert (ref / f"{name}.html").exists(), f"Ref page {name}.html missing"
+
+
+def test_DED_jupyter_kernel_ref_pages():
+    """gdtest_jupyter_kernel: site builds with jupyter kernel config."""
+    pkg = "gdtest_jupyter_kernel"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "compute.html").exists(), "compute page missing"
+    assert (ref / "evaluate.html").exists(), "evaluate page missing"
+
+
+def test_DED_site_combo_config():
+    """gdtest_site_combo: _quarto.yml reflects custom site config."""
+    pkg = "gdtest_site_combo"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    cfg = _load_quarto_yml(pkg)
+    html_cfg = cfg.get("format", {}).get("html", {})
+    assert html_cfg.get("toc-depth") == 3, f"Expected toc-depth 3, got {html_cfg.get('toc-depth')}"
+    assert html_cfg.get("toc-title") == "Contents", (
+        f"Expected toc-title 'Contents', got {html_cfg.get('toc-title')}"
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DED: GitHub & Display Packages
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def test_DED_github_icon_ref_pages():
+    """gdtest_github_icon: site builds with github_style=icon."""
+    pkg = "gdtest_github_icon"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "fetch.html").exists(), "fetch page missing"
+    assert (ref / "store.html").exists(), "store page missing"
+
+
+@requires_bs4
+def test_DED_funding_in_index():
+    """gdtest_funding: funding organization appears in index."""
+    pkg = "gdtest_funding"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    content = (_site_dir(pkg) / "index.html").read_text(encoding="utf-8")
+    assert "Science Foundation" in content, "Funding org 'Science Foundation' missing"
+
+
+@requires_bs4
+def test_DED_authors_multi_all_names():
+    """gdtest_authors_multi: all three author names appear in rendered site."""
+    pkg = "gdtest_authors_multi"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    content = (_site_dir(pkg) / "index.html").read_text(encoding="utf-8")
+    assert "Alice Smith" in content, "Author 'Alice Smith' missing"
+    assert "Bob Jones" in content, "Author 'Bob Jones' missing"
+    assert "Carol Lee" in content, "Author 'Carol Lee' missing"
+
+
+def test_DED_github_contrib_page():
+    """gdtest_github_contrib: contributing page exists from .github/ dir."""
+    pkg = "gdtest_github_contrib"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    assert (_site_dir(pkg) / "contributing.html").exists(), "contributing.html missing"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DED: Exclude & CLI Packages
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def test_DED_exclude_list_hides_items():
+    """gdtest_exclude_list: excluded symbols don't have ref pages."""
+    pkg = "gdtest_exclude_list"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("public_a", "public_b", "public_c"):
+        assert (ref / f"{name}.html").exists(), f"Public page {name}.html missing"
+    assert not (ref / "_hidden_func.html").exists(), "Excluded _hidden_func should not have page"
+    assert not (ref / "InternalHelper.html").exists(), (
+        "Excluded InternalHelper should not have page"
+    )
+
+
+def test_DED_exclude_cli_ref_and_cli():
+    """gdtest_exclude_cli: CLI docs exist and excluded items are absent."""
+    pkg = "gdtest_exclude_cli"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "execute.html").exists(), "execute page missing"
+    assert (ref / "report.html").exists(), "report page missing"
+    assert not (ref / "hidden_func.html").exists(), "Excluded hidden_func should not have page"
+    # CLI pages are under reference/cli/
+    cli_dir = ref / "cli"
+    assert cli_dir.exists(), "CLI dir missing"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DED: Parser Packages
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def test_DED_parser_google_ref_pages():
+    """gdtest_parser_google: reference pages exist with google parser."""
+    pkg = "gdtest_parser_google"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("connect", "disconnect", "receive", "send", "status"):
+        assert (ref / f"{name}.html").exists(), f"Ref page {name}.html missing"
+
+
+def test_DED_parser_sphinx_ref_pages():
+    """gdtest_parser_sphinx: reference pages exist with sphinx parser."""
+    pkg = "gdtest_parser_sphinx"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("Timer", "create_timer", "format_duration"):
+        assert (ref / f"{name}.html").exists(), f"Ref page {name}.html missing"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DED: Section Packages
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def test_DED_sec_blog_dir_exists():
+    """gdtest_sec_blog: blog section directory exists."""
+    pkg = "gdtest_sec_blog"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    assert (_site_dir(pkg) / "blog").exists(), "Blog section dir missing"
+
+
+def test_DED_sec_deep_tutorials_dir():
+    """gdtest_sec_deep: tutorials section with nested subdirs exists."""
+    pkg = "gdtest_sec_deep"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    assert (_site_dir(pkg) / "tutorials").exists(), "Tutorials section dir missing"
+
+
+def test_DED_sec_examples_dir():
+    """gdtest_sec_examples: examples section directory exists."""
+    pkg = "gdtest_sec_examples"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    assert (_site_dir(pkg) / "examples").exists(), "Examples section dir missing"
+
+
+def test_DED_sec_faq_dir():
+    """gdtest_sec_faq: FAQ section directory exists."""
+    pkg = "gdtest_sec_faq"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    assert (_site_dir(pkg) / "faq").exists(), "FAQ section dir missing"
+
+
+def test_DED_sec_index_opt_section_dirs():
+    """gdtest_sec_index_opt: examples and tutorials section dirs exist."""
+    pkg = "gdtest_sec_index_opt"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    site = _site_dir(pkg)
+    assert (site / "examples").exists(), "Examples section dir missing"
+    assert (site / "tutorials").exists(), "Tutorials section dir missing"
+
+
+def test_DED_sec_multi_three_sections():
+    """gdtest_sec_multi: three custom sections exist."""
+    pkg = "gdtest_sec_multi"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    site = _site_dir(pkg)
+    assert (site / "examples").exists(), "Examples section missing"
+    assert (site / "tutorials").exists(), "Tutorials section missing"
+    assert (site / "recipes").exists(), "Recipes section missing"
+
+
+def test_DED_sec_navbar_after_cookbook():
+    """gdtest_sec_navbar_after: cookbook section directory exists."""
+    pkg = "gdtest_sec_navbar_after"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    assert (_site_dir(pkg) / "cookbook").exists(), "Cookbook section dir missing"
+
+
+def test_DED_sec_recipes_dir():
+    """gdtest_sec_recipes: recipes section directory exists."""
+    pkg = "gdtest_sec_recipes"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    assert (_site_dir(pkg) / "recipes").exists(), "Recipes section dir missing"
+
+
+def test_DED_sec_sidebar_single_sections():
+    """gdtest_sec_sidebar_single: guides and faq sections exist."""
+    pkg = "gdtest_sec_sidebar_single"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    site = _site_dir(pkg)
+    assert (site / "guides").exists(), "Guides section missing"
+    assert (site / "faq").exists(), "FAQ section missing"
+
+
+def test_DED_sec_tutorials_dir():
+    """gdtest_sec_tutorials: tutorials section directory exists."""
+    pkg = "gdtest_sec_tutorials"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    assert (_site_dir(pkg) / "tutorials").exists(), "Tutorials section dir missing"
+
+
+def test_DED_sec_with_ref_tutorials_and_ref():
+    """gdtest_sec_with_ref: tutorials section and explicit ref pages coexist."""
+    pkg = "gdtest_sec_with_ref"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    site = _site_dir(pkg)
+    assert (site / "tutorials").exists(), "Tutorials section missing"
+    ref = _ref_dir(pkg)
+    for name in ("analyze", "format_output", "process"):
+        assert (ref / f"{name}.html").exists(), f"Ref page {name}.html missing"
+
+
+def test_DED_sec_with_ug_examples_and_guide():
+    """gdtest_sec_with_ug: examples section and user guide coexist."""
+    pkg = "gdtest_sec_with_ug"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    site = _site_dir(pkg)
+    assert (site / "examples").exists(), "Examples section missing"
+    ug = site / "user-guide"
+    assert ug.exists(), "User guide missing"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DED: Reference Config Packages
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def test_DED_ref_explicit_section_pages():
+    """gdtest_ref_explicit: explicit reference sections with named pages."""
+    pkg = "gdtest_ref_explicit"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("build", "compile_source", "execute", "run"):
+        assert (ref / f"{name}.html").exists(), f"Ref page {name}.html missing"
+
+
+def test_DED_ref_reorder_pages():
+    """gdtest_ref_reorder: reordered reference pages exist."""
+    pkg = "gdtest_ref_reorder"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("compute", "transform", "DataModel", "Schema"):
+        assert (ref / f"{name}.html").exists(), f"Ref page {name}.html missing"
+
+
+def test_DED_ref_single_section_pages():
+    """gdtest_ref_single_section: single section with all exports."""
+    pkg = "gdtest_ref_single_section"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("alpha", "beta", "gamma", "delta"):
+        assert (ref / f"{name}.html").exists(), f"Ref page {name}.html missing"
+
+
+def test_DED_ref_big_class_pages():
+    """gdtest_ref_big_class: big class with members=true has page."""
+    pkg = "gdtest_ref_big_class"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "Manager.html").exists(), "Manager page missing"
+    assert (ref / "create_manager.html").exists(), "create_manager page missing"
+
+
+def test_DED_ref_members_false_pages():
+    """gdtest_ref_members_false: Engine page exists with members suppressed."""
+    pkg = "gdtest_ref_members_false"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "Engine.html").exists(), "Engine page missing"
+    assert (ref / "start_engine.html").exists(), "start_engine page missing"
+
+
+def test_DED_ref_mixed_pages():
+    """gdtest_ref_mixed: mixed explicit and auto-discovered ref pages."""
+    pkg = "gdtest_ref_mixed"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "connect.html").exists(), "connect page missing"
+    assert (ref / "disconnect.html").exists(), "disconnect page missing"
+
+
+def test_DED_ref_multi_big_pages():
+    """gdtest_ref_multi_big: multiple big classes have pages."""
+    pkg = "gdtest_ref_multi_big"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "Processor.html").exists(), "Processor page missing"
+    assert (ref / "Transformer.html").exists(), "Transformer page missing"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DED: Code Pattern Packages
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def test_DED_context_mgr_pages():
+    """gdtest_context_mgr: context manager classes have ref pages."""
+    pkg = "gdtest_context_mgr"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "ManagedResource.html").exists(), "ManagedResource page missing"
+    assert (ref / "Timer.html").exists(), "Timer page missing"
+
+
+def test_DED_descriptors_pages():
+    """gdtest_descriptors: descriptor class has ref page."""
+    pkg = "gdtest_descriptors"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "Resource.html").exists(), "Resource page missing"
+
+
+def test_DED_nested_class_pages():
+    """gdtest_nested_class: nested class has ref page."""
+    pkg = "gdtest_nested_class"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "Tree.html").exists(), "Tree page missing"
+
+
+def test_DED_slots_class_pages():
+    """gdtest_slots_class: __slots__ class has ref page."""
+    pkg = "gdtest_slots_class"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "SlottedPoint.html").exists(), "SlottedPoint page missing"
+
+
+def test_DED_multi_inherit_pages():
+    """gdtest_multi_inherit: diamond inheritance classes have ref pages."""
+    pkg = "gdtest_multi_inherit"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("Base", "LogMixin", "CacheMixin", "Combined"):
+        assert (ref / f"{name}.html").exists(), f"Ref page {name}.html missing"
+
+
+def test_DED_typed_containers_pages():
+    """gdtest_typed_containers: NamedTuple and TypedDict have ref pages."""
+    pkg = "gdtest_typed_containers"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "Coordinate.html").exists(), "Coordinate page missing"
+    assert (ref / "UserProfile.html").exists(), "UserProfile page missing"
+
+
+def test_DED_small_class_pages():
+    """gdtest_small_class: small classes (<=5 methods) have ref pages."""
+    pkg = "gdtest_small_class"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "Point.html").exists(), "Point page missing"
+    assert (ref / "Color.html").exists(), "Color page missing"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DED: Docstring Packages
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def test_DED_docstring_notes_pages():
+    """gdtest_docstring_notes: functions with Notes sections have ref pages."""
+    pkg = "gdtest_docstring_notes"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "flatten_list.html").exists(), "flatten_list page missing"
+    assert (ref / "merge_dicts.html").exists(), "merge_dicts page missing"
+
+
+def test_DED_docstring_seealso_pages():
+    """gdtest_docstring_seealso: functions with See Also have ref pages."""
+    pkg = "gdtest_docstring_seealso"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("serialize", "deserialize", "to_json"):
+        assert (ref / f"{name}.html").exists(), f"Ref page {name}.html missing"
+
+
+def test_DED_docstring_warnings_pages():
+    """gdtest_docstring_warnings: functions with Warnings have ref pages."""
+    pkg = "gdtest_docstring_warnings"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "mutable_default.html").exists(), "mutable_default page missing"
+    assert (ref / "unsafe_eval.html").exists(), "unsafe_eval page missing"
+
+
+def test_DED_docstring_references_pages():
+    """gdtest_docstring_references: functions with References have ref pages."""
+    pkg = "gdtest_docstring_references"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "binary_search.html").exists(), "binary_search page missing"
+    assert (ref / "quicksort.html").exists(), "quicksort page missing"
+
+
+def test_DED_docstring_combo_pages():
+    """gdtest_docstring_combo: combo docstring functions have ref pages."""
+    pkg = "gdtest_docstring_combo"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "advanced_compute.html").exists(), "advanced_compute page missing"
+    assert (ref / "helper.html").exists(), "helper page missing"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DED: Layout & Build Backend Packages
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def test_DED_flit_ref_pages():
+    """gdtest_flit: flit-built package has ref pages."""
+    pkg = "gdtest_flit"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "compose.html").exists(), "compose page missing"
+    assert (ref / "publish.html").exists(), "publish page missing"
+
+
+def test_DED_flit_enums_ref_pages():
+    """gdtest_flit_enums: flit with enums has ref pages."""
+    pkg = "gdtest_flit_enums"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    # Enum pages may be module-prefixed
+    color_page = _find_export_page(ref, "Color")
+    assert color_page is not None, "Color enum page missing"
+
+
+def test_DED_pdm_ref_pages():
+    """gdtest_pdm: PDM-built package has ref pages."""
+    pkg = "gdtest_pdm"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "install.html").exists(), "install page missing"
+    assert (ref / "remove.html").exists(), "remove page missing"
+
+
+def test_DED_pdm_big_class_pages():
+    """gdtest_pdm_big_class: PDM with big class has ref pages."""
+    pkg = "gdtest_pdm_big_class"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    # Pages are module-prefixed (pipeline.Pipeline.html)
+    pipeline_page = _find_export_page(ref, "Pipeline")
+    assert pipeline_page is not None, "Pipeline page missing"
+
+
+def test_DED_hatch_ref_pages():
+    """gdtest_hatch: hatch-built package has ref pages."""
+    pkg = "gdtest_hatch"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "Builder.html").exists(), "Builder page missing"
+    assert (ref / "build.html").exists(), "build page missing"
+
+
+def test_DED_hatch_nodoc_ref_pages():
+    """gdtest_hatch_nodoc: hatch-built with %nodoc has ref pages."""
+    pkg = "gdtest_hatch_nodoc"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    # Pages may be module-prefixed
+    config_page = _find_export_page(ref, "Config")
+    assert config_page is not None, "Config page missing"
+
+
+def test_DED_monorepo_ref_pages():
+    """gdtest_monorepo: monorepo layout has ref pages."""
+    pkg = "gdtest_monorepo"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "build.html").exists(), "build page missing"
+    assert (ref / "deploy.html").exists(), "deploy page missing"
+
+
+def test_DED_lib_layout_ref_pages():
+    """gdtest_lib_layout: lib/ layout has ref pages."""
+    pkg = "gdtest_lib_layout"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "open_connection.html").exists(), "open_connection page missing"
+    assert (ref / "close_connection.html").exists(), "close_connection page missing"
+
+
+def test_DED_python_layout_ref_pages():
+    """gdtest_python_layout: python/ layout has ref pages."""
+    pkg = "gdtest_python_layout"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "read_file.html").exists(), "read_file page missing"
+    assert (ref / "write_file.html").exists(), "write_file page missing"
+
+
+def test_DED_setup_cfg_ref_pages():
+    """gdtest_setup_cfg: setup.cfg-only package has ref pages."""
+    pkg = "gdtest_setup_cfg"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "ping.html").exists(), "ping page missing"
+    assert (ref / "pong.html").exists(), "pong page missing"
+
+
+def test_DED_setup_cfg_src_ref_pages():
+    """gdtest_setup_cfg_src: setup.cfg + src/ layout has ref pages."""
+    pkg = "gdtest_setup_cfg_src"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "parse.html").exists(), "parse page missing"
+    assert (ref / "format_text.html").exists(), "format_text page missing"
+
+
+def test_DED_setup_py_ref_pages():
+    """gdtest_setup_py: setup.py-only package has ref pages."""
+    pkg = "gdtest_setup_py"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "echo.html").exists(), "echo page missing"
+    assert (ref / "reverse.html").exists(), "reverse page missing"
+
+
+def test_DED_setuptools_find_ref_pages():
+    """gdtest_setuptools_find: setuptools find_packages has ref pages."""
+    pkg = "gdtest_setuptools_find"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "Scanner.html").exists(), "Scanner page missing"
+
+
+def test_DED_src_layout_ref_pages():
+    """gdtest_src_layout: src/ layout has ref pages."""
+    pkg = "gdtest_src_layout"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "Widget.html").exists(), "Widget page missing"
+    assert (ref / "create_widget.html").exists(), "create_widget page missing"
+
+
+def test_DED_src_big_class_ref_pages():
+    """gdtest_src_big_class: src/ layout with big class has ref pages."""
+    pkg = "gdtest_src_big_class"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    pipeline_page = _find_export_page(ref, "Pipeline")
+    assert pipeline_page is not None, "Pipeline page missing"
+
+
+def test_DED_src_explicit_ref_pages():
+    """gdtest_src_explicit_ref: src/ with explicit ref config has pages."""
+    pkg = "gdtest_src_explicit_ref"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "Engine.html").exists(), "Engine page missing"
+    assert (ref / "run.html").exists(), "run page missing"
+    assert (ref / "format_result.html").exists(), "format_result page missing"
+
+
+def test_DED_src_google_seealso_ref_pages():
+    """gdtest_src_google_seealso: src/ with google+seealso has ref pages."""
+    pkg = "gdtest_src_google_seealso"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    # Pages are module-prefixed (codec.encode.html)
+    encode_page = _find_export_page(ref, "encode")
+    assert encode_page is not None, "encode page missing"
+
+
+def test_DED_src_legacy_ref_pages():
+    """gdtest_src_legacy: src/ + setup.py legacy layout has ref pages."""
+    pkg = "gdtest_src_legacy"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "legacy_init.html").exists(), "legacy_init page missing"
+    assert (ref / "legacy_run.html").exists(), "legacy_run page missing"
+
+
+def test_DED_src_no_all_ref_pages():
+    """gdtest_src_no_all: src/ without __all__ has griffe-discovered ref pages."""
+    pkg = "gdtest_src_no_all"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "Record.html").exists(), "Record page missing"
+    assert (ref / "fetch.html").exists(), "fetch page missing"
+    assert (ref / "store.html").exists(), "store page missing"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DED: User Guide Packages
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def test_DED_user_guide_auto_pages():
+    """gdtest_user_guide_auto: auto-discovered user guide pages exist."""
+    pkg = "gdtest_user_guide_auto"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ug = _site_dir(pkg) / "user-guide"
+    assert ug.exists(), "User guide dir missing"
+    ug_files = [f.name for f in ug.glob("*.html")]
+    assert len(ug_files) >= 2, f"Expected >=2 UG pages, got {len(ug_files)}"
+
+
+def test_DED_user_guide_cli_pages():
+    """gdtest_user_guide_cli: user guide + CLI docs coexist."""
+    pkg = "gdtest_user_guide_cli"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ug = _site_dir(pkg) / "user-guide"
+    assert ug.exists(), "User guide dir missing"
+    cli_dir = _ref_dir(pkg) / "cli"
+    assert cli_dir.exists(), "CLI dir missing"
+
+
+def test_DED_user_guide_custom_dir_pages():
+    """gdtest_user_guide_custom_dir: custom dir user guide pages exist."""
+    pkg = "gdtest_user_guide_custom_dir"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ug = _site_dir(pkg) / "user-guide"
+    assert ug.exists(), "User guide dir missing"
+    ug_files = [f.name for f in ug.glob("*.html")]
+    assert "intro.html" in ug_files, "intro.html missing from user guide"
+    assert "advanced.html" in ug_files, "advanced.html missing from user guide"
+
+
+def test_DED_user_guide_explicit_pages():
+    """gdtest_user_guide_explicit: explicit user guide ordering produces pages."""
+    pkg = "gdtest_user_guide_explicit"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ug = _site_dir(pkg) / "user-guide"
+    assert ug.exists(), "User guide dir missing"
+    ug_files = [f.name for f in ug.glob("*.html")]
+    assert "intro.html" in ug_files, "intro.html missing"
+    assert "quickstart.html" in ug_files, "quickstart.html missing"
+    assert "advanced.html" in ug_files, "advanced.html missing"
+
+
+def test_DED_user_guide_hyphen_dir():
+    """gdtest_user_guide_hyphen: user-guide/ (hyphenated) dir fallback works."""
+    pkg = "gdtest_user_guide_hyphen"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ug = _site_dir(pkg) / "user-guide"
+    assert ug.exists(), "User guide dir missing"
+    assert (ug / "intro.html").exists(), "intro.html missing from user guide"
+
+
+def test_DED_user_guide_sections_pages():
+    """gdtest_user_guide_sections: sectioned user guide pages exist."""
+    pkg = "gdtest_user_guide_sections"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ug = _site_dir(pkg) / "user-guide"
+    assert ug.exists(), "User guide dir missing"
+    ug_files = [f.name for f in ug.glob("*.html")]
+    assert len(ug_files) >= 3, f"Expected >=3 UG pages, got {len(ug_files)}"
+
+
+def test_DED_user_guide_subdirs_pages():
+    """gdtest_user_guide_subdirs: user guide with subdirs produces pages."""
+    pkg = "gdtest_user_guide_subdirs"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ug = _site_dir(pkg) / "user-guide"
+    assert ug.exists(), "User guide dir missing"
+    ug_files = [f.name for f in ug.rglob("*.html")]
+    assert len(ug_files) >= 3, f"Expected >=3 UG pages, got {len(ug_files)}"
+
+
+def test_DED_ug_subdir_numbered_pages():
+    """gdtest_ug_subdir_numbered: numbered subdirectory user guide has pages."""
+    pkg = "gdtest_ug_subdir_numbered"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ug = _site_dir(pkg) / "user-guide"
+    assert ug.exists(), "User guide dir missing"
+    ug_files = [f.name for f in ug.rglob("*.html")]
+    assert len(ug_files) >= 3, f"Expected >=3 UG pages, got {len(ug_files)}"
+
+
+def test_DED_many_guides_ug_pages():
+    """gdtest_many_guides: 10-page user guide produces all pages."""
+    pkg = "gdtest_many_guides"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ug = _site_dir(pkg) / "user-guide"
+    assert ug.exists(), "User guide dir missing"
+    ug_files = [f.name for f in ug.glob("*.html")]
+    assert len(ug_files) >= 8, f"Expected >=8 UG pages, got {len(ug_files)}"
+
+
+def test_DED_mixed_guide_ext_pages():
+    """gdtest_mixed_guide_ext: mixed .qmd/.md user guide produces pages."""
+    pkg = "gdtest_mixed_guide_ext"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ug = _site_dir(pkg) / "user-guide"
+    assert ug.exists(), "User guide dir missing"
+    ug_files = [f.name for f in ug.glob("*.html")]
+    assert len(ug_files) >= 2, f"Expected >=2 UG pages, got {len(ug_files)}"
+
+
+def test_DED_extras_guide_ug_and_supporting():
+    """gdtest_extras_guide: user guide + all supporting pages exist."""
+    pkg = "gdtest_extras_guide"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    site = _site_dir(pkg)
+    ug = site / "user-guide"
+    assert ug.exists(), "User guide dir missing"
+    assert (site / "license.html").exists(), "license page missing"
+    assert (site / "citation.html").exists(), "citation page missing"
+    assert (site / "contributing.html").exists(), "contributing page missing"
+    assert (site / "code-of-conduct.html").exists(), "code-of-conduct page missing"
+
+
+def test_DED_full_extras_all_pages():
+    """gdtest_full_extras: user guide + all 4 supporting pages exist."""
+    pkg = "gdtest_full_extras"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    site = _site_dir(pkg)
+    assert (site / "user-guide").exists(), "User guide dir missing"
+    for page in ("license", "citation", "contributing", "code-of-conduct"):
+        assert (site / f"{page}.html").exists(), f"{page}.html missing"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DED: Homepage & Index Packages
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@requires_bs4
+def test_DED_homepage_ug_content():
+    """gdtest_homepage_ug: user guide homepage has expected content."""
+    pkg = "gdtest_homepage_ug"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    content = (_site_dir(pkg) / "index.html").read_text(encoding="utf-8")
+    assert "Getting Started" in content, "'Getting Started' should be on homepage"
+    assert "gd-meta-sidebar" in content, "gd-meta-sidebar marker missing"
+
+
+def test_DED_index_md_ref_pages():
+    """gdtest_index_md: index.md package builds with ref pages."""
+    pkg = "gdtest_index_md"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    assert (ref := _ref_dir(pkg)) and (ref / "greet.html").exists(), "greet page missing"
+
+
+def test_DED_index_qmd_ref_pages():
+    """gdtest_index_qmd: index.qmd package builds with ref pages."""
+    pkg = "gdtest_index_qmd"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    assert (_ref_dir(pkg) / "hello.html").exists(), "hello page missing"
+
+
+def test_DED_index_wins_ref_pages():
+    """gdtest_index_wins: index.qmd wins over README.md with ref pages."""
+    pkg = "gdtest_index_wins"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    assert (_ref_dir(pkg) / "winner.html").exists(), "winner page missing"
+
+
+def test_DED_no_readme_builds():
+    """gdtest_no_readme: package with no README still builds."""
+    pkg = "gdtest_no_readme"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    assert (_site_dir(pkg) / "index.html").exists(), "Index page missing"
+    assert (_ref_dir(pkg) / "noop.html").exists(), "noop page missing"
+
+
+def test_DED_readme_rst_builds():
+    """gdtest_readme_rst: RST README converts and builds."""
+    pkg = "gdtest_readme_rst"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "convert.html").exists(), "convert page missing"
+    assert (ref / "parse.html").exists(), "parse page missing"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DED: Discovery & __all__ Packages
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def test_DED_all_concat_ref_pages():
+    """gdtest_all_concat: __all__ concatenation produces ref pages."""
+    pkg = "gdtest_all_concat"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("Record", "validate_record", "format_output", "parse_input"):
+        page = _find_export_page(ref, name)
+        assert page is not None, f"Ref page for {name} missing"
+
+
+def test_DED_all_private_ref_pages():
+    """gdtest_all_private: only public items have ref pages."""
+    pkg = "gdtest_all_private"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "public_api.html").exists(), "public_api page missing"
+
+
+def test_DED_auto_discover_ref_pages():
+    """gdtest_auto_discover: pure auto-discovery produces ref pages."""
+    pkg = "gdtest_auto_discover"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("Engine", "ignite", "shutdown"):
+        page = _find_export_page(ref, name)
+        assert page is not None, f"Ref page for {name} missing"
+
+
+def test_DED_auto_exclude_ref_pages():
+    """gdtest_auto_exclude: auto-excluded framework names absent, real exports present."""
+    pkg = "gdtest_auto_exclude"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "MyClass.html").exists(), "MyClass page missing"
+    assert (ref / "real_func.html").exists(), "real_func page missing"
+
+
+def test_DED_duplicate_all_ref_pages():
+    """gdtest_duplicate_all: duplicate __all__ entries deduplicated, pages exist."""
+    pkg = "gdtest_duplicate_all"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "transform.html").exists(), "transform page missing"
+    assert (ref / "validate.html").exists(), "validate page missing"
+
+
+def test_DED_no_all_ref_pages():
+    """gdtest_no_all: no __all__ griffe fallback produces ref pages."""
+    pkg = "gdtest_no_all"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "Registry.html").exists(), "Registry page missing"
+    assert (ref / "create_registry.html").exists(), "create_registry page missing"
+
+
+def test_DED_namespace_ref_pages():
+    """gdtest_namespace: namespace package produces ref pages."""
+    pkg = "gdtest_namespace"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "greet.html").exists(), "greet page missing"
+    assert (ref / "farewell.html").exists(), "farewell page missing"
+
+
+def test_DED_name_mismatch_ref_pages():
+    """gdtest_name_mismatch: mismatched name/module builds with ref pages."""
+    pkg = "gdtest_name_mismatch"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "Mapper.html").exists(), "Mapper page missing"
+    assert (ref / "transform.html").exists(), "transform page missing"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DED: Miscellaneous Packages
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def test_DED_badge_readme_ref_pages():
+    """gdtest_badge_readme: README with badges builds with ref pages."""
+    pkg = "gdtest_badge_readme"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    assert (_ref_dir(pkg) / "greet.html").exists(), "greet page missing"
+
+
+def test_DED_unicode_docs_ref_pages():
+    """gdtest_unicode_docs: unicode docstrings build with ref pages."""
+    pkg = "gdtest_unicode_docs"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("analyze_text", "compute_stats", "greet_international"):
+        assert (ref / f"{name}.html").exists(), f"Ref page {name}.html missing"
+
+
+def test_DED_long_docs_ref_pages():
+    """gdtest_long_docs: long docstrings build with ref pages."""
+    pkg = "gdtest_long_docs"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("complex_transform", "detailed_validate", "full_process"):
+        assert (ref / f"{name}.html").exists(), f"Ref page {name}.html missing"
+
+
+def test_DED_mixed_docs_ref_pages():
+    """gdtest_mixed_docs: mixed docstring styles build with ref pages."""
+    pkg = "gdtest_mixed_docs"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "Converter.html").exists(), "Converter page missing"
+    assert (ref / "encode.html").exists(), "encode page missing"
+    assert (ref / "decode.html").exists(), "decode page missing"
+
+
+def test_DED_many_exports_ref_pages():
+    """gdtest_many_exports: 30 exported functions all have ref pages."""
+    pkg = "gdtest_many_exports"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    ref_htmls = [f.name for f in ref.glob("*.html") if f.name != "index.html"]
+    assert len(ref_htmls) == 30, f"Expected 30 ref pages, got {len(ref_htmls)}"
+
+
+def test_DED_many_big_classes_ref_pages():
+    """gdtest_many_big_classes: five big classes all have ref pages."""
+    pkg = "gdtest_many_big_classes"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for cls in ("Processor", "Transformer", "Validator", "Formatter", "Exporter"):
+        assert (ref / f"{cls}.html").exists(), f"{cls} page missing"
+
+
+def test_DED_explicit_big_class_ref():
+    """gdtest_explicit_big_class: explicit big class config with members=false."""
+    pkg = "gdtest_explicit_big_class"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "BigEngine.html").exists(), "BigEngine page missing"
+    assert (ref / "helper_a.html").exists(), "helper_a page missing"
+    assert (ref / "helper_b.html").exists(), "helper_b page missing"
+
+
+def test_DED_explicit_ref_section_pages():
+    """gdtest_explicit_ref: explicit ref sections with named pages."""
+    pkg = "gdtest_explicit_ref"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("MyClass", "helper_func", "util_a", "util_b"):
+        assert (ref / f"{name}.html").exists(), f"Ref page {name}.html missing"
+
+
+def test_DED_google_big_class_ref():
+    """gdtest_google_big_class: google big class has ref pages."""
+    pkg = "gdtest_google_big_class"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "DataProcessor.html").exists(), "DataProcessor page missing"
+    assert (ref / "load_data.html").exists(), "load_data page missing"
+
+
+def test_DED_google_seealso_ref():
+    """gdtest_google_seealso: google seealso functions have ref pages."""
+    pkg = "gdtest_google_seealso"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    for name in ("encode", "decode", "compress", "decompress"):
+        assert (ref / f"{name}.html").exists(), f"Ref page {name}.html missing"

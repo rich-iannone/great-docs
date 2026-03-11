@@ -49,10 +49,9 @@ dev = [
     "pytest-xdist>=3.5",
     "ruff>=0.9.9",
     "mypy>=1.0.0",
-    "pyright>=1.1.350",
+    "pyright>=1.1.407",
     "build>=0.7",
     "twine>=3.4",
-    "pyright>=1.1.407",
 ]
 docs = [
     "jupyter>=1.0.0",
@@ -148,18 +147,25 @@ line-ending = "auto"
 [tool.pyright]
 pythonVersion = "3.11"
 typeCheckingMode = "strict"
-include = [
-   "great_docs/_qrenderer/"
+include = ["great_docs"]
+exclude = [
+    "**/__pycache__",
+    "**/node_modules",
+    "**/.venv",
+    "**/build",
+    "**/dist",
+    "tests",
+    "docs",
 ]
-
-# These checks are not enabled on by "strict"
+reportMissingImports = true
+reportMissingTypeStubs = false
+reportUnusedImport = true
+reportUnusedVariable = true
+# Additional strict checks from qrenderer
 reportUnnecessaryTypeIgnoreComment = true
 reportCallInDefaultInitializer = true
 reportPropertyTypeMismatch = true
 reportUnusedCallResult = true
-
-# We need this because quartodoc is not fully type annotated
-reportMissingTypeStubs = false
 
 [tool.mypy]
 python_version = "3.11"

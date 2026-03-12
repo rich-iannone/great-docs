@@ -23,7 +23,8 @@ class __RenderDocFunction(RenderDocCallMixin, RenderDoc):
         self.doc: layout.DocFunction = self.doc
         self.obj: gf.Function = self.obj
 
-        self.subject_above_signature = self.subject_above_signature is None and not self.contained
+        if self.subject_above_signature is None:
+            self.subject_above_signature = True
 
 
 class RenderDocFunction(__RenderDocFunction):

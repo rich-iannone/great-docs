@@ -316,7 +316,7 @@ class __RenderDocMembersMixin(RenderDoc):
             show_summary = self.show_functions_summary
             show_body = self.show_functions_body
             if isinstance(self.doc, DocClass):
-                slug = "functions"
+                slug = "methods"
 
         if not docables:
             return None

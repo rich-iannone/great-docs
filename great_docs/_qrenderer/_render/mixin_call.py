@@ -130,11 +130,48 @@ class __RenderDocCallMixin(RenderDoc):
         """
         Render the signature of this callable
         """
-        # For now, we do not do any interlinking in the signature
         name = self.signature_name if self.show_signature_name else ""
+
+        # Check for @overload variants
+        overloads = getattr(self.obj, "overloads", None)
+        if overloads:
+            return self._render_overload_signatures(name, overloads)
+
         sig = formatted_signature(name, self.render_signature_parameters())
         return Div(
             CodeBlock(sig, Attr(classes=["python"])),
+            Attr(classes=["doc-signature", f"doc-{self.obj.kind}"]),
+        )
+
+    def _render_overload_signatures(self, name: str, overloads: list) -> BlockContent:
+        """Render multiple @overload signatures as a single code block."""
+        sig_lines: list[str] = []
+        for ov in overloads:
+            if not hasattr(ov, "parameters"):
+                continue
+            params: list[str] = []
+            for p in ov.parameters:
+                ann = str(p.annotation) if p.annotation else ""
+                default = str(p.default) if p.default else ""
+                if ann and default:
+                    params.append(f"{p.name}: {ann} = {default}")
+                elif ann:
+                    params.append(f"{p.name}: {ann}")
+                elif default:
+                    params.append(f"{p.name}={default}")
+                else:
+                    params.append(p.name)
+            ret = str(ov.returns) if ov.returns else ""
+            sig = f"{name}({', '.join(params)})"
+            if ret:
+                sig += f" -> {ret}"
+            sig_lines.append(sig)
+
+        if not sig_lines:
+            sig_lines.append(f"{name}()")
+
+        return Div(
+            CodeBlock("\n".join(sig_lines), Attr(classes=["python"])),
             Attr(classes=["doc-signature", f"doc-{self.obj.kind}"]),
         )
 

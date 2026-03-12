@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import cached_property
 from typing import TYPE_CHECKING
 
-from great_docs._renderer.pandoc.blocks import Div
+from great_docs._renderer.pandoc.blocks import Blocks, Div
 from great_docs._renderer.pandoc.components import Attr
 from great_docs._renderer.pandoc.inlines import Code
 
@@ -47,6 +48,26 @@ class __RenderDocAttribute(RenderDoc):
             Code(str(term)).html,
             Attr(classes=["doc-signature", f"doc-{self.kind}"]),
         )
+
+    def render_description(self) -> BlockContent:
+        """
+        Render description for attributes: subject above signature, no Usage label.
+        """
+        return Blocks(
+            [
+                self.render_docstring_subject(),
+                self.render_signature() if self.show_signature else None,
+            ]
+        )
+
+    @cached_property
+    def docstring_sections_content(self):
+        """
+        Filter out Returns sections for properties since the type
+        is already shown in the signature.
+        """
+        items = super().docstring_sections_content
+        return [(title, section) for title, section in items if title != "Returns"]
 
 
 class RenderDocAttribute(__RenderDocAttribute):

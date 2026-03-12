@@ -290,6 +290,9 @@ ALL_PACKAGES: list[str] = [
     "gdtest_navbar_color_dark",  # 141
     "gdtest_navbar_color_same",  # 142
     "gdtest_navbar_color_split",  # 143
+    # 144–145: Qrenderer variants
+    "gdtest_kitchen_sink_q",  # 144
+    "gdtest_stress_everything_q",  # 145
 ]
 
 
@@ -1640,6 +1643,17 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "Tests navbar_color with contrasting per-mode choices: dark warm "
         "brown (#3e2723, white text) in light mode and pale sky blue "
         "(#bbdefb, black text) in dark mode."
+    ),
+    # ── Qrenderer variants ────────────────────────────────────────────────
+    "gdtest_kitchen_sink_q": (
+        "Identical to gdtest_kitchen_sink but with renderer: 'q'. "
+        "Validates qrenderer output against the classic baseline. "
+        "All features should render correctly via the new pipeline."
+    ),
+    "gdtest_stress_everything_q": (
+        "Identical to gdtest_stress_everything but with renderer: 'q'. "
+        "Validates qrenderer output against the classic baseline. "
+        "All features should render correctly via the new pipeline."
     ),
 }
 

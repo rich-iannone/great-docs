@@ -20,8 +20,6 @@ from great_docs._renderer._griffe_compat import (
 )
 from great_docs._renderer._griffe_compat import dataclasses as dc
 from great_docs._renderer.inventory import convert_inventory, create_inventory
-from great_docs._renderer.pandoc.blocks import Blocks, Header, Para
-from great_docs._renderer.pandoc.components import Attr
 from great_docs._renderer.parsers import get_parser_defaults
 from great_docs._renderer.renderer import Renderer
 

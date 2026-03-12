@@ -117,10 +117,6 @@ DEFAULT_CONFIG: dict[str, Any] = {
     # str: inline HTML text (e.g., a <script> or <link> tag)
     # list[str | dict]: list of inline text strings or {"text": ...} / {"file": ...} entries
     "include_in_header": [],
-    # Renderer style for API reference pages
-    # "classic": legacy markdown renderer + full post-render processing
-    # "q" (default): structured qrenderer with semantic CSS (from _qrenderer)
-    "renderer": "q",
 }
 
 
@@ -318,20 +314,6 @@ class Config:
     def parser(self) -> str:
         """Get the docstring parser format (numpy, google, or sphinx)."""
         return self.get("parser", "numpy")
-
-    @property
-    def renderer(self) -> str:
-        """Get the renderer style: 'q' (default) or 'classic'."""
-        val = self.get("renderer", "q")
-        if val not in ("classic", "q"):
-            print(f"Warning: Unknown renderer '{val}', falling back to 'q'")
-            return "q"
-        return val
-
-    @property
-    def use_qrenderer(self) -> bool:
-        """Check if the new qrenderer is active."""
-        return self.renderer == "q"
 
     @property
     def dynamic(self) -> bool:

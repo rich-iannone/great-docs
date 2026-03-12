@@ -910,9 +910,12 @@ class GreatDocs:
                     project = data.get("project", {})
 
                     # Extract relevant fields from [project] section
-                    metadata["license"] = project.get("license", {}).get("text") or project.get(
-                        "license", {}
-                    ).get("file", "")
+                    # License can be a string (PEP 639) or a dict with "text"/"file" keys
+                    license_val = project.get("license", "")
+                    if isinstance(license_val, dict):
+                        metadata["license"] = license_val.get("text") or license_val.get("file", "")
+                    else:
+                        metadata["license"] = str(license_val) if license_val else ""
                     metadata["authors"] = project.get("authors", [])
                     metadata["maintainers"] = project.get("maintainers", [])
                     metadata["urls"] = project.get("urls", {})

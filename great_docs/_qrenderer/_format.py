@@ -339,6 +339,9 @@ def format_str(source: str) -> str:
 
     This analogous to black.format_str.
     """
+    if not HAS_RUFF:
+        return source
+
     proc = subprocess.run(
         [
             "ruff",

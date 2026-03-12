@@ -248,27 +248,67 @@ def _replace_rst_code_block(m: re.Match) -> str:
     return f"{prefix}\n\n```python\n{dedented}\n```\n"
 
 
+def _smart_dedent(text: str) -> str:
+    """Dedent text using the first non-blank line's indent as the margin.
+
+    Unlike `textwrap.dedent`, this tolerates lines with *less* indentation than the margin (e.g. a
+    string-literal continuation at column 0 that made `inspect.cleandoc` choose margin=0). We strip
+    up to *margin* leading spaces from every line, so lines already at 0-indent stay put.
+    """
+    lines = text.splitlines(True)
+
+    # Determine margin from first non-blank line
+    margin = 0
+    for line in lines:
+        stripped = line.strip()
+        if stripped:
+            margin = len(line) - len(line.lstrip())
+            break
+
+    if not margin:
+        return text
+
+    result: list[str] = []
+    for line in lines:
+        if line.strip():
+            current_indent = len(line) - len(line.lstrip())
+            strip_amount = min(margin, current_indent)
+            result.append(line[strip_amount:])
+        else:
+            result.append(line)
+    return "".join(result)
+
+
 def _convert_rst_text(text: str) -> str:
-    """Apply all RST → Markdown transforms to a docstring text section."""
-    # RST ``::`` code blocks → fenced code blocks (includes ``.. math::``)
+    """Apply all RST -> Markdown transforms to a docstring text section."""
+    # Fix docstrings where inspect.cleandoc failed to dedent (e.g. a
+    # multiline string literal created a 0-indent line, preventing
+    # proper margin detection).
+    text = _smart_dedent(text)
+
+    # Quarto executable cell syntax -> regular fenced code blocks
+    # e.g. ```{python} -> ```python so Quarto doesn't treat them as cells
+    text = re.sub(r"```\{\s*(\w+)\s*\}", r"```\1", text)
+
+    # RST `::` code blocks -> fenced code blocks (includes `.. math::`)
     text = _RST_CODE_BLOCK_RE.sub(_replace_rst_code_block, text)
 
-    # RST inline math ``:math:`…``` → ``$…$``
+    # RST inline math `:math:`…`` -> `$…$`
     text = re.sub(r":math:`([^`]+)`", r"$\1$", text)
 
-    # Sphinx cross-reference roles → markdown code spans
+    # Sphinx cross-reference roles -> markdown code spans
     text = _convert_sphinx_roles(text)
 
-    # RST admonition / version directives → Quarto callout blocks
+    # RST admonition / version directives -> Quarto callout blocks
     text = _convert_rst_directives(text)
 
-    # RST simple tables → Markdown pipe tables
+    # RST simple tables -> Markdown pipe tables
     text = _convert_rst_simple_tables(text)
 
-    # RST grid tables → Markdown pipe tables
+    # RST grid tables -> Markdown pipe tables
     text = _convert_rst_grid_tables(text)
 
-    # RST citation markers ``.. [1] Text`` → numbered list
+    # RST citation markers ``.. [1] Text`` -> numbered list
     text = _convert_rst_citations(text)
 
     return text
@@ -276,7 +316,7 @@ def _convert_rst_text(text: str) -> str:
 
 # RST citation converter ------------------------------------------------------
 
-# Match lines/paragraphs containing ``.. [N]`` citation markers.
+# Match lines/paragraphs containing `.. [N]` citation markers.
 _RST_CITATION_RE = re.compile(
     r"^([ \t]*)\.\.\s+\[(\d+)\]\s+",
     re.MULTILINE,
@@ -284,7 +324,7 @@ _RST_CITATION_RE = re.compile(
 
 
 def _convert_rst_citations(text: str) -> str:
-    """Convert RST ``.. [N] body`` citation markers to a numbered markdown list.
+    """Convert RST `.. [N] body` citation markers to a numbered markdown list.
 
     Input like::
 
@@ -329,7 +369,7 @@ def _convert_rst_citations(text: str) -> str:
 
 
 def _convert_rst_simple_tables(text: str) -> str:
-    """Convert RST simple tables (``=====`` delimited) to Markdown pipe tables."""
+    """Convert RST simple tables (`=====` delimited) to Markdown pipe tables."""
     lines = text.split("\n")
     result: list[str] = []
     i = 0
@@ -382,7 +422,7 @@ def _convert_rst_simple_tables(text: str) -> str:
 
 
 def _convert_rst_grid_tables(text: str) -> str:
-    """Convert RST grid tables (``+---+`` delimited) to Markdown pipe tables."""
+    """Convert RST grid tables (`+---+` delimited) to Markdown pipe tables."""
     lines = text.split("\n")
     result: list[str] = []
     i = 0

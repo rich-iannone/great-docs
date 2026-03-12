@@ -1988,7 +1988,7 @@ body.quarto-dark .callout {
 }
 
 body.quarto-dark .callout .callout-header {
-    background-color: var(--gd-bg-secondary);
+    background-color: var(--gd-bg-secondary) !important;
 }
 
 body.quarto-dark .callout .callout-icon::before {

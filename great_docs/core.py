@@ -7085,7 +7085,7 @@ title: "Code of Conduct"
                     role = author.get("role", "")
                     affiliation = author.get("affiliation", "")
                     github = author.get("github", "")
-                    homepage = author.get("homepage", "")
+                    homepage = author.get("homepage", "") or author.get("url", "")
                     orcid = author.get("orcid", "")
 
                     # Build author HTML

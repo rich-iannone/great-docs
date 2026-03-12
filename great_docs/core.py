@@ -3913,11 +3913,15 @@ class GreatDocs:
             # Get all members from the package (equivalent to dir(package))
             all_members = list(pkg.members.keys())
 
-            # Filter out private names (starting with underscore)
-            # This also filters out dunder names like __version__, __all__, etc.
-            public_members = [name for name in all_members if not name.startswith("_")]
-
-            print(f"Discovered {len(public_members)} public names")
+            # If the package defines __all__, restrict to those names
+            if pkg.exports:
+                public_members = [name for name in all_members if name in set(pkg.exports)]
+                print(f"Using __all__ with {len(public_members)} exports")
+            else:
+                # Filter out private names (starting with underscore)
+                # This also filters out dunder names like __version__, __all__, etc.
+                public_members = [name for name in all_members if not name.startswith("_")]
+                print(f"Discovered {len(public_members)} public names")
 
             # Get config from great-docs.yml
             metadata = self._get_package_metadata()

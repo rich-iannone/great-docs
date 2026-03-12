@@ -14,6 +14,7 @@ from great_docs._renderer.pandoc.blocks import (
 )
 from great_docs._renderer.pandoc.components import Attr
 from great_docs._renderer.pandoc.inlines import Code
+from great_docs._renderer.renderer import _convert_rst_text
 
 from .._format import formatted_signature, repr_obj
 from .._griffe.docstrings import (
@@ -87,7 +88,8 @@ class __RenderDocCallMixin(RenderDoc):
             # references can be processed. Pandoc does not process any markup
             # within backquotes `...`, but it does if the markup is within
             # html code tags.
-            return Code(str(term)).html, el.description
+            desc = _convert_rst_text(el.description) if el.description else ""
+            return Code(str(term)).html, desc
 
         items = [render_section_item(item) for item in el.value]
         return Div(

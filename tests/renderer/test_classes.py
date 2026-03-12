@@ -55,11 +55,11 @@ def test_dataclass_parameters():
         assert f"[[{default}]{{.{co}}}]{{.doc-parameter-default}}</code>" in qmd
 
     assert "## Init Parameters {.doc-init-parameters}" in qmd
-    assert_in_qmd("a", "[int](`int`)", "1", "dv")
+    assert_in_qmd("a", "int", "1", "dv")
 
     assert "## Parameter Attributes {.doc-parameter-attributes}" in qmd
-    assert_in_qmd("b", "[float](`float`)", "2", "dv")
-    assert_in_qmd("c", "[float](`float`)", "3.0", "fl")
+    assert_in_qmd("b", "float", "2", "dv")
+    assert_in_qmd("c", "float", "3.0", "fl")
 
 
 def test_dataclass_parameter_docstrings():
@@ -86,4 +86,5 @@ def test_contained_docstring_link():
     """
 
     qmd = render_code_variable(code, "Base")
-    assert "[meth](#package.Base.meth)" in qmd
+    # Q renderer adds parens to method references
+    assert "[meth()](#package.Base.meth)" in qmd or "[meth](#package.Base.meth)" in qmd

@@ -47,11 +47,11 @@ class GreatDocs:
         # Whether API reference was successfully configured (set during build)
         self._has_api_reference = True
 
-        # Set environment variables needed by the qrenderer (only when active)
-        if self._config.use_qrenderer:
-            _, _, url = self._get_github_repo_info()
+        # Set environment variables needed by the qrenderer
+        _, _, url = self._get_github_repo_info()
+        if url:
             os.environ["GITHUB_REPO_URL"] = str(url)
-            os.environ["GIT_REF"] = self._detect_git_ref()
+        os.environ["GIT_REF"] = self._detect_git_ref()
 
     def _prepare_build_directory(self) -> None:
         """
@@ -86,14 +86,13 @@ class GreatDocs:
         css_dst = self.project_path / "great-docs.css"
         shutil.copy2(css_src, css_dst)
 
-        # Copy qrenderer assets only when renderer: "q" is active
-        if self._config.use_qrenderer:
-            renderer_src = self.assets_path / "_renderer.py"
-            if renderer_src.exists():
-                shutil.copy2(renderer_src, self.project_path / "_renderer.py")
-            scss_src = self.assets_path / "great-docs-q.scss"
-            if scss_src.exists():
-                shutil.copy2(scss_src, self.project_path / "great-docs-q.scss")
+        # Copy qrenderer assets
+        renderer_src = self.assets_path / "_renderer.py"
+        if renderer_src.exists():
+            shutil.copy2(renderer_src, self.project_path / "_renderer.py")
+        scss_src = self.assets_path / "great-docs-q.scss"
+        if scss_src.exists():
+            shutil.copy2(scss_src, self.project_path / "great-docs-q.scss")
 
         # Copy JavaScript files
         js_files = [
@@ -140,7 +139,6 @@ class GreatDocs:
         # Write options JSON for the post-render script
         gd_options = {
             "markdown_pages": self._config.markdown_pages,
-            "renderer": self._config.renderer,
         }
         gd_options_path = self.project_path / "_gd_options.json"
         with open(gd_options_path, "w") as f:
@@ -3912,11 +3910,15 @@ class GreatDocs:
             # Get all members from the package (equivalent to dir(package))
             all_members = list(pkg.members.keys())
 
-            # Filter out private names (starting with underscore)
-            # This also filters out dunder names like __version__, __all__, etc.
-            public_members = [name for name in all_members if not name.startswith("_")]
-
-            print(f"Discovered {len(public_members)} public names")
+            # If the package defines __all__, restrict to those names
+            if pkg.exports:
+                public_members = [name for name in all_members if name in set(pkg.exports)]
+                print(f"Using __all__ with {len(public_members)} exports")
+            else:
+                # Filter out private names (starting with underscore)
+                # This also filters out dunder names like __version__, __all__, etc.
+                public_members = [name for name in all_members if not name.startswith("_")]
+                print(f"Discovered {len(public_members)} public names")
 
             # Get config from great-docs.yml
             metadata = self._get_package_metadata()
@@ -7080,7 +7082,7 @@ title: "Code of Conduct"
                     role = author.get("role", "")
                     affiliation = author.get("affiliation", "")
                     github = author.get("github", "")
-                    homepage = author.get("homepage", "")
+                    homepage = author.get("homepage", "") or author.get("url", "")
                     orcid = author.get("orcid", "")
 
                     # Build author HTML
@@ -7696,11 +7698,8 @@ toc: false
         ref_title = self._config.reference_title or "Reference"
         ref_desc = self._config.reference_desc
 
-        # Select renderer based on config: "classic" (default) or "q" (new qrenderer)
-        if self._config.use_qrenderer:
-            renderer_config = {"style": "_renderer.py"}
-        else:
-            renderer_config = {"style": "markdown", "table_style": "description-list"}
+        # Configure the qrenderer
+        renderer_config = {"style": "_renderer.py"}
 
         api_ref_config = {
             "package": importable_name,

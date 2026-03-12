@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from functools import cached_property
 from typing import TYPE_CHECKING, TypeAlias, cast
 
@@ -7,6 +8,7 @@ import griffe as gf
 
 from great_docs._renderer.pandoc.blocks import (
     BlockContent,
+    Blocks,
     CodeBlock,
     DefinitionItem,
     DefinitionList,
@@ -14,6 +16,7 @@ from great_docs._renderer.pandoc.blocks import (
 )
 from great_docs._renderer.pandoc.components import Attr
 from great_docs._renderer.pandoc.inlines import Code
+from great_docs._renderer.renderer import _convert_rst_text
 
 from .._format import formatted_signature, repr_obj
 from .._griffe.docstrings import (
@@ -68,6 +71,12 @@ class __RenderDocCallMixin(RenderDoc):
         e.g. Parameters, Other Parameters, Returns, Yields, Receives,
              Warns, Attributes
         """
+        _RST_DIRECTIVE_RE = re.compile(r"^\.\.\s+\w+::")
+
+        def _is_rst_directive_item(item: DocstringDefinitionType) -> bool:
+            """Check if a definition item is actually a misinterpreted RST directive."""
+            ann = getattr(item, "annotation", None)
+            return bool(ann and isinstance(ann, str) and _RST_DIRECTIVE_RE.match(ann.strip()))
 
         def render_section_item(el: DocstringDefinitionType) -> DefinitionItem:
             """
@@ -87,13 +96,61 @@ class __RenderDocCallMixin(RenderDoc):
             # references can be processed. Pandoc does not process any markup
             # within backquotes `...`, but it does if the markup is within
             # html code tags.
-            return Code(str(term)).html, el.description
+            desc = _convert_rst_text(el.description) if el.description else ""
+            return Code(str(term)).html, desc
 
-        items = [render_section_item(item) for item in el.value]
-        return Div(
-            DefinitionList(items),
-            Attr(classes=["doc-definition-items"]),
-        )
+        normal_items: list[DefinitionItem] = []
+        directive_parts: list[str] = []
+
+        # For Returns/Yields/Receives, merge consecutive unnamed items that
+        # share the same annotation (griffe splits continuation paragraphs
+        # into separate DocstringReturn objects, each repeating the type).
+        items_to_render = list(el.value)
+        if isinstance(
+            el, (gf.DocstringSectionReturns, gf.DocstringSectionYields, gf.DocstringSectionReceives)
+        ):
+            merged: list[gf.DocstringReturn] = []
+            for item in items_to_render:
+                name = getattr(item, "name", None) or ""
+                ann = getattr(item, "annotation", None)
+                if (
+                    not name
+                    and merged
+                    and not (getattr(merged[-1], "name", None) or "")
+                    and getattr(merged[-1], "annotation", None) == ann
+                ):
+                    # Merge description into the previous item
+                    prev = merged[-1]
+                    prev_desc = prev.description or ""
+                    cur_desc = item.description or ""
+                    sep = "\n\n" if prev_desc else ""
+                    prev.description = prev_desc + sep + cur_desc
+                else:
+                    merged.append(item)
+            items_to_render = merged
+
+        for item in items_to_render:
+            if _is_rst_directive_item(item):
+                # Reconstruct the RST directive text and convert it
+                ann = item.annotation.strip()
+                desc = getattr(item, "description", "") or ""
+                if desc:
+                    lines = desc.splitlines()
+                    directive_text = ann + "\n" + "\n".join("    " + ln for ln in lines)
+                else:
+                    directive_text = ann
+                directive_parts.append(_convert_rst_text(directive_text))
+            else:
+                normal_items.append(render_section_item(item))
+
+        parts: list[BlockContent] = []
+        if normal_items:
+            parts.append(Div(DefinitionList(normal_items), Attr(classes=["doc-definition-items"])))
+        parts.extend(directive_parts)
+
+        if len(parts) == 1:
+            return parts[0]
+        return Blocks(parts) if parts else None
 
     @cached_property
     def parameters(self) -> gf.Parameters:
@@ -130,11 +187,48 @@ class __RenderDocCallMixin(RenderDoc):
         """
         Render the signature of this callable
         """
-        # For now, we do not do any interlinking in the signature
         name = self.signature_name if self.show_signature_name else ""
+
+        # Check for @overload variants
+        overloads = getattr(self.obj, "overloads", None)
+        if overloads:
+            return self._render_overload_signatures(name, overloads)
+
         sig = formatted_signature(name, self.render_signature_parameters())
         return Div(
             CodeBlock(sig, Attr(classes=["python"])),
+            Attr(classes=["doc-signature", f"doc-{self.obj.kind}"]),
+        )
+
+    def _render_overload_signatures(self, name: str, overloads: list) -> BlockContent:
+        """Render multiple @overload signatures as a single code block."""
+        sig_lines: list[str] = []
+        for ov in overloads:
+            if not hasattr(ov, "parameters"):
+                continue
+            params: list[str] = []
+            for p in ov.parameters:
+                ann = str(p.annotation) if p.annotation else ""
+                default = str(p.default) if p.default else ""
+                if ann and default:
+                    params.append(f"{p.name}: {ann} = {default}")
+                elif ann:
+                    params.append(f"{p.name}: {ann}")
+                elif default:
+                    params.append(f"{p.name}={default}")
+                else:
+                    params.append(p.name)
+            ret = str(ov.returns) if ov.returns else ""
+            sig = f"{name}({', '.join(params)})"
+            if ret:
+                sig += f" -> {ret}"
+            sig_lines.append(sig)
+
+        if not sig_lines:
+            sig_lines.append(f"{name}()")
+
+        return Div(
+            CodeBlock("\n".join(sig_lines), Attr(classes=["python"])),
             Attr(classes=["doc-signature", f"doc-{self.obj.kind}"]),
         )
 

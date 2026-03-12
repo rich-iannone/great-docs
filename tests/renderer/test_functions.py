@@ -44,7 +44,6 @@ def test_variable_positional_parameters():
     """
     qmd = render_code_variable(code, "func")
     assert "func(a=1, b=2, *c, z=26)" in qmd
-    assert "()" not in qmd
 
 
 def test_variable_keyword_parameters():

@@ -23,6 +23,7 @@ from great_docs._renderer.pandoc.blocks import (
 )
 from great_docs._renderer.pandoc.components import Attr
 from great_docs._renderer.pandoc.inlines import Inline, Inlines, Inlines0, Link, Span
+from great_docs._renderer.renderer import _convert_rst_text
 
 from .._format import (
     HAS_RUFF,
@@ -34,7 +35,6 @@ from .._format import (
     render_formatted_expr,
     repr_obj,
 )
-from .._pandoc.inlines import InterLink
 from .._utils import package_info
 from .base import RenderBase
 
@@ -174,6 +174,11 @@ class __RenderDoc(RenderBase):
             format = "name"
         name = format_name(self.doc, format)
 
+        # Append () to callable objects (functions, methods) to match classic
+        # renderer behavior and user expectations
+        if self.kind == "function":
+            name += "()"
+
         return markdown_escape(name)
 
     @cached_property
@@ -204,11 +209,13 @@ class __RenderDoc(RenderBase):
     def _title(self) -> InlineContent:
         return Span(
             self.display_name,
-            Attr(classes=[
-                "doc-object-name",
-                f"doc-{self.kind}",
-                "doc-label",
-                f"doc-label-{self.label}"],
+            Attr(
+                classes=[
+                    "doc-object-name",
+                    f"doc-{self.kind}",
+                    "doc-label",
+                    f"doc-label-{self.label}",
+                ],
             ),
         )
 
@@ -259,14 +266,14 @@ class __RenderDoc(RenderBase):
 
             annotation = self.obj.annotation
 
-        def _render(ann: Annotation | None) -> str | InterLink:
-            # Recursively render annotation
+        def _render(ann: Annotation | None) -> str:
+            # Recursively render annotation as plain text (no links)
             if ann is None:
                 return ""
             elif isinstance(ann, str):
                 return repr_obj(ann)
             elif isinstance(ann, gf.ExprName):
-                return InterLink(markdown_escape(ann.name), ann.canonical_path)
+                return markdown_escape(ann.name)
             else:
                 assert isinstance(ann, gf.Expr)
                 if isinstance(ann, gf.ExprSubscript) and ann.canonical_name == "InitVar":
@@ -274,8 +281,8 @@ class __RenderDoc(RenderBase):
                 # A type annotation with ~ removes the qualname prefix
                 path_str = ann.canonical_path
                 if path_str[0] == "~":
-                    return InterLink(ann.canonical_name, path_str[1:])
-                return "".join(str(_render(a)) for a in ann)
+                    return ann.canonical_name
+                return "".join(_render(a) for a in ann)
 
         return pretty_code(str(_render(annotation)))
 
@@ -411,6 +418,8 @@ class __RenderDoc(RenderBase):
         sections: list[Block] = []
         for title, section in self.docstring_sections_content:
             body = self.render_docstring_section(section) or ""
+            if not body:
+                continue
             slug = title.lower().replace(" ", "-")
             section_classes = [f"doc-{slug}"]
             if title in ("Text", "Deprecated"):
@@ -450,7 +459,7 @@ class __RenderDoc(RenderBase):
         new_el = qast.transform(el)  # pyright: ignore[reportUnknownMemberType]
         if isinstance(new_el, qast.ExampleCode):
             return CodeBlock(el.value, Attr(classes=["python"]))
-        return el.value
+        return _convert_rst_text(el.value)
 
     @render_docstring_section.register
     def _(self, el: gf.DocstringSectionExamples):
@@ -477,7 +486,15 @@ class __RenderDoc(RenderBase):
         """
         This catches unofficial numpydoc sections
         """
-        return el.value.description
+        return _convert_rst_text(el.value.description)
+
+    @render_docstring_section.register
+    def _(self, el: qast.DocstringSectionWarnings):
+        return _convert_rst_text(el.value)
+
+    @render_docstring_section.register
+    def _(self, el: qast.DocstringSectionNotes):
+        return _convert_rst_text(el.value)
 
     @render_docstring_section.register
     def _(self, el: qast.DocstringSectionSeeAlso):
@@ -498,7 +515,11 @@ class __RenderDoc(RenderBase):
         """
         The name of object as it will appear in the summary table
         """
-        return self.doc.name
+        name = self.doc.name
+        # Append () to callable objects in summary tables
+        if self.kind == "function":
+            name += "()"
+        return name
 
     def render_summary(self) -> Sequence[DefinitionItem]:
         """
@@ -536,11 +557,13 @@ class __RenderDoc(RenderBase):
         )
 
     @cached_property
-    def source_link(self) -> Link:
+    def source_link(self) -> Link | None:
         """
         Link to source code where the object is described
         """
         base_url = package_info("GITHUB_REPO_URL")
+        if not base_url or base_url == "None":
+            return None
         branch = package_info("GIT_REF")
         relative_path = self.obj.relative_package_filepath
         start, end = self.obj.lineno, self.obj.endlineno

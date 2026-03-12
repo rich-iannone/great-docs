@@ -459,7 +459,7 @@ class __RenderDoc(RenderBase):
         new_el = qast.transform(el)  # pyright: ignore[reportUnknownMemberType]
         if isinstance(new_el, qast.ExampleCode):
             return CodeBlock(el.value, Attr(classes=["python"]))
-        return el.value
+        return _convert_rst_text(el.value)
 
     @render_docstring_section.register
     def _(self, el: gf.DocstringSectionExamples):
@@ -486,7 +486,7 @@ class __RenderDoc(RenderBase):
         """
         This catches unofficial numpydoc sections
         """
-        return el.value.description
+        return _convert_rst_text(el.value.description)
 
     @render_docstring_section.register
     def _(self, el: qast.DocstringSectionWarnings):

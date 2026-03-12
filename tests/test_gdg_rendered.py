@@ -789,7 +789,23 @@ def test_R3_rst_directives_render_as_callouts(pkg_name: str, expected_items):
             if label.lower() in text.lower() or "version" in text.lower():
                 found_callouts += 1
 
-        # Q renderer: RST directive appears as annotation text or in page content
+        # Q renderer: Quarto callout divs (properly rendered directives)
+        if found_callouts == 0:
+            callout_class_map = {
+                "Note": "callout-note",
+                "Warning": "callout-warning",
+                "Tip": "callout-tip",
+                "Deprecated": "callout-warning",
+                "Added": "callout-note",
+                "Caution": "callout-caution",
+                "Danger": "callout-important",
+                "Important": "callout-important",
+            }
+            callout_cls = callout_class_map.get(label, "callout-note")
+            quarto_callouts = soup.find_all("div", class_=lambda c: c and callout_cls in c)
+            found_callouts += len(quarto_callouts)
+
+        # Q renderer fallback: RST directive appears as raw text in page content
         if found_callouts == 0:
             page_text = soup.get_text()
             if rst_marker and rst_marker in page_text:

@@ -102,7 +102,34 @@ class __RenderDocCallMixin(RenderDoc):
         normal_items: list[DefinitionItem] = []
         directive_parts: list[str] = []
 
-        for item in el.value:
+        # For Returns/Yields/Receives, merge consecutive unnamed items that
+        # share the same annotation (griffe splits continuation paragraphs
+        # into separate DocstringReturn objects, each repeating the type).
+        items_to_render = list(el.value)
+        if isinstance(
+            el, (gf.DocstringSectionReturns, gf.DocstringSectionYields, gf.DocstringSectionReceives)
+        ):
+            merged: list[gf.DocstringReturn] = []
+            for item in items_to_render:
+                name = getattr(item, "name", None) or ""
+                ann = getattr(item, "annotation", None)
+                if (
+                    not name
+                    and merged
+                    and not (getattr(merged[-1], "name", None) or "")
+                    and getattr(merged[-1], "annotation", None) == ann
+                ):
+                    # Merge description into the previous item
+                    prev = merged[-1]
+                    prev_desc = prev.description or ""
+                    cur_desc = item.description or ""
+                    sep = "\n\n" if prev_desc else ""
+                    prev.description = prev_desc + sep + cur_desc
+                else:
+                    merged.append(item)
+            items_to_render = merged
+
+        for item in items_to_render:
             if _is_rst_directive_item(item):
                 # Reconstruct the RST directive text and convert it
                 ann = item.annotation.strip()

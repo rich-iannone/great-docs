@@ -353,6 +353,26 @@ def _insert_contents(
     return False
 
 
+def _merge_frontmatter(content: str, extra: dict) -> str:
+    """Merge extra YAML properties into a document's frontmatter.
+
+    If `content` starts with a YAML frontmatter block (`---`), the *extra* keys are inserted into
+    it. Otherwise, a new frontmatter block is prepended.
+    """
+    if content.startswith("---\n"):
+        # Find end of existing frontmatter
+        end = content.index("\n---", 4)
+        existing_yaml = content[4 : end + 1]  # noqa: E203
+        rest = content[end + 4 :]  # after closing ---
+        existing = yaml.safe_load(existing_yaml) or {}
+        existing.update(extra)
+        new_yaml = yaml.dump(existing, allow_unicode=True, sort_keys=False)
+        return f"---\n{new_yaml}---{rest}"
+    else:
+        new_yaml = yaml.dump(extra, allow_unicode=True, sort_keys=False)
+        return f"---\n{new_yaml}---\n\n{content}"
+
+
 # Builder =====================================================================
 
 
@@ -436,7 +456,9 @@ class Builder:
         render_interlinks: bool = False,
         _fast_inventory=False,
     ):
-        self.layout = self.load_layout(title, desc=desc, sections=sections, package=package, options=options)
+        self.layout = self.load_layout(
+            title, desc=desc, sections=sections, package=package, options=options
+        )
 
         self.package = package
         self.version = None
@@ -526,8 +548,8 @@ class Builder:
             _log.info(f"Rendering {page.path}")
             rendered = self.renderer.render(page)
 
-            # Prepend frontmatter to disable prev/next page navigation
-            rendered = "---\npage-navigation: false\n---\n\n" + rendered
+            # Merge page-navigation into existing frontmatter
+            rendered = _merge_frontmatter(rendered, {"page-navigation": False})
 
             html_path = Path(self.dir) / (page.path + self.out_page_suffix)
             html_path.parent.mkdir(exist_ok=True, parents=True)

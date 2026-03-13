@@ -8610,11 +8610,26 @@ toc: false
 }}
 {selector} .navbar .quarto-navbar-tools button,
 {selector} .navbar .quarto-navbar-tools .quarto-navigation-tool {{
+    background: {btn_bg};
+    border-color: {btn_border};
     color: {text_hex};
 }}
 {selector} .navbar .quarto-navbar-tools button:hover,
 {selector} .navbar .quarto-navbar-tools .quarto-navigation-tool:hover {{
-    background-color: {hover_bg};
+    background: {btn_hover_bg};
+    border-color: {btn_hover_border};
+}}
+{selector} .navbar .nav-item.compact .nav-link,
+{selector} .navbar .gd-navbar-icon {{
+    background: {btn_bg};
+    border: 1px solid {btn_border};
+    border-radius: 6px;
+    color: {text_hex};
+}}
+{selector} .navbar .nav-item.compact .nav-link:hover,
+{selector} .navbar .gd-navbar-icon:hover {{
+    background: {btn_hover_bg};
+    border-color: {btn_hover_border};
 }}
 {selector} .navbar .navbar-toggler-icon {{
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='{toggler_stroke}' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;

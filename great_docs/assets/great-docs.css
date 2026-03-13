@@ -505,6 +505,24 @@ body.quarto-light .navbar .navbar-toggler-icon {
 }
 
 /* Search button - styled to match dark-mode toggle and GitHub widget */
+
+/* Navbar widget container — groups search, toggle, and GitHub into a flex row */
+#gd-navbar-widgets {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Reset Quarto's auto-margins and ordering on search when inside widget tray */
+#gd-navbar-widgets #quarto-search {
+    margin-left: 0;
+    order: unset;
+}
+
+#gd-navbar-widgets #quarto-search.type-overlay .aa-Autocomplete {
+    width: 34px;
+}
+
 #quarto-search .aa-DetachedSearchButton {
     display: flex;
     align-items: center;
@@ -556,12 +574,48 @@ body.quarto-light .navbar .aa-SubmitButton svg {
 
 body.quarto-light .navbar .quarto-navbar-tools button,
 body.quarto-light .navbar .quarto-navbar-tools .quarto-navigation-tool {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
     color: var(--gd-navbar-text);
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
 body.quarto-light .navbar .quarto-navbar-tools button:hover,
 body.quarto-light .navbar .quarto-navbar-tools .quarto-navigation-tool:hover {
-    background-color: rgba(0, 0, 0, 0.06);
+    background: rgba(0, 0, 0, 0.10);
+    border-color: rgba(0, 0, 0, 0.25);
+}
+
+/* GitHub icon (icon mode) — rendered as .nav-item.compact .nav-link, or
+   .gd-navbar-icon when extracted into #gd-navbar-widgets */
+body.quarto-light .navbar .nav-item.compact .nav-link,
+body.quarto-light .navbar .gd-navbar-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+    color: var(--gd-navbar-text);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+body.quarto-light .navbar .nav-item.compact .nav-link:hover,
+body.quarto-light .navbar .gd-navbar-icon:hover {
+    background: rgba(0, 0, 0, 0.10);
+    border-color: rgba(0, 0, 0, 0.25);
 }
 
 #navbarCollapse > ul.navbar-nav.navbar-nav-scroll.ms-auto > li {
@@ -751,7 +805,6 @@ body.quarto-light .navbar .quarto-navbar-tools .quarto-navigation-tool:hover {
     position: relative;
     display: inline-flex;
     align-items: center;
-    margin-left: 8px;
 }
 
 .gh-widget-trigger {
@@ -883,29 +936,13 @@ body.quarto-light .navbar .quarto-navbar-tools .quarto-navigation-tool:hover {
 
 /* Mobile responsive adjustments */
 @media (max-width: 991.98px) {
-    /* Align both widgets with consistent left positioning */
-    #github-widget {
-        margin-left: 0;
+    /* Keep widget container in a row on mobile */
+    #gd-navbar-widgets {
+        gap: 4px;
+        margin-left: auto;
     }
 
-    #dark-mode-toggle-container {
-        margin-right: 8px;
-    }
-
-    /* Stack widgets vertically with consistent width */
-    .nav-item:has(#dark-mode-toggle-container),
-    .nav-item:has(#github-widget) {
-        display: flex;
-        width: 100%;
-        padding: 4px 0;
-    }
-
-    /* Make dark mode toggle full width to match GitHub widget */
-    #dark-mode-toggle-container .dark-mode-toggle {
-        margin-left: 10px;
-    }
-
-    /* Make GitHub widget full width */
+    /* Make GitHub widget full width when inside collapsed nav */
     .gh-widget-trigger {
         width: 100%;
         justify-content: flex-start;
@@ -2079,13 +2116,47 @@ body.quarto-dark #quarto-search .aa-DetachedSearchButton:focus {
 
 body.quarto-dark .navbar .quarto-navbar-tools button,
 body.quarto-dark .navbar .quarto-navbar-tools .quarto-navigation-tool {
-    background-color: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
     color: #e0e0e0;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
 body.quarto-dark .navbar .quarto-navbar-tools button:hover,
 body.quarto-dark .navbar .quarto-navbar-tools .quarto-navigation-tool:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* GitHub icon (icon mode) — dark mode */
+body.quarto-dark .navbar .nav-item.compact .nav-link,
+body.quarto-dark .navbar .gd-navbar-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    color: #e0e0e0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+body.quarto-dark .navbar .nav-item.compact .nav-link:hover,
+body.quarto-dark .navbar .gd-navbar-icon:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
 }
 
 body.quarto-dark .navbar .navbar-toggler {
@@ -2794,6 +2865,23 @@ html[data-bs-theme="dark"] .navbar[class*="gd-gradient-"] .nav-link:hover {
 }
 html[data-bs-theme="dark"] .navbar[class*="gd-gradient-"] .nav-item:has(#github-widget) .nav-link:hover {
     background-color: transparent !important;
+}
+html[data-bs-theme="dark"] .navbar[class*="gd-gradient-"] .nav-item.compact .nav-link,
+html[data-bs-theme="dark"] .navbar[class*="gd-gradient-"] .gd-navbar-icon {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+html[data-bs-theme="dark"] .navbar[class*="gd-gradient-"] .nav-item.compact .nav-link:hover,
+html[data-bs-theme="dark"] .navbar[class*="gd-gradient-"] .gd-navbar-icon:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+    border-color: rgba(255, 255, 255, 0.25);
 }
 html[data-bs-theme="dark"] .navbar[class*="gd-gradient-"] .nav-link.active {
     text-decoration-color: rgba(255, 255, 255, 0.75) !important;

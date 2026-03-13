@@ -100,3 +100,86 @@
   }
   mql.addEventListener("change", update);
 })();
+
+/**
+ * Collect navbar action widgets (search, dark-mode toggle, GitHub icon)
+ * into a single flex container for consistent alignment and spacing.
+ *
+ * Each widget lives in a different part of the Quarto-generated DOM:
+ *   - #quarto-search: outside #navbarCollapse
+ *   - dark-mode toggle: JS-injected <li> inside ul.ms-auto
+ *   - GitHub icon: <li class="nav-item compact"> inside ul.ms-auto
+ *   - GitHub widget: <li> wrapping #github-widget inside ul.ms-auto
+ *
+ * This IIFE moves them into a shared #gd-navbar-widgets container placed
+ * after #navbarCollapse for uniform flex alignment on desktop.
+ */
+(function () {
+  "use strict";
+
+  function collect() {
+    var containerFluid = document.querySelector(".navbar .container-fluid");
+    if (!containerFluid) return;
+
+    // Don't run twice
+    if (document.getElementById("gd-navbar-widgets")) return;
+
+    var wrapper = document.createElement("div");
+    wrapper.id = "gd-navbar-widgets";
+
+    // 1. Dark-mode toggle (unwrap from its <li>)
+    var toggleContainer = document.getElementById("dark-mode-toggle-container");
+    if (toggleContainer) {
+      var li = toggleContainer.closest("li.nav-item");
+      wrapper.appendChild(toggleContainer);
+      if (li && !li.hasChildNodes()) li.remove();
+    }
+
+    // 2. GitHub icon – compact nav-item (unwrap the <a> from its <li>)
+    var compactItem = containerFluid.querySelector(
+      "#navbarCollapse .nav-item.compact"
+    );
+    if (compactItem) {
+      var link = compactItem.querySelector(".nav-link");
+      if (link) {
+        // Mark the extracted link so CSS can target it without the .nav-item.compact parent
+        link.classList.add("gd-navbar-icon");
+        wrapper.appendChild(link);
+        compactItem.remove();
+      }
+    }
+
+    // 3. GitHub widget – #github-widget (unwrap from its <li>)
+    var ghWidget = document.getElementById("github-widget");
+    if (ghWidget) {
+      var ghLi = ghWidget.closest("li.nav-item");
+      wrapper.appendChild(ghWidget);
+      if (ghLi && !ghLi.hasChildNodes()) ghLi.remove();
+    }
+
+    // 4. Search button
+    var search = document.getElementById("quarto-search");
+    if (search) wrapper.appendChild(search);
+
+    // Remove the now-empty ul.ms-auto if it has no remaining children
+    var msAuto = containerFluid.querySelector(
+      "#navbarCollapse .navbar-nav.ms-auto"
+    );
+    if (msAuto && msAuto.children.length === 0) msAuto.remove();
+
+    // Place inside .quarto-navbar-tools (the rightmost navbar slot)
+    var tools = containerFluid.querySelector(".quarto-navbar-tools");
+    if (tools) {
+      tools.appendChild(wrapper);
+    } else {
+      // Fallback: append to container-fluid
+      containerFluid.appendChild(wrapper);
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", collect);
+  } else {
+    collect();
+  }
+})();

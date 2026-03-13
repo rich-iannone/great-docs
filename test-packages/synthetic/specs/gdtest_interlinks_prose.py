@@ -2,9 +2,14 @@
 gdtest_interlinks_prose — interlink references in docstring prose.
 
 Dimensions: A1, D1, E3, L26
-Focus: Tests the ``[](`~pkg.Name`)`` interlinks syntax used directly in
-       free-form docstring text.  The post-render resolver should convert
-       these into proper hyperlinks to the corresponding reference pages.
+Focus: Tests all interlinks syntax variants used directly in free-form
+       docstring text:
+       - ``[](`~pkg.Name`)``  — shortened display
+       - ``[](`pkg.Name`)``   — full qualified display
+       - ``[custom text](`pkg.Name`)`` — custom display text
+       - ``[custom text](`~pkg.Name`)`` — custom text with tilde (text wins)
+       The post-render resolver should convert all of these into proper
+       hyperlinks to the corresponding reference pages.
 """
 
 SPEC = {
@@ -77,8 +82,8 @@ SPEC = {
             class ChromaDBStore(BaseStore):
                 """Vector storage using ChromaDB.
 
-                Inherits from [](`~gdtest_interlinks_prose.BaseStore`).
-                See [](`~gdtest_interlinks_prose.DuckDBStore`) for a
+                Inherits from [](`gdtest_interlinks_prose.BaseStore`).
+                See [the DuckDB-backed store](`~gdtest_interlinks_prose.DuckDBStore`) for a
                 simpler alternative.
 
                 Parameters
@@ -99,14 +104,14 @@ SPEC = {
 
                 Works with any [](`~gdtest_interlinks_prose.BaseStore`)
                 implementation, including
-                [](`~gdtest_interlinks_prose.DuckDBStore`) and
-                [](`~gdtest_interlinks_prose.ChromaDBStore`).
+                [](`gdtest_interlinks_prose.DuckDBStore`) and
+                [the ChromaDB store](`gdtest_interlinks_prose.ChromaDBStore`).
 
                 Parameters
                 ----------
                 store
                     The store to search. Must be an instance of
-                    [](`~gdtest_interlinks_prose.BaseStore`).
+                    [a base store](`~gdtest_interlinks_prose.BaseStore`).
                 text
                     The search query string.
 
@@ -133,12 +138,24 @@ SPEC = {
         "has_user_guide": False,
         # Names referenced via interlinks in prose — these should become
         # clickable <a> links in the rendered HTML after post-render resolves
-        # the ``[](`~pkg.Name`)`` syntax.
+        # interlinks syntax. Values are (display_text, target_name) tuples.
         "interlinks_in_prose": {
+            # BaseStore: shortened links (~)
             "BaseStore": ["DuckDBStore", "ChromaDBStore"],
+            # DuckDBStore: shortened links (~)
             "DuckDBStore": ["BaseStore", "query"],
-            "ChromaDBStore": ["BaseStore", "DuckDBStore"],
-            "query": ["BaseStore", "DuckDBStore", "ChromaDBStore"],
+            # ChromaDBStore: full qualified (no ~) + custom text with ~
+            "ChromaDBStore": [
+                "gdtest_interlinks_prose.BaseStore",  # [](`pkg.Name`) → full name
+                "the DuckDB-backed store",  # [custom](`~pkg.Name`) → custom text
+            ],
+            # query: mix of all styles
+            "query": [
+                "BaseStore",  # [](`~pkg.Name`) → short name
+                "gdtest_interlinks_prose.DuckDBStore",  # [](`pkg.Name`) → full name
+                "the ChromaDB store",  # [custom](`pkg.Name`) → custom text
+                "a base store",  # [custom](`~pkg.Name`) → custom text
+            ],
         },
     },
 }

@@ -153,7 +153,9 @@ ALL_PACKAGES: list[str] = [
     "gdtest_config_combo_d",  # 26
     "gdtest_config_combo_e",  # 27
     "gdtest_config_combo_f",  # 28
-    # 29–53: Docstring richness & post-render
+    "gdtest_attribution_on",  # 29
+    "gdtest_attribution_off",  # 30
+    # 31–55: Docstring richness & post-render
     "gdtest_rst_versionadded",  # 26
     "gdtest_rst_deprecated",  # 27
     "gdtest_rst_note",  # 28
@@ -423,6 +425,8 @@ DIMENSIONS: dict[str, dict[str, str]] = {
     "K45": {"axis": "config", "label": "navbar_color: dark only"},
     "K46": {"axis": "config", "label": "navbar_color: same both modes"},
     "K47": {"axis": "config", "label": "navbar_color: split warm/cool"},
+    "K48": {"axis": "config", "label": "attribution: true (default)"},
+    "K49": {"axis": "config", "label": "attribution: false"},
     # Docstring richness axes
     "L1": {"axis": "docstring", "label": ".. versionadded::"},
     "L2": {"axis": "docstring", "label": ".. deprecated::"},
@@ -1206,6 +1210,14 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
     "gdtest_config_combo_c": (
         "Combination: sections (examples + tutorials) + user_guide (list) + "
         "reference (explicit). Full navigation structure defined by config."
+    ),
+    "gdtest_attribution_on": (
+        "Attribution enabled (default): footer should include "
+        "'Site created with Great Docs (v...)' after the author line."
+    ),
+    "gdtest_attribution_off": (
+        "Attribution disabled via attribution: false. Footer should contain "
+        "author text but NOT the 'Site created with Great Docs' line."
     ),
     # ── 26–50: Docstring richness ─────────────────────────────────────────
     "gdtest_rst_versionadded": (

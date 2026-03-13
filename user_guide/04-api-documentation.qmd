@@ -281,7 +281,15 @@ This is particularly useful for packages like `dateutil` that organize their API
 
 ## Cross-Referencing
 
-Great Docs provides several ways to create clickable links between related API items. These links help users navigate your documentation and discover connected functionality.
+## Great Docs Linking System (GDLS)
+
+Great Docs provides a linking system that automatically creates clickable navigation between your API reference pages. GDLS operates at three levels:
+
+1. **See Also sections** — structured links between related items (`%seealso` directive or NumPy-style sections)
+2. **Inline interlinks** — Markdown link syntax to reference other API items anywhere in prose
+3. **Code autolinks** — inline code like `` `MyClass` `` is automatically linked when it matches a documented symbol
+
+All three mechanisms resolve against the same `objects.json` inventory that Great Docs generates during the build.
 
 ### The `%seealso` Directive
 
@@ -361,7 +369,7 @@ def connect(host: str, port: int = 5432):
 
 Great Docs recognizes this format, preserves the descriptions, and merges it with any `%seealso` entries on the same page. Duplicate references are deduplicated automatically.
 
-### Interlinks in Prose
+### Inline Interlinks
 
 You can create inline links to other API items anywhere in your docstring text using the interlinks syntax. There are several forms:
 
@@ -395,16 +403,71 @@ In the rendered documentation, each interlinks reference becomes a clickable lin
 
 Interlinks work in any part of a docstring: the summary line, extended description, parameter descriptions, notes, or any other section.
 
+### Code Autolinks
+
+Great Docs automatically converts inline code in docstrings into clickable links when the code matches a documented API symbol. No special syntax is needed, you just use standard backtick code formatting:
+
+```python
+class Engine:
+    """Core processing engine.
+
+    Use `Pipeline` to chain multiple engines together.
+    Call `run_pipeline()` to execute a full pipeline.
+    """
+    ...
+```
+
+In the rendered output, `` `Pipeline` `` and `` `run_pipeline()` `` become clickable links to their respective reference pages.
+
+#### Shortening Prefixes
+
+For qualified names, you can control the display text with `~~` prefixes:
+
+| Style | Syntax | Displays as |
+| --- | --- | --- |
+| **Full path** | `` `mypackage.MyClass` `` | `mypackage.MyClass` |
+| **Full path with parens** | `` `mypackage.my_func()` `` | `mypackage.my_func()` |
+| **Shortened** | `` `~~mypackage.MyClass` `` | `MyClass` |
+| **Shortened with parens** | `` `~~mypackage.my_func()` `` | `my_func()` |
+| **Dot-prefixed short** | `` `~~.mypackage.MyClass` `` | `.MyClass` |
+| **Unmatched (no link)** | `` `~~unknown_func()` `` | `unknown_func()` |
+
+#### What Gets Autolinked
+
+Any inline code that looks like an identifier or dotted path is a candidate for autolinking. Parentheses at the end are allowed:
+
+**Linked** (if name exists in API):
+
+- `` `MyClass` ``
+- `` `my_func()` ``
+- `` `mypackage.MyClass` ``
+
+**Not linked** (contains arguments, spaces, or operators):
+
+- `` `my_func(x=1)` ``
+- `` `a + b` ``
+- `` `-MyClass` ``
+
+#### Disabling Autolinks
+
+To prevent a specific piece of inline code from being autolinked, add the `{.gd-no-link}` class:
+
+```markdown
+The `Config`{.gd-no-link} parameter is a plain dictionary, not the Config class.
+```
+
+This is the same `{.gd-no-link}` directive used by the [link checker](link-checker.qmd#skipped) to skip URL validation.
+
 ::: {.callout-tip}
-Interlinks require the target to exist in your package's `objects.json` inventory, which is generated automatically during the build. Only items that are documented as part of your API reference can be linked to.
+All GDLS features require the target to exist in your package's `objects.json` inventory, which is generated automatically during the build. Only items that are documented as part of your API reference can be linked to.
 :::
 
-### How Cross-References Are Resolved
+### How GDLS Resolves Links
 
-All three mechanisms (`%seealso`, NumPy See Also, and interlinks) go through the same resolution pipeline:
+All GDLS mechanisms (`%seealso`, NumPy See Also, interlinks, and code autolinks) go through the same resolution pipeline:
 
 1. **During build** — Great Docs generates an `objects.json` inventory mapping every documented symbol to its reference page URI
-2. **During post-render** — Interlink references and See Also entries are resolved against this inventory
+2. **During post-render** — References are resolved against this inventory
 3. **Name matching** — Both exact matches (`mypackage.MyClass`) and suffix matches (`MyClass`) are supported
 4. **Unresolved references** — Names that can't be resolved are shown as plain text (no broken links)
 

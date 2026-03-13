@@ -1,11 +1,11 @@
 ---
 title: "Cross-Reference Related Items"
-description: "Link related classes, functions, and methods with %seealso directives and interlinks."
+description: "Link related classes, functions, and methods using the Great Docs Linking System (GDLS)."
 ---
 
 # Cross-Reference Related Items
 
-Great Docs offers three ways to create links between API items. Use whichever fits your docstring style.
+The Great Docs Linking System (GDLS) creates clickable links between API items. Use whichever style fits your docstrings.
 
 ## `%seealso` Directive
 
@@ -65,9 +65,9 @@ class Validator:
         ...
 ```
 
-## Interlinks in Prose
+## Inline Interlinks
 
-Create inline links to other API items anywhere in a docstring using the interlinks syntax. There are several forms:
+Create inline links to other API items anywhere in a docstring using the interlinks syntax:
 
 | Style | Syntax | Displays as |
 | --- | --- | --- |
@@ -95,11 +95,31 @@ class BaseStore:
 
 Each reference becomes a clickable link to the target's reference page.
 
+## Code Autolinks
+
+Inline code matching a documented symbol is automatically linked — no special syntax needed:
+
+```python
+class Engine:
+    """Core processing engine.
+
+    Use `Pipeline` to chain multiple engines together.
+    Call `run_pipeline()` to execute a full pipeline.
+    """
+    ...
+```
+
+In the rendered output, `` `Pipeline` `` and `` `run_pipeline()` `` become clickable links.
+
+Use `~~` to shorten qualified names: `` `~~mypackage.MyClass` `` displays as `MyClass`. Use `` `~~.mypackage.MyClass` `` for `.MyClass`.
+
+To prevent autolinking, add `{.gd-no-link}`: `` `Config`{.gd-no-link} ``.
+
 ## Tips
 
 - Names in `%seealso` must match the exported API name exactly
 - Multiple `%seealso` directives on the same symbol are merged
 - NumPy-style See Also sections are also recognized and merged with `%seealso` entries
 - The directive line is stripped from the rendered output
-- Cross-references that can't be resolved are shown as plain text (no broken links)
-- Interlinks work in any part of a docstring (summary, parameters, notes, etc.)
+- Unresolved references are shown as plain text (no broken links)
+- All GDLS features work in any part of a docstring (summary, parameters, notes, etc.)

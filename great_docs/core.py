@@ -8595,6 +8595,15 @@ toc: false
     background: {btn_hover_bg};
     border-color: {btn_hover_border};
 }}
+{selector} .navbar .gh-widget-trigger {{
+    background: {btn_bg};
+    border-color: {btn_border};
+    color: {text_hex};
+}}
+{selector} .navbar .gh-widget-trigger:hover {{
+    background: {btn_hover_bg};
+    border-color: {btn_hover_border};
+}}
 {selector} .navbar .quarto-navbar-tools button,
 {selector} .navbar .quarto-navbar-tools .quarto-navigation-tool {{
     color: {text_hex};

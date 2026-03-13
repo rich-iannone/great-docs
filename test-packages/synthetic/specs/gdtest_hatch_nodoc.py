@@ -32,6 +32,8 @@ SPEC = {
         "src/gdtest_hatch_nodoc/__init__.py": '''\
             """Package with Hatch layout, dataclasses, and nodoc directives."""
 
+            from gdtest_hatch_nodoc.models import Config, UserProfile, InternalState, create_config
+
             __version__ = "0.1.0"
             __all__ = ["Config", "UserProfile", "InternalState", "create_config"]
         ''',
@@ -131,6 +133,7 @@ SPEC = {
         "detected_module": "gdtest_hatch_nodoc",
         "detected_parser": "numpy",
         "export_names": ["Config", "InternalState", "UserProfile", "create_config"],
+        "nodoc_items": ["InternalState"],
         "num_exports": 4,
     },
 }

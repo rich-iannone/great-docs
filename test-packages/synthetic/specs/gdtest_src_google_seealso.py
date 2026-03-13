@@ -31,6 +31,8 @@ SPEC = {
         "src/gdtest_src_google_seealso/__init__.py": '''\
             """Package with src layout, Google docstrings, and seealso directives."""
 
+            from gdtest_src_google_seealso.codec import encode, decode, compress, decompress
+
             __version__ = "0.1.0"
             __all__ = ["encode", "decode", "compress", "decompress"]
         ''',

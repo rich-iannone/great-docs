@@ -295,6 +295,11 @@ ALL_PACKAGES: list[str] = [
     # 144–145: Qrenderer variants
     "gdtest_kitchen_sink_q",  # 144
     "gdtest_stress_everything_q",  # 145
+    # 146–147: See Also description variants
+    "gdtest_seealso_desc",  # 146
+    "gdtest_numpy_seealso_desc",  # 147
+    # 148: Interlinks in prose
+    "gdtest_interlinks_prose",  # 148
 ]
 
 
@@ -450,6 +455,8 @@ DIMENSIONS: dict[str, dict[str, str]] = {
     "L20": {"axis": "docstring", "label": "Warnings section"},
     "L21": {"axis": "docstring", "label": "References section"},
     "L22": {"axis": "docstring", "label": "See Also section"},
+    "L25": {"axis": "docstring", "label": "See Also with descriptions"},
+    "L26": {"axis": "docstring", "label": "Interlinks in prose"},
     "L23": {"axis": "docstring", "label": "Math in docstrings"},
     "L24": {"axis": "docstring", "label": "Tables in docstrings"},
     # User guide axes
@@ -1666,6 +1673,21 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "Identical to gdtest_stress_everything but with renderer: 'q'. "
         "Validates qrenderer output against the classic baseline. "
         "All features should render correctly via the new pipeline."
+    ),
+    "gdtest_seealso_desc": (
+        "Four functions with %seealso directives using 'name : description' syntax. "
+        "Tests that descriptions are preserved and rendered alongside links "
+        "in the See Also section of each reference page."
+    ),
+    "gdtest_numpy_seealso_desc": (
+        "Four functions with NumPy-style See Also sections containing "
+        "'name : description' entries. Tests that descriptions survive the "
+        "post-render merge step and appear in the final rendered output."
+    ),
+    "gdtest_interlinks_prose": (
+        "Three classes and a function using [](`~pkg.Name`) interlinks syntax "
+        "directly in docstring prose text. Tests that the post-render resolver "
+        "converts these references into proper hyperlinks to reference pages."
     ),
 }
 

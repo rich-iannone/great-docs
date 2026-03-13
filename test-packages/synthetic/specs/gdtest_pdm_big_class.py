@@ -28,6 +28,8 @@ SPEC = {
         "src/gdtest_pdm_big_class/__init__.py": '''\
             """Package with PDM layout and a big class."""
 
+            from gdtest_pdm_big_class.pipeline import Pipeline
+
             __version__ = "0.1.0"
             __all__ = ["Pipeline"]
         ''',

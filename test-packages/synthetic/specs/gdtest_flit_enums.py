@@ -31,6 +31,8 @@ SPEC = {
         "gdtest_flit_enums/__init__.py": '''\
             """Package with Flit layout and enums using Google docstrings."""
 
+            from gdtest_flit_enums.types import Color, Status, Priority, get_label
+
             __version__ = "0.1.0"
             __all__ = ["Color", "Status", "Priority", "get_label"]
         ''',

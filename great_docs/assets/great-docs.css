@@ -634,6 +634,8 @@ body.quarto-light .navbar .gd-navbar-icon:hover {
 }
 
 .nav-footer {
+    position: relative;
+    z-index: 1;
     border-top-style: solid;
     border-top-width: 1px;
     border-top-color: #AAAAAA40;

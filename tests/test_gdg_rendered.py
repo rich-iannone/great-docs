@@ -6109,6 +6109,7 @@ def test_DED_interlinks_prose_hrefs_valid():
             link = soup.find("a", string=target)
             assert link is not None, f"{obj_name}.html: no <a> tag with text {target!r}"
             href = link.get("href", "")
-            assert target in href or f"{target}.html" in href, (
-                f"{obj_name}.html: href {href!r} doesn't reference {target!r}"
+            # href should point to a .html file (sibling-relative)
+            assert ".html" in href, (
+                f"{obj_name}.html: href {href!r} for {target!r} is not a valid page link"
             )

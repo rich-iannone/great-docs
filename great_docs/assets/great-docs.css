@@ -2128,14 +2128,18 @@ body.quarto-dark input::placeholder {
    Dark Mode - Search
    ========================================================================== */
 
-body.quarto-dark #quarto-search {
+body.quarto-dark #quarto-search,
+html.quarto-dark #quarto-search,
+[data-bs-theme="dark"] #quarto-search {
     background-color: transparent;
 }
 
-body.quarto-dark #quarto-search input {
+body.quarto-dark #quarto-search input,
+html.quarto-dark #quarto-search input,
+[data-bs-theme="dark"] #quarto-search input {
     background-color: var(--gd-bg-tertiary);
     border-color: var(--gd-border-color);
-    color: var(--gd-text-primary);
+    color: var(--gd-text-primary) !important;
 }
 
 body.quarto-dark #quarto-search .aa-SubmitButton {
@@ -2289,17 +2293,26 @@ body.quarto-dark .aa-Autocomplete {
     background-color: transparent;
 }
 
-body.quarto-dark .aa-Form {
+body.quarto-dark .aa-Form,
+html.quarto-dark .aa-Form,
+[data-bs-theme="dark"] .aa-Form {
     background-color: var(--gd-bg-tertiary);
     border-color: var(--gd-border-color);
 }
 
-body.quarto-dark .aa-Input {
-    color: var(--gd-text-primary);
+body.quarto-dark .aa-Input,
+html.quarto-dark .aa-Input,
+[data-bs-theme="dark"] .aa-Input {
+    color: var(--gd-text-primary) !important;
+    background-color: transparent;
 }
 
 body.quarto-dark .aa-InputWrapperPrefix,
-body.quarto-dark .aa-InputWrapperSuffix {
+body.quarto-dark .aa-InputWrapperSuffix,
+html.quarto-dark .aa-InputWrapperPrefix,
+html.quarto-dark .aa-InputWrapperSuffix,
+[data-bs-theme="dark"] .aa-InputWrapperPrefix,
+[data-bs-theme="dark"] .aa-InputWrapperSuffix {
     color: var(--gd-text-muted);
 }
 

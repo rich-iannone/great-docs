@@ -722,33 +722,52 @@ class TestAutolinkCodeReferences:
 
     def test_simple_name_match(self):
         result = self._autolink("<p><code>MyClass</code></p>")
-        assert '<a href="MyClass.html#mypackage.MyClass"><code>MyClass</code></a>' in result
+        assert (
+            '<a href="MyClass.html#mypackage.MyClass" class="gdls-link gdls-code">MyClass</a>'
+            in result
+        )
 
     def test_qualified_name_match(self):
         result = self._autolink("<p><code>mypackage.MyClass</code></p>")
         assert (
-            '<a href="MyClass.html#mypackage.MyClass"><code>mypackage.MyClass</code></a>' in result
+            '<a href="MyClass.html#mypackage.MyClass" class="gdls-link gdls-code">mypackage.MyClass</a>'
+            in result
         )
 
     def test_name_with_parens(self):
         result = self._autolink("<p><code>my_func()</code></p>")
-        assert '<a href="my_func.html#mypackage.my_func"><code>my_func()</code></a>' in result
+        assert (
+            '<a href="my_func.html#mypackage.my_func" class="gdls-link gdls-code">my_func()</a>'
+            in result
+        )
 
     def test_tilde_shortening(self):
         result = self._autolink("<p><code>~~mypackage.MyClass</code></p>")
-        assert '<a href="MyClass.html#mypackage.MyClass"><code>MyClass</code></a>' in result
+        assert (
+            '<a href="MyClass.html#mypackage.MyClass" class="gdls-link gdls-code">MyClass</a>'
+            in result
+        )
 
     def test_tilde_shortening_with_parens(self):
         result = self._autolink("<p><code>~~mypackage.my_func()</code></p>")
-        assert '<a href="my_func.html#mypackage.my_func"><code>my_func()</code></a>' in result
+        assert (
+            '<a href="my_func.html#mypackage.my_func" class="gdls-link gdls-code">my_func()</a>'
+            in result
+        )
 
     def test_tilde_dot_shortening(self):
         result = self._autolink("<p><code>~~.mypackage.MyClass</code></p>")
-        assert '<a href="MyClass.html#mypackage.MyClass"><code>.MyClass</code></a>' in result
+        assert (
+            '<a href="MyClass.html#mypackage.MyClass" class="gdls-link gdls-code">.MyClass</a>'
+            in result
+        )
 
     def test_tilde_dot_shortening_with_parens(self):
         result = self._autolink("<p><code>~~.mypackage.my_func()</code></p>")
-        assert '<a href="my_func.html#mypackage.my_func"><code>.my_func()</code></a>' in result
+        assert (
+            '<a href="my_func.html#mypackage.my_func" class="gdls-link gdls-code">.my_func()</a>'
+            in result
+        )
 
     def test_no_match_left_alone(self):
         result = self._autolink("<p><code>unknown_thing</code></p>")

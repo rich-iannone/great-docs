@@ -204,3 +204,9 @@ hub-state: ## Show GDG build state summary
 	info = summary(s); info['last_run_id'] = s.get('last_run_id'); \
 	print(json.dumps(info, indent=2))" 2>/dev/null || \
 	 echo "No build state found. Run 'make hub-build' first."
+
+.PHONY: hub-deploy
+hub-deploy: ## Trigger GDG hub deployment to GitHub Pages (requires gh CLI)
+	@gh workflow run deploy.yml --repo rich-iannone/gdg \
+	  -f great_docs_ref=$$(git rev-parse --abbrev-ref HEAD) && \
+	 echo "Deployment triggered. Watch at: https://github.com/rich-iannone/gdg/actions"

@@ -281,7 +281,7 @@ def scan(project_path, docs_dir, verbose):
     """
 
     try:
-        docs = GreatDocs(project_path=project_path, docs_dir=docs_dir)
+        docs = GreatDocs(project_path=project_path)
 
         # Detect package name
         package_name = docs._detect_package_name()
@@ -768,7 +768,7 @@ def spell_check(
     import json as json_module
 
     try:
-        docs = GreatDocs(project_path=project_path, docs_dir=docs_dir)
+        docs = GreatDocs(project_path=project_path)
 
         # Build custom dictionary
         custom_dictionary = list(custom_words) if custom_words else []

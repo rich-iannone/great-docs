@@ -371,14 +371,10 @@ Great Docs recognizes this format, preserves the descriptions, and merges it wit
 
 You can create inline links to other API items anywhere in your docstring text using the interlinks syntax. There are several forms:
 
-| Style | Syntax | Displays as |
-| --- | --- | --- |
-| **Shortened** | `` [](`~mypackage.MyClass`) `` | `MyClass` |
-| **Full qualified** | `` [](`mypackage.MyClass`) `` | `mypackage.MyClass` |
-| **Custom text** | `` [see this class](`mypackage.MyClass`) `` | `see this class` |
-| **Custom + tilde** | `` [see this class](`~mypackage.MyClass`) `` | `see this class` |
-
-The `~` prefix tells Great Docs to display only the short name when no custom text is provided. When you supply custom link text in the brackets, it's always used as-is regardless of the `~` prefix.
+- **Shortened**: write `` [](`~mypackage.MyClass`) `` to display just `MyClass`. The `~` prefix strips the package path and shows only the short name.
+- **Fully qualified**: write `` [](`mypackage.MyClass`) `` to display the full path `mypackage.MyClass`.
+- **Custom text**: write `` [see this class](`mypackage.MyClass`) `` to display `see this class` as the link text.
+- **Custom text + tilde**: write `` [see this class](`~mypackage.MyClass`) `` — this also displays `see this class`. When you supply custom link text in the brackets, it's always used as-is regardless of the `~` prefix.
 
 This is particularly useful for class hierarchies and overview docstrings:
 
@@ -421,14 +417,12 @@ In the rendered output, `` `Pipeline` `` and `` `run_pipeline()` `` become click
 
 For qualified names, you can control the display text with `~~` prefixes:
 
-| Style | Syntax | Displays as |
-| --- | --- | --- |
-| **Full path** | `` `mypackage.MyClass` `` | `mypackage.MyClass` |
-| **Full path with parens** | `` `mypackage.my_func()` `` | `mypackage.my_func()` |
-| **Shortened** | `` `~~mypackage.MyClass` `` | `MyClass` |
-| **Shortened with parens** | `` `~~mypackage.my_func()` `` | `my_func()` |
-| **Dot-prefixed short** | `` `~~.mypackage.MyClass` `` | `.MyClass` |
-| **Unmatched (no link)** | `` `~~unknown_func()` `` | `unknown_func()` |
+- **Full path**: `` `mypackage.MyClass` `` displays as `mypackage.MyClass`.
+- **Full path with parens**: `` `mypackage.my_func()` `` displays as `mypackage.my_func()`.
+- **Shortened**: `` `~~mypackage.MyClass` `` displays as `MyClass`. The `~~` prefix strips everything before the last component.
+- **Shortened with parens**: `` `~~mypackage.my_func()` `` displays as `my_func()`.
+- **Dot-prefixed short**: `` `~~.mypackage.MyClass` `` displays as `.MyClass`, retaining a leading dot to hint at the omitted path.
+- **Unmatched (no link)**: if the name doesn't match any documented symbol (e.g., `` `~~unknown_func()` ``), it renders as plain code (`unknown_func()`) with no link.
 
 #### What Gets Autolinked
 
@@ -477,16 +471,7 @@ Great Docs automatically translates these into clean, styled HTML during the pos
 
 ### Sphinx Cross-Reference Roles
 
-Sphinx roles like `:py:class:`, `:func:`, and `:exc:` are converted into plain inline code formatting:
-
-| Source (in docstring) | Rendered output |
-| --- | --- |
-| `` :py:exc:`ValueError` `` | `ValueError` |
-| `` :py:class:`datetime.datetime` `` | `datetime.datetime` |
-| `` :func:`my_function` `` | `my_function()` |
-| `` :meth:`MyClass.run` `` | `MyClass.run()` |
-
-Function and method roles automatically receive trailing `()` to indicate they are callable.
+Sphinx roles like `:py:class:`, `:func:`, and `:exc:` are converted into plain inline code formatting. For example, `` :py:exc:`ValueError` `` becomes `ValueError`, and `` :py:class:`datetime.datetime` `` becomes `datetime.datetime`. Function and method roles automatically receive trailing `()` to indicate they are callable, so `` :func:`my_function` `` renders as `my_function()` and `` :meth:`MyClass.run` `` renders as `MyClass.run()`.
 
 ### RST Admonition & Version Directives
 

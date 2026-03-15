@@ -2142,9 +2142,11 @@ html.quarto-dark #quarto-search input,
     color: var(--gd-text-primary) !important;
 }
 
-body.quarto-dark #quarto-search .aa-SubmitButton {
+body.quarto-dark #quarto-search .aa-SubmitButton,
+html.quarto-dark #quarto-search .aa-SubmitButton,
+[data-bs-theme="dark"] #quarto-search .aa-SubmitButton {
     background-color: transparent;
-    color: var(--gd-text-muted);
+    color: var(--gd-text-muted) !important;
 }
 
 body.quarto-dark #quarto-search .aa-DetachedSearchButton {
@@ -2236,14 +2238,14 @@ body.quarto-dark .aa-Item[aria-selected="true"] {
     background-color: var(--gd-bg-tertiary);
 }
 
-/* Search results styling - keep light background but ensure dark text */
+/* Search results styling - ensure readable text in dark mode */
 body.quarto-dark .search-result-title,
 body.quarto-dark p.search-result-title,
 body.quarto-dark .aa-Panel .search-result-title,
 body.quarto-dark #quarto-search-results .search-result-title,
 html.quarto-dark .search-result-title,
 html.quarto-dark p.search-result-title {
-    color: #1a1a1a !important;
+    color: var(--gd-text-primary) !important;
 }
 
 body.quarto-dark .search-result-header,
@@ -2252,7 +2254,7 @@ body.quarto-dark .aa-Panel .search-result-header,
 body.quarto-dark #quarto-search-results .search-result-header,
 html.quarto-dark .search-result-header,
 html.quarto-dark div.search-result-header {
-    color: #333 !important;
+    color: var(--gd-text-secondary) !important;
 }
 
 body.quarto-dark .search-result-text {
@@ -2316,12 +2318,40 @@ html.quarto-dark .aa-InputWrapperSuffix,
     color: var(--gd-text-muted);
 }
 
-body.quarto-dark .aa-ClearButton {
-    color: var(--gd-text-muted);
+body.quarto-dark .aa-SubmitButton,
+html.quarto-dark .aa-SubmitButton,
+[data-bs-theme="dark"] .aa-SubmitButton,
+body.quarto-dark .aa-SubmitIcon,
+html.quarto-dark .aa-SubmitIcon,
+[data-bs-theme="dark"] .aa-SubmitIcon,
+body.quarto-dark svg.aa-SubmitIcon,
+html.quarto-dark svg.aa-SubmitIcon,
+[data-bs-theme="dark"] svg.aa-SubmitIcon {
+    color: var(--gd-text-muted) !important;
+    fill: var(--gd-text-muted) !important;
 }
 
-body.quarto-dark .aa-ClearButton:hover {
-    color: var(--gd-text-primary);
+body.quarto-dark .aa-ClearButton,
+html.quarto-dark .aa-ClearButton,
+[data-bs-theme="dark"] .aa-ClearButton,
+body.quarto-dark .aa-ClearIcon,
+html.quarto-dark .aa-ClearIcon,
+[data-bs-theme="dark"] .aa-ClearIcon,
+body.quarto-dark svg.aa-ClearIcon,
+html.quarto-dark svg.aa-ClearIcon,
+[data-bs-theme="dark"] svg.aa-ClearIcon {
+    color: var(--gd-text-muted) !important;
+    fill: var(--gd-text-muted) !important;
+}
+
+body.quarto-dark .aa-ClearButton:hover,
+html.quarto-dark .aa-ClearButton:hover,
+[data-bs-theme="dark"] .aa-ClearButton:hover,
+body.quarto-dark .aa-ClearButton:hover svg.aa-ClearIcon,
+html.quarto-dark .aa-ClearButton:hover svg.aa-ClearIcon,
+[data-bs-theme="dark"] .aa-ClearButton:hover svg.aa-ClearIcon {
+    color: var(--gd-text-primary) !important;
+    fill: var(--gd-text-primary) !important;
 }
 
 /* ==========================================================================

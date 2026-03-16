@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 from . import layout
-from ._pandoc.blocks import Meta
 from ._render import (
     RenderDocAttribute,
     RenderDocClass,
@@ -19,6 +18,7 @@ from .pandoc.blocks import (
     BlockContent,
     Blocks,
     Header,
+    Meta,
 )
 
 if TYPE_CHECKING:

@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING, cast
 from great_docs._qrenderer._render.mixin_page import RenderPageMixin
 
 from .._format import markdown_escape
-from .._pandoc.blocks import Meta
 from ..pandoc.blocks import (
     BlockContent,
     Blocks,
     DefinitionItem,
+    Meta,
 )
 from ..pandoc.inlines import Link
 from .base import RenderBase

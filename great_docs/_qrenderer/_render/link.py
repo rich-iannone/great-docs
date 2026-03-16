@@ -3,13 +3,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, cast
 
 from .._format import markdown_escape
-from .._pandoc.inlines import InterLink
 from ..pandoc.blocks import (
     Blocks,
     DefinitionItem,
     Div,
 )
 from ..pandoc.components import Attr
+from ..pandoc.inlines import InterLink
 from .base import RenderBase
 
 if TYPE_CHECKING:

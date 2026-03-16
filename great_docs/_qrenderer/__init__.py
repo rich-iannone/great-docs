@@ -1,5 +1,4 @@
 from ._md_renderer import MdRenderer
-from ._md_renderer import Renderer as MdRendererBase
 from ._render.api_page import RenderAPIPage
 from ._render.doc import RenderDoc
 from ._render.docattribute import RenderDocAttribute

@@ -16,7 +16,6 @@ from ._griffe import (
     LinesCollection,
     ModulesCollection,
     Parser,
-    parse,
 )
 from ._griffe import dataclasses as dc
 from ._md_renderer import Renderer
@@ -39,38 +38,6 @@ def get_parser_defaults(name: str):
 
 
 # Docstring loading / parsing =================================================
-
-
-def parse_function(module: str, func_name: str):
-    griffe = GriffeLoader()
-    mod = griffe.load(module)
-
-    f_data = mod.functions[func_name]
-
-    return parse(f_data.docstring, Parser.numpy)
-
-
-def get_function(module: str, func_name: str, parser: str = "numpy") -> dc.Object:
-    """Fetch a function.
-
-    Parameters
-    ----------
-    module: str
-        A module name.
-    func_name: str
-        A function name.
-    parser: str
-        A docstring parser to use.
-
-    """
-    griffe = GriffeLoader(
-        docstring_parser=Parser(parser), docstring_options=get_parser_defaults(parser)
-    )
-    mod = griffe.load(module)
-
-    f_data = mod.functions[func_name]
-
-    return f_data
 
 
 def get_object(

@@ -1965,7 +1965,7 @@ class GreatDocs:
             if isinstance(item, dict) and item.get("text") == "Reference":
                 navbar_items.insert(i, link)
                 return
-        # No Reference found — append
+        # If no Reference found then append
         navbar_items.append(link)
 
     def _read_quarto_config(self, quarto_yml: Path) -> dict:
@@ -1979,6 +1979,7 @@ class GreatDocs:
         config.setdefault("website", {})
         config["website"].setdefault("sidebar", [])
         config["website"].setdefault("navbar", {"left": []})
+
         return config
 
     # =========================================================================

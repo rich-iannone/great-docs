@@ -17,6 +17,7 @@ def test_great_docs_init_with_path():
     """Test GreatDocs initialization with custom path."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs.project_root == Path(tmp_dir)
 
 
@@ -28,12 +29,14 @@ def test_install_creates_files():
 
         # Check that config file was created
         project_path = Path(tmp_dir)
+
         assert (project_path / "great-docs.yml").exists()
 
         # Check that .gitignore was updated (or created)
         gitignore_path = project_path / ".gitignore"
         if gitignore_path.exists():
             content = gitignore_path.read_text()
+
             assert "great-docs/" in content
 
 
@@ -46,6 +49,7 @@ def test_uninstall_removes_files():
         docs.install(force=True)
 
         project_path = Path(tmp_dir)
+
         assert (project_path / "great-docs.yml").exists()
 
         # Then uninstall
@@ -63,7 +67,7 @@ def test_build_requires_config():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
 
-        # No great-docs.yml exists → build should fail immediately
+        # If no great-docs.yml exists build should fail immediately
         with pytest.raises(FileNotFoundError, match="great-docs.yml not found"):
             docs.build()
 
@@ -76,11 +80,13 @@ def test_init_refuses_when_config_exists():
         # Create an initial config
         docs = GreatDocs(project_path=tmp_dir)
         docs.install(force=True)
+
         assert (project_path / "great-docs.yml").exists()
 
         # A second init without --force should refuse (not overwrite)
         docs2 = GreatDocs(project_path=tmp_dir)
         docs2.install(force=False)
+
         # The original file should still be there, unchanged
         assert (project_path / "great-docs.yml").exists()
 
@@ -201,6 +207,7 @@ def some_function():
 
             # Check that we have a Classes section
             class_section = next((s for s in sections if s["title"] == "Classes"), None)
+
             assert class_section is not None
 
             # BigClass should have members: [] since it has >5 methods
@@ -212,6 +219,7 @@ def some_function():
                 ),
                 None,
             )
+
             assert big_class_entry is not None
             assert big_class_entry == {"name": "BigClass", "members": []}
 
@@ -220,6 +228,7 @@ def some_function():
 
             # Check that we have a separate method section for BigClass
             method_section = next((s for s in sections if s["title"] == "BigClass Methods"), None)
+
             assert method_section is not None
             assert len(method_section["contents"]) == 7
             assert "BigClass.method1" in method_section["contents"]
@@ -229,10 +238,12 @@ def some_function():
             small_method_section = next(
                 (s for s in sections if s["title"] == "SmallClass Methods"), None
             )
+
             assert small_method_section is None
 
             # Check that functions section exists
             func_section = next((s for s in sections if s["title"] == "Functions"), None)
+
             assert func_section is not None
             assert "some_function" in func_section["contents"]
         finally:
@@ -306,6 +317,7 @@ def test_setup_github_pages_command():
 
         # Check the file was created
         workflow_file = Path(tmp_dir) / ".github" / "workflows" / "docs.yml"
+
         assert workflow_file.exists()
 
         # Check the content is valid YAML and contains expected keys
@@ -408,10 +420,12 @@ api-reference:
 
         # Check the file was created in great-docs directory
         llms_txt = great_docs_dir / "llms.txt"
+
         assert llms_txt.exists()
 
         # Check content structure
         content = llms_txt.read_text()
+
         assert "# test_package" in content
         assert "> A test package" in content
         assert "## Docs" in content
@@ -800,6 +814,7 @@ def test_build_github_source_url_single_line_hardcoded_path():
 
     assert url is not None
     assert "#L42" in url
+
     # Should not have the range format
     assert "#L42-L42" not in url
 
@@ -853,11 +868,6 @@ source:
         assert metadata.get("source_link_branch") == "develop"
         assert metadata.get("source_link_path") == "src/mypackage"
         assert metadata.get("source_link_placement") == "title"
-
-
-# ============================================================================
-# Link Checker Tests
-# ============================================================================
 
 
 def test_check_links_extracts_urls():
@@ -985,11 +995,6 @@ def test_check_links_returns_correct_structure():
         assert isinstance(results["by_file"], dict)
 
 
-# ============================================================================
-# Config Module Tests
-# ============================================================================
-
-
 def test_config_defaults():
     """Test that Config provides sensible defaults when no file exists."""
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -1022,6 +1027,7 @@ def test_config_attribution_disabled():
         config_file.write_text("attribution: false\n")
 
         config = Config(Path(tmp_dir))
+
         assert config.attribution is False
 
 
@@ -1078,9 +1084,11 @@ cli:
 
         # CLI is set
         assert config.cli_enabled is True
+
         # But other CLI fields still have defaults
         assert config.cli_module is None
         assert config.cli_name is None
+
         # And other config has defaults
         assert config.github_style == "widget"
         assert config.dark_mode_toggle is True
@@ -1096,6 +1104,7 @@ def test_config_exists():
         config_file.write_text("cli:\n  enabled: true\n")
 
         config2 = Config(Path(tmp_dir))
+
         assert config2.exists() is True
 
 
@@ -1158,6 +1167,7 @@ def test_config_funding_property_none_when_not_set():
     """Test funding property returns None when not configured."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         config = Config(Path(tmp_dir))
+
         assert config.funding is None
 
 
@@ -1183,6 +1193,7 @@ def test_load_config_function():
     """Test the load_config helper function."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         config = load_config(tmp_dir)
+
         assert isinstance(config, Config)
 
 
@@ -1196,9 +1207,6 @@ def test_create_default_config():
     assert "cli:" in content
     assert "authors:" in content
     assert "parser:" in content
-
-
-# --- Docstring Style Detection Tests ---
 
 
 def test_detect_docstring_style_numpy_from_files():
@@ -1300,6 +1308,7 @@ class MyClass:
         try:
             docs = GreatDocs(project_path=tmp_dir)
             style = docs._detect_docstring_style("googlepkg")
+
             assert style == "google"
         finally:
             sys.path.remove(tmp_dir)
@@ -1337,6 +1346,7 @@ def my_function(x, y):
         try:
             docs = GreatDocs(project_path=tmp_dir)
             style = docs._detect_docstring_style("sphinxpkg")
+
             assert style == "sphinx"
         finally:
             sys.path.remove(tmp_dir)
@@ -1364,6 +1374,7 @@ def my_function(x, y):
         try:
             docs = GreatDocs(project_path=tmp_dir)
             style = docs._detect_docstring_style("nodocspkg")
+
             assert style == "numpy"  # Default when no docstrings found
         finally:
             sys.path.remove(tmp_dir)
@@ -1374,17 +1385,20 @@ def test_config_parser_property():
     with tempfile.TemporaryDirectory() as tmp_dir:
         # Test default value
         config = Config(Path(tmp_dir))
+
         assert config.parser == "numpy"
 
         # Test custom value
         config_file = Path(tmp_dir) / "great-docs.yml"
         config_file.write_text("parser: google")
         config = Config(Path(tmp_dir))
+
         assert config.parser == "google"
 
         # Test sphinx value
         config_file.write_text("parser: sphinx")
         config = Config(Path(tmp_dir))
+
         assert config.parser == "sphinx"
 
 
@@ -1481,14 +1495,12 @@ reference:
 
             # Build sections from config should work
             sections = docs._build_sections_from_reference_config(docs._config.reference)
+
             assert sections is not None
             assert len(sections) == 1
             assert "my_func" in sections[0]["contents"]
         finally:
             sys.path.remove(tmp_dir)
-
-
-# --- Quarto Environment Tests ---
 
 
 def test_get_quarto_env_returns_current_python():
@@ -1503,6 +1515,7 @@ def test_get_quarto_env_returns_current_python():
         # Should either be the current interpreter or a venv Python
         # Accept python, python3, python.exe, python3.exe
         python_path = env["QUARTO_PYTHON"]
+
         assert (
             python_path.endswith("python")
             or python_path.endswith("python3")
@@ -1543,9 +1556,6 @@ def test_get_quarto_env_preserves_existing_env():
         assert env["PATH"] == os.environ.get("PATH")
 
 
-# --- Dynamic Mode Tests ---
-
-
 def test_detect_dynamic_mode_returns_true_for_simple_package():
     """Test that _detect_dynamic_mode returns True for packages without cyclic aliases."""
     import sys
@@ -1582,6 +1592,7 @@ def test_detect_dynamic_mode_returns_true_with_no_package():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._detect_dynamic_mode("")
+
         assert result is True
 
 
@@ -1596,6 +1607,7 @@ def test_config_dynamic_property():
         config_file = config_path / "great-docs.yml"
         config_file.write_text("dynamic: true\n")
         config = Config(config_path)
+
         assert config.dynamic is True
 
     # Create a separate temp dir for dynamic: false test
@@ -1604,6 +1616,7 @@ def test_config_dynamic_property():
         config_file2 = config_path2 / "great-docs.yml"
         config_file2.write_text("dynamic: false\n")
         config2 = Config(config_path2)
+
         assert config2.dynamic is False
 
 
@@ -1619,6 +1632,7 @@ def test_config_dynamic_property_default():
         config_file.write_text(config_content)
 
         config = Config(config_dir)
+
         # Default should be True
         assert config.dynamic is True
 
@@ -1660,9 +1674,11 @@ def test_citation_year_from_date_released():
 
         # Check that citation.qmd was created
         citation_qmd = docs_dir / "citation.qmd"
+
         assert citation_qmd.exists()
 
         content = citation_qmd.read_text()
+
         # Check that 2023 appears in the citation (from date-released)
         assert "2023" in content
         assert "year = {2023}" in content
@@ -1704,11 +1720,14 @@ def test_citation_year_defaults_to_current():
 
         # Check that citation.qmd was created
         citation_qmd = docs_dir / "citation.qmd"
+
         assert citation_qmd.exists()
 
         content = citation_qmd.read_text()
+
         # Check that current year appears in the citation
         current_year = str(datetime.now().year)
+
         assert current_year in content
         assert f"year = {{{current_year}}}" in content
 
@@ -1750,19 +1769,21 @@ def test_citation_year_handles_invalid_date():
 
         # Check that citation.qmd was created
         citation_qmd = docs_dir / "citation.qmd"
+
         assert citation_qmd.exists()
 
         content = citation_qmd.read_text()
+
         # Check that current year appears (fallback from invalid date)
         current_year = str(datetime.now().year)
+
         assert current_year in content
         assert f"year = {{{current_year}}}" in content
+
         current_year = str(datetime.now().year)
+
         assert current_year in content
         assert f"year = {{{current_year}}}" in content
-
-
-# --- Author Extraction Tests ---
 
 
 def test_extract_authors_from_pyproject_with_authors():
@@ -1926,11 +1947,6 @@ def test_format_authors_yaml_no_email():
         assert "# email:" in yaml_output  # Should be commented out placeholder
 
 
-# ============================================================================
-# User Guide URL Stripping Tests
-# ============================================================================
-
-
 def test_strip_numeric_prefix_single_digit():
     """Test stripping single-digit numeric prefix like 1-, 2-, etc."""
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -2039,6 +2055,7 @@ guide-section: Getting Started
 
         # Process the user guide
         user_guide_info = docs._discover_user_guide()
+
         assert user_guide_info is not None
 
         copied_files = docs._copy_user_guide_to_docs(user_guide_info)
@@ -2049,6 +2066,7 @@ guide-section: Getting Started
 
         # Check files exist with clean names
         docs_user_guide = docs.project_path / "user-guide"
+
         assert (docs_user_guide / "introduction.qmd").exists()
         assert (docs_user_guide / "installation.qmd").exists()
 
@@ -2113,6 +2131,7 @@ def test_user_guide_discovers_mixed_extensions_and_nested_files():
 
         # Copy files and verify they end up in the right places
         copied_files = docs._copy_user_guide_to_docs(user_guide_info)
+
         assert len(copied_files) == 6
 
         docs_ug = docs.project_path / "user-guide"
@@ -2218,6 +2237,7 @@ def test_copy_assets_basic():
 
         # Check that files were copied
         docs_assets = docs.project_path / "assets"
+
         assert docs_assets.exists()
         assert (docs_assets / "image.png").exists()
         assert (docs_assets / "style.css").exists()
@@ -2258,6 +2278,7 @@ def test_copy_assets_nested_directories():
 
         # Check nested structure was preserved
         docs_assets = docs.project_path / "assets"
+
         assert (docs_assets / "images" / "logo.png").exists()
         assert (docs_assets / "images" / "icons" / "star.svg").exists()
         assert (docs_assets / "css" / "theme.css").exists()
@@ -2379,6 +2400,7 @@ def test_assets_not_added_to_quarto_config_when_missing():
 
         # Read the generated _quarto.yml
         quarto_yml = docs.project_path / "_quarto.yml"
+
         assert quarto_yml.exists()
 
         with open(quarto_yml, "r") as f:
@@ -2421,6 +2443,7 @@ def test_assets_added_to_config_after_copy():
 
         # Now copy assets and update config again (simulating build flow)
         assets_copied = docs._copy_assets()
+
         assert assets_copied is True
 
         docs._update_quarto_config()
@@ -2451,8 +2474,9 @@ def test_assets_config_update_only_when_copied():
         docs.project_path.mkdir(parents=True, exist_ok=True)
         docs._update_quarto_config()
 
-        # Try to copy assets when none exist - should return False
+        # Try to copy assets when none exist: should return False
         assets_copied = docs._copy_assets()
+
         assert assets_copied is False
 
         # Config should still not have assets/** since copy returned False
@@ -2461,11 +2485,6 @@ def test_assets_config_update_only_when_copied():
             config = yaml.safe_load(f)
 
         assert "assets/**" not in config["project"]["resources"]
-
-
-# =============================================================================
-# User Guide Config Path Tests
-# =============================================================================
 
 
 def test_user_guide_config_option_overrides_default_dir():
@@ -2541,7 +2560,9 @@ def test_user_guide_config_option_nonexistent_dir(capsys):
         result = docs._discover_user_guide()
 
         assert result is None
+
         captured = capsys.readouterr()
+
         assert "does not exist" in captured.out
 
 
@@ -2561,7 +2582,9 @@ def test_user_guide_warns_on_empty_directory(capsys):
         result = docs._discover_user_guide()
 
         assert result is None
+
         captured = capsys.readouterr()
+
         assert "is empty" in captured.out
 
 
@@ -2583,7 +2606,9 @@ def test_user_guide_warns_on_no_guide_files(capsys):
         result = docs._discover_user_guide()
 
         assert result is None
+
         captured = capsys.readouterr()
+
         assert "contains no .qmd or .md files" in captured.out
 
 
@@ -2612,10 +2637,12 @@ def test_user_guide_config_warns_when_both_exist(capsys):
         user_guide_info = docs._discover_user_guide()
 
         assert user_guide_info is not None
+
         # Config option should win
         assert user_guide_info["source_dir"] == custom_dir
 
         captured = capsys.readouterr()
+
         assert "using configured path" in captured.out
 
 
@@ -2661,7 +2688,9 @@ def test_user_guide_config_empty_dir_warns(capsys):
         result = docs._discover_user_guide()
 
         assert result is None
+
         captured = capsys.readouterr()
+
         assert "is empty" in captured.out
 
 
@@ -2688,14 +2717,10 @@ def test_copy_user_guide_files_uses_config():
         docs._copy_user_guide_files()
 
         dest = docs.project_path / "user-guide"
+
         assert dest.exists()
         assert (dest / "guide.qmd").exists()
         assert (dest / "guide.md").exists()
-
-
-# =========================================================================
-# Explicit User Guide Ordering Tests
-# =========================================================================
 
 
 def test_user_guide_explicit_config_discovery():
@@ -2819,19 +2844,23 @@ def test_user_guide_explicit_config_sidebar_generation():
 
         # Check first section
         section1 = sidebar["contents"][0]
+
         assert section1["section"] == "Get Started"
         assert len(section1["contents"]) == 3
+
         # First item has custom text
         assert section1["contents"][0] == {
             "text": "Welcome to Package",
             "href": "user-guide/index.qmd",
         }
+
         # Other items are plain hrefs
         assert section1["contents"][1] == "user-guide/quickstart.qmd"
         assert section1["contents"][2] == "user-guide/installation.qmd"
 
         # Check second section
         section2 = sidebar["contents"][1]
+
         assert section2["section"] == "Advanced"
         assert section2["contents"] == ["user-guide/advanced.qmd"]
 
@@ -2871,12 +2900,14 @@ def test_user_guide_explicit_config_no_prefix_stripping():
 
         # Verify files exist with original names
         docs_ug = docs.project_path / "user-guide"
+
         assert (docs_ug / "01-intro.qmd").exists()
         assert (docs_ug / "02-setup.qmd").exists()
 
         # Sidebar should also use original names
         sidebar = docs._generate_user_guide_sidebar(user_guide_info)
         section_contents = sidebar["contents"][0]["contents"]
+
         assert section_contents[0] == "user-guide/01-intro.qmd"
         assert section_contents[1] == "user-guide/02-setup.qmd"
 
@@ -2906,11 +2937,13 @@ def test_user_guide_explicit_config_missing_file(capsys):
         result = docs._discover_user_guide()
 
         assert result is not None
+
         # Only the existing file should be included
         assert len(result["files"]) == 1
         assert result["files"][0]["path"].name == "exists.qmd"
 
         captured = capsys.readouterr()
+
         assert "missing.qmd" in captured.out
         assert "does not exist" in captured.out
 
@@ -2970,6 +3003,7 @@ def test_user_guide_explicit_overrides_frontmatter_sections():
         result = docs._discover_user_guide()
 
         assert result is not None
+
         # Section should come from config, not frontmatter
         assert result["files"][0]["section"] == "New Section"
         assert "New Section" in result["sections"]
@@ -3031,11 +3065,6 @@ def test_user_guide_string_config_still_works():
         assert len(result["files"]) == 1
 
 
-# =========================================================================
-# Landing Page Generation Tests
-# =========================================================================
-
-
 def test_landing_page_generated_when_no_readme():
     """Test that a landing page is auto-generated when no README/index files exist."""
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -3058,9 +3087,11 @@ def test_landing_page_generated_when_no_readme():
         docs._create_index_from_readme()
 
         index_qmd = docs.project_path / "index.qmd"
+
         assert index_qmd.exists()
 
         content = index_qmd.read_text()
+
         assert "my-package" in content
         assert "A great package" in content
         assert "pip install my-package" in content
@@ -3089,6 +3120,7 @@ def test_landing_page_includes_description_from_pyproject():
         metadata = docs._get_package_metadata()
 
         content = docs._generate_landing_page_content(metadata)
+
         assert "## fancy-lib" in content
         assert "Fancy library for doing fancy things" in content
         assert "pip install fancy-lib" in content
@@ -3160,9 +3192,11 @@ def test_landing_page_not_generated_when_readme_exists():
         docs._create_index_from_readme()
 
         index_qmd = docs.project_path / "index.qmd"
+
         assert index_qmd.exists()
 
         content = index_qmd.read_text()
+
         # Should use the README content, not the auto-generated landing page
         assert "This is the readme" in content
         assert "pip install" not in content
@@ -3221,13 +3255,9 @@ def test_landing_page_with_no_metadata():
         metadata = docs._get_package_metadata()
 
         content = docs._generate_landing_page_content(metadata)
+
         assert "## minimal_pkg" in content
         assert "pip install minimal_pkg" in content
-
-
-# =========================================================================
-# README.rst and Index Source Discovery Tests
-# =========================================================================
 
 
 def test_find_index_source_priority_order():
@@ -3239,29 +3269,33 @@ def test_find_index_source_priority_order():
         config_path = project_path / "great-docs.yml"
         config_path.write_text("")
 
-        # Only README.rst → should find it
+        # If only README.rst exists, it should find it
         (project_path / "README.rst").write_text("Title\n=====\n")
         docs = GreatDocs(project_path=tmp_dir)
         source, warnings = docs._find_index_source_file()
+
         assert source is not None
         assert source.name == "README.rst"
         assert len(warnings) == 0
 
-        # Add README.md → should prefer it over README.rst
+        # If README.md exists, it should prefer it over README.rst
         (project_path / "README.md").write_text("# Title\n")
         source, warnings = docs._find_index_source_file()
+
         assert source.name == "README.md"
         assert len(warnings) == 1
         assert "README.rst" in warnings[0]
 
-        # Add index.md → should prefer it
+        # If index.md exists, it should prefer it
         (project_path / "index.md").write_text("# Index\n")
         source, warnings = docs._find_index_source_file()
+
         assert source.name == "index.md"
 
-        # Add index.qmd → should prefer it
+        # If index.qmd exists, it should prefer it
         (project_path / "index.qmd").write_text("---\ntitle: Index\n---\n")
         source, warnings = docs._find_index_source_file()
+
         assert source.name == "index.qmd"
 
 
@@ -3274,6 +3308,7 @@ def test_find_index_source_no_files():
 
         docs = GreatDocs(project_path=tmp_dir)
         source, warnings = docs._find_index_source_file()
+
         assert source is None
         assert len(warnings) == 0
 
@@ -3299,9 +3334,11 @@ def test_readme_rst_creates_index():
         docs._create_index_from_readme()
 
         index_qmd = docs.project_path / "index.qmd"
+
         assert index_qmd.exists()
 
         content = index_qmd.read_text()
+
         # Pandoc converts RST headings to Markdown headings
         # The heading adjustment then bumps them up one level
         assert "My Package" in content
@@ -3333,6 +3370,7 @@ def test_readme_rst_not_used_when_readme_md_exists():
 
         index_qmd = docs.project_path / "index.qmd"
         content = index_qmd.read_text()
+
         assert "Markdown README" in content
         assert "RST readme" not in content
 
@@ -3365,11 +3403,6 @@ def test_convert_rst_to_markdown_real_pandoc():
         assert "## Subtitle" in result or "Subtitle" in result
         assert "Paragraph text" in result
         assert "Item 1" in result
-
-
-# =========================================================================
-# Changelog (GitHub Releases) Tests
-# =========================================================================
 
 
 def test_fetch_github_releases_success():
@@ -3414,6 +3447,7 @@ def test_fetch_github_releases_success():
         releases = docs._fetch_github_releases("owner", "repo", max_releases=10)
 
     mock_get.assert_called_once()
+
     assert len(releases) == 2  # Draft skipped
     assert releases[0]["tag_name"] == "v1.0.0"
     assert releases[0]["name"] == "Version 1.0"
@@ -3507,9 +3541,11 @@ def test_generate_changelog_page():
         assert result == "changelog.qmd"
 
         changelog_qmd = build_dir / "changelog.qmd"
+
         assert changelog_qmd.exists()
 
         content = changelog_qmd.read_text()
+
         assert 'title: "Changelog"' in content
         assert "## Version 2.0" in content
         assert "## Version 1.0" in content
@@ -3589,6 +3625,7 @@ def test_add_changelog_to_navbar_manual_yaml():
         changelog_items = [
             i for i in navbar_items if isinstance(i, dict) and i.get("text") == "Changelog"
         ]
+
         assert len(changelog_items) == 1
         assert changelog_items[0]["href"] == "changelog.qmd"
 
@@ -3620,6 +3657,7 @@ def test_add_changelog_to_navbar_idempotent_double_call():
             for i in config["website"]["navbar"]["left"]
             if isinstance(i, dict) and i.get("text") == "Changelog"
         ]
+
         assert len(changelog_items) == 1
 
 
@@ -3630,6 +3668,7 @@ def test_changelog_config_defaults():
         config_path.write_text("")
 
         config = Config(Path(tmp_dir))
+
         assert config.changelog_enabled is True
         assert config.changelog_max_releases == 50
 
@@ -3641,6 +3680,7 @@ def test_changelog_config_custom():
         config_path.write_text("changelog:\n  enabled: false\n  max_releases: 10\n")
 
         config = Config(Path(tmp_dir))
+
         assert config.changelog_enabled is False
         assert config.changelog_max_releases == 10
 
@@ -3703,16 +3743,12 @@ def test_fetch_github_releases_max_cap():
     assert len(releases) == 5
 
 
-# =========================================================================
-# Linkify GitHub References Tests
-# =========================================================================
-
-
 def test_linkify_bare_issue_number():
     """Test that bare #NNN references become links."""
     docs = GreatDocs()
     text = "Fixed a bug (#42) and another issue #100."
     result = docs._linkify_github_references(text, "owner", "repo")
+
     assert "[#42](https://github.com/owner/repo/issues/42)" in result
     assert "[#100](https://github.com/owner/repo/issues/100)" in result
 
@@ -3722,8 +3758,10 @@ def test_linkify_gh_issue_and_pr():
     docs = GreatDocs()
     text = "Reported by @amureki (gh issue #662, gh pr #679)"
     result = docs._linkify_github_references(text, "owner", "repo")
+
     assert "[#662](https://github.com/owner/repo/issues/662)" in result
     assert "[#679](https://github.com/owner/repo/issues/679)" in result
+
     # The "gh issue" / "gh pr" prefix should be consumed
     assert "gh issue" not in result
     assert "gh pr" not in result
@@ -3734,6 +3772,7 @@ def test_linkify_at_mention():
     docs = GreatDocs()
     text = "Reported and fixed by @amureki and @some-user."
     result = docs._linkify_github_references(text, "o", "r")
+
     assert "[@amureki](https://github.com/amureki)" in result
     assert "[@some-user](https://github.com/some-user)" in result
 
@@ -3741,9 +3780,11 @@ def test_linkify_at_mention():
 def test_linkify_no_double_linking():
     """Test that already-linked references are not double-wrapped."""
     docs = GreatDocs()
+
     # After one pass, #42 becomes [#42](…/42); a second pass must not re-wrap
     text = "[#42](https://github.com/owner/repo/issues/42)"
     result = docs._linkify_github_references(text, "owner", "repo")
+
     # Should still have exactly one link, not nested
     assert result.count("[#42]") == 1
 
@@ -3753,6 +3794,7 @@ def test_linkify_email_not_matched():
     docs = GreatDocs()
     text = "Contact user@example.com for help."
     result = docs._linkify_github_references(text, "o", "r")
+
     assert "[@example" not in result
     assert "user@example.com" in result
 
@@ -3762,6 +3804,7 @@ def test_linkify_case_insensitive_gh_prefix():
     docs = GreatDocs()
     text = "See GH Issue #10 and GH PR #20."
     result = docs._linkify_github_references(text, "o", "r")
+
     assert "[#10](https://github.com/o/r/issues/10)" in result
     assert "[#20](https://github.com/o/r/issues/20)" in result
 
@@ -3772,9 +3815,11 @@ def test_linkify_backslash_escaped_refs():
     # Raw body from GitHub API often contains \@ and \# escapes
     text = r"Reported by \@hawkEye-01 (gh issue \#1167). Fixed by \@Mifrill (gh pr \#1168)"
     result = docs._linkify_github_references(text, "dateutil", "dateutil")
+
     assert "[@hawkEye-01](https://github.com/hawkEye-01)" in result
     assert "[#1167](https://github.com/dateutil/dateutil/issues/1167)" in result
     assert "[#1168](https://github.com/dateutil/dateutil/issues/1168)" in result
+
     # No leftover backslashes before @ or #
     assert "\\@" not in result
     assert "\\#" not in result
@@ -3785,6 +3830,7 @@ def test_linkify_backslash_escaped_quotes():
     docs = GreatDocs()
     text = r"Fixed a bug where it doesn\'t work with \"special\" input."
     result = docs._linkify_github_references(text, "o", "r")
+
     assert "doesn't" in result
     assert '"special"' in result
     assert "\\" not in result
@@ -3822,14 +3868,10 @@ def test_linkify_integrated_in_changelog():
             docs._generate_changelog_page()
 
         content = (build_dir / "changelog.qmd").read_text()
+
         assert "[#55](https://github.com/owner/repo/issues/55)" in content
         assert "[#60](https://github.com/owner/repo/issues/60)" in content
         assert "[@contributor](https://github.com/contributor)" in content
-
-
-# =========================================================================
-# Custom Sections Tests
-# =========================================================================
 
 
 def test_process_sections_empty_config_with_files():
@@ -3841,6 +3883,7 @@ def test_process_sections_empty_config_with_files():
 
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._process_sections()
+
         assert result == 0
 
 
@@ -3885,14 +3928,18 @@ def test_process_sections_discovers_and_copies():
 
         # Check files were copied (with numeric prefix stripped)
         dest = build_dir / "examples"
+
         assert dest.exists()
         assert (dest / "basic.qmd").exists()
         assert (dest / "advanced.qmd").exists()
 
         # Check auto-generated index
         index = dest / "index.qmd"
+
         assert index.exists()
+
         content = index.read_text()
+
         assert "Examples" in content
         assert "Basic Example" in content
         assert "Advanced Example" in content
@@ -3907,10 +3954,12 @@ def test_process_sections_discovers_and_copies():
             for item in config["website"]["navbar"]["left"]
             if isinstance(item, dict)
         ]
+
         assert "Examples" in navbar_texts
 
         # Check sidebar was added
         sidebar_ids = [s.get("id") for s in config["website"]["sidebar"] if isinstance(s, dict)]
+
         assert "examples" in sidebar_ids
 
 
@@ -3953,12 +4002,14 @@ def test_process_sections_no_index_by_default():
 
         # Check files were copied (with numeric prefix stripped)
         dest = build_dir / "examples"
+
         assert dest.exists()
         assert (dest / "basic.qmd").exists()
         assert (dest / "advanced.qmd").exists()
 
         # No auto-generated index page
         index = dest / "index.qmd"
+
         assert not index.exists(), "index.qmd should NOT be generated by default"
 
         # Check navbar links to first page, not index
@@ -3971,6 +4022,7 @@ def test_process_sections_no_index_by_default():
             for item in config["website"]["navbar"]["left"]
             if isinstance(item, dict) and item.get("text") == "Examples"
         )
+
         assert examples_item["href"] == "examples/basic.qmd"
 
         # Sidebar should NOT have an index entry
@@ -3980,7 +4032,9 @@ def test_process_sections_no_index_by_default():
             if isinstance(s, dict) and s.get("id") == "examples"
         )
         sidebar_hrefs = [c["href"] for c in sidebar["contents"] if isinstance(c, dict)]
+
         assert "examples/index.qmd" not in sidebar_hrefs
+
     """Test that user-provided index.qmd is used instead of auto-generating."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         project_path = Path(tmp_dir)
@@ -4011,6 +4065,7 @@ def test_process_sections_no_index_by_default():
         # The user's index should be preserved, not overwritten
         index = build_dir / "demos" / "index.qmd"
         content = index.read_text()
+
         assert "Custom gallery content" in content
 
 
@@ -4066,6 +4121,7 @@ def test_process_sections_navbar_after():
             for item in config["website"]["navbar"]["left"]
             if isinstance(item, dict)
         ]
+
         # Tutorials should be right after User Guide
         assert texts.index("Tutorials") == texts.index("User Guide") + 1
         assert texts.index("Tutorials") < texts.index("Reference")
@@ -4108,6 +4164,7 @@ def test_process_sections_default_navbar_before_reference():
             for item in config["website"]["navbar"]["left"]
             if isinstance(item, dict)
         ]
+
         assert texts.index("Examples") < texts.index("Reference")
 
 
@@ -4154,6 +4211,7 @@ def test_process_sections_multiple():
             for item in config["website"]["navbar"]["left"]
             if isinstance(item, dict)
         ]
+
         assert "Examples" in texts
         assert "Tutorials" in texts
 
@@ -4197,6 +4255,7 @@ def test_process_sections_idempotent():
             for item in config["website"]["navbar"]["left"]
             if isinstance(item, dict) and item.get("text") == "Examples"
         ]
+
         assert len(example_links) == 1
 
         # Only one sidebar
@@ -4205,6 +4264,7 @@ def test_process_sections_idempotent():
             for s in config["website"]["sidebar"]
             if isinstance(s, dict) and s.get("id") == "examples"
         ]
+
         assert len(example_sidebars) == 1
 
 
@@ -4213,6 +4273,7 @@ def test_sections_config_default():
     with tempfile.TemporaryDirectory() as tmp_dir:
         (Path(tmp_dir) / "great-docs.yml").write_text("")
         config = Config(Path(tmp_dir))
+
         assert config.sections == []
 
 
@@ -4228,6 +4289,7 @@ def test_sections_config_parsed():
             "    dir: blog\n"
         )
         config = Config(Path(tmp_dir))
+
         assert len(config.sections) == 2
         assert config.sections[0]["title"] == "Examples"
         assert config.sections[0]["dir"] == "examples"
@@ -4262,16 +4324,12 @@ def test_generate_section_index_with_descriptions():
 
         index = build_dir / "gallery" / "index.qmd"
         content = index.read_text()
+
         assert "Card One" in content
         assert "First card description" in content
         assert "img/card1.png" in content
         assert "Card Two" in content
         assert "Second card" in content
-
-
-# =============================================================================
-# Navbar Home Removal + Version Badge Tests
-# =============================================================================
 
 
 def test_navbar_no_home_new_build():
@@ -4294,6 +4352,7 @@ def test_navbar_no_home_new_build():
 
         navbar_items = config["website"]["navbar"]["left"]
         texts = [item.get("text") for item in navbar_items if isinstance(item, dict)]
+
         assert "Home" not in texts
         # Reference is added later by _add_api_reference_config only when
         # documentable exports exist, so it's not present after bare
@@ -4330,6 +4389,7 @@ def test_navbar_home_removed_from_existing():
 
         navbar_items = config["website"]["navbar"]["left"]
         texts = [item.get("text") for item in navbar_items if isinstance(item, dict)]
+
         assert "Home" not in texts
         assert "Reference" in texts
 
@@ -4373,9 +4433,12 @@ def test_version_metadata_from_github_release():
         import json
 
         meta_path = build_dir / "_package_meta.json"
+
         assert meta_path.exists()
+
         with open(meta_path) as f:
             meta = json.load(f)
+
         assert meta["version"] == "2.3.4"
         assert meta["published_at"] == "2025-06-15T18:30:00Z"
 
@@ -4406,6 +4469,7 @@ def test_version_metadata_not_written_no_releases():
             docs._update_quarto_config()
 
         meta_path = build_dir / "_package_meta.json"
+
         assert not meta_path.exists()
 
 
@@ -4414,6 +4478,7 @@ def test_version_metadata_not_written_no_github():
     with tempfile.TemporaryDirectory() as tmp_dir:
         project_path = Path(tmp_dir)
         (project_path / "great-docs.yml").write_text("")
+
         # No repository URL in pyproject.toml
         (project_path / "pyproject.toml").write_text(
             '[project]\nname = "test-pkg"\nversion = "1.0.0"\n'
@@ -4427,6 +4492,7 @@ def test_version_metadata_not_written_no_github():
         docs._update_quarto_config()
 
         meta_path = build_dir / "_package_meta.json"
+
         assert not meta_path.exists()
 
 
@@ -4469,14 +4535,14 @@ def test_version_metadata_strips_v_prefix():
         import json
 
         meta_path = build_dir / "_package_meta.json"
+
         assert meta_path.exists()
+
         with open(meta_path) as f:
             meta = json.load(f)
+
         # Should be "1.0.0" not "v1.0.0"
         assert meta["version"] == "1.0.0"
-
-
-# ── Module Introspection Tests ───────────────────────────────────────────
 
 
 def test_module_exports_categorized():
@@ -4660,6 +4726,7 @@ def test_module_big_class_splitting():
                 (s for s in sections if s["title"] == "engine.Engine Methods"),
                 None,
             )
+
             assert method_section is not None
             assert len(method_section["contents"]) == 7
             assert "engine.Engine.start" in method_section["contents"]
@@ -4667,6 +4734,7 @@ def test_module_big_class_splitting():
 
             # Functions section should have create_engine
             func_section = next((s for s in sections if s["title"] == "Functions"), None)
+
             assert func_section is not None
             assert "engine.create_engine" in func_section["contents"]
         finally:
@@ -4893,6 +4961,7 @@ def test_write_object_types_json_empty_categories():
         docs._write_object_types_json(categories)
 
         types_path = docs.project_path / "_object_types.json"
+
         assert types_path.exists()
 
         with open(types_path) as f:
@@ -4958,9 +5027,6 @@ def test_object_types_integrated_with_categorization():
             assert obj_types["MyClass.action"] == "method"
         finally:
             sys.path.remove(tmp_dir)
-
-
-# ── Fallback categorization (griffe unavailable) ─────────────────────
 
 
 def test_categorize_fallback_functions_not_other():
@@ -5142,7 +5208,9 @@ class TestGdgSite144DocstringTables:
 
     def _read_html(self, *parts: str) -> str:
         path = self.SITE_DIR.joinpath(*parts)
+
         assert path.exists(), f"Expected page not found: {path}"
+
         return path.read_text(encoding="utf-8")
 
     def test_compare_methods_has_table(self):
@@ -5155,6 +5223,7 @@ class TestGdgSite144DocstringTables:
             assert "<th>Method</th>" in html
             assert "<th>Speed</th>" in html
             assert "<th>Memory</th>" in html
+
         # Body data should appear in either table or text form
         assert "O(n log n)" in html or "n log n" in html
         assert "O(n^2)" in html or "n^2" in html or "n²" in html
@@ -5163,21 +5232,18 @@ class TestGdgSite144DocstringTables:
     def test_format_report_has_table(self):
         """format_report reference page contains an HTML table with expected data."""
         html = self._read_html("reference", "format_report.html")
+
         # Q renderer may not convert RST tables to HTML <table> elements;
         # verify that the data content is present regardless of format
         if "<table" in html:
             assert "<thead>" in html, "Expected <thead> in table"
             assert "<th>Metric</th>" in html
             assert "<th>Value</th>" in html
+
         # Body data should appear in either table or text form
         assert "count" in html
         assert "100" in html
         assert "42.5" in html
-
-
-# =========================================================================
-# Renderer-Level Transform Tests (P0 workarounds absorbed into renderer)
-# =========================================================================
 
 
 class TestRendererDunderEscaping:
@@ -5195,7 +5261,7 @@ class TestRendererDunderEscaping:
         assert _escape_dunders("process") == "process"
 
     def test_dotted_dunder_escaped(self):
-        """Collection.__repr__ → Collection.\\_\\_repr\\_\\_"""
+        """Collection.__repr__ -> Collection.\\_\\_repr\\_\\_"""
         from great_docs._renderer.renderer import _escape_dunders
 
         result = _escape_dunders("Collection.__repr__")
@@ -5221,6 +5287,7 @@ class TestRendererRstCodeBlocks:
 
         text = "For example::\n\n    x = 1\n    y = 2\n"
         result = _convert_rst_text(text)
+
         assert "```python" in result
         assert "x = 1" in result
         assert "::" not in result.split("```")[0]
@@ -5231,26 +5298,29 @@ class TestRendererRstCodeBlocks:
 
         text = ".. note::\n\n    Important info\n"
         result = _convert_rst_text(text)
+
         assert ".callout-note" in result
         assert "Important info" in result
         assert ":::" in result
 
     def test_math_directive_to_dollar_signs(self):
-        """.. math:: → $$...$$ display math."""
+        """.. math:: -> $$...$$ display math."""
         from great_docs._renderer.renderer import _convert_rst_text
 
         text = "The formula:\n\n.. math::\n\n    a^2 + b^2 = c^2\n"
         result = _convert_rst_text(text)
+
         assert "$$" in result
         assert "a^2 + b^2 = c^2" in result
         assert ".. math::" not in result
 
     def test_inline_math_converted(self):
-        """:math:`x^2` → $x^2$"""
+        """:math:`x^2` -> $x^2$"""
         from great_docs._renderer.renderer import _convert_rst_text
 
         text = "The value :math:`x^2` is computed."
         result = _convert_rst_text(text)
+
         assert "$x^2$" in result
         assert ":math:" not in result
 
@@ -5270,6 +5340,7 @@ class TestRendererRstTables:
             "========  =========\n"
         )
         result = _convert_rst_text(text)
+
         assert "| Method" in result
         assert "| Quick" in result
         assert "| ---" in result
@@ -5286,6 +5357,7 @@ class TestRendererRstTables:
             "+--------+-------+\n"
         )
         result = _convert_rst_text(text)
+
         assert "| Name" in result
         assert "| alpha" in result
         assert "| ---" in result
@@ -5302,6 +5374,7 @@ class TestRendererOverloadSignatures:
         # Create a simple set of "overload" lines
         sig_lines = ["process(data: str) -> bytes", "process(data: bytes) -> str"]
         result = renderer._render_overload_signatures("process", [])
+
         assert "```python" in result
 
     def test_overload_empty_falls_back(self):
@@ -5310,6 +5383,7 @@ class TestRendererOverloadSignatures:
 
         renderer = MdRenderer()
         result = renderer._render_overload_signatures("func", [])
+
         assert "func()" in result
 
 
@@ -5324,6 +5398,7 @@ class TestRendererDataclassAttributes:
 
         obj = MagicMock()
         obj.labels = {"dataclass"}
+
         assert _is_griffe_dataclass(obj) is True
 
     def test_is_griffe_dataclass_false(self):
@@ -5334,6 +5409,7 @@ class TestRendererDataclassAttributes:
 
         obj = MagicMock()
         obj.labels = {"class"}
+
         assert _is_griffe_dataclass(obj) is False
 
     def test_get_dataclass_field_names(self):
@@ -5392,6 +5468,7 @@ class TestRendererDataclassAttributes:
         obj.docstring = docstring
 
         result = _get_param_descriptions(obj)
+
         assert result == {"name": "The name of the item.", "count": "Number of items."}
 
     def test_get_dataclass_field_names_non_dataclass_returns_none(self):
@@ -5400,11 +5477,12 @@ class TestRendererDataclassAttributes:
 
         obj = type("FakeObj", (), {"canonical_path": "os.path", "path": "os.path"})()
         result = _get_dataclass_field_names(obj)
+
         assert result is None
 
 
 class TestRendererSphinxRoles:
-    """Sphinx cross-reference roles → markdown code spans."""
+    """Sphinx cross-reference roles -> Markdown code spans."""
 
     def test_func_role(self):
         from great_docs._renderer.renderer import _convert_sphinx_roles
@@ -5441,6 +5519,7 @@ class TestRendererSphinxRoles:
 
         text = "Use :func:`foo` and :class:`Bar` together."
         result = _convert_sphinx_roles(text)
+
         assert result == "Use `foo()` and `Bar` together."
 
     def test_func_already_has_parens(self):
@@ -5450,12 +5529,13 @@ class TestRendererSphinxRoles:
 
 
 class TestRendererRstDirectives:
-    """RST admonition / version directives → Quarto callout blocks."""
+    """RST admonition / version directives -> Quarto callout blocks."""
 
     def test_inline_note(self):
         from great_docs._renderer.renderer import _convert_rst_directives
 
         result = _convert_rst_directives(".. note:: Something important.")
+
         assert ".callout-note" in result
         assert "Something important." in result
         assert ":::" in result
@@ -5464,6 +5544,7 @@ class TestRendererRstDirectives:
         from great_docs._renderer.renderer import _convert_rst_directives
 
         result = _convert_rst_directives(".. warning:: Be careful.")
+
         assert ".callout-warning" in result
         assert "Be careful." in result
 
@@ -5471,6 +5552,7 @@ class TestRendererRstDirectives:
         from great_docs._renderer.renderer import _convert_rst_directives
 
         result = _convert_rst_directives(".. versionadded:: 2.8.1")
+
         assert ".callout-note" in result
         assert "Added in version" in result
         assert "2.8.1" in result
@@ -5479,6 +5561,7 @@ class TestRendererRstDirectives:
         from great_docs._renderer.renderer import _convert_rst_directives
 
         result = _convert_rst_directives(".. deprecated:: 2.6 Use X instead.")
+
         assert ".callout-warning" in result
         assert "Deprecated since version" in result
         assert "2.6" in result
@@ -5488,6 +5571,7 @@ class TestRendererRstDirectives:
 
         text = ".. note::\n\n    This is the note body.\n"
         result = _convert_rst_directives(text)
+
         assert ".callout-note" in result
         assert "This is the note body." in result
 
@@ -5496,6 +5580,7 @@ class TestRendererRstDirectives:
 
         text = ".. tip::\n\n    Helpful advice.\n"
         result = _convert_rst_directives(text)
+
         assert ".callout-tip" in result
         assert "Helpful advice." in result
 
@@ -5503,12 +5588,14 @@ class TestRendererRstDirectives:
         from great_docs._renderer.renderer import _convert_rst_directives
 
         result = _convert_rst_directives(".. danger:: Critical issue.")
+
         assert ".callout-important" in result
 
     def test_bare_directive(self):
         from great_docs._renderer.renderer import _convert_rst_directives
 
         result = _convert_rst_directives(".. note::")
+
         assert ".callout-note" in result
         assert ":::" in result
 
@@ -5517,17 +5604,19 @@ class TestRendererRstDirectives:
 
         text = ".. versionchanged:: 3.0\n\n    New behaviour.\n"
         result = _convert_rst_directives(text)
+
         assert "Changed in version" in result
         assert "3.0" in result
 
 
 class TestRendererBoldSectionHeaders:
-    """``**Examples**::`` → proper QMD section headings."""
+    """``**Examples**::`` -> proper QMD section headings."""
 
     def test_examples_header(self):
         from great_docs._renderer.renderer import _convert_bold_section_headers
 
         result = _convert_bold_section_headers("**Examples**::", 2)
+
         assert "## Examples" in result
         assert ".doc-section-examples" in result
 
@@ -5535,6 +5624,7 @@ class TestRendererBoldSectionHeaders:
         from great_docs._renderer.renderer import _convert_bold_section_headers
 
         result = _convert_bold_section_headers("**Notes**::", 3)
+
         assert "### Notes" in result
         assert ".doc-section-notes" in result
 
@@ -5542,23 +5632,26 @@ class TestRendererBoldSectionHeaders:
         from great_docs._renderer.renderer import _convert_bold_section_headers
 
         result = _convert_bold_section_headers("**See Also**::", 2)
+
         assert ".doc-section-see-also" in result
 
     def test_non_matching_text_unchanged(self):
         from great_docs._renderer.renderer import _convert_bold_section_headers
 
         text = "This is **bold** text."
+
         assert _convert_bold_section_headers(text, 2) == text
 
 
 class TestRendererSphinxFields:
-    """Sphinx-style ``:param:`` / ``:returns:`` / ``:raises:`` fields → sections."""
+    """Sphinx-style ``:param:`` / ``:returns:`` / ``:raises:`` fields -> sections."""
 
     def test_param_and_type(self):
         from great_docs._renderer.renderer import _convert_sphinx_fields
 
         text = ":param x: The x value.\n:type x: int"
         result = _convert_sphinx_fields(text, 2)
+
         assert "## Parameters" in result
         assert "x" in result
         assert "int" in result
@@ -5569,6 +5662,7 @@ class TestRendererSphinxFields:
 
         text = ":returns: The result.\n:rtype: str"
         result = _convert_sphinx_fields(text, 2)
+
         assert "## Returns" in result
         assert "str" in result
         assert "The result." in result
@@ -5578,6 +5672,7 @@ class TestRendererSphinxFields:
 
         text = ":raises ValueError: If bad input."
         result = _convert_sphinx_fields(text, 2)
+
         assert "## Raises" in result
         assert "ValueError" in result
         assert "If bad input." in result
@@ -5594,6 +5689,7 @@ class TestRendererSphinxFields:
             ":raises ValueError: Bad."
         )
         result = _convert_sphinx_fields(text, 2)
+
         assert "Description text." in result
         assert "## Parameters" in result
         assert "## Returns" in result
@@ -5603,17 +5699,19 @@ class TestRendererSphinxFields:
         from great_docs._renderer.renderer import _convert_sphinx_fields
 
         text = "Just normal text."
+
         assert _convert_sphinx_fields(text, 2) == text
 
 
 class TestRendererGoogleSections:
-    """Google-style ``Args:`` / ``Returns:`` / ``Raises:`` sections → QMD."""
+    """Google-style ``Args:`` / ``Returns:`` / ``Raises:`` sections -> QMD."""
 
     def test_args_section(self):
         from great_docs._renderer.renderer import _convert_google_sections
 
         text = "Args:\n    x: The x value.\n    y: The y value."
         result = _convert_google_sections(text, 2)
+
         assert "## Parameters" in result
         assert "x" in result
         assert "y" in result
@@ -5623,6 +5721,7 @@ class TestRendererGoogleSections:
 
         text = "Returns:\n    A dict of results."
         result = _convert_google_sections(text, 2)
+
         assert "## Returns" in result
         assert "A dict of results." in result
 
@@ -5631,6 +5730,7 @@ class TestRendererGoogleSections:
 
         text = "Raises:\n    ValueError: If bad input.\n    TypeError: If wrong type."
         result = _convert_google_sections(text, 2)
+
         assert "## Raises" in result
         assert "ValueError" in result
         assert "TypeError" in result
@@ -5640,6 +5740,7 @@ class TestRendererGoogleSections:
 
         text = "Note:\n    This is important."
         result = _convert_google_sections(text, 2)
+
         assert "## Note" in result
         assert ".doc-section-notes" in result
 
@@ -5648,6 +5749,7 @@ class TestRendererGoogleSections:
 
         text = "Examples:\n    >>> foo()\n    42"
         result = _convert_google_sections(text, 3)
+
         assert "### Examples" in result
         assert ".doc-section-examples" in result
 
@@ -5661,6 +5763,7 @@ class TestRendererGoogleSections:
             "Raises:\n    ValueError: Bad."
         )
         result = _convert_google_sections(text, 2)
+
         assert "Description." in result
         assert "## Parameters" in result
         assert "## Returns" in result
@@ -5670,17 +5773,19 @@ class TestRendererGoogleSections:
         from great_docs._renderer.renderer import _convert_google_sections
 
         text = "Just normal text."
+
         assert _convert_google_sections(text, 2) == text
 
 
 class TestRendererDoctestFencing:
-    """Unfenced ``>>>`` doctest blocks → fenced ```python code blocks."""
+    """Unfenced ``>>>`` doctest blocks -> fenced ```python code blocks."""
 
     def test_single_doctest_line(self):
         from great_docs._renderer.renderer import _fence_doctest_blocks
 
         text = ">>> print('hello')"
         result = _fence_doctest_blocks(text)
+
         assert "```python" in result
         assert ">>> print('hello')" in result
         assert result.endswith("```")
@@ -5690,6 +5795,7 @@ class TestRendererDoctestFencing:
 
         text = ">>> x = 1\n>>> y = 2\n>>> x + y"
         result = _fence_doctest_blocks(text)
+
         assert result.count("```python") == 1
         assert result.count("```") == 2
 
@@ -5698,6 +5804,7 @@ class TestRendererDoctestFencing:
 
         text = ">>> for i in range(3):\n...     print(i)"
         result = _fence_doctest_blocks(text)
+
         assert "```python" in result
         assert "... " in result
 
@@ -5706,12 +5813,14 @@ class TestRendererDoctestFencing:
 
         text = "First example:\n\n>>> x = 1\n\nSecond example:\n\n>>> y = 2"
         result = _fence_doctest_blocks(text)
+
         assert result.count("```python") == 2
 
     def test_no_doctest_unchanged(self):
         from great_docs._renderer.renderer import _fence_doctest_blocks
 
         text = "Just some normal text."
+
         assert _fence_doctest_blocks(text) == text
 
     def test_bare_prompt(self):
@@ -5719,6 +5828,7 @@ class TestRendererDoctestFencing:
 
         text = ">>>"
         result = _fence_doctest_blocks(text)
+
         assert "```python" in result
 
     def test_in_render_section_text(self):
@@ -5727,6 +5837,7 @@ class TestRendererDoctestFencing:
 
         text = "Example usage:\n\n>>> foo(42)\n>>> bar()"
         result = _fence_doctest_blocks(_convert_rst_text(text))
+
         assert "```python" in result
         assert ">>> foo(42)" in result
 
@@ -5754,6 +5865,7 @@ class TestRendererCallableParens:
         doc.__class__ = layout.DocFunction
 
         result = renderer.render_header(doc)
+
         assert "my_func()" in result
         assert "# my_func()" in result
 
@@ -5776,6 +5888,7 @@ class TestRendererCallableParens:
         doc.__class__ = layout.DocClass
 
         result = renderer.render_header(doc)
+
         assert "MyClass" in result
         assert "MyClass()" not in result
 
@@ -5800,6 +5913,7 @@ class TestRendererTypeBadgeClasses:
         doc.__class__ = layout.DocFunction
 
         result = renderer.render_header(doc)
+
         assert ".doc-type-function" in result
 
     def test_class_type_class(self):
@@ -5819,6 +5933,7 @@ class TestRendererTypeBadgeClasses:
         doc.__class__ = layout.DocClass
 
         result = renderer.render_header(doc)
+
         assert ".doc-type-class" in result
 
     def test_enum_type_class(self):
@@ -5838,6 +5953,7 @@ class TestRendererTypeBadgeClasses:
         doc.__class__ = layout.DocClass
 
         result = renderer.render_header(doc)
+
         assert ".doc-type-enum" in result
 
     def test_attribute_type_class(self):
@@ -5857,6 +5973,7 @@ class TestRendererTypeBadgeClasses:
         doc.__class__ = layout.DocAttribute
 
         result = renderer.render_header(doc)
+
         assert ".doc-type-attribute" in result
         assert "MY_CONST()" not in result
 
@@ -5881,6 +5998,7 @@ class TestRendererSignatureMultiline:
                 },
             )()
         )
+
         assert "foo()" in result
         assert "\n    " not in result  # no indentation = single line
 
@@ -5910,12 +6028,8 @@ class TestRendererSignatureMultiline:
         el.parameters = dc.Parameters(*params)
 
         result = renderer._signature_func_or_class(el)
+
         assert "\n    " in result  # has indentation = multi-line
-
-
-# =============================================================================
-# P3 renderer improvements
-# =============================================================================
 
 
 class TestRendererConstantValues:
@@ -5937,6 +6051,7 @@ class TestRendererConstantValues:
         el.value = None
 
         result = renderer._signature_module_or_attr(el)
+
         assert result == "`MY_CONST`"
 
     def test_constant_with_annotation(self):
@@ -5955,6 +6070,7 @@ class TestRendererConstantValues:
         el.value = None
 
         result = renderer._signature_module_or_attr(el)
+
         assert result == "`TIMEOUT: int`"
 
     def test_constant_with_value(self):
@@ -5973,6 +6089,7 @@ class TestRendererConstantValues:
         el.value = "3"
 
         result = renderer._signature_module_or_attr(el)
+
         assert result == "`MAX_RETRIES = 3`"
 
     def test_constant_with_both(self):
@@ -5991,6 +6108,7 @@ class TestRendererConstantValues:
         el.value = "8080"
 
         result = renderer._signature_module_or_attr(el)
+
         assert result == "`DEFAULT_PORT: int = 8080`"
 
     def test_constant_long_value_skipped(self):
@@ -6009,6 +6127,7 @@ class TestRendererConstantValues:
         el.value = "x" * 201
 
         result = renderer._signature_module_or_attr(el)
+
         assert result == "`BIG: str`"
         assert "x" * 201 not in result
 
@@ -6035,6 +6154,7 @@ class TestRendererNonCallableCleanup:
         el.bases = []
 
         result = renderer._signature_func_or_class(el)
+
         assert "Color" in result
         assert "Color()" not in result
 
@@ -6057,6 +6177,7 @@ class TestRendererNonCallableCleanup:
         el.bases = ["TypedDict"]
 
         result = renderer._signature_func_or_class(el)
+
         assert "Config" in result
         assert "Config()" not in result
 
@@ -6080,6 +6201,7 @@ class TestRendererNonCallableCleanup:
         el.parameters = dc.Parameters()
 
         result = renderer._signature_func_or_class(el)
+
         assert "Widget()" in result
 
 
@@ -6169,6 +6291,7 @@ class TestRendererRstCitations:
 
         text = ".. [1] Author (2023). Title.\n.. [2] Another ref."
         result = _convert_rst_citations(text)
+
         assert "1. Author (2023). Title." in result
         assert "2. Another ref." in result
         assert ".. [1]" not in result
@@ -6179,6 +6302,7 @@ class TestRendererRstCitations:
 
         text = ".. [1] See https://example.com for details."
         result = _convert_rst_citations(text)
+
         assert "1." in result
         assert "<https://example.com>" in result
 
@@ -6188,14 +6312,16 @@ class TestRendererRstCitations:
 
         text = "Regular paragraph text.\nNo citations here."
         result = _convert_rst_citations(text)
+
         assert result == text
 
     def test_citations_in_convert_rst_text(self):
-        """Citations are converted as part of the full RST → Markdown pipeline."""
+        """Citations are converted as part of the full RST -> Markdown pipeline."""
         from great_docs._renderer.renderer import _convert_rst_text
 
         text = "References\n\n.. [1] First ref.\n.. [2] Second ref."
         result = _convert_rst_text(text)
+
         assert "1. First ref." in result
         assert "2. Second ref." in result
 
@@ -6205,6 +6331,7 @@ class TestRendererRstCitations:
 
         text = ".. [1] Author (2023).\n    Title of the work."
         result = _convert_rst_citations(text)
+
         assert "1. Author (2023). Title of the work." in result
 
 
@@ -6217,6 +6344,7 @@ class TestRendererRstMathDisplay:
 
         text = "Some text.\n\n.. math::\n\n    E = mc^2\n"
         result = _convert_rst_text(text)
+
         assert "$$" in result
         assert "E = mc^2" in result
         assert ".. math::" not in result
@@ -6227,6 +6355,7 @@ class TestRendererRstMathDisplay:
 
         text = "The formula :math:`x^2` is simple."
         result = _convert_rst_text(text)
+
         assert "$x^2$" in result
         assert ":math:" not in result
 
@@ -6242,6 +6371,7 @@ class TestRendererIsNonCallableClass:
         obj = MagicMock()
         obj.labels = {"enum"}
         obj.bases = []
+
         assert _is_non_callable_class(obj) is True
 
     def test_typeddict_detected_by_base(self):
@@ -6252,6 +6382,7 @@ class TestRendererIsNonCallableClass:
         obj = MagicMock()
         obj.labels = set()
         obj.bases = ["TypedDict"]
+
         assert _is_non_callable_class(obj) is True
 
     def test_regular_class_not_detected(self):
@@ -6262,6 +6393,7 @@ class TestRendererIsNonCallableClass:
         obj = MagicMock()
         obj.labels = set()
         obj.bases = ["object"]
+
         assert _is_non_callable_class(obj) is False
 
     def test_int_enum_detected(self):
@@ -6272,6 +6404,7 @@ class TestRendererIsNonCallableClass:
         obj = MagicMock()
         obj.labels = set()
         obj.bases = ["IntEnum"]
+
         assert _is_non_callable_class(obj) is True
 
     def test_str_enum_detected(self):
@@ -6282,6 +6415,7 @@ class TestRendererIsNonCallableClass:
         obj = MagicMock()
         obj.labels = set()
         obj.bases = ["StrEnum"]
+
         assert _is_non_callable_class(obj) is True
 
 
@@ -6313,6 +6447,7 @@ class TestFitToSquare:
 
         img = Image.new("RGBA", (100, 100), (255, 0, 0, 255))
         result = GreatDocs._fit_to_square(img, 64)
+
         assert result.size == (64, 64)
 
     def test_wide_image_padded_to_square(self):
@@ -6321,9 +6456,12 @@ class TestFitToSquare:
 
         img = Image.new("RGBA", (200, 100), (255, 0, 0, 255))
         result = GreatDocs._fit_to_square(img, 200)
+
         assert result.size == (200, 200)
+
         # Top-left corner should be transparent (padding)
         assert result.getpixel((0, 0))[3] == 0
+
         # Center should be opaque (the image)
         assert result.getpixel((100, 100))[3] == 255
 
@@ -6333,9 +6471,12 @@ class TestFitToSquare:
 
         img = Image.new("RGBA", (100, 200), (0, 255, 0, 255))
         result = GreatDocs._fit_to_square(img, 200)
+
         assert result.size == (200, 200)
+
         # Left edge should be transparent (padding)
         assert result.getpixel((0, 100))[3] == 0
+
         # Center should be opaque
         assert result.getpixel((100, 100))[3] == 255
 
@@ -6345,6 +6486,7 @@ class TestFitToSquare:
 
         img = Image.new("RGB", (50, 50), (0, 0, 255))
         result = GreatDocs._fit_to_square(img, 64)
+
         assert result.mode == "RGBA"
 
     def test_downscale_preserves_aspect_ratio(self):
@@ -6353,6 +6495,7 @@ class TestFitToSquare:
 
         img = Image.new("RGBA", (400, 200), (255, 0, 0, 255))
         result = GreatDocs._fit_to_square(img, 100)
+
         assert result.size == (100, 100)
 
 
@@ -6450,6 +6593,7 @@ class TestGenerateFaviconsSvg:
             assert result["icon"] == "favicon.ico"
             for name in ["favicon-16x16.png", "favicon-32x32.png", "apple-touch-icon.png"]:
                 img = Image.open(dest / name)
+
                 assert img.size[0] == img.size[1], f"{name} should be square"
 
 
@@ -6551,6 +6695,7 @@ class TestGenerateFaviconsPng:
             assert result["icon"] == "favicon.ico"
             for name in ["favicon-16x16.png", "favicon-32x32.png", "apple-touch-icon.png"]:
                 img = Image.open(dest / name)
+
                 assert img.size[0] == img.size[1], f"{name} should be square"
 
 
@@ -6582,6 +6727,7 @@ class TestFaviconConfigNormalization:
             config_file = Path(tmp_dir) / "great-docs.yml"
             config_file.write_text("display_name: Test\n")
             config = Config(Path(tmp_dir))
+
             assert config.favicon is None
 
     def test_favicon_string_normalized_to_dict(self):
@@ -6590,6 +6736,7 @@ class TestFaviconConfigNormalization:
             config_file = Path(tmp_dir) / "great-docs.yml"
             config_file.write_text("favicon: assets/favicon.svg\n")
             config = Config(Path(tmp_dir))
+
             assert config.favicon == {"icon": "assets/favicon.svg"}
 
     def test_favicon_dict_passed_through(self):
@@ -6598,6 +6745,7 @@ class TestFaviconConfigNormalization:
             config_file = Path(tmp_dir) / "great-docs.yml"
             config_file.write_text("favicon:\n  icon: my-icon.svg\n")
             config = Config(Path(tmp_dir))
+
             assert config.favicon == {"icon": "my-icon.svg"}
 
     def test_favicon_invalid_type_returns_none(self):
@@ -6606,6 +6754,7 @@ class TestFaviconConfigNormalization:
             config_file = Path(tmp_dir) / "great-docs.yml"
             config_file.write_text("favicon:\n  - item1\n  - item2\n")
             config = Config(Path(tmp_dir))
+
             assert config.favicon is None
 
 
@@ -6751,10 +6900,12 @@ class TestExtractBadgesFromContent:
         assert len(badges) == 2
         assert badges[0]["alt"] == "PyPI"
         assert "img.shields.io" in badges[0]["img"]
+
         # Heading preserved, badges stripped, body preserved
         assert "# My Package" in cleaned
         assert "Some body text." in cleaned
         assert "img.shields.io" not in cleaned
+
         # No hero extras for top-of-file badges
         assert hero_extras == {}
 
@@ -6782,14 +6933,17 @@ class TestExtractBadgesFromContent:
         assert len(badges) == 3
         assert badges[0]["alt"] == "PyPI"
         assert badges[2]["alt"] == "Coverage"
+
         # Entire div block removed
         assert "<div" not in cleaned
         assert "</div>" not in cleaned
         assert "logo.png" not in cleaned
         assert "cool tagline" not in cleaned
+
         # Surrounding content preserved
         assert "Install via pip" in cleaned
         assert "Body text after." in cleaned
+
         # Hero extras extracted from centered div
         assert hero_extras["logo_url"] == "logo.png"
         assert hero_extras["tagline"] == "A cool tagline"
@@ -6868,6 +7022,7 @@ def test_config_markdown_pages_disabled():
 
         # copy-page.js should NOT be in resources
         resources = config["project"].get("resources", [])
+
         assert "copy-page.js" not in resources
 
         # copy-page.js should NOT be in include-after-body
@@ -6899,11 +7054,13 @@ def test_config_markdown_pages_widget_disabled():
         docs._update_quarto_config()
 
         quarto_yml = docs.project_path / "_quarto.yml"
+
         with open(quarto_yml, "r") as f:
             config = yaml.safe_load(f)
 
         # copy-page.js should NOT be in resources
         resources = config["project"].get("resources", [])
+
         assert "copy-page.js" not in resources
 
         # copy-page.js should NOT be in include-after-body
@@ -6932,11 +7089,13 @@ def test_config_markdown_pages_default_enabled():
 
         # copy-page.js SHOULD be in resources
         resources = config["project"].get("resources", [])
+
         assert "copy-page.js" in resources
 
         # copy-page.js SHOULD be in include-after-body
         after_body = config["format"]["html"].get("include-after-body", [])
         has_copy_page = any("copy-page" in str(item) for item in after_body)
+
         assert has_copy_page
 
 
@@ -6966,48 +7125,56 @@ class TestPositBadgeInjection:
 
     def _header_has_posit_badge(self, config: dict) -> bool:
         header = config.get("format", {}).get("html", {}).get("include-in-header", [])
+
         return any("supported-by-posit" in str(item) for item in header)
 
     def test_posit_pbc_injects_badge(self):
         """funding.name = 'Posit, PBC' should inject the badge."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             config = self._build_with_funding(tmp_dir, "Posit, PBC")
+
             assert self._header_has_posit_badge(config)
 
     def test_posit_software_pbc_injects_badge(self):
         """funding.name = 'Posit Software, PBC' should inject the badge."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             config = self._build_with_funding(tmp_dir, "Posit Software, PBC")
+
             assert self._header_has_posit_badge(config)
 
     def test_posit_alone_injects_badge(self):
         """funding.name = 'Posit' should inject the badge."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             config = self._build_with_funding(tmp_dir, "Posit")
+
             assert self._header_has_posit_badge(config)
 
     def test_posit_case_insensitive(self):
         """funding.name = 'posit' (lowercase) should inject the badge."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             config = self._build_with_funding(tmp_dir, "posit")
+
             assert self._header_has_posit_badge(config)
 
     def test_no_funding_no_badge(self):
         """No funding config should not inject the badge."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             config = self._build_with_funding(tmp_dir, None)
+
             assert not self._header_has_posit_badge(config)
 
     def test_non_posit_funder_no_badge(self):
         """funding.name = 'Acme Corp' should not inject the badge."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             config = self._build_with_funding(tmp_dir, "Acme Corp")
+
             assert not self._header_has_posit_badge(config)
 
     def test_posit_as_substring_no_badge(self):
         """funding.name = 'Compositor Labs' should not inject the badge (word boundary)."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             config = self._build_with_funding(tmp_dir, "Compositor Labs")
+
             assert not self._header_has_posit_badge(config)
 
     def test_no_duplicate_badge(self):
@@ -7026,17 +7193,14 @@ class TestPositBadgeInjection:
             docs._update_quarto_config()  # second run
 
             quarto_yml = docs.project_path / "_quarto.yml"
+
             with open(quarto_yml) as f:
                 config = yaml.safe_load(f)
 
             header = config.get("format", {}).get("html", {}).get("include-in-header", [])
             badge_count = sum(1 for item in header if "supported-by-posit" in str(item))
+
             assert badge_count == 1
-
-
-# ---------------------------------------------------------------------------
-# Coverage: _update_project_gitignore (core.py lines ~302-328)
-# ---------------------------------------------------------------------------
 
 
 def test_update_gitignore_force_creates_new():
@@ -7046,8 +7210,11 @@ def test_update_gitignore_force_creates_new():
         docs._update_project_gitignore(force=True)
 
         gitignore = Path(tmp_dir) / ".gitignore"
+
         assert gitignore.exists()
+
         content = gitignore.read_text()
+
         assert "great-docs/" in content
 
 
@@ -7061,6 +7228,7 @@ def test_update_gitignore_force_appends_to_existing():
         docs._update_project_gitignore(force=True)
 
         content = gitignore.read_text()
+
         assert "__pycache__/" in content
         assert "great-docs/" in content
 
@@ -7076,12 +7244,8 @@ def test_update_gitignore_skip_when_already_present():
 
         # Should not duplicate
         content = gitignore.read_text()
+
         assert content.count("great-docs/") == 1
-
-
-# ---------------------------------------------------------------------------
-# Coverage: _detect_package_name (core.py lines ~352-379)
-# ---------------------------------------------------------------------------
 
 
 def test_detect_package_name_from_setup_cfg_preexisting():
@@ -7091,6 +7255,7 @@ def test_detect_package_name_from_setup_cfg_preexisting():
         setup_cfg.write_text("[metadata]\nname = my-cfg-package\n")
 
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._detect_package_name() == "my-cfg-package"
 
 
@@ -7101,6 +7266,7 @@ def test_detect_package_name_from_setup_py_preexisting():
         setup_py.write_text('from setuptools import setup\nsetup(name="my-setup-package")\n')
 
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._detect_package_name() == "my-setup-package"
 
 
@@ -7108,12 +7274,8 @@ def test_detect_package_name_returns_none():
     """_detect_package_name returns None when no package metadata found."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._detect_package_name() is None
-
-
-# ---------------------------------------------------------------------------
-# Coverage: _detect_logo (core.py lines ~467-468)
-# ---------------------------------------------------------------------------
 
 
 def test_detect_logo_finds_svg():
@@ -7150,6 +7312,7 @@ def test_detect_logo_returns_none():
         (Path(tmp_dir) / "pyproject.toml").write_text('[project]\nname = "pkg"\n')
 
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._detect_logo() is None
 
 
@@ -7166,11 +7329,6 @@ def test_detect_logo_light_dark_pair():
         assert result is not None
         assert result["light"] == "logo.svg"
         assert result["dark"] == "logo-dark.svg"
-
-
-# ---------------------------------------------------------------------------
-# Coverage: _detect_hero_logo (core.py lines ~507-529)
-# ---------------------------------------------------------------------------
 
 
 def test_detect_hero_logo_finds_svg():
@@ -7207,6 +7365,7 @@ def test_detect_hero_logo_returns_none():
         (Path(tmp_dir) / "pyproject.toml").write_text('[project]\nname = "pkg"\n')
 
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._detect_hero_logo() is None
 
 
@@ -7225,23 +7384,14 @@ def test_detect_hero_logo_in_assets():
         assert result["light"] == "assets/logo-hero.png"
 
 
-# ---------------------------------------------------------------------------
-# Coverage: _normalize_package_name (core.py line 670)
-# ---------------------------------------------------------------------------
-
-
 def test_normalize_package_name_multiple_formats():
     """_normalize_package_name replaces hyphens with underscores."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._normalize_package_name("my-cool-package") == "my_cool_package"
         assert docs._normalize_package_name("already_underscored") == "already_underscored"
         assert docs._normalize_package_name("simple") == "simple"
-
-
-# ---------------------------------------------------------------------------
-# Coverage: _detect_module_name (core.py lines ~692-768)
-# ---------------------------------------------------------------------------
 
 
 def test_detect_module_name_from_config():
@@ -7251,6 +7401,7 @@ def test_detect_module_name_from_config():
         (Path(tmp_dir) / "great-docs.yml").write_text("module: my_custom_module\n")
 
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._detect_module_name() == "my_custom_module"
 
 
@@ -7261,6 +7412,7 @@ def test_detect_module_name_from_pyi_stub():
         (Path(tmp_dir) / "my_module.pyi").write_text("def foo() -> int: ...\n")
 
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._detect_module_name() == "my_module"
 
 
@@ -7272,6 +7424,7 @@ def test_detect_module_name_from_maturin_minimal():
         )
 
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._detect_module_name() == "rust_mod"
 
 
@@ -7283,6 +7436,7 @@ def test_detect_module_name_from_setuptools_packages_no_dir():
         )
 
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._detect_module_name() == "my_lib"
 
 
@@ -7296,6 +7450,7 @@ def test_detect_module_name_from_hatch_packages():
         )
 
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._detect_module_name() == "hatch_pkg"
 
 
@@ -7308,6 +7463,7 @@ def test_detect_module_name_falls_back_to_init():
         (pkg / "__init__.py").write_text("__version__ = '1.0'\n")
 
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._detect_module_name() == "my_pkg"
 
 
@@ -7317,12 +7473,8 @@ def test_detect_module_name_returns_none():
         (Path(tmp_dir) / "pyproject.toml").write_text('[project]\nname = "mystery"\n')
 
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._detect_module_name() is None
-
-
-# ---------------------------------------------------------------------------
-# Coverage: _is_compiled_extension (core.py lines ~779-793)
-# ---------------------------------------------------------------------------
 
 
 def test_is_compiled_extension_cargo():
@@ -7332,6 +7484,7 @@ def test_is_compiled_extension_cargo():
         (Path(tmp_dir) / "Cargo.toml").write_text("[package]\nname = 'mypkg'\n")
 
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._is_compiled_extension() is True
 
 
@@ -7342,6 +7495,7 @@ def test_is_compiled_extension_pyi_without_py():
         (Path(tmp_dir) / "myext.pyi").write_text("def foo() -> int: ...\n")
 
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._is_compiled_extension() is True
 
 
@@ -7351,12 +7505,8 @@ def test_is_compiled_extension_false():
         (Path(tmp_dir) / "pyproject.toml").write_text('[project]\nname = "pkg"\n')
 
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._is_compiled_extension() is False
-
-
-# ---------------------------------------------------------------------------
-# Coverage: _get_cli_entry_point_name (core.py lines ~2124-2150)
-# ---------------------------------------------------------------------------
 
 
 def test_get_cli_entry_point_name():
@@ -7367,6 +7517,7 @@ def test_get_cli_entry_point_name():
         )
 
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._get_cli_entry_point_name("pkg") == "mycli"
 
 
@@ -7378,6 +7529,7 @@ def test_get_cli_entry_point_name_gui_scripts_fallback():
         )
 
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._get_cli_entry_point_name("pkg") == "myapp"
 
 
@@ -7387,6 +7539,7 @@ def test_get_cli_entry_point_name_no_scripts_returns_none():
         (Path(tmp_dir) / "pyproject.toml").write_text('[project]\nname = "pkg"\n')
 
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._get_cli_entry_point_name("pkg") is None
 
 
@@ -7394,12 +7547,8 @@ def test_get_cli_entry_point_name_no_pyproject_returns_none():
     """_get_cli_entry_point_name returns None when pyproject.toml missing."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._get_cli_entry_point_name("pkg") is None
-
-
-# ---------------------------------------------------------------------------
-# Coverage: _add_frontmatter_option (core.py lines ~2861-2871)
-# ---------------------------------------------------------------------------
 
 
 def test_add_frontmatter_option_new_key_toc():
@@ -7408,6 +7557,7 @@ def test_add_frontmatter_option_new_key_toc():
         docs = GreatDocs(project_path=tmp_dir)
         content = "---\ntitle: Hello\n---\n\n# Body\n"
         result = docs._add_frontmatter_option(content, "toc", False)
+
         assert "toc: false" in result
         assert "title: Hello" in result
 
@@ -7418,6 +7568,7 @@ def test_add_frontmatter_option_update_existing():
         docs = GreatDocs(project_path=tmp_dir)
         content = "---\ntitle: Old Title\n---\n\n# Body\n"
         result = docs._add_frontmatter_option(content, "title", "New Title")
+
         assert '"New Title"' in result
         assert "Old Title" not in result
 
@@ -7428,6 +7579,7 @@ def test_add_frontmatter_option_no_frontmatter_wraps_content():
         docs = GreatDocs(project_path=tmp_dir)
         content = "# No frontmatter here\n"
         result = docs._add_frontmatter_option(content, "title", "Added")
+
         assert result.startswith("---\n")
         assert '"Added"' in result
         assert "# No frontmatter here" in result
@@ -7439,12 +7591,8 @@ def test_add_frontmatter_option_bool_true_toc():
         docs = GreatDocs(project_path=tmp_dir)
         content = "---\ntitle: Test\n---\nBody"
         result = docs._add_frontmatter_option(content, "toc", True)
+
         assert "toc: true" in result
-
-
-# ---------------------------------------------------------------------------
-# Coverage: _update_navbar_github_link (core.py lines ~1063-1100)
-# ---------------------------------------------------------------------------
 
 
 def test_update_navbar_github_link_widget_style_basic():
@@ -7456,6 +7604,7 @@ def test_update_navbar_github_link_widget_style_basic():
             config, "owner", "repo", "https://github.com/owner/repo", "widget"
         )
         right = config["website"]["navbar"]["right"]
+
         assert len(right) == 1
         assert "github-widget" in right[0]["text"]
 
@@ -7469,6 +7618,7 @@ def test_update_navbar_github_link_icon_style_entry_check():
             config, "owner", "repo", "https://github.com/owner/repo", "icon"
         )
         right = config["website"]["navbar"]["right"]
+
         assert len(right) == 1
         assert right[0]["icon"] == "github"
 
@@ -7491,6 +7641,7 @@ def test_update_navbar_github_link_replaces_existing():
             config, "new_owner", "new_repo", "https://github.com/new_owner/new_repo", "widget"
         )
         right = config["website"]["navbar"]["right"]
+
         assert len(right) == 2
         assert "github-widget" in right[0]["text"]
         assert right[1]["icon"] == "twitter"
@@ -7502,6 +7653,7 @@ def test_update_navbar_github_link_no_url():
         docs = GreatDocs(project_path=tmp_dir)
         config = {"website": {"navbar": {"right": []}}}
         docs._update_navbar_github_link(config, None, None, None, "icon")
+
         assert config["website"]["navbar"]["right"] == []
 
 
@@ -7513,13 +7665,9 @@ def test_update_navbar_github_link_creates_right_section_from_empty():
         docs._update_navbar_github_link(
             config, "owner", "repo", "https://github.com/owner/repo", "icon"
         )
+
         assert "right" in config["website"]["navbar"]
         assert len(config["website"]["navbar"]["right"]) == 1
-
-
-# ---------------------------------------------------------------------------
-# Coverage: _find_index_source_file (core.py lines ~6537-6560)
-# ---------------------------------------------------------------------------
 
 
 def test_find_index_source_file_readme_returns_tuple():
@@ -7561,11 +7709,6 @@ def test_find_index_source_file_none_empty_dir():
         assert source is None
 
 
-# ---------------------------------------------------------------------------
-# Coverage: _format_preserved_extras_yaml (core.py lines ~5964-6004)
-# ---------------------------------------------------------------------------
-
-
 def test_format_preserved_extras_yaml_with_values_simple_funding():
     """_format_preserved_extras_yaml generates active YAML when values set."""
     dn, site, funding = GreatDocs._format_preserved_extras_yaml(
@@ -7573,6 +7716,7 @@ def test_format_preserved_extras_yaml_with_values_simple_funding():
         site={"theme": "flatly", "toc": True},
         funding={"name": "ACME Corp", "roles": ["funder"], "homepage": "https://acme.com"},
     )
+
     assert 'display_name: "My Package"' in dn
     assert "site:" in site
     assert "theme: flatly" in site
@@ -7585,6 +7729,7 @@ def test_format_preserved_extras_yaml_with_values_simple_funding():
 def test_format_preserved_extras_yaml_defaults_commented():
     """_format_preserved_extras_yaml generates commented templates when no values."""
     dn, site, funding = GreatDocs._format_preserved_extras_yaml()
+
     assert dn == ""
     assert "# site:" in site
     assert "# funding:" in funding
@@ -7595,17 +7740,14 @@ def test_format_preserved_extras_yaml_funding_ror_output():
     _, _, funding = GreatDocs._format_preserved_extras_yaml(
         funding={"name": "Posit", "ror": "https://ror.org/123"}
     )
+
     assert "ror: https://ror.org/123" in funding
-
-
-# ---------------------------------------------------------------------------
-# Coverage: _format_cli_yaml (core.py lines ~6039-6049)
-# ---------------------------------------------------------------------------
 
 
 def test_format_cli_yaml_enabled_all_keys():
     """_format_cli_yaml generates active YAML when CLI is enabled."""
     result = GreatDocs._format_cli_yaml({"enabled": True, "module": "pkg.cli", "name": "mycli"})
+
     assert "cli:" in result
     assert "enabled: true" in result
     assert "module: pkg.cli" in result
@@ -7615,6 +7757,7 @@ def test_format_cli_yaml_enabled_all_keys():
 def test_format_cli_yaml_disabled_commented():
     """_format_cli_yaml generates commented template when disabled."""
     result = GreatDocs._format_cli_yaml(None)
+
     assert "# cli:" in result
     assert "#   enabled: true" in result
 
@@ -7622,14 +7765,10 @@ def test_format_cli_yaml_disabled_commented():
 def test_format_cli_yaml_enabled_minimal_only_flag():
     """_format_cli_yaml with only enabled flag set."""
     result = GreatDocs._format_cli_yaml({"enabled": True})
+
     assert "cli:" in result
     assert "enabled: true" in result
     assert "module:" not in result
-
-
-# ---------------------------------------------------------------------------
-# Coverage: _get_package_metadata (core.py lines ~931-991)
-# ---------------------------------------------------------------------------
 
 
 def test_get_package_metadata_from_setup_cfg():
@@ -7704,11 +7843,6 @@ def test_get_package_metadata_setup_cfg_python_requires_basic():
         assert metadata["requires_python"] == ">=3.8"
 
 
-# ---------------------------------------------------------------------------
-# Coverage: _find_package_init third-pass auto-discovery (core.py lines ~3660-3696)
-# ---------------------------------------------------------------------------
-
-
 def test_find_package_init_auto_discovers():
     """_find_package_init auto-discovers packages with non-matching names."""
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -7761,11 +7895,6 @@ def test_find_package_init_hatch_packages():
 
         assert result is not None
         assert result.parent.name == "hatch_mod"
-
-
-# ---------------------------------------------------------------------------
-# Coverage: _sub_classify_class static method (core.py lines ~4435-4504)
-# ---------------------------------------------------------------------------
 
 
 def test_sub_classify_class_dataclass_plain_mock():
@@ -7901,11 +8030,6 @@ def test_sub_classify_class_plain_no_bases():
     assert GreatDocs._sub_classify_class(FakeObj()) == "class"
 
 
-# ---------------------------------------------------------------------------
-# Coverage: _sub_classify_function static method (core.py lines ~4494-4504)
-# ---------------------------------------------------------------------------
-
-
 def test_sub_classify_function_async():
     """_sub_classify_function identifies async functions."""
 
@@ -7949,11 +8073,6 @@ def test_sub_classify_function_plain():
         labels = set()
 
     assert GreatDocs._sub_classify_function(FakeObj()) == "function"
-
-
-# ---------------------------------------------------------------------------
-# Coverage: _sub_classify_attribute static method (core.py lines ~4527-4544)
-# ---------------------------------------------------------------------------
 
 
 def test_sub_classify_attribute_type_alias_plain_mock():
@@ -8003,11 +8122,6 @@ def test_sub_classify_attribute_constant_no_kind():
     assert GreatDocs._sub_classify_attribute(FakeObj()) == "constant"
 
 
-# ---------------------------------------------------------------------------
-# Coverage: _extract_constant_metadata static method (core.py lines ~4577-4583)
-# ---------------------------------------------------------------------------
-
-
 def test_extract_constant_metadata_value_and_annotation():
     """_extract_constant_metadata captures both value and annotation."""
 
@@ -8051,11 +8165,6 @@ def test_extract_constant_metadata_long_value_key_absence():
     assert "BIG" not in categories["constant_metadata"]
 
 
-# ---------------------------------------------------------------------------
-# Coverage: _count_cli_sidebar_items static method (core.py line ~2350)
-# ---------------------------------------------------------------------------
-
-
 def test_count_cli_sidebar_items_flat_inline():
     """_count_cli_sidebar_items counts simple string entries."""
     assert GreatDocs._count_cli_sidebar_items(["a.qmd", "b.qmd", "c.qmd"]) == 3
@@ -8067,26 +8176,19 @@ def test_count_cli_sidebar_items_nested_three():
         "top.qmd",
         {"section": "Group", "contents": ["a.qmd", "b.qmd"]},
     ]
+
     assert GreatDocs._count_cli_sidebar_items(items) == 3
 
 
 def test_count_cli_sidebar_items_empty_list():
     """_count_cli_sidebar_items returns 0 for empty list."""
+
     assert GreatDocs._count_cli_sidebar_items([]) == 0
 
-
-# ===========================================================================
-# Coverage batch 2: Blog, section, user-guide, config, and navigation methods
-# ===========================================================================
 
 import json
 import shutil
 import yaml
-
-
-# ---------------------------------------------------------------------------
-# _copy_blog_files  (core.py ~1606-1670)
-# ---------------------------------------------------------------------------
 
 
 def test_copy_blog_files_basic_explicit_list():
@@ -8166,11 +8268,6 @@ def test_copy_blog_files_bad_yaml():
         assert result[0]["title"] == "Bad"
 
 
-# ---------------------------------------------------------------------------
-# _generate_blog_index  (core.py ~1672-1710)
-# ---------------------------------------------------------------------------
-
-
 def test_generate_blog_index_creates_file():
     """_generate_blog_index creates an index.qmd with listing directive."""
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -8182,17 +8279,15 @@ def test_generate_blog_index_creates_file():
         docs._generate_blog_index("My Blog", "blog", dest)
 
         index = dest / "index.qmd"
+
         assert index.exists()
+
         content = index.read_text()
+
         assert 'title: "My Blog"' in content
         assert "listing:" in content
         assert 'sort: "date desc"' in content
         assert "bread-crumbs: false" in content
-
-
-# ---------------------------------------------------------------------------
-# _generate_section_index  (core.py ~1709-1809)
-# ---------------------------------------------------------------------------
 
 
 def test_generate_section_index_with_pages():
@@ -8210,8 +8305,11 @@ def test_generate_section_index_with_pages():
         docs._generate_section_index("Recipes", pages, "recipes", dest)
 
         index = dest / "index.qmd"
+
         assert index.exists()
+
         content = index.read_text()
+
         assert 'title: "Recipes"' in content
         assert "section-cards" in content
         assert "Intro" in content
@@ -8233,7 +8331,9 @@ def test_generate_section_index_filters_index():
         docs._generate_section_index("Section", pages, "sec", dest)
 
         content = (dest / "index.qmd").read_text()
+
         assert "Page" in content
+
         # The card for Index should not appear (it's excluded from entries)
         assert 'href="index.qmd"' not in content
 
@@ -8249,6 +8349,7 @@ def test_generate_section_index_empty():
         docs._generate_section_index("Empty", [], "sec", dest)
 
         content = (dest / "index.qmd").read_text()
+
         assert "No pages found" in content
 
 
@@ -8266,13 +8367,9 @@ def test_generate_section_index_with_image():
         docs._generate_section_index("Sec", pages, "sec", dest)
 
         content = (dest / "index.qmd").read_text()
+
         assert "pic.png" in content
         assert "<img" in content
-
-
-# ---------------------------------------------------------------------------
-# _copy_section_files  (core.py ~1524-1606)
-# ---------------------------------------------------------------------------
 
 
 def test_copy_section_files_strips_prefix():
@@ -8309,6 +8406,7 @@ def test_copy_section_files_adds_breadcrumbs():
         docs._copy_section_files([src / "page.qmd"], src, dest)
 
         written = (dest / "page.qmd").read_text()
+
         assert "bread-crumbs" in written
 
 
@@ -8328,11 +8426,6 @@ def test_copy_section_files_no_frontmatter_explicit_list():
 
         assert result[0]["title"] == "Raw"
         assert (dest / "raw.qmd").exists()
-
-
-# ---------------------------------------------------------------------------
-# _add_section_sidebar  (core.py ~1809-1875)
-# ---------------------------------------------------------------------------
 
 
 def test_add_section_sidebar_creates_sidebar():
@@ -8357,6 +8450,7 @@ def test_add_section_sidebar_creates_sidebar():
             result = yaml.safe_load(f)
 
         sidebar = result["website"]["sidebar"]
+
         assert len(sidebar) == 1
         assert sidebar[0]["id"] == "recipes"
         assert sidebar[0]["title"] == "Recipes"
@@ -8411,13 +8505,9 @@ def test_add_section_sidebar_replaces_existing():
             result = yaml.safe_load(f)
 
         sidebar = result["website"]["sidebar"]
+
         assert len(sidebar) == 1
         assert sidebar[0]["title"] == "Recipes"
-
-
-# ---------------------------------------------------------------------------
-# _inject_section_body_class  (core.py ~1876-1915)
-# ---------------------------------------------------------------------------
 
 
 def test_inject_section_body_class_adds_class():
@@ -8434,6 +8524,7 @@ def test_inject_section_body_class_adds_class():
         docs._inject_section_body_class("sec", pages, dest)
 
         content = (dest / "page.qmd").read_text()
+
         assert "gd-section-no-sidebar" in content
 
 
@@ -8452,6 +8543,7 @@ def test_inject_section_body_class_preserves_existing():
         docs._inject_section_body_class("sec", pages, dest)
 
         content = (dest / "page.qmd").read_text()
+
         assert "my-custom" in content
         assert "gd-section-no-sidebar" in content
 
@@ -8465,6 +8557,7 @@ def test_inject_section_body_class_skip_missing():
 
         pages = [{"filename": "missing.qmd"}]
         docs = GreatDocs(project_path=tmp_dir)
+
         # Should not raise
         docs._inject_section_body_class("sec", pages, dest)
 
@@ -8483,6 +8576,7 @@ def test_inject_section_body_class_skip_no_frontmatter():
         docs._inject_section_body_class("sec", pages, dest)
 
         content = (dest / "plain.qmd").read_text()
+
         assert "gd-section-no-sidebar" not in content
 
 
@@ -8501,12 +8595,8 @@ def test_inject_section_body_class_idempotent():
         docs._inject_section_body_class("sec", pages, dest)
 
         content = (dest / "page.qmd").read_text()
+
         assert content.count("gd-section-no-sidebar") == 1
-
-
-# ---------------------------------------------------------------------------
-# _add_section_to_navbar  (core.py ~1915-1988)
-# ---------------------------------------------------------------------------
 
 
 def test_add_section_to_navbar_basic():
@@ -8527,6 +8617,7 @@ def test_add_section_to_navbar_basic():
             result = yaml.safe_load(f)
 
         items = result["website"]["navbar"]["left"]
+
         assert any(i.get("text") == "Recipes" for i in items)
 
 
@@ -8554,6 +8645,7 @@ def test_add_section_to_navbar_idempotent_project_root():
 
         items = result["website"]["navbar"]["left"]
         recipe_count = sum(1 for i in items if isinstance(i, dict) and i.get("text") == "Recipes")
+
         assert recipe_count == 1
 
 
@@ -8586,6 +8678,7 @@ def test_add_section_to_navbar_after():
 
         items = result["website"]["navbar"]["left"]
         texts = [i.get("text") for i in items if isinstance(i, dict)]
+
         assert texts == ["Guide", "Recipes", "Reference"]
 
 
@@ -8618,6 +8711,7 @@ def test_add_section_to_navbar_before_reference():
 
         items = result["website"]["navbar"]["left"]
         texts = [i.get("text") for i in items if isinstance(i, dict)]
+
         assert texts == ["Guide", "Blog", "Reference"]
 
 
@@ -8630,6 +8724,7 @@ def test_add_section_to_navbar_no_navbar():
         docs.project_path.mkdir(parents=True, exist_ok=True)
 
         config = {"website": {"sidebar": []}}
+
         with open(quarto_yml, "w") as f:
             yaml.dump(config, f)
 
@@ -8666,13 +8761,9 @@ def test_add_section_to_navbar_after_not_found():
 
         items = result["website"]["navbar"]["left"]
         texts = [i.get("text") for i in items if isinstance(i, dict)]
+
         # Should insert before Reference as fallback
         assert texts == ["Guide", "Extra", "Reference"]
-
-
-# ---------------------------------------------------------------------------
-# _add_changelog_to_navbar  (core.py ~1377-1405)
-# ---------------------------------------------------------------------------
 
 
 def test_add_changelog_to_navbar():
@@ -8684,6 +8775,7 @@ def test_add_changelog_to_navbar():
         docs.project_path.mkdir(parents=True, exist_ok=True)
 
         config = {"website": {"navbar": {"left": [{"text": "Guide", "href": "guide/"}]}}}
+
         with open(quarto_yml, "w") as f:
             yaml.dump(config, f)
 
@@ -8693,6 +8785,7 @@ def test_add_changelog_to_navbar():
             result = yaml.safe_load(f)
 
         items = result["website"]["navbar"]["left"]
+
         assert any(i.get("text") == "Changelog" for i in items)
 
 
@@ -8717,6 +8810,7 @@ def test_add_changelog_to_navbar_idempotent_v2():
         changelog_count = sum(
             1 for i in items if isinstance(i, dict) and i.get("text") == "Changelog"
         )
+
         assert changelog_count == 1
 
 
@@ -8726,11 +8820,6 @@ def test_add_changelog_to_navbar_no_file():
         docs = GreatDocs(project_path=tmp_dir)
         # Should not raise
         docs._add_changelog_to_navbar()
-
-
-# ---------------------------------------------------------------------------
-# _parse_user_guide_file  (core.py ~2671-2721)
-# ---------------------------------------------------------------------------
 
 
 def test_parse_user_guide_file_with_frontmatter_basic():
@@ -8783,11 +8872,6 @@ def test_parse_user_guide_file_missing_file():
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._parse_user_guide_file(Path(tmp_dir) / "nonexistent.qmd")
         assert result is None
-
-
-# ---------------------------------------------------------------------------
-# _discover_user_guide  (core.py ~2575-2671) — auto-discovery mode
-# ---------------------------------------------------------------------------
 
 
 def test_discover_user_guide_auto():
@@ -8871,11 +8955,6 @@ def test_discover_user_guide_with_subdirectories():
 
         assert result is not None
         assert len(result["files"]) == 2
-
-
-# ---------------------------------------------------------------------------
-# _discover_user_guide_explicit  (core.py ~2482-2575)
-# ---------------------------------------------------------------------------
 
 
 def test_discover_user_guide_explicit():
@@ -8977,11 +9056,6 @@ def test_discover_user_guide_explicit_skips_duplicates():
         assert len(result["files"]) == 1
 
 
-# ---------------------------------------------------------------------------
-# _copy_user_guide_to_docs  (core.py ~2747-2825)
-# ---------------------------------------------------------------------------
-
-
 def test_copy_user_guide_to_docs_auto():
     """_copy_user_guide_to_docs strips numeric prefixes in auto mode."""
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -9045,6 +9119,7 @@ def test_copy_user_guide_to_docs_adds_breadcrumbs():
         docs._copy_user_guide_to_docs(guide_info)
 
         content = (docs.project_path / "user-guide" / "page.qmd").read_text()
+
         assert "bread-crumbs" in content
 
 
@@ -9052,6 +9127,7 @@ def test_copy_user_guide_to_docs_empty():
     """_copy_user_guide_to_docs returns empty list for falsy input."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._copy_user_guide_to_docs({}) == []
         assert docs._copy_user_guide_to_docs(None) == []
 
@@ -9080,11 +9156,6 @@ def test_copy_user_guide_to_docs_copies_assets():
         assert (docs.project_path / "user-guide" / "images" / "logo.png").exists()
 
 
-# ---------------------------------------------------------------------------
-# _update_sidebar_with_cli  (core.py ~2360-2435)
-# ---------------------------------------------------------------------------
-
-
 def test_update_sidebar_with_cli_new():
     """_update_sidebar_with_cli adds CLI section to sidebar."""
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -9104,6 +9175,7 @@ def test_update_sidebar_with_cli_new():
 
         sidebar = result["website"]["sidebar"]
         cli = next(s for s in sidebar if isinstance(s, dict) and s.get("id") == "cli-reference")
+
         assert cli["title"] == "CLI Reference"
         assert len(cli["contents"]) == 2
 
@@ -9136,6 +9208,7 @@ def test_update_sidebar_with_cli_updates_existing_no_subdir():
             for s in result["website"]["sidebar"]
             if isinstance(s, dict) and s.get("id") == "cli-reference"
         )
+
         assert cli["contents"] == ["new1.qmd", "new2.qmd"]
 
 
@@ -9148,6 +9221,7 @@ def test_update_sidebar_with_cli_empty():
         docs.project_path.mkdir(parents=True, exist_ok=True)
 
         config = {"website": {"sidebar": []}}
+
         with open(quarto_yml, "w") as f:
             yaml.dump(config, f)
 
@@ -9191,23 +9265,21 @@ def test_update_sidebar_with_cli_adds_api_link():
             for s in result["website"]["sidebar"]
             if isinstance(s, dict) and s.get("id") == "reference"
         )
+
         assert ref["contents"][0]["text"] == "API"
-
-
-# ---------------------------------------------------------------------------
-# _format_preserved_extras_yaml  (core.py ~5937-6023)
-# ---------------------------------------------------------------------------
 
 
 def test_format_preserved_extras_yaml_display_name():
     """_format_preserved_extras_yaml returns active display_name YAML when given."""
     dn, _, _ = GreatDocs._format_preserved_extras_yaml(display_name="My Package")
+
     assert 'display_name: "My Package"' in dn
 
 
 def test_format_preserved_extras_yaml_no_display_name():
     """_format_preserved_extras_yaml returns empty string for no display_name."""
     dn, _, _ = GreatDocs._format_preserved_extras_yaml(display_name=None)
+
     assert dn == ""
 
 
@@ -9216,6 +9288,7 @@ def test_format_preserved_extras_yaml_site_active():
     _, site, _ = GreatDocs._format_preserved_extras_yaml(
         site={"theme": "flatly", "toc": True, "toc-depth": 3}
     )
+
     assert "site:" in site
     assert "theme: flatly" in site
     assert "toc: true" in site
@@ -9225,6 +9298,7 @@ def test_format_preserved_extras_yaml_site_active():
 def test_format_preserved_extras_yaml_site_commented():
     """_format_preserved_extras_yaml returns commented template when no site."""
     _, site, _ = GreatDocs._format_preserved_extras_yaml(site=None)
+
     assert "# site:" in site
     assert "#   theme:" in site
 
@@ -9234,6 +9308,7 @@ def test_format_preserved_extras_yaml_funding_active():
     _, _, funding = GreatDocs._format_preserved_extras_yaml(
         funding={"name": "Acme Corp", "roles": ["funder", "sponsor"], "homepage": "https://acme.co"}
     )
+
     assert "funding:" in funding
     assert 'name: "Acme Corp"' in funding
     assert "- funder" in funding
@@ -9245,29 +9320,28 @@ def test_format_preserved_extras_yaml_funding_with_ror():
     _, _, funding = GreatDocs._format_preserved_extras_yaml(
         funding={"name": "Lab", "ror": "https://ror.org/abc123"}
     )
+
     assert "ror: https://ror.org/abc123" in funding
 
 
 def test_format_preserved_extras_yaml_funding_commented():
     """_format_preserved_extras_yaml returns commented template for no funding."""
     _, _, funding = GreatDocs._format_preserved_extras_yaml(funding=None)
+
     assert "# funding:" in funding
 
 
 def test_format_preserved_extras_yaml_funding_no_name():
     """_format_preserved_extras_yaml returns template when funding has no name."""
     _, _, funding = GreatDocs._format_preserved_extras_yaml(funding={"homepage": "https://x.co"})
+
     assert "# funding:" in funding
-
-
-# ---------------------------------------------------------------------------
-# _format_cli_yaml  (core.py ~6023-6065)
-# ---------------------------------------------------------------------------
 
 
 def test_format_cli_yaml_enabled_v2():
     """_format_cli_yaml returns active config when enabled."""
     result = GreatDocs._format_cli_yaml({"enabled": True, "module": "pkg.cli", "name": "main"})
+
     assert "cli:" in result
     assert "enabled: true" in result
     assert "module: pkg.cli" in result
@@ -9277,6 +9351,7 @@ def test_format_cli_yaml_enabled_v2():
 def test_format_cli_yaml_enabled_minimal_v2():
     """_format_cli_yaml with only enabled=True omits optional keys."""
     result = GreatDocs._format_cli_yaml({"enabled": True})
+
     assert "cli:" in result
     assert "enabled: true" in result
     assert "module:" not in result
@@ -9286,18 +9361,15 @@ def test_format_cli_yaml_enabled_minimal_v2():
 def test_format_cli_yaml_disabled_v2():
     """_format_cli_yaml returns commented template when disabled."""
     result = GreatDocs._format_cli_yaml({"enabled": False})
+
     assert "# cli:" in result
 
 
 def test_format_cli_yaml_none():
     """_format_cli_yaml returns commented template for None."""
     result = GreatDocs._format_cli_yaml(None)
+
     assert "# cli:" in result
-
-
-# ---------------------------------------------------------------------------
-# _find_index_source_file  (core.py ~6470-6513)
-# ---------------------------------------------------------------------------
 
 
 def test_find_index_source_file_readme_v2():
@@ -9356,11 +9428,6 @@ def test_find_index_source_file_rst():
         assert winner.name == "README.rst"
 
 
-# ---------------------------------------------------------------------------
-# _detect_git_ref  (core.py ~3498-3546)
-# ---------------------------------------------------------------------------
-
-
 def test_detect_git_ref_configured():
     """_detect_git_ref returns configured source branch."""
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -9369,6 +9436,7 @@ def test_detect_git_ref_configured():
         (tmp / "great-docs.yml").write_text("source:\n  branch: develop\n")
 
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._detect_git_ref() == "develop"
 
 
@@ -9379,15 +9447,12 @@ def test_detect_git_ref_fallback_permissive():
         (tmp / "pyproject.toml").write_text('[project]\nname = "mypkg"\n')
 
         docs = GreatDocs(project_path=tmp_dir)
+
         # In a temp dir without git, should fallback
         ref = docs._detect_git_ref()
+
         # Should be either the actual git branch or 'main' fallback
         assert isinstance(ref, str) and len(ref) > 0
-
-
-# ---------------------------------------------------------------------------
-# _build_github_source_url  (core.py ~3434-3498)
-# ---------------------------------------------------------------------------
 
 
 def test_build_github_source_url_basic_line_range():
@@ -9439,15 +9504,11 @@ def test_build_github_source_url_no_repo_empty_url():
         assert url is None
 
 
-# ---------------------------------------------------------------------------
-# _process_sections  (core.py ~1405-1524) — the orchestrator
-# ---------------------------------------------------------------------------
-
-
 def test_process_sections_no_config():
     """_process_sections returns 0 when no sections configured."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._process_sections() == 0
 
 
@@ -9458,6 +9519,7 @@ def test_process_sections_invalid_type():
         (tmp / "pyproject.toml").write_text('[project]\nname = "mypkg"\n')
         (tmp / "great-docs.yml").write_text("sections: not-a-list\n")
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._process_sections() == 0
 
 
@@ -9512,6 +9574,7 @@ def test_process_sections_blog_section():
         result = docs._process_sections()
 
         assert result == 1
+
         # Blog should create an auto-generated index
         assert (docs.project_path / "blog" / "index.qmd").exists()
 
@@ -9539,6 +9602,7 @@ def test_process_sections_missing_title():
 
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._process_sections()
+
         assert result == 0
 
 
@@ -9574,12 +9638,8 @@ def test_process_sections_with_navbar_after():
 
         items = result["website"]["navbar"]["left"]
         texts = [i.get("text") for i in items if isinstance(i, dict)]
+
         assert "Tutorials" in texts
-
-
-# ---------------------------------------------------------------------------
-# _insert_before_reference  (core.py ~1982)
-# ---------------------------------------------------------------------------
 
 
 def test_insert_before_reference_simple_items():
@@ -9589,6 +9649,7 @@ def test_insert_before_reference_simple_items():
         items = [{"text": "Guide"}, {"text": "Reference"}]
         docs._insert_before_reference(items, {"text": "New"})
         texts = [i["text"] for i in items]
+
         assert texts == ["Guide", "New", "Reference"]
 
 
@@ -9599,12 +9660,8 @@ def test_insert_before_reference_no_reference_simple_items():
         items = [{"text": "Guide"}]
         docs._insert_before_reference(items, {"text": "New"})
         texts = [i["text"] for i in items]
+
         assert texts == ["Guide", "New"]
-
-
-# ---------------------------------------------------------------------------
-# _read_quarto_config  (core.py ~1988)
-# ---------------------------------------------------------------------------
 
 
 def test_read_quarto_config_existing():
@@ -9619,6 +9676,7 @@ def test_read_quarto_config_existing():
             yaml.dump({"project": {"type": "website"}}, f)
 
         config = docs._read_quarto_config(quarto_yml)
+
         assert "website" in config
         assert "sidebar" in config["website"]
         assert "navbar" in config["website"]
@@ -9629,13 +9687,9 @@ def test_read_quarto_config_missing():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         config = docs._read_quarto_config(Path(tmp_dir) / "missing.yml")
+
         assert config["website"]["sidebar"] == []
         assert "left" in config["website"]["navbar"]
-
-
-# ---------------------------------------------------------------------------
-# _add_frontmatter_option  (core.py ~2825)
-# ---------------------------------------------------------------------------
 
 
 def test_add_frontmatter_option_new_key():
@@ -9644,6 +9698,7 @@ def test_add_frontmatter_option_new_key():
         docs = GreatDocs(project_path=tmp_dir)
         content = "---\ntitle: Page\n---\nBody\n"
         result = docs._add_frontmatter_option(content, "bread-crumbs", False)
+
         assert "bread-crumbs: false" in result
 
 
@@ -9653,6 +9708,7 @@ def test_add_frontmatter_option_bool_true():
         docs = GreatDocs(project_path=tmp_dir)
         content = "---\ntitle: Page\n---\nBody\n"
         result = docs._add_frontmatter_option(content, "toc", True)
+
         assert "toc: true" in result
 
 
@@ -9662,18 +9718,9 @@ def test_add_frontmatter_option_no_frontmatter_v2():
         docs = GreatDocs(project_path=tmp_dir)
         content = "Just plain content\n"
         result = docs._add_frontmatter_option(content, "key", "val")
+
         # Should wrap in frontmatter
         assert "---" in result
-
-
-# ===========================================================================
-# Coverage batch 3: CLI documentation, user guide orchestration, sidebar, nodoc
-# ===========================================================================
-
-
-# ---------------------------------------------------------------------------
-# _get_cli_entry_point_name  (core.py ~2110)
-# ---------------------------------------------------------------------------
 
 
 def test_get_cli_entry_point_name_scripts():
@@ -9684,6 +9731,7 @@ def test_get_cli_entry_point_name_scripts():
             '[project]\nname = "mypkg"\n\n[project.scripts]\nmy-tool = "mypkg.cli:main"\n'
         )
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._get_cli_entry_point_name("mypkg") == "my-tool"
 
 
@@ -9695,6 +9743,7 @@ def test_get_cli_entry_point_name_gui_scripts():
             '[project]\nname = "mypkg"\n\n[project.gui-scripts]\nmy-gui = "mypkg.gui:main"\n'
         )
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._get_cli_entry_point_name("mypkg") == "my-gui"
 
 
@@ -9704,6 +9753,7 @@ def test_get_cli_entry_point_name_no_scripts():
         tmp = Path(tmp_dir)
         (tmp / "pyproject.toml").write_text('[project]\nname = "mypkg"\n')
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._get_cli_entry_point_name("mypkg") is None
 
 
@@ -9711,12 +9761,8 @@ def test_get_cli_entry_point_name_no_pyproject():
     """_get_cli_entry_point_name returns None when pyproject.toml missing."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._get_cli_entry_point_name("mypkg") is None
-
-
-# ---------------------------------------------------------------------------
-# _extract_click_command  (core.py ~2155)
-# ---------------------------------------------------------------------------
 
 
 def test_extract_click_command_simple():
@@ -9785,6 +9831,7 @@ def test_extract_click_command_hidden_subcommand():
         result = docs._extract_click_command(cli, "tool")
 
         names = [c["name"] for c in result["commands"]]
+
         assert "public" in names
         assert "secret" not in names
 
@@ -9801,12 +9848,8 @@ def test_extract_click_command_with_parent_path():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._extract_click_command(sub, "sub", parent_path="tool")
+
         assert result["full_path"] == "tool sub"
-
-
-# ---------------------------------------------------------------------------
-# _get_click_help_text  (core.py ~2216)
-# ---------------------------------------------------------------------------
 
 
 def test_get_click_help_text():
@@ -9826,11 +9869,6 @@ def test_get_click_help_text():
         assert "Usage:" in result
         assert "--name" in result
         assert "Say hello to someone." in result
-
-
-# ---------------------------------------------------------------------------
-# _generate_cli_command_page  (core.py ~2370)
-# ---------------------------------------------------------------------------
 
 
 def test_generate_cli_command_page_main():
@@ -9864,15 +9902,11 @@ def test_generate_cli_command_page_subcommand():
         assert 'title: "my-tool build"' in result
 
 
-# ---------------------------------------------------------------------------
-# _generate_cli_reference_pages  (core.py ~2263)
-# ---------------------------------------------------------------------------
-
-
 def test_generate_cli_reference_pages_empty():
     """_generate_cli_reference_pages returns empty list for empty input."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._generate_cli_reference_pages({}) == []
         assert docs._generate_cli_reference_pages(None) == []
 
@@ -9901,11 +9935,6 @@ def test_generate_cli_reference_pages_basic():
         assert "reference/cli/index.qmd" in result
         assert (docs.project_path / "reference" / "cli" / "index.qmd").exists()
         assert (docs.project_path / "reference" / "cli" / "build.qmd").exists()
-
-
-# ---------------------------------------------------------------------------
-# _generate_subcommand_pages  (core.py ~2306)
-# ---------------------------------------------------------------------------
 
 
 def test_generate_subcommand_pages_nested():
@@ -9961,12 +9990,8 @@ def test_generate_subcommand_pages_leaf():
             ],
         }
         result = docs._generate_subcommand_pages(cmd_info, cli_dir)
+
         assert result == ["reference/cli/build.qmd"]
-
-
-# ---------------------------------------------------------------------------
-# _discover_click_cli  (core.py ~1988)
-# ---------------------------------------------------------------------------
 
 
 def test_discover_click_cli_disabled():
@@ -9975,6 +10000,7 @@ def test_discover_click_cli_disabled():
         tmp = Path(tmp_dir)
         (tmp / "pyproject.toml").write_text('[project]\nname = "mypkg"\n')
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._discover_click_cli("mypkg") is None
 
 
@@ -9988,12 +10014,8 @@ def test_discover_click_cli_no_click_missing_pkg():
         # click IS installed in test env so this would proceed,
         # but there's no CLI module to find
         result = docs._discover_click_cli("nonexistent_pkg_xyzzy")
+
         assert result is None
-
-
-# ---------------------------------------------------------------------------
-# _rewrite_href_recursive  (core.py ~3120)
-# ---------------------------------------------------------------------------
 
 
 def test_rewrite_href_recursive_dict_match():
@@ -10005,6 +10027,7 @@ def test_rewrite_href_recursive_dict_match():
             {"text": "Setup", "href": "user-guide/setup.qmd"},
         ]
         found = docs._rewrite_href_recursive(items, "user-guide/intro.qmd", "index.qmd")
+
         assert found is True
         assert items[0]["href"] == "index.qmd"
 
@@ -10015,6 +10038,7 @@ def test_rewrite_href_recursive_string_match():
         docs = GreatDocs(project_path=tmp_dir)
         items = ["user-guide/intro.qmd", "user-guide/setup.qmd"]
         found = docs._rewrite_href_recursive(items, "user-guide/intro.qmd", "index.qmd")
+
         assert found is True
         assert items[0] == {"text": "Home", "href": "index.qmd"}
 
@@ -10032,6 +10056,7 @@ def test_rewrite_href_recursive_nested():
             },
         ]
         found = docs._rewrite_href_recursive(items, "user-guide/intro.qmd", "index.qmd")
+
         assert found is True
         assert items[0]["contents"][0]["href"] == "index.qmd"
 
@@ -10041,12 +10066,8 @@ def test_rewrite_href_recursive_no_match():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         items = [{"text": "Other", "href": "other.qmd"}]
+
         assert docs._rewrite_href_recursive(items, "missing.qmd", "new.qmd") is False
-
-
-# ---------------------------------------------------------------------------
-# _rewrite_sidebar_first_entry  (core.py ~3094)
-# ---------------------------------------------------------------------------
 
 
 def test_rewrite_sidebar_first_entry_exact_check():
@@ -10062,12 +10083,8 @@ def test_rewrite_sidebar_first_entry_exact_check():
             ],
         }
         docs._rewrite_sidebar_first_entry(sidebar, "user-guide/intro.qmd")
+
         assert sidebar["contents"][0]["href"] == "index.qmd"
-
-
-# ---------------------------------------------------------------------------
-# _organize_files_into_sidebar  (core.py ~2972)  [the auto sidebar builder]
-# ---------------------------------------------------------------------------
 
 
 def test_organize_files_into_sidebar_flat():
@@ -10116,8 +10133,10 @@ def test_organize_files_into_sidebar_with_sections():
         result = docs._generate_user_guide_sidebar_auto(guide_info)
 
         assert result["id"] == "user-guide"
+
         # Should have one section entry
         section_items = [c for c in result["contents"] if isinstance(c, dict) and "section" in c]
+
         assert len(section_items) == 1
         assert section_items[0]["section"] == "Basics"
 
@@ -10147,13 +10166,9 @@ def test_organize_files_into_sidebar_subdirectories():
 
         # Should have root file + subdirectory section
         section_items = [c for c in result["contents"] if isinstance(c, dict) and "section" in c]
+
         assert len(section_items) == 1
         assert section_items[0]["section"] == "Advanced"
-
-
-# ---------------------------------------------------------------------------
-# _update_config_with_user_guide  (core.py ~3203)
-# ---------------------------------------------------------------------------
 
 
 def test_update_config_with_user_guide_adds_sidebar():
@@ -10192,12 +10207,14 @@ def test_update_config_with_user_guide_adds_sidebar():
 
         # Should add user-guide sidebar
         sidebar_ids = [s.get("id") for s in result["website"]["sidebar"] if isinstance(s, dict)]
+
         assert "user-guide" in sidebar_ids
 
         # Should add User Guide to navbar
         nav_texts = [
             i.get("text") for i in result["website"]["navbar"]["left"] if isinstance(i, dict)
         ]
+
         assert "User Guide" in nav_texts
 
 
@@ -10206,6 +10223,7 @@ def test_update_config_with_user_guide_no_quarto_yml():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         guide_info = {"files": [], "source_dir": Path(tmp_dir), "sections": {}}
+
         # Should not raise
         docs._update_config_with_user_guide(guide_info)
 
@@ -10252,19 +10270,17 @@ def test_update_config_with_user_guide_idempotent():
             for s in result["website"]["sidebar"]
             if isinstance(s, dict) and s.get("id") == "user-guide"
         ]
+
         assert len(ug_sidebars) == 1
+
         # Reference sidebar should be preserved
         ref_sidebars = [
             s
             for s in result["website"]["sidebar"]
             if isinstance(s, dict) and s.get("id") == "reference"
         ]
+
         assert len(ref_sidebars) == 1
-
-
-# ---------------------------------------------------------------------------
-# _process_user_guide  (core.py ~3260)
-# ---------------------------------------------------------------------------
 
 
 def test_process_user_guide_no_guide():
@@ -10273,6 +10289,7 @@ def test_process_user_guide_no_guide():
         tmp = Path(tmp_dir)
         (tmp / "pyproject.toml").write_text('[project]\nname = "mypkg"\n')
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._process_user_guide() is False
 
 
@@ -10311,10 +10328,12 @@ def test_process_user_guide_with_sections():
         docs = GreatDocs(project_path=tmp_dir)
         docs.project_path.mkdir(parents=True, exist_ok=True)
         config = {"website": {"sidebar": [], "navbar": {"left": []}}}
+
         with open(docs.project_path / "_quarto.yml", "w") as f:
             yaml.dump(config, f)
 
         result = docs._process_user_guide()
+
         assert result is True
 
         with open(docs.project_path / "_quarto.yml") as f:
@@ -10328,12 +10347,8 @@ def test_process_user_guide_with_sections():
         section_items = [
             c for c in ug_sidebar["contents"] if isinstance(c, dict) and "section" in c
         ]
+
         assert len(section_items) >= 1
-
-
-# ---------------------------------------------------------------------------
-# _apply_nodoc_filter  (core.py ~5773)
-# ---------------------------------------------------------------------------
 
 
 def test_apply_nodoc_filter_removes_items():
@@ -10444,11 +10459,6 @@ def test_apply_nodoc_filter_dict_items():
         assert result[0]["contents"][0]["name"] == "Good"
 
 
-# ---------------------------------------------------------------------------
-# _generate_user_guide_sidebar_explicit  (core.py ~2893)
-# ---------------------------------------------------------------------------
-
-
 def test_generate_user_guide_sidebar_explicit():
     """_generate_user_guide_sidebar_explicit builds sidebar from config."""
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -10487,51 +10497,43 @@ def test_generate_user_guide_sidebar_explicit():
             ],
         }
         result = docs._generate_user_guide_sidebar_explicit(guide_info)
+
         assert result["id"] == "user-guide"
+
         section_items = [c for c in result["contents"] if isinstance(c, dict) and "section" in c]
+
         assert len(section_items) == 1
-
-
-# ---------------------------------------------------------------------------
-# _strip_numeric_prefix  (core.py)
-# ---------------------------------------------------------------------------
 
 
 def test_strip_numeric_prefix_various():
     """_strip_numeric_prefix handles different prefix formats."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._strip_numeric_prefix("01-intro.qmd") == "intro.qmd"
         assert docs._strip_numeric_prefix("99_advanced.qmd") == "advanced.qmd"
         assert docs._strip_numeric_prefix("no-prefix.qmd") == "no-prefix.qmd"
         assert docs._strip_numeric_prefix("001-triple.qmd") == "triple.qmd"
 
 
-# ---------------------------------------------------------------------------
-# _normalize_package_name  (core.py)
-# ---------------------------------------------------------------------------
-
-
 def test_normalize_package_name_v2():
     """_normalize_package_name replaces hyphens with underscores."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._normalize_package_name("my-package") == "my_package"
         assert docs._normalize_package_name("already_good") == "already_good"
         assert docs._normalize_package_name("multi-hyphen-name") == "multi_hyphen_name"
-
-
-# ---------------------------------------------------------------------------
-# _get_source_location  (core.py ~3370)
-# ---------------------------------------------------------------------------
 
 
 def test_get_source_location_found():
     """_get_source_location returns file/line info for an exported symbol."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
+
         # Use great_docs itself as a known package
         result = docs._get_source_location("great_docs", "GreatDocs")
+
         assert result is not None
         assert "file" in result
         assert "start_line" in result
@@ -10544,6 +10546,7 @@ def test_get_source_location_not_found_v2():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._get_source_location("great_docs", "NonExistentSymbol")
+
         assert result is None
 
 
@@ -10562,12 +10565,8 @@ def test_get_source_location_bad_package():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._get_source_location("nonexistent_pkg_xyzzy", "SomeClass")
+
         assert result is None
-
-
-# ---------------------------------------------------------------------------
-# _count_cli_sidebar_items  (already tested, adding nested test)
-# ---------------------------------------------------------------------------
 
 
 def test_count_cli_sidebar_items_nested_v2():
@@ -10582,12 +10581,8 @@ def test_count_cli_sidebar_items_nested_v2():
             ],
         },
     ]
+
     assert GreatDocs._count_cli_sidebar_items(items) == 3
-
-
-# ---------------------------------------------------------------------------
-# _write_quarto_yml  (core.py — used by many methods)
-# ---------------------------------------------------------------------------
 
 
 def test_write_quarto_yml_no_header_check():
@@ -10602,12 +10597,8 @@ def test_write_quarto_yml_no_header_check():
 
         with open(quarto_yml) as f:
             result = yaml.safe_load(f)
+
         assert result["website"]["title"] == "Test"
-
-
-# ---------------------------------------------------------------------------
-# _detect_package_name  (core.py)
-# ---------------------------------------------------------------------------
 
 
 def test_detect_package_name_from_pyproject_v2():
@@ -10616,6 +10607,7 @@ def test_detect_package_name_from_pyproject_v2():
         tmp = Path(tmp_dir)
         (tmp / "pyproject.toml").write_text('[project]\nname = "my-cool-pkg"\n')
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._detect_package_name() == "my-cool-pkg"
 
 
@@ -10624,12 +10616,8 @@ def test_detect_package_name_no_pyproject():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._detect_package_name()
+
         assert result is None
-
-
-# ---------------------------------------------------------------------------
-# _parse_all_from_init  (core.py ~3829)
-# ---------------------------------------------------------------------------
 
 
 def test_parse_package_exports():
@@ -10654,6 +10642,7 @@ def test_parse_package_exports_missing_package():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._parse_package_exports("nonexistent_pkg_xyzzy")
+
         assert result is None
 
 
@@ -10669,16 +10658,12 @@ def test_parse_package_exports_with_exclude_gdg_config():
             assert "GreatDocs" not in result
 
 
-# ---------------------------------------------------------------------------
-# _discover_package_exports  (core.py ~3885)
-# ---------------------------------------------------------------------------
-
-
 def test_discover_package_exports():
     """_discover_package_exports discovers exports using griffe."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._discover_package_exports("great_docs")
+
         assert result is not None
         assert "GreatDocs" in result
 
@@ -10688,12 +10673,8 @@ def test_discover_package_exports_missing():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._discover_package_exports("nonexistent_pkg_xyzzy")
+
         assert result is None
-
-
-# ---------------------------------------------------------------------------
-# _extract_authors_from_pyproject  (core.py ~5843)
-# ---------------------------------------------------------------------------
 
 
 def test_extract_authors_from_pyproject():
@@ -10709,6 +10690,7 @@ def test_extract_authors_from_pyproject():
         result = docs._extract_authors_from_pyproject()
 
         assert len(result) == 2
+
         # Maintainers come first in the implementation
         assert result[0]["name"] == "Bob"
         assert result[0]["role"] == "Maintainer"
@@ -10723,12 +10705,8 @@ def test_extract_authors_from_pyproject_no_authors():
         (tmp / "pyproject.toml").write_text('[project]\nname = "mypkg"\n')
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._extract_authors_from_pyproject()
+
         assert result == []
-
-
-# ---------------------------------------------------------------------------
-# _format_authors_yaml  (core.py ~5900)
-# ---------------------------------------------------------------------------
 
 
 def test_format_authors_yaml():
@@ -10740,6 +10718,7 @@ def test_format_authors_yaml():
             {"name": "Bob", "email": "bob@example.com", "role": "Maintainer"},
         ]
         result = docs._format_authors_yaml(authors)
+
         assert "Alice" in result
         assert "alice@example.com" in result
         assert "Bob" in result
@@ -10751,12 +10730,8 @@ def test_format_authors_yaml_empty_v2():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._format_authors_yaml([])
+
         assert result == ""
-
-
-# ---------------------------------------------------------------------------
-# _update_navbar_github_link  (core.py ~1045)
-# ---------------------------------------------------------------------------
 
 
 def test_update_navbar_github_link_widget_style():
@@ -10772,6 +10747,7 @@ def test_update_navbar_github_link_widget_style():
             github_style="widget",
         )
         right = config["website"]["navbar"]["right"]
+
         assert len(right) == 1
         assert "github-widget" in right[0]["text"]
         assert 'data-owner="octocat"' in right[0]["text"]
@@ -10791,6 +10767,7 @@ def test_update_navbar_github_link_icon_style():
             github_style="icon",
         )
         right = config["website"]["navbar"]["right"]
+
         assert len(right) == 1
         assert right[0] == {"icon": "github", "href": "https://github.com/octocat/hello"}
 
@@ -10809,6 +10786,7 @@ def test_update_navbar_github_link_replaces_existing_icon():
             github_style="widget",
         )
         right = config["website"]["navbar"]["right"]
+
         assert len(right) == 2
         assert "github-widget" in right[0]["text"]
         assert right[1] == {"text": "About"}
@@ -10828,6 +10806,7 @@ def test_update_navbar_github_link_replaces_existing_widget():
             github_style="icon",
         )
         right = config["website"]["navbar"]["right"]
+
         assert len(right) == 1
         assert right[0] == {"icon": "github", "href": "https://github.com/new/new"}
 
@@ -10840,6 +10819,7 @@ def test_update_navbar_github_link_no_repo_url():
         docs._update_navbar_github_link(
             config, owner=None, repo=None, repo_url=None, github_style="icon"
         )
+
         assert config["website"]["navbar"]["right"] == []
 
 
@@ -10851,6 +10831,7 @@ def test_update_navbar_github_link_creates_right_section():
         docs._update_navbar_github_link(
             config, owner="x", repo="y", repo_url="https://github.com/x/y", github_style="icon"
         )
+
         assert "right" in config["website"]["navbar"]
         assert len(config["website"]["navbar"]["right"]) == 1
 
@@ -10864,6 +10845,7 @@ def test_update_navbar_github_link_widget_without_owner_falls_back_to_icon():
             config, owner=None, repo=None, repo_url="https://github.com/x/y", github_style="widget"
         )
         right = config["website"]["navbar"]["right"]
+
         assert right[0] == {"icon": "github", "href": "https://github.com/x/y"}
 
 
@@ -10876,15 +10858,11 @@ def test_update_navbar_github_link_preserves_non_github_items():
             config, owner="o", repo="r", repo_url="https://github.com/o/r", github_style="icon"
         )
         right = config["website"]["navbar"]["right"]
+
         assert len(right) == 3
         assert right[0] == {"text": "About"}
         assert right[1] == "plain-string"
         assert right[2] == {"icon": "github", "href": "https://github.com/o/r"}
-
-
-# ---------------------------------------------------------------------------
-# _find_index_source_file  (core.py ~6470)
-# ---------------------------------------------------------------------------
 
 
 def test_find_index_source_file_index_qmd_exact_warnings():
@@ -10894,6 +10872,7 @@ def test_find_index_source_file_index_qmd_exact_warnings():
         (Path(tmp_dir) / "README.md").write_text("# README", encoding="utf-8")
         docs = GreatDocs(project_path=tmp_dir)
         source, warnings = docs._find_index_source_file()
+
         assert source is not None
         assert source.name == "index.qmd"
         assert len(warnings) == 1  # warns about multiple candidates
@@ -10905,6 +10884,7 @@ def test_find_index_source_file_index_md():
         (Path(tmp_dir) / "index.md").write_text("# Index", encoding="utf-8")
         docs = GreatDocs(project_path=tmp_dir)
         source, warnings = docs._find_index_source_file()
+
         assert source is not None
         assert source.name == "index.md"
         assert len(warnings) == 0
@@ -10916,6 +10896,7 @@ def test_find_index_source_file_readme_md():
         (Path(tmp_dir) / "README.md").write_text("# Hello", encoding="utf-8")
         docs = GreatDocs(project_path=tmp_dir)
         source, warnings = docs._find_index_source_file()
+
         assert source is not None
         assert source.name == "README.md"
         assert len(warnings) == 0
@@ -10927,6 +10908,7 @@ def test_find_index_source_file_readme_rst():
         (Path(tmp_dir) / "README.rst").write_text("Hello\n=====", encoding="utf-8")
         docs = GreatDocs(project_path=tmp_dir)
         source, warnings = docs._find_index_source_file()
+
         assert source is not None
         assert source.name == "README.rst"
 
@@ -10936,6 +10918,7 @@ def test_find_index_source_file_none_v3():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         source, warnings = docs._find_index_source_file()
+
         assert source is None
         assert len(warnings) == 0
 
@@ -10948,15 +10931,11 @@ def test_find_index_source_file_multiple_warns():
         (Path(tmp_dir) / "README.rst").write_text("z", encoding="utf-8")
         docs = GreatDocs(project_path=tmp_dir)
         source, warnings = docs._find_index_source_file()
+
         assert source.name == "index.md"
         assert len(warnings) == 1
         assert "README.md" in warnings[0]
         assert "README.rst" in warnings[0]
-
-
-# ---------------------------------------------------------------------------
-# _convert_rst_to_markdown  (core.py ~6537)
-# ---------------------------------------------------------------------------
 
 
 def test_convert_rst_to_markdown_no_pandoc(monkeypatch):
@@ -10969,6 +10948,7 @@ def test_convert_rst_to_markdown_no_pandoc(monkeypatch):
         docs = GreatDocs(project_path=tmp_dir)
         monkeypatch.setattr(shutil_mod, "which", lambda _cmd: None)
         result = docs._convert_rst_to_markdown(rst_file)
+
         assert result == "Hello\n=====\n\nWorld"
 
 
@@ -10992,6 +10972,7 @@ def test_convert_rst_to_markdown_pandoc_fails(monkeypatch):
 
         monkeypatch.setattr(subprocess_mod, "run", mock_run)
         result = docs._convert_rst_to_markdown(rst_file)
+
         assert result == "Hello\n====="
 
 
@@ -11013,12 +10994,8 @@ def test_convert_rst_to_markdown_pandoc_exception(monkeypatch):
 
         monkeypatch.setattr(subprocess_mod, "run", mock_run)
         result = docs._convert_rst_to_markdown(rst_file)
+
         assert result == "Raw RST Content"
-
-
-# ---------------------------------------------------------------------------
-# _generate_landing_page_content  (core.py ~6562)
-# ---------------------------------------------------------------------------
 
 
 def test_generate_landing_page_content_basic():
@@ -11027,6 +11004,7 @@ def test_generate_landing_page_content_basic():
         docs = GreatDocs(project_path=tmp_dir)
         metadata = {"description": "A cool library", "name": "mylib"}
         result = docs._generate_landing_page_content(metadata)
+
         assert "### Installation" in result
         assert "pip install" in result
         assert "A cool library" in result
@@ -11038,6 +11016,7 @@ def test_generate_landing_page_content_no_description():
         docs = GreatDocs(project_path=tmp_dir)
         metadata = {}
         result = docs._generate_landing_page_content(metadata)
+
         assert "### Installation" in result
         assert "pip install" in result
 
@@ -11049,6 +11028,7 @@ def test_generate_landing_page_content_with_api_reference():
         docs._has_api_reference = True
         metadata = {"description": "Test"}
         result = docs._generate_landing_page_content(metadata)
+
         assert "API Reference" in result
         assert "reference/index.qmd" in result
 
@@ -11063,13 +11043,9 @@ def test_generate_landing_page_content_with_user_guide():
         docs = GreatDocs(project_path=tmp_dir)
         metadata = {"description": "Test"}
         result = docs._generate_landing_page_content(metadata)
+
         assert "User Guide" in result
         assert "user-guide/index.qmd" in result
-
-
-# ---------------------------------------------------------------------------
-# _get_quarto_env  (core.py ~823)
-# ---------------------------------------------------------------------------
 
 
 def test_get_quarto_env_sets_quarto_python():
@@ -11077,6 +11053,7 @@ def test_get_quarto_env_sets_quarto_python():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         env = docs._get_quarto_env()
+
         assert "QUARTO_PYTHON" in env
         assert env["QUARTO_PYTHON"]  # non-empty
 
@@ -11086,6 +11063,7 @@ def test_get_quarto_env_sets_pythonpath():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         env = docs._get_quarto_env()
+
         assert "PYTHONPATH" in env
         assert tmp_dir in env["PYTHONPATH"]
 
@@ -11097,6 +11075,7 @@ def test_get_quarto_env_includes_src_dir():
         src_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         env = docs._get_quarto_env()
+
         assert str(src_dir) in env["PYTHONPATH"]
 
 
@@ -11107,6 +11086,7 @@ def test_get_quarto_env_includes_python_dir():
         python_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         env = docs._get_quarto_env()
+
         assert str(python_dir) in env["PYTHONPATH"]
 
 
@@ -11121,6 +11101,7 @@ def test_get_quarto_env_venv_detection():
         venv_python.write_text("#!/bin/sh\n", encoding="utf-8")
         docs = GreatDocs(project_path=tmp_dir)
         env = docs._get_quarto_env()
+
         assert env["QUARTO_PYTHON"] == str(venv_python)
 
 
@@ -11132,13 +11113,9 @@ def test_get_quarto_env_preserves_existing_pythonpath(monkeypatch):
         monkeypatch.setenv("PYTHONPATH", "/existing/path")
         docs = GreatDocs(project_path=tmp_dir)
         env = docs._get_quarto_env()
+
         assert "/existing/path" in env["PYTHONPATH"]
         assert tmp_dir in env["PYTHONPATH"]
-
-
-# ---------------------------------------------------------------------------
-# _detect_module_name  (core.py ~700)
-# ---------------------------------------------------------------------------
 
 
 def test_detect_module_name_from_pyi():
@@ -11148,6 +11125,7 @@ def test_detect_module_name_from_pyi():
         pyi_file.write_text("def func(): ...", encoding="utf-8")
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._detect_module_name()
+
         assert result == "mymodule"
 
 
@@ -11161,6 +11139,7 @@ def test_detect_module_name_from_maturin():
         )
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._detect_module_name()
+
         assert result == "my_rust_mod"
 
 
@@ -11174,6 +11153,7 @@ def test_detect_module_name_from_setuptools_packages():
         )
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._detect_module_name()
+
         assert result == "cool_pkg"
 
 
@@ -11187,6 +11167,7 @@ def test_detect_module_name_from_hatch():
         )
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._detect_module_name()
+
         assert result == "hatch_pkg"
 
 
@@ -11197,6 +11178,7 @@ def test_detect_module_name_skips_init_pyi():
         docs = GreatDocs(project_path=tmp_dir)
         # Should not return "__init__"
         result = docs._detect_module_name()
+
         assert result != "__init__"
 
 
@@ -11210,12 +11192,8 @@ def test_detect_module_name_fallback_to_package_init():
         (pkg_dir / "__init__.py").write_text("", encoding="utf-8")
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._detect_module_name()
+
         assert result == "testpkg"
-
-
-# ---------------------------------------------------------------------------
-# _build_metadata_margin  (core.py ~6940)
-# ---------------------------------------------------------------------------
 
 
 def test_build_metadata_margin_with_package_name():
@@ -11228,6 +11206,7 @@ def test_build_metadata_margin_with_package_name():
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._build_metadata_margin()
+
         assert "pypi.org/project/testpkg" in result
         assert "#### Links" in result
 
@@ -11244,6 +11223,7 @@ def test_build_metadata_margin_with_license():
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._build_metadata_margin()
+
         assert "#### License" in result
 
 
@@ -11258,6 +11238,7 @@ def test_build_metadata_margin_with_license_qmd():
         (gd_dir / "license.qmd").write_text("---\ntitle: License\n---\n", encoding="utf-8")
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._build_metadata_margin()
+
         assert "Full license" in result
         assert "license.qmd" in result
 
@@ -11275,13 +11256,19 @@ def test_build_metadata_margin_with_contributing():
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._build_metadata_margin()
+
         assert "#### Community" in result
         assert "Contributing guide" in result
+
         # Check that contributing.qmd was created
         contrib_qmd = gd_dir / "contributing.qmd"
+
         assert contrib_qmd.exists()
+
         content = contrib_qmd.read_text(encoding="utf-8")
+
         assert "Please submit PRs." in content
+
         # First heading should be stripped
         assert content.count("# Contributing") == 0
 
@@ -11299,10 +11286,15 @@ def test_build_metadata_margin_with_code_of_conduct():
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._build_metadata_margin()
+
         assert "Code of conduct" in result
+
         coc_qmd = gd_dir / "code-of-conduct.qmd"
+
         assert coc_qmd.exists()
+
         content = coc_qmd.read_text(encoding="utf-8")
+
         assert "Be nice." in content
 
 
@@ -11318,6 +11310,7 @@ def test_build_metadata_margin_github_contributing():
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._build_metadata_margin()
+
         assert "Contributing guide" in result
 
 
@@ -11333,6 +11326,7 @@ def test_build_metadata_margin_with_urls():
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._build_metadata_margin()
+
         assert "Browse source code" in result
         assert "Report a bug" in result
 
@@ -11349,6 +11343,7 @@ def test_build_metadata_margin_with_authors():
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._build_metadata_margin()
+
         assert "#### Developers" in result
         assert "Jane Doe" in result
 
@@ -11360,6 +11355,7 @@ def test_build_metadata_margin_llms_links():
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._build_metadata_margin()
+
         assert "llms.txt" in result
         assert "llms-full.txt" in result
 
@@ -11391,6 +11387,7 @@ def test_build_metadata_margin_authors_with_rich_metadata():
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._build_metadata_margin()
+
         assert "Alice" in result
         assert "Maintainer" in result
         assert "github.com/alice" in result
@@ -11407,15 +11404,11 @@ def test_build_metadata_margin_citation_link():
         (gd_dir / "citation.qmd").write_text("---\ntitle: Citation\n---\n", encoding="utf-8")
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._build_metadata_margin()
+
         # citation_link should be set since citation.qmd exists
         # (but it may not appear in margin sections if no explicit block uses it;
         # check the result doesn't error out at minimum)
         assert isinstance(result, str)
-
-
-# ---------------------------------------------------------------------------
-# _generate_config_with_reference  (core.py ~6285)
-# ---------------------------------------------------------------------------
 
 
 def test_generate_config_with_reference_basic_categories():
@@ -11433,6 +11426,7 @@ def test_generate_config_with_reference_basic_categories():
         result = docs._generate_config_with_reference(
             categories, package_name="pkg", parser="numpy", dynamic=True
         )
+
         assert "reference:" in result
         assert "MyClass" in result
         assert "my_func" in result
@@ -11455,8 +11449,10 @@ def test_generate_config_with_reference_large_class_splitting():
         result = docs._generate_config_with_reference(
             categories, package_name="pkg", parser="numpy", dynamic=True
         )
+
         assert "members: false" in result
         assert "BigClass Methods" in result
+
         for m in methods:
             assert f"BigClass.{m}" in result
 
@@ -11476,6 +11472,7 @@ def test_generate_config_with_reference_enums_and_exceptions():
         result = docs._generate_config_with_reference(
             categories, package_name="pkg", parser="google", dynamic=False
         )
+
         assert "title: Enumerations" in result
         assert "Color" in result
         assert "title: Exceptions" in result
@@ -11494,7 +11491,9 @@ def test_generate_config_with_reference_empty_categories():
         result = docs._generate_config_with_reference(
             categories, package_name="pkg", parser="numpy", dynamic=True
         )
+
         assert "reference:" in result
+
         # Should still have the reference: key but no section titles
         assert "title: Classes" not in result
         assert "title: Functions" not in result
@@ -11515,6 +11514,7 @@ def test_generate_config_with_reference_dataclasses_and_protocols():
         result = docs._generate_config_with_reference(
             categories, package_name="pkg", parser="numpy", dynamic=True
         )
+
         assert "title: Dataclasses" in result
         assert "title: Protocols" in result
         assert "MyData  # 1 method(s)" in result
@@ -11534,6 +11534,7 @@ def test_generate_config_with_reference_has_authors():
         result = docs._generate_config_with_reference(
             categories, package_name="pkg", parser="numpy", dynamic=True
         )
+
         assert "authors:" in result or "Alice" in result
 
 
@@ -11551,6 +11552,7 @@ def test_generate_config_with_reference_async_functions():
         result = docs._generate_config_with_reference(
             categories, package_name="pkg", parser="numpy", dynamic=True
         )
+
         assert "title: Async Functions" in result
         assert "async_fetch" in result
 
@@ -11570,13 +11572,9 @@ def test_generate_config_with_reference_type_aliases():
         result = docs._generate_config_with_reference(
             categories, package_name="pkg", parser="numpy", dynamic=True
         )
+
         assert "title: Type Aliases" in result
         assert "title: Constants" in result
-
-
-# ---------------------------------------------------------------------------
-# _generate_llms_full_txt  (core.py ~9038)
-# ---------------------------------------------------------------------------
 
 
 def test_generate_llms_full_txt_creates_file():
@@ -11604,8 +11602,11 @@ def test_generate_llms_full_txt_creates_file():
         docs = GreatDocs(project_path=tmp_dir)
         docs._generate_llms_full_txt()
         llms_full = gd_dir / "llms-full.txt"
+
         assert llms_full.exists()
+
         content = llms_full.read_text(encoding="utf-8")
+
         assert "json" in content
 
 
@@ -11617,6 +11618,7 @@ def test_generate_llms_full_txt_no_quarto_yml():
         docs = GreatDocs(project_path=tmp_dir)
         docs._generate_llms_full_txt()
         llms_full = gd_dir / "llms-full.txt"
+
         assert not llms_full.exists()
 
 
@@ -11628,11 +11630,14 @@ def test_generate_llms_full_txt_no_api_reference_with_title():
         gd_dir = Path(tmp_dir) / "great-docs"
         gd_dir.mkdir()
         quarto_yml = gd_dir / "_quarto.yml"
+
         with open(quarto_yml, "w") as f:
             yaml.dump({"website": {"title": "Test"}}, f)
+
         docs = GreatDocs(project_path=tmp_dir)
         docs._generate_llms_full_txt()
         llms_full = gd_dir / "llms-full.txt"
+
         assert not llms_full.exists()
 
 
@@ -11644,11 +11649,14 @@ def test_generate_llms_full_txt_no_package():
         gd_dir = Path(tmp_dir) / "great-docs"
         gd_dir.mkdir()
         quarto_yml = gd_dir / "_quarto.yml"
+
         with open(quarto_yml, "w") as f:
             yaml.dump({"api-reference": {"sections": []}}, f)
+
         docs = GreatDocs(project_path=tmp_dir)
         docs._generate_llms_full_txt()
         llms_full = gd_dir / "llms-full.txt"
+
         assert not llms_full.exists()
 
 
@@ -11673,6 +11681,7 @@ def test_generate_llms_full_txt_import_error():
         docs = GreatDocs(project_path=tmp_dir)
         docs._generate_llms_full_txt()
         llms_full = gd_dir / "llms-full.txt"
+
         assert not llms_full.exists()
 
 
@@ -11706,8 +11715,11 @@ def test_generate_llms_full_txt_with_sections():
         docs = GreatDocs(project_path=tmp_dir)
         docs._generate_llms_full_txt()
         llms_full = gd_dir / "llms-full.txt"
+
         assert llms_full.exists()
+
         content = llms_full.read_text(encoding="utf-8")
+
         assert "## Encoding" in content
         assert "## Decoding" in content
         assert "Encode Python objects to JSON" in content
@@ -11737,12 +11749,8 @@ def test_generate_llms_full_txt_dict_item_format():
         docs = GreatDocs(project_path=tmp_dir)
         docs._generate_llms_full_txt()
         llms_full = gd_dir / "llms-full.txt"
+
         assert llms_full.exists()
-
-
-# ---------------------------------------------------------------------------
-# _get_github_repo_info  (core.py ~1110)
-# ---------------------------------------------------------------------------
 
 
 def test_get_github_repo_info_from_pyproject_urls():
@@ -11755,6 +11763,7 @@ def test_get_github_repo_info_from_pyproject_urls():
         )
         docs = GreatDocs(project_path=tmp_dir)
         owner, repo_name, base_url = docs._get_github_repo_info()
+
         assert owner == "owner"
         assert repo_name == "repo"
         assert base_url == "https://github.com/owner/repo"
@@ -11777,6 +11786,7 @@ def test_get_github_repo_info_from_gd_yml():
         )
         docs = GreatDocs(project_path=tmp_dir)
         owner, repo_name, base_url = docs._get_github_repo_info()
+
         assert owner == "new"
         assert repo_name == "new"
         assert base_url == "https://github.com/new/new"
@@ -11789,6 +11799,7 @@ def test_get_github_repo_info_no_github():
         pyproject.write_text('[project]\nname = "pkg"\n', encoding="utf-8")
         docs = GreatDocs(project_path=tmp_dir)
         owner, repo_name, base_url = docs._get_github_repo_info()
+
         assert owner is None
         assert repo_name is None
         assert base_url is None
@@ -11804,13 +11815,9 @@ def test_get_github_repo_info_trailing_slash():
         )
         docs = GreatDocs(project_path=tmp_dir)
         owner, repo_name, base_url = docs._get_github_repo_info()
+
         assert owner == "user"
         assert repo_name == "project"
-
-
-# ---------------------------------------------------------------------------
-# _extract_badges_from_content  (core.py ~6635)
-# ---------------------------------------------------------------------------
 
 
 def test_extract_badges_from_content_no_badges():
@@ -11818,6 +11825,7 @@ def test_extract_badges_from_content_no_badges():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         badges, cleaned, hero = docs._extract_badges_from_content("# Hello\n\nSome text here.")
+
         assert badges == []
 
 
@@ -11827,13 +11835,9 @@ def test_extract_badges_from_content_top_of_file_badges():
         docs = GreatDocs(project_path=tmp_dir)
         content = "# Project\n\n[![badge](https://img.shields.io/badge.svg)](https://example.com)\n\nSome text."
         badges, cleaned, hero = docs._extract_badges_from_content(content)
+
         assert len(badges) >= 1
         assert badges[0]["img"] == "https://img.shields.io/badge.svg"
-
-
-# ---------------------------------------------------------------------------
-# _build_hero_section  (partial test for uncovered branches)
-# ---------------------------------------------------------------------------
 
 
 def test_build_hero_section_disabled_no_logo():
@@ -11847,6 +11851,7 @@ def test_build_hero_section_disabled_no_logo():
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         result, cleaned = docs._build_hero_section("# Hello\n\nContent")
+
         assert result == ""
         assert cleaned is None
 
@@ -11875,6 +11880,7 @@ def test_build_hero_section_with_name_and_tagline():
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         result, cleaned = docs._build_hero_section("# Test\n\nBody")
+
         assert "My Proj" in result
         assert "A great tagline" in result
         assert "gd-hero" in result
@@ -11904,6 +11910,7 @@ def test_build_hero_section_with_string_logo():
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         result, cleaned = docs._build_hero_section("# Test\n\nBody")
+
         assert "assets/logo.svg" in result
         assert "gd-hero-logo" in result
 
@@ -11924,6 +11931,7 @@ def test_build_hero_section_with_badges():
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         result, cleaned = docs._build_hero_section("# Test")
+
         assert "gd-hero" in result
 
 
@@ -11954,13 +11962,9 @@ def test_build_hero_section_badge_from_config():
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         result, cleaned = docs._build_hero_section("# Test")
+
         assert "gd-hero-badges" in result
         assert "https://ci.svg" in result
-
-
-# ---------------------------------------------------------------------------
-# _add_frontmatter_option  (core.py ~2825)
-# ---------------------------------------------------------------------------
 
 
 def test_add_frontmatter_option_add_new_key():
@@ -11969,6 +11973,7 @@ def test_add_frontmatter_option_add_new_key():
         docs = GreatDocs(project_path=tmp_dir)
         content = "---\ntitle: Hello\n---\n\nBody"
         result = docs._add_frontmatter_option(content, "toc", False)
+
         assert "toc: false" in result
         assert "title: Hello" in result
         assert "Body" in result
@@ -11980,6 +11985,7 @@ def test_add_frontmatter_option_update_existing_key():
         docs = GreatDocs(project_path=tmp_dir)
         content = '---\ntitle: "Old"\ntoc: true\n---\n\nBody'
         result = docs._add_frontmatter_option(content, "toc", False)
+
         assert "toc: false" in result
         assert "toc: true" not in result
 
@@ -11990,6 +11996,7 @@ def test_add_frontmatter_option_string_value():
         docs = GreatDocs(project_path=tmp_dir)
         content = "---\ntitle: Hello\n---\n\nBody"
         result = docs._add_frontmatter_option(content, "subtitle", "World")
+
         assert 'subtitle: "World"' in result
 
 
@@ -11999,6 +12006,7 @@ def test_add_frontmatter_option_no_frontmatter():
         docs = GreatDocs(project_path=tmp_dir)
         content = "# No Frontmatter\n\nBody text."
         result = docs._add_frontmatter_option(content, "toc", True)
+
         assert result.startswith("---\n")
         assert "toc: true" in result
         assert "# No Frontmatter" in result
@@ -12010,12 +12018,8 @@ def test_add_frontmatter_option_integer_value():
         docs = GreatDocs(project_path=tmp_dir)
         content = "---\ntitle: Test\n---\n\nBody"
         result = docs._add_frontmatter_option(content, "depth", 3)
+
         assert "depth: 3" in result
-
-
-# ---------------------------------------------------------------------------
-# _write_quarto_yml  (core.py ~7893)
-# ---------------------------------------------------------------------------
 
 
 def test_write_quarto_yml_v2():
@@ -12028,15 +12032,11 @@ def test_write_quarto_yml_v2():
         config = {"project": {"type": "website"}, "website": {"title": "Test"}}
         docs._write_quarto_yml(quarto_yml, config)
         content = quarto_yml.read_text(encoding="utf-8")
+
         assert "Generated by Great Docs" in content
         assert "great-docs.yml" in content
         assert "website:" in content
         assert "title: Test" in content
-
-
-# ---------------------------------------------------------------------------
-# _generate_minimal_config  (core.py ~6150)
-# ---------------------------------------------------------------------------
 
 
 def test_generate_minimal_config_defaults():
@@ -12046,6 +12046,7 @@ def test_generate_minimal_config_defaults():
         pyproject.write_text('[project]\nname = "pkg"\n', encoding="utf-8")
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._generate_minimal_config()
+
         assert "parser: numpy" in result
         assert "dynamic: true" in result
         assert "jupyter: python3" in result
@@ -12058,6 +12059,7 @@ def test_generate_minimal_config_google_parser():
         pyproject.write_text('[project]\nname = "pkg"\n', encoding="utf-8")
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._generate_minimal_config(parser="google", dynamic=False)
+
         assert "parser: google" in result
         assert "dynamic: false" in result
 
@@ -12072,12 +12074,8 @@ def test_generate_minimal_config_with_authors():
         )
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._generate_minimal_config()
+
         assert "Alice" in result
-
-
-# ---------------------------------------------------------------------------
-# _build_sections_from_reference_config  (core.py ~5528)
-# ---------------------------------------------------------------------------
 
 
 def test_build_sections_from_reference_config_basic_functions():
@@ -12089,6 +12087,7 @@ def test_build_sections_from_reference_config_basic_functions():
             {"title": "Classes", "desc": "Types", "contents": ["MyClass"]},
         ]
         result = docs._build_sections_from_reference_config(reference_config)
+
         assert len(result) == 2
         assert result[0]["title"] == "Functions"
         assert result[0]["contents"] == ["func_a", "func_b"]
@@ -12110,8 +12109,11 @@ def test_build_sections_from_reference_config_dict_items_simple():
             }
         ]
         result = docs._build_sections_from_reference_config(reference_config)
+
         assert len(result) == 1
+
         contents = result[0]["contents"]
+
         assert contents[0] == {"name": "BigClass", "members": []}
         assert contents[1] == "SmallClass"
         assert contents[2] == "plain_func"
@@ -12121,6 +12123,7 @@ def test_build_sections_from_reference_config_empty_v2():
     """_build_sections_from_reference_config returns None for empty config."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
+
         assert docs._build_sections_from_reference_config([]) is None
         assert docs._build_sections_from_reference_config(None) is None
 
@@ -12134,6 +12137,7 @@ def test_build_sections_from_reference_config_skips_empty_contents():
             {"title": "Valid", "contents": ["func_a"]},
         ]
         result = docs._build_sections_from_reference_config(reference_config)
+
         assert len(result) == 1
         assert result[0]["title"] == "Valid"
 
@@ -12147,6 +12151,7 @@ def test_build_sections_from_reference_config_skips_string_entry():
             {"title": "Valid", "contents": ["func_a"]},
         ]
         result = docs._build_sections_from_reference_config(reference_config)
+
         assert len(result) == 1
 
 
@@ -12158,13 +12163,9 @@ def test_build_sections_from_reference_config_dict_no_name_returns_none():
             {"title": "Test", "contents": [{"members": False}]},
         ]
         result = docs._build_sections_from_reference_config(reference_config)
+
         # Section has no valid contents, so it should be skipped
         assert result is None
-
-
-# ---------------------------------------------------------------------------
-# _build_metadata_margin (funding / meta / citation)  (core.py ~7176-7260)
-# ---------------------------------------------------------------------------
 
 
 def test_build_metadata_margin_with_funding():
@@ -12191,6 +12192,7 @@ def test_build_metadata_margin_with_funding():
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._build_metadata_margin()
+
         assert "#### Funding" in result
         assert "Science Foundation" in result
         assert "Sponsor" in result
@@ -12219,6 +12221,7 @@ def test_build_metadata_margin_with_funding_ror():
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._build_metadata_margin()
+
         assert "Research Inc" in result
         assert "ror.org/12345" in result
         assert "ror-sidebar-icon" in result
@@ -12236,6 +12239,7 @@ def test_build_metadata_margin_with_meta_requires_python():
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._build_metadata_margin()
+
         assert "#### Meta" in result
         assert "Requires:" in result
         assert ">=3.9" in result
@@ -12253,6 +12257,7 @@ def test_build_metadata_margin_with_meta_extras():
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._build_metadata_margin()
+
         assert "#### Meta" in result
         assert "Provides-Extra:" in result
 
@@ -12267,13 +12272,9 @@ def test_build_metadata_margin_citation_section():
         (gd_dir / "citation.qmd").write_text("---\ntitle: Citation\n---\n", encoding="utf-8")
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._build_metadata_margin()
+
         assert "#### Citation" in result
         assert "citation.qmd" in result
-
-
-# ---------------------------------------------------------------------------
-# _detect_git_ref  (core.py ~3498)
-# ---------------------------------------------------------------------------
 
 
 def test_detect_git_ref_configured_branch_via_yaml():
@@ -12290,6 +12291,7 @@ def test_detect_git_ref_configured_branch_via_yaml():
         )
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._detect_git_ref()
+
         assert result == "develop"
 
 
@@ -12298,14 +12300,10 @@ def test_detect_git_ref_fallback_v2():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._detect_git_ref()
+
         # Either returns actual git branch or "main" fallback
         assert isinstance(result, str)
         assert len(result) > 0
-
-
-# ---------------------------------------------------------------------------
-# _create_index_from_readme helpers  (core.py ~7270+)
-# ---------------------------------------------------------------------------
 
 
 def test_create_index_from_readme_with_license():
@@ -12319,8 +12317,11 @@ def test_create_index_from_readme_with_license():
         docs = GreatDocs(project_path=tmp_dir)
         docs._create_index_from_readme(force_rebuild=True)
         license_qmd = gd_dir / "license.qmd"
+
         assert license_qmd.exists()
+
         content = license_qmd.read_text(encoding="utf-8")
+
         assert "MIT License" in content
         assert 'title: "License"' in content
 
@@ -12344,8 +12345,11 @@ def test_create_index_from_readme_with_citation():
         docs = GreatDocs(project_path=tmp_dir)
         docs._create_index_from_readme(force_rebuild=True)
         citation_qmd = gd_dir / "citation.qmd"
+
         assert citation_qmd.exists()
+
         content = citation_qmd.read_text(encoding="utf-8")
+
         assert "Alice" in content
         assert "Smith" in content
 
@@ -12361,8 +12365,11 @@ def test_create_index_from_readme_creates_index_qmd():
         docs = GreatDocs(project_path=tmp_dir)
         docs._create_index_from_readme(force_rebuild=True)
         index_qmd = gd_dir / "index.qmd"
+
         assert index_qmd.exists()
+
         content = index_qmd.read_text(encoding="utf-8")
+
         assert "A great package." in content
 
 
@@ -12379,15 +12386,13 @@ def test_create_index_from_readme_generates_landing_page():
         docs = GreatDocs(project_path=tmp_dir)
         docs._create_index_from_readme(force_rebuild=True)
         index_qmd = gd_dir / "index.qmd"
+
         assert index_qmd.exists()
+
         content = index_qmd.read_text(encoding="utf-8")
+
         assert "mypkg" in content
         assert "pip install" in content
-
-
-# ---------------------------------------------------------------------------
-# _create_blended_index  (core.py ~3280)
-# ---------------------------------------------------------------------------
 
 
 def test_create_blended_index_basic():
@@ -12397,6 +12402,7 @@ def test_create_blended_index_basic():
         pyproject.write_text('[project]\nname = "pkg"\n', encoding="utf-8")
         gd_dir = Path(tmp_dir) / "great-docs"
         gd_dir.mkdir()
+
         # Create a user-guide directory with a first page
         ug_dir = gd_dir / "user-guide"
         ug_dir.mkdir()
@@ -12413,9 +12419,13 @@ def test_create_blended_index_basic():
         }
         docs._create_blended_index(user_guide_info, ["user-guide/introduction.qmd"])
         index_qmd = gd_dir / "index.qmd"
+
         assert index_qmd.exists()
+
         content = index_qmd.read_text(encoding="utf-8")
+
         assert "Welcome to the guide." in content
+
         # The first page should have been removed from user-guide/
         assert not first_page.exists()
 
@@ -12428,6 +12438,7 @@ def test_create_blended_index_empty_files():
         docs = GreatDocs(project_path=tmp_dir)
         user_guide_info = {"files": [], "source_dir": Path(tmp_dir), "explicit": False}
         docs._create_blended_index(user_guide_info, [])
+
         # index.qmd should not have been created
         assert not (gd_dir / "index.qmd").exists()
 
@@ -12446,12 +12457,8 @@ def test_create_blended_index_missing_first_page():
         }
         # Should not raise, just print warning
         docs._create_blended_index(user_guide_info, ["user-guide/intro.qmd"])
+
         assert not (gd_dir / "index.qmd").exists()
-
-
-# ---------------------------------------------------------------------------
-# _inject_section_body_class  (core.py ~1875)
-# ---------------------------------------------------------------------------
 
 
 def test_inject_section_body_class():
@@ -12465,6 +12472,7 @@ def test_inject_section_body_class():
         pages = [{"filename": "page.qmd"}]
         docs._inject_section_body_class("my-section", pages, gd_dir)
         content = page_file.read_text(encoding="utf-8")
+
         assert "gd-section-no-sidebar" in content
 
 
@@ -12482,6 +12490,7 @@ def test_inject_section_body_class_already_has_class():
         pages = [{"filename": "page.qmd"}]
         docs._inject_section_body_class("my-section", pages, gd_dir)
         content = page_file.read_text(encoding="utf-8")
+
         assert content.count("gd-section-no-sidebar") == 1
 
 
@@ -12496,6 +12505,7 @@ def test_inject_section_body_class_no_frontmatter():
         pages = [{"filename": "page.qmd"}]
         docs._inject_section_body_class("my-section", pages, gd_dir)
         content = page_file.read_text(encoding="utf-8")
+
         assert "gd-section-no-sidebar" not in content
 
 
@@ -12508,11 +12518,6 @@ def test_inject_section_body_class_missing_file():
         pages = [{"filename": "missing.qmd"}]
         # Should not raise
         docs._inject_section_body_class("my-section", pages, gd_dir)
-
-
-# ---------------------------------------------------------------------------
-# _add_section_to_navbar  (core.py ~1952)
-# ---------------------------------------------------------------------------
 
 
 def test_add_section_to_navbar():
@@ -12531,6 +12536,7 @@ def test_add_section_to_navbar():
         with open(quarto_yml) as f:
             result = yaml.safe_load(f)
         left = result["website"]["navbar"]["left"]
+
         assert any(item.get("text") == "Guide" for item in left if isinstance(item, dict))
 
 
@@ -12563,12 +12569,8 @@ def test_add_section_to_navbar_no_duplicate():
             for item in result["website"]["navbar"]["left"]
             if isinstance(item, dict) and item.get("text") == "Guide"
         )
+
         assert guide_count == 1
-
-
-# ---------------------------------------------------------------------------
-# _extract_badges_from_content  (core.py ~6636) — additional tests
-# ---------------------------------------------------------------------------
 
 
 def test_extract_badges_centered_div():
@@ -12577,6 +12579,7 @@ def test_extract_badges_centered_div():
         docs = GreatDocs(project_path=tmp_dir)
         content = '# Project\n\n<div align="center">\n\n[![badge](https://img.shields.io/badge.svg)](https://example.com)\n\n</div>\n\nSome text.'
         badges, cleaned, hero = docs._extract_badges_from_content(content)
+
         assert len(badges) >= 1
 
 
@@ -12591,12 +12594,8 @@ def test_extract_badges_multiple():
             "Some text."
         )
         badges, cleaned, hero = docs._extract_badges_from_content(content)
+
         assert len(badges) >= 2
-
-
-# ---------------------------------------------------------------------------
-# _copy_assets  (core.py — tests for asset copying)
-# ---------------------------------------------------------------------------
 
 
 def test_copy_assets_creates_assets_dir():
@@ -12615,11 +12614,6 @@ def test_copy_assets_creates_assets_dir():
             assert (assets_dst / "logo.svg").exists()
 
 
-# ---------------------------------------------------------------------------
-# _build_metadata_margin — author fallback_github  (core.py ~7066)
-# ---------------------------------------------------------------------------
-
-
 def test_build_metadata_margin_author_fallback_github():
     """_build_metadata_margin uses repository URL for author GitHub fallback."""
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -12634,15 +12628,12 @@ def test_build_metadata_margin_author_fallback_github():
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._build_metadata_margin()
+
         assert "#### Developers" in result
         assert "Bob" in result
+
         # Should have GitHub link derived from repo URL
         assert "github.com/bob" in result
-
-
-# ---------------------------------------------------------------------------
-# _build_hero_section — additional branches  (core.py ~6795)
-# ---------------------------------------------------------------------------
 
 
 def test_build_hero_section_with_light_dark_logo():
@@ -12672,6 +12663,7 @@ def test_build_hero_section_with_light_dark_logo():
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         result, cleaned = docs._build_hero_section()
+
         assert "gd-only-light" in result
         assert "gd-only-dark" in result
         assert "logo-light.svg" in result
@@ -12687,6 +12679,7 @@ def test_build_hero_section_auto_enable_no_hero():
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         result, cleaned = docs._build_hero_section("# Hello\n\nBody")
+
         assert result == ""
 
 
@@ -12703,6 +12696,7 @@ def test_build_hero_section_metadata_fallback_name():
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
         result, cleaned = docs._build_hero_section()
+
         # Should use package name as fallback
         assert "cool-pkg" in result or "cool_pkg" in result
 
@@ -12724,12 +12718,6 @@ def test_build_hero_section_metadata_fallback_tagline():
         docs = GreatDocs(project_path=tmp_dir)
         result, cleaned = docs._build_hero_section()
         assert "A wonderful library" in result
-
-
-# ---------------------------------------------------------------------------
-# _create_index_from_readme — citation.qmd CITATION.cff parsing
-# (core.py 7327-7410 — multi-author citation BibTeX)
-# ---------------------------------------------------------------------------
 
 
 def test_create_index_from_readme_citation_bibtex():
@@ -12757,8 +12745,11 @@ def test_create_index_from_readme_citation_bibtex():
         docs = GreatDocs(project_path=tmp_dir)
         docs._create_index_from_readme(force_rebuild=True)
         citation_qmd = gd_dir / "citation.qmd"
+
         assert citation_qmd.exists()
+
         content = citation_qmd.read_text(encoding="utf-8")
+
         assert "BibTeX" in content
         assert "@Manual" in content
         assert "Smith" in content
@@ -12789,13 +12780,9 @@ def test_create_index_from_readme_citation_two_authors():
         docs._create_index_from_readme(force_rebuild=True)
         citation_qmd = gd_dir / "citation.qmd"
         content = citation_qmd.read_text(encoding="utf-8")
+
         assert "Smith" in content
         assert "Jones" in content
-
-
-# ---------------------------------------------------------------------------
-# _generate_landing_page_content — additional branches
-# ---------------------------------------------------------------------------
 
 
 def test_generate_landing_page_content_with_both_sections():
@@ -12808,14 +12795,10 @@ def test_generate_landing_page_content_with_both_sections():
         docs._has_api_reference = True
         metadata = {"description": "Test lib"}
         result = docs._generate_landing_page_content(metadata)
+
         assert "### Get Started" in result
         assert "API Reference" in result
         assert "User Guide" in result
-
-
-# ---------------------------------------------------------------------------
-# _detect_module_name — additional branches
-# ---------------------------------------------------------------------------
 
 
 def test_detect_module_name_no_sources():
@@ -12823,6 +12806,7 @@ def test_detect_module_name_no_sources():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._detect_module_name()
+
         assert result is None
 
 
@@ -12833,12 +12817,8 @@ def test_detect_module_name_pyproject_parse_error():
         pyproject.write_text("this is not valid toml!!!", encoding="utf-8")
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._detect_module_name()
+
         assert result is None
-
-
-# ---------------------------------------------------------------------------
-# _get_quarto_env — additional branches
-# ---------------------------------------------------------------------------
 
 
 def test_get_quarto_env_no_extra_dirs():
@@ -12846,9 +12826,12 @@ def test_get_quarto_env_no_extra_dirs():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         env = docs._get_quarto_env()
+
         assert "PYTHONPATH" in env
+
         # Should just have the tmp_dir itself
         parts = env["PYTHONPATH"].split(":")
+
         assert any(tmp_dir in p for p in parts)
 
 
@@ -12861,12 +12844,8 @@ def test_get_quarto_env_venv_alternative_name():
         venv_python.write_text("#!/bin/sh\n", encoding="utf-8")
         docs = GreatDocs(project_path=tmp_dir)
         env = docs._get_quarto_env()
+
         assert env["QUARTO_PYTHON"] == str(venv_python)
-
-
-# ---------------------------------------------------------------------------
-# _update_navbar_github_link — additional branches
-# ---------------------------------------------------------------------------
 
 
 def test_update_navbar_github_link_with_string_items():
@@ -12882,20 +12861,11 @@ def test_update_navbar_github_link_with_string_items():
             github_style="icon",
         )
         right = config["website"]["navbar"]["right"]
+
         assert len(right) == 3
         assert right[0] == "text-only"
         assert right[1] == {"text": "Other"}
         assert right[2] == {"icon": "github", "href": "https://github.com/user/repo"}
-
-
-# ── Batch 6: _generate_source_links_json, _build_github_source_url,
-#    _get_source_location, _generate_minimal_config, _generate_llms_txt,
-#    _check_docstring_spelling, citation/BibTeX, _create_api_sections_from_config,
-#    _apply_nodoc_filter, _prepare_build_directory, _detect_git_ref,
-#    navbar_color CSS, content_style, announcement banner, _update_sidebar_from_sections,
-#    _update_reference_index_frontmatter, _write_quarto_yml, _get_docstring_summary,
-#    _get_cli_help_text_for_llms, _strip_frontmatter, _get_user_guide_text_for_llms,
-#    _detect_dynamic_mode, attribution, page footer ──
 
 
 def test_build_github_source_url_basic():
@@ -12917,6 +12887,7 @@ def test_build_github_source_url_basic():
             {"file": "mypkg/module.py", "start_line": 10, "end_line": 10},
             branch="main",
         )
+
         assert result is not None
         assert result.endswith("#L10")
         assert "/blob/main/" in result
@@ -12938,6 +12909,7 @@ def test_build_github_source_url_line_range():
             {"file": "mypkg/core.py", "start_line": 5, "end_line": 20},
             branch="v1.0",
         )
+
         assert result is not None
         assert result.endswith("#L5-L20")
         assert "/blob/v1.0/" in result
@@ -12948,11 +12920,12 @@ def test_build_github_source_url_no_repo_v2():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
 
-        # No pyproject.toml → no repo info
+        # No pyproject.toml -> no repo info
         result = docs._build_github_source_url(
             {"file": "mypkg/module.py", "start_line": 1, "end_line": 1},
             branch="main",
         )
+
         assert result is None
 
 
@@ -12978,6 +12951,7 @@ def test_build_github_source_url_source_path_config():
             {"file": "/absolute/path/module.py", "start_line": 3, "end_line": 3},
             branch="main",
         )
+
         assert result is not None
         assert "packages/mypkg/src/module.py" in result
 
@@ -13000,6 +12974,7 @@ def test_build_github_source_url_absolute_path():
             {"file": abs_path, "start_line": 1, "end_line": 5},
             branch="dev",
         )
+
         assert result is not None
         assert "/blob/dev/" in result
 
@@ -13019,6 +12994,7 @@ def test_detect_git_ref_configured_branch():
         docs._config = Config(Path(tmp_dir))
 
         result = docs._detect_git_ref()
+
         assert result == "release-2.0"
 
 
@@ -13026,8 +13002,10 @@ def test_detect_git_ref_fallback():
     """Test _detect_git_ref falls back to 'main' when no git repo."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
+
         # No git repo, no config
         result = docs._detect_git_ref()
+
         assert result == "main"
 
 
@@ -13046,6 +13024,7 @@ def test_generate_source_links_json_disabled():
         docs._config = Config(Path(tmp_dir))
 
         docs._generate_source_links_json("mypkg")
+
         # Should return early; no JSON file created
         assert not (docs.project_path / "_source_links.json").exists()
 
@@ -13057,6 +13036,7 @@ def test_generate_source_links_json_no_repo():
 
         # No pyproject.toml = no repo
         docs._generate_source_links_json("mypkg")
+
         assert not (docs.project_path / "_source_links.json").exists()
 
 
@@ -13070,6 +13050,7 @@ def test_get_source_location_no_griffe():
         # Mock griffe import failure
         with patch.dict("sys.modules", {"griffe": None}):
             result = docs._get_source_location("nonexistent_package", "SomeClass")
+
             assert result is None
 
 
@@ -13079,6 +13060,7 @@ def test_generate_minimal_config_default():
         docs = GreatDocs(project_path=tmp_dir)
 
         result = docs._generate_minimal_config()
+
         assert "parser: numpy" in result
         assert "dynamic: true" in result
         assert "Great Docs Configuration" in result
@@ -13090,6 +13072,7 @@ def test_generate_minimal_config_google_no_dynamic():
         docs = GreatDocs(project_path=tmp_dir)
 
         result = docs._generate_minimal_config(parser="google", dynamic=False)
+
         assert "parser: google" in result
         assert "dynamic: false" in result
 
@@ -13100,6 +13083,7 @@ def test_generate_minimal_config_sphinx():
         docs = GreatDocs(project_path=tmp_dir)
 
         result = docs._generate_minimal_config(parser="sphinx", dynamic=True)
+
         assert "parser: sphinx" in result
         assert "dynamic: true" in result
 
@@ -13111,6 +13095,7 @@ def test_strip_frontmatter_with_yaml():
 
         content = "---\ntitle: Test\n---\n\n# Hello\nWorld"
         result = docs._strip_frontmatter(content)
+
         assert "title: Test" not in result
         assert "# Hello" in result
         assert "World" in result
@@ -13123,6 +13108,7 @@ def test_strip_frontmatter_no_frontmatter_simple():
 
         content = "# Hello\nWorld"
         result = docs._strip_frontmatter(content)
+
         assert "# Hello" in result
         assert "World" in result
 
@@ -13134,6 +13120,7 @@ def test_get_docstring_summary_returns_first_line():
 
         # Use a known stdlib module
         result = docs._get_docstring_summary("os", "path")
+
         # os.path has a docstring, so result should be non-empty or empty
         # (we just test it doesn't crash)
         assert isinstance(result, str)
@@ -13145,6 +13132,7 @@ def test_get_docstring_summary_nonexistent():
         docs = GreatDocs(project_path=tmp_dir)
 
         result = docs._get_docstring_summary("os", "nonexistent_xyz_abc")
+
         assert result == ""
 
 
@@ -13154,6 +13142,7 @@ def test_get_docstring_summary_no_docstring():
         docs = GreatDocs(project_path=tmp_dir)
 
         result = docs._get_docstring_summary("nonexistent_package_xyz", "whatever")
+
         assert result == ""
 
 
@@ -13171,7 +13160,9 @@ def test_write_quarto_yml_adds_header():
         docs._write_quarto_yml(quarto_yml, config)
 
         content = quarto_yml.read_text()
+
         assert "project" in content
+
         # Header comment should be present
         assert "#" in content
 
@@ -13215,11 +13206,15 @@ def test_update_sidebar_from_sections_basic():
             result = yaml.safe_load(f)
 
         sidebar = result["website"]["sidebar"]
+
         assert len(sidebar) == 1
         assert sidebar[0]["id"] == "reference"
+
         contents = sidebar[0]["contents"]
+
         # First entry is API link
         assert contents[0] == {"text": "API", "href": "reference/index.qmd"}
+
         # Then section entries
         assert contents[1]["section"] == "Classes"
         assert "reference/MyClass.qmd" in contents[1]["contents"]
@@ -13266,6 +13261,7 @@ def test_update_sidebar_from_sections_dict_items():
 
         sidebar = result["website"]["sidebar"]
         section = sidebar[0]["contents"][1]  # First section after API link
+
         assert "reference/BigClass.qmd" in section["contents"]
         assert "reference/simple_func.qmd" in section["contents"]
 
@@ -13293,6 +13289,7 @@ def test_update_reference_index_frontmatter_no_file():
     """Test _update_reference_index_frontmatter when index.qmd doesn't exist."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
+
         # Should not raise
         docs._update_reference_index_frontmatter()
 
@@ -13311,6 +13308,7 @@ def test_update_reference_index_frontmatter_adds_page_nav():
         docs._update_reference_index_frontmatter()
 
         content = index_qmd.read_text()
+
         assert "page-navigation: false" in content
 
 
@@ -13328,6 +13326,7 @@ def test_update_reference_index_frontmatter_no_frontmatter():
         docs._update_reference_index_frontmatter()
 
         content = index_qmd.read_text()
+
         assert content.startswith("---\n")
         assert "page-navigation: false" in content
 
@@ -13347,6 +13346,7 @@ def test_update_reference_index_frontmatter_already_has_page_nav():
         docs._update_reference_index_frontmatter()
 
         content = index_qmd.read_text()
+
         # Should be unchanged
         assert content == original
 
@@ -13356,6 +13356,7 @@ def test_generate_llms_txt_no_quarto_yml():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         docs._generate_llms_txt()
+
         assert not (docs.project_path / "llms.txt").exists()
 
 
@@ -13373,6 +13374,7 @@ def test_generate_llms_txt_no_api_reference():
             yaml.dump({"project": {"type": "website"}}, f)
 
         docs._generate_llms_txt()
+
         assert not (docs.project_path / "llms.txt").exists()
 
 
@@ -13412,8 +13414,11 @@ def test_generate_llms_txt_writes_file():
         docs._generate_llms_txt()
 
         llms_path = docs.project_path / "llms.txt"
+
         assert llms_path.exists()
+
         content = llms_path.read_text()
+
         assert "# mypkg" in content
         assert "func_a" in content
         assert "func_b" in content
@@ -13453,6 +13458,7 @@ def test_generate_llms_txt_with_site_url():
         docs._generate_llms_txt()
 
         content = (docs.project_path / "llms.txt").read_text()
+
         # URL should have the anchor stripped
         assert "https://example.com/docs/" in content
         assert "#readme" not in content
@@ -13472,6 +13478,7 @@ def test_generate_llms_full_txt_no_api_reference():
             yaml.dump({"project": {"type": "website"}}, f)
 
         docs._generate_llms_full_txt()
+
         assert not (docs.project_path / "llms-full.txt").exists()
 
 
@@ -13495,6 +13502,7 @@ def test_generate_llms_full_txt_no_package_name():
             yaml.dump(config, f)
 
         docs._generate_llms_full_txt()
+
         assert not (docs.project_path / "llms-full.txt").exists()
 
 
@@ -13535,6 +13543,7 @@ def test_update_quarto_config_navbar_color_light_dark():
         # The navbar color CSS should be injected as a style in after-body
         after_body = result["format"]["html"].get("include-after-body", [])
         style_entries = [str(item) for item in after_body if "navbar_color overrides" in str(item)]
+
         assert len(style_entries) > 0
 
 
@@ -13571,7 +13580,9 @@ def test_update_quarto_config_navbar_color_light_only():
 
         after_body = result["format"]["html"].get("include-after-body", [])
         css_items = [str(item) for item in after_body if "navbar_color overrides" in str(item)]
+
         assert len(css_items) > 0
+
         # Should contain quarto-light selector
         assert "quarto-light" in css_items[0]
 
@@ -13615,10 +13626,12 @@ def test_update_quarto_config_announcement_banner():
 
         # Check meta tag in header
         has_ann_meta = any("gd-announcement" in str(item) for item in header)
+
         assert has_ann_meta
 
         # Check script in after-body
         has_ann_script = any("announcement-banner" in str(item) for item in after_body)
+
         assert has_ann_script
 
         # Check resource
@@ -13663,11 +13676,12 @@ def test_update_quarto_config_content_style():
         after_body = result["format"]["html"].get("include-after-body", [])
 
         has_cs_meta = any("gd-content-style" in str(item) for item in header)
+
         assert has_cs_meta
 
         has_cs_script = any("content-style" in str(item) for item in after_body)
-        assert has_cs_script
 
+        assert has_cs_script
         assert "content-style.js" in result["project"]["resources"]
 
 
@@ -13706,11 +13720,12 @@ def test_update_quarto_config_navbar_style():
         after_body = result["format"]["html"].get("include-after-body", [])
 
         has_nb_meta = any("gd-navbar-style" in str(item) for item in header)
+
         assert has_nb_meta
 
         has_nb_script = any("navbar-style" in str(item) for item in after_body)
-        assert has_nb_script
 
+        assert has_nb_script
         assert "navbar-style.js" in result["project"]["resources"]
 
 
@@ -13743,10 +13758,12 @@ def test_update_quarto_config_dark_mode_toggle():
 
         after_body = result["format"]["html"].get("include-after-body", [])
         has_dark_mode = any("dark-mode-toggle" in str(item) for item in after_body)
+
         assert has_dark_mode
 
         header = result["format"]["html"].get("include-in-header", [])
         has_theme_init = any("theme-init" in str(item) for item in header)
+
         assert has_theme_init
 
 
@@ -13783,6 +13800,7 @@ def test_update_quarto_config_cli_enabled_adds_ref_switcher():
 
         after_body = result["format"]["html"].get("include-after-body", [])
         has_ref_switcher = any("reference-switcher" in str(item) for item in after_body)
+
         assert has_ref_switcher
 
 
@@ -13820,6 +13838,7 @@ def test_update_quarto_config_page_footer_with_authors():
 
         footer = result["website"].get("page-footer", {})
         footer_text = footer.get("center", "")
+
         assert "Developed by" in footer_text
         assert "Alice" in footer_text
         assert "Bob" in footer_text
@@ -13864,6 +13883,7 @@ def test_update_quarto_config_page_footer_with_funding():
 
         footer = result["website"].get("page-footer", {})
         footer_text = footer.get("center", "")
+
         assert "Supported by" in footer_text
         assert "ACME" in footer_text
 
@@ -13901,6 +13921,7 @@ def test_update_quarto_config_page_footer_funding_no_authors():
 
         footer = result["website"].get("page-footer", {})
         footer_text = footer.get("center", "")
+
         assert "Supported by" in footer_text
         assert "TestFund" in footer_text
 
@@ -13938,6 +13959,7 @@ def test_update_quarto_config_posit_badge():
 
         header = result["format"]["html"].get("include-in-header", [])
         has_posit = any("supported-by-posit" in str(item) for item in header)
+
         assert has_posit
 
 
@@ -13970,6 +13992,7 @@ def test_update_quarto_config_sidebar_filter():
 
         after_body = result["format"]["html"].get("include-after-body", [])
         has_sidebar_filter = any("sidebar-filter" in str(item) for item in after_body)
+
         assert has_sidebar_filter
 
 
@@ -14006,6 +14029,7 @@ def test_update_quarto_config_sidebar_filter_custom_min_items():
 
         after_body = result["format"]["html"].get("include-after-body", [])
         has_min_items = any("sidebarFilterMinItems" in str(item) for item in after_body)
+
         assert has_min_items
 
 
@@ -14042,6 +14066,7 @@ def test_update_quarto_config_attribution():
 
         footer = result["website"].get("page-footer", {})
         footer_text = footer.get("center", "")
+
         assert "Great&nbsp;Docs" in footer_text
 
 
@@ -14079,8 +14104,11 @@ def test_update_quarto_config_version_badge_metadata():
             docs._update_quarto_config()
 
         meta_path = docs.project_path / "_package_meta.json"
+
         assert meta_path.exists()
+
         meta = json.loads(meta_path.read_text())
+
         assert meta["version"] == "2.0.0"
         assert "published_at" in meta
 
@@ -14160,8 +14188,11 @@ def test_create_index_from_readme_citation_parsing():
         docs._create_index_from_readme(force_rebuild=True)
 
         citation_qmd = docs.project_path / "citation.qmd"
+
         assert citation_qmd.exists()
+
         content = citation_qmd.read_text()
+
         assert "Authors and Citation" in content
         assert "Alice Smith" in content
         assert "Bob Jones" in content
@@ -14198,8 +14229,11 @@ def test_create_index_from_readme_citation_single_author():
         docs._create_index_from_readme(force_rebuild=True)
 
         citation_qmd = docs.project_path / "citation.qmd"
+
         assert citation_qmd.exists()
+
         content = citation_qmd.read_text()
+
         assert "Carol Williams" in content
 
 
@@ -14234,7 +14268,8 @@ def test_create_index_from_readme_citation_three_authors():
 
         citation_qmd = docs.project_path / "citation.qmd"
         content = citation_qmd.read_text()
-        # 3 authors → APA uses ", &" format for last author
+
+        # 3 authors -> APA uses ", &" format for last author
         assert ", &" in content or "A, Alice" in content
 
 
@@ -14253,6 +14288,7 @@ def test_create_index_from_readme_no_citation():
         docs._create_index_from_readme(force_rebuild=True)
 
         citation_qmd = docs.project_path / "citation.qmd"
+
         assert not citation_qmd.exists()
 
 
@@ -14274,9 +14310,12 @@ def test_create_index_from_readme_heading_adjustment():
         docs._create_index_from_readme(force_rebuild=True)
 
         index_qmd = docs.project_path / "index.qmd"
+
         assert index_qmd.exists()
+
         content = index_qmd.read_text()
-        # Headings should be bumped: ## → ###, ### → ####
+
+        # Headings should be bumped: ## -> ###, ### -> ####
         assert "### Section" in content
         assert "#### Subsection" in content
 
@@ -14303,6 +14342,7 @@ def test_create_index_from_readme_rst_source():
             docs._create_index_from_readme(force_rebuild=True)
 
         index_qmd = docs.project_path / "index.qmd"
+
         assert index_qmd.exists()
 
 
@@ -14323,6 +14363,7 @@ def test_create_index_from_readme_landing_page_fallback():
         docs._create_index_from_readme(force_rebuild=True)
 
         index_qmd = docs.project_path / "index.qmd"
+
         assert index_qmd.exists()
 
 
@@ -14350,8 +14391,11 @@ def test_create_index_from_readme_hero_section():
         docs._create_index_from_readme(force_rebuild=True)
 
         index_qmd = docs.project_path / "index.qmd"
+
         assert index_qmd.exists()
+
         content = index_qmd.read_text()
+
         # Hero section should inject HTML at the top
         assert "hero" in content.lower() or "Hello world" in content
 
@@ -14380,6 +14424,7 @@ def test_create_index_from_readme_hero_strips_duplicate_h1():
 
         index_qmd = docs.project_path / "index.qmd"
         content = index_qmd.read_text()
+
         # The first h1 "# testpkg" should be stripped because hero shows the name
         # But "## Features" (which becomes "### Features") should remain
         assert "Features" in content
@@ -14536,6 +14581,7 @@ def test_add_api_reference_config_disabled():
             yaml.dump({"project": {"type": "website"}}, f)
 
         docs._add_api_reference_config()
+
         assert docs._has_api_reference is False
 
 
@@ -14587,6 +14633,7 @@ def test_add_api_reference_config_already_exists():
         # Should not have changed
         with open(quarto_yml, "r") as f:
             result = yaml.safe_load(f)
+
         assert result["api-reference"]["package"] == "mypkg"
 
 
@@ -14623,11 +14670,13 @@ def test_add_api_reference_config_with_sections():
         assert "api-reference" in result
         assert result["api-reference"]["package"] == "mypkg"
         assert result["api-reference"]["sections"] == fake_sections
+
         # Should add Reference link to navbar
         left = result["website"]["navbar"]["left"]
         ref_items = [
             i for i in left if isinstance(i, dict) and i.get("href") == "reference/index.qmd"
         ]
+
         assert len(ref_items) == 1
 
 
@@ -14691,8 +14740,11 @@ def test_prepare_build_directory_creates_structure():
 
         # Check .gitignore
         gitignore = docs.project_path / ".gitignore"
+
         assert gitignore.exists()
+
         content = gitignore.read_text()
+
         assert "Great Docs build directory" in content
 
         # Check CSS file was copied
@@ -14705,8 +14757,11 @@ def test_prepare_build_directory_creates_structure():
         import json
 
         options_path = docs.project_path / "_gd_options.json"
+
         assert options_path.exists()
+
         options = json.loads(options_path.read_text())
+
         assert "markdown_pages" in options
 
 
@@ -14785,6 +14840,7 @@ def test_prepare_build_directory_cleans_existing():
 
         # Stale file should be gone
         assert not stale_file.exists()
+
         # But new files should exist
         assert docs.project_path.exists()
 
@@ -14804,6 +14860,7 @@ def test_find_package_init_standard_location():
         init_file.write_text('__version__ = "1.0"\n')
 
         result = docs._find_package_init("mypkg")
+
         assert result is not None
         assert result.name == "__init__.py"
 
@@ -14823,6 +14880,7 @@ def test_find_package_init_src_layout():
         init_file.write_text('__all__ = ["Widget"]\n')
 
         result = docs._find_package_init("mypkg")
+
         assert result is not None
         assert result.name == "__init__.py"
 
@@ -14836,6 +14894,7 @@ def test_find_package_init_not_found_xyz_pkg():
         pyproject.write_text('[project]\nname = "mypkg"\n', encoding="utf-8")
 
         result = docs._find_package_init("nonexistent_pkg_xyz")
+
         assert result is None
 
 
@@ -14853,6 +14912,7 @@ def test_find_package_init_hyphens_to_underscores():
         init_file.write_text('__version__ = "1.0"\n')
 
         result = docs._find_package_init("my-pkg")
+
         assert result is not None
 
 
@@ -14873,6 +14933,7 @@ def test_find_package_init_pyproject_explicit_packages():
         init_file.write_text('__version__ = "1.0"\n')
 
         result = docs._find_package_init("mypkg")
+
         assert result is not None
         assert "custom_pkg" in str(result)
 
@@ -14892,6 +14953,7 @@ def test_find_package_init_auto_discover():
         init_file.write_text('__version__ = "1.0"\n')
 
         result = docs._find_package_init("nonexistent")
+
         # Should auto-discover actual_pkg
         assert result is not None
         assert "actual_pkg" in str(result)
@@ -14911,6 +14973,7 @@ def test_parse_package_exports_with_all_simple():
         init_file.write_text('__all__ = ["WidgetA", "WidgetB", "helper_fn"]\n__version__ = "1.0"\n')
 
         result = docs._parse_package_exports("mypkg")
+
         assert result is not None
         assert "WidgetA" in result
         assert "WidgetB" in result
@@ -14937,6 +15000,7 @@ def test_parse_package_exports_with_exclude():
         init_file.write_text('__all__ = ["WidgetA", "helper_fn"]\n')
 
         result = docs._parse_package_exports("mypkg")
+
         assert result is not None
         assert "WidgetA" in result
         assert "helper_fn" not in result
@@ -14951,6 +15015,7 @@ def test_parse_package_exports_no_init_alt_name():
         pyproject.write_text('[project]\nname = "mypkg"\n', encoding="utf-8")
 
         result = docs._parse_package_exports("nonexistent_pkg_xyz")
+
         assert result is None
 
 
@@ -14968,6 +15033,7 @@ def test_parse_package_exports_no_all_returns_none():
         init_file.write_text('__version__ = "1.0"\n')
 
         result = docs._parse_package_exports("mypkg")
+
         assert result is None
 
 
@@ -15005,6 +15071,7 @@ def test_update_quarto_config_page_footer_three_authors():
             result = yaml.safe_load(f)
 
         footer_text = result["website"]["page-footer"]["center"]
+
         assert "Developed by" in footer_text
         assert ", and" in footer_text  # Oxford comma
 
@@ -15040,6 +15107,7 @@ def test_update_quarto_config_page_footer_single_author():
             result = yaml.safe_load(f)
 
         footer_text = result["website"]["page-footer"]["center"]
+
         assert "Solo" in footer_text
         assert " and " not in footer_text.split("Developed by")[1].split(".")[0]
 
@@ -15082,6 +15150,7 @@ def test_update_quarto_config_page_footer_author_homepage():
             result = yaml.safe_load(f)
 
         footer_text = result["website"]["page-footer"]["center"]
+
         assert "https://alice.dev" in footer_text
         assert "<a href=" in footer_text
 
@@ -15122,6 +15191,7 @@ def test_generate_llms_txt_dict_items_in_sections():
         docs._generate_llms_txt()
 
         content = (docs.project_path / "llms.txt").read_text()
+
         assert "BigClass" in content
         assert "simple_func" in content
 
@@ -15135,6 +15205,7 @@ def test_check_docstring_spelling_no_griffe():
 
         with patch.dict("sys.modules", {"griffe": None}):
             result = docs._check_docstring_spelling("mypkg", None, verbose=False)
+
         assert result == {}
 
 
@@ -15147,6 +15218,7 @@ def test_get_cli_help_text_for_llms_no_cli():
         pyproject.write_text('[project]\nname = "mypkg"\n', encoding="utf-8")
 
         result = docs._get_cli_help_text_for_llms()
+
         assert result == ""
 
 
@@ -15159,15 +15231,8 @@ def test_get_user_guide_text_for_llms_no_guide_empty_result():
         pyproject.write_text('[project]\nname = "mypkg"\n', encoding="utf-8")
 
         result = docs._get_user_guide_text_for_llms()
+
         assert result == ""
-
-
-# ── Batch 7: _build_sections_from_reference_config, _apply_nodoc_filter,
-#    _extract_authors_from_pyproject, _format_authors_yaml,
-#    _format_preserved_extras_yaml, _format_cli_yaml, _write_object_types_json,
-#    _categorize_api_objects_fallback, _create_api_sections, _detect_docstring_style,
-#    _update_gitignore, _detect_module_name, _get_api_details,
-#    _generate_initial_config ──
 
 
 def test_build_sections_from_reference_config_basic():
@@ -15180,6 +15245,7 @@ def test_build_sections_from_reference_config_basic():
             {"title": "Utils", "desc": "", "contents": ["helper_fn"]},
         ]
         result = docs._build_sections_from_reference_config(ref_config)
+
         assert result is not None
         assert len(result) == 2
         assert result[0]["title"] == "Core"
@@ -15548,7 +15614,7 @@ def test_categorize_api_objects_fallback_basic():
 
         # Use 'os' module with known exports
         result = docs._categorize_api_objects_fallback("os", ["path", "getcwd", "sep"])
-        # path is a module → other; getcwd is a function; sep is a constant
+        # path is a module -> other; getcwd is a function; sep is a constant
         assert "getcwd" in result["functions"]
         assert "sep" in result["constants"]
 
@@ -16286,9 +16352,6 @@ def test_is_compiled_extension():
         assert isinstance(result, bool)
 
 
-# ── Batch 8 Tests ───────────────────────────────────────────────────────
-
-
 def test_linkify_github_references_bare_issue():
     """Test _linkify_github_references converts bare #NNN references."""
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -16431,6 +16494,7 @@ def test_find_package_root_with_pyproject():
         pyproject = Path(tmp_dir) / "pyproject.toml"
         pyproject.write_text('[project]\nname = "pkg"\n', encoding="utf-8")
         root = docs._find_package_root()
+
         assert root == Path(tmp_dir)
 
 
@@ -16439,6 +16503,7 @@ def test_find_package_root_no_pyproject():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         root = docs._find_package_root()
+
         # Should not crash, returns some Path
         assert isinstance(root, Path)
 
@@ -16449,6 +16514,7 @@ def test_is_compiled_extension_cargo_toml():
         docs = GreatDocs(project_path=tmp_dir)
         (Path(tmp_dir) / "Cargo.toml").write_text("[package]\n", encoding="utf-8")
         result = docs._is_compiled_extension()
+
         assert result is True
 
 
@@ -16458,6 +16524,7 @@ def test_is_compiled_extension_pyi_stub():
         docs = GreatDocs(project_path=tmp_dir)
         (Path(tmp_dir) / "mymodule.pyi").write_text("def fn() -> int: ...\n")
         result = docs._is_compiled_extension()
+
         assert result is True
 
 
@@ -16468,6 +16535,7 @@ def test_is_compiled_extension_pyi_with_py():
         (Path(tmp_dir) / "mymodule.pyi").write_text("def fn() -> int: ...\n")
         (Path(tmp_dir) / "mymodule.py").write_text("def fn(): return 1\n")
         result = docs._is_compiled_extension()
+
         assert result is False
 
 
@@ -16483,6 +16551,7 @@ def test_get_github_repo_info_https():
             encoding="utf-8",
         )
         owner, repo, base_url = docs._get_github_repo_info()
+
         assert owner == "myowner"
         assert repo == "myrepo"
         assert base_url == "https://github.com/myowner/myrepo"
@@ -16500,6 +16569,7 @@ def test_get_github_repo_info_git_suffix():
             encoding="utf-8",
         )
         owner, repo, base_url = docs._get_github_repo_info()
+
         assert repo == "repo"
         assert ".git" not in base_url
 
@@ -16511,6 +16581,7 @@ def test_get_github_repo_info_no_urls():
         pyproject = Path(tmp_dir) / "pyproject.toml"
         pyproject.write_text('[project]\nname = "pkg"\n', encoding="utf-8")
         owner, repo, base_url = docs._get_github_repo_info()
+
         assert owner is None
         assert repo is None
         assert base_url is None
@@ -16523,6 +16594,7 @@ def test_generate_changelog_page_no_repo():
         pyproject = Path(tmp_dir) / "pyproject.toml"
         pyproject.write_text('[project]\nname = "pkg"\n', encoding="utf-8")
         result = docs._generate_changelog_page()
+
         assert result is None
 
 
@@ -16533,12 +16605,14 @@ def test_add_changelog_to_navbar_creates_entry():
         quarto_yml = Path(tmp_dir) / "great-docs" / "_quarto.yml"
         quarto_yml.parent.mkdir(parents=True, exist_ok=True)
         config = {"website": {"navbar": {"left": [{"text": "Home", "href": "index.qmd"}]}}}
+
         import yaml as _yaml
 
         quarto_yml.write_text(_yaml.dump(config), encoding="utf-8")
         docs._add_changelog_to_navbar()
         content = _yaml.safe_load(quarto_yml.read_text(encoding="utf-8"))
         texts = [i.get("text") for i in content["website"]["navbar"]["left"] if isinstance(i, dict)]
+
         assert "Changelog" in texts
 
 
@@ -16558,6 +16632,7 @@ def test_add_changelog_to_navbar_idempotent():
                 }
             }
         }
+
         import yaml as _yaml
 
         quarto_yml.write_text(_yaml.dump(config), encoding="utf-8")
@@ -16568,6 +16643,7 @@ def test_add_changelog_to_navbar_idempotent():
             for i in content["website"]["navbar"]["left"]
             if isinstance(i, dict) and i.get("text") == "Changelog"
         )
+
         assert count == 1
 
 
@@ -16575,8 +16651,10 @@ def test_process_sections_empty_config():
     """Test _process_sections returns 0 when no sections configured."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
-        # No great-docs.yml → config.sections is empty
+
+        # No great-docs.yml -> config.sections is empty
         result = docs._process_sections()
+
         assert result == 0
 
 
@@ -16588,6 +16666,7 @@ def test_process_sections_not_list():
         gd_yml.write_text("sections: not-a-list\n", encoding="utf-8")
         docs._config = Config(Path(tmp_dir))
         result = docs._process_sections()
+
         assert result == 0
 
 
@@ -16599,6 +16678,7 @@ def test_process_sections_missing_title_or_dir():
         gd_yml.write_text("sections:\n  - title: Recipes\n", encoding="utf-8")
         docs._config = Config(Path(tmp_dir))
         result = docs._process_sections()
+
         assert result == 0
 
 
@@ -16613,6 +16693,7 @@ def test_process_sections_missing_source_dir():
         )
         docs._config = Config(Path(tmp_dir))
         result = docs._process_sections()
+
         assert result == 0
 
 
@@ -16631,6 +16712,7 @@ def test_process_sections_no_files_in_dir():
         )
         docs._config = Config(Path(tmp_dir))
         result = docs._process_sections()
+
         assert result == 0
 
 
@@ -16673,6 +16755,7 @@ def test_process_sections_default_type():
         docs._config = Config(Path(tmp_dir))
 
         result = docs._process_sections()
+
         assert result >= 1
 
 
@@ -16681,6 +16764,7 @@ def test_parse_package_exports_no_init():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._parse_package_exports("nonexistent_pkg")
+
         assert result is None
 
 
@@ -16699,6 +16783,7 @@ def test_parse_package_exports_with_all():
         )
 
         result = docs._parse_package_exports("mypkg")
+
         assert result is not None
         assert "MyClass" in result
         assert "my_function" in result
@@ -16724,6 +16809,7 @@ def test_parse_package_exports_with_exclusions():
         )
 
         result = docs._parse_package_exports("mypkg")
+
         assert result is not None
         assert "MyClass" in result
         assert "CONSTANT" not in result
@@ -16744,6 +16830,7 @@ def test_parse_package_exports_no_all():
         )
 
         result = docs._parse_package_exports("mypkg")
+
         assert result is None
 
 
@@ -16752,6 +16839,7 @@ def test_get_source_location_not_found():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._get_source_location("nonexistent_pkg", "SomeClass")
+
         assert result is None
 
 
@@ -16763,6 +16851,7 @@ def test_build_github_source_url_no_repo():
         pyproject.write_text('[project]\nname = "mypkg"\n', encoding="utf-8")
         source_loc = {"file": "src/module.py", "start_line": 10, "end_line": 20}
         result = docs._build_github_source_url(source_loc)
+
         assert result is None
 
 
@@ -16772,6 +16861,7 @@ def test_generate_landing_page_content_no_name():
         docs = GreatDocs(project_path=tmp_dir)
         metadata = {"description": "A description."}
         result = docs._generate_landing_page_content(metadata)
+
         assert "## Package" in result
         assert "A description." in result
 
@@ -16784,6 +16874,7 @@ def test_generate_landing_page_content_pip_install():
         pyproject.write_text('[project]\nname = "great-pkg"\n', encoding="utf-8")
         metadata = {"description": "A package."}
         result = docs._generate_landing_page_content(metadata)
+
         assert "pip install" in result
 
 
@@ -16795,6 +16886,7 @@ def test_sub_classify_class_dataclass():
     obj.labels = {"dataclass"}
     obj.bases = []
     result = GreatDocs._sub_classify_class(obj)
+
     assert result == "dataclass"
 
 
@@ -16806,6 +16898,7 @@ def test_sub_classify_class_enum():
     obj.labels = set()
     obj.bases = ["enum.IntEnum"]
     result = GreatDocs._sub_classify_class(obj)
+
     assert result == "enum"
 
 
@@ -16817,6 +16910,7 @@ def test_sub_classify_class_exception():
     obj.labels = set()
     obj.bases = ["ValueError"]
     result = GreatDocs._sub_classify_class(obj)
+
     assert result == "exception"
 
 
@@ -16828,6 +16922,7 @@ def test_sub_classify_class_namedtuple():
     obj.labels = set()
     obj.bases = ["typing.NamedTuple"]
     result = GreatDocs._sub_classify_class(obj)
+
     assert result == "namedtuple"
 
 
@@ -16839,6 +16934,7 @@ def test_sub_classify_class_typeddict():
     obj.labels = set()
     obj.bases = ["typing.TypedDict"]
     result = GreatDocs._sub_classify_class(obj)
+
     assert result == "typeddict"
 
 
@@ -16850,6 +16946,7 @@ def test_sub_classify_class_protocol():
     obj.labels = set()
     obj.bases = ["typing.Protocol"]
     result = GreatDocs._sub_classify_class(obj)
+
     assert result == "protocol"
 
 
@@ -16861,6 +16958,7 @@ def test_sub_classify_class_abc():
     obj.labels = set()
     obj.bases = ["abc.ABC"]
     result = GreatDocs._sub_classify_class(obj)
+
     assert result == "abc"
 
 
@@ -16873,6 +16971,7 @@ def test_sub_classify_class_plain():
     obj.bases = ["object"]
     obj.decorators = []
     result = GreatDocs._sub_classify_class(obj)
+
     assert result == "class"
 
 
@@ -16884,6 +16983,7 @@ def test_sub_classify_attribute_type_alias():
     obj.labels = set()
     obj.kind.value = "type alias"
     result = GreatDocs._sub_classify_attribute(obj)
+
     assert result == "type_alias"
 
 
@@ -16896,6 +16996,7 @@ def test_sub_classify_attribute_typevar():
     obj.kind.value = "attribute"
     obj.annotation = "TypeVar"
     result = GreatDocs._sub_classify_attribute(obj)
+
     assert result == "typevar"
 
 
@@ -16908,6 +17009,7 @@ def test_sub_classify_attribute_constant():
     obj.kind.value = "attribute"
     obj.annotation = None
     result = GreatDocs._sub_classify_attribute(obj)
+
     assert result == "constant"
 
 
@@ -16920,6 +17022,7 @@ def test_extract_constant_metadata_value():
     obj.annotation = "int"
     categories = {"constant_metadata": {}}
     GreatDocs._extract_constant_metadata(obj, "MY_CONST", categories)
+
     assert "MY_CONST" in categories["constant_metadata"]
     assert categories["constant_metadata"]["MY_CONST"]["value"] == "42"
     assert categories["constant_metadata"]["MY_CONST"]["annotation"] == "int"
@@ -16935,6 +17038,7 @@ def test_extract_constant_metadata_long_value():
     categories = {"constant_metadata": {}}
     GreatDocs._extract_constant_metadata(obj, "BIG_CONST", categories)
     meta = categories["constant_metadata"].get("BIG_CONST", {})
+
     assert "value" not in meta
 
 
@@ -16947,6 +17051,7 @@ def test_extract_constant_metadata_no_value():
     obj.annotation = None
     categories = {"constant_metadata": {}}
     GreatDocs._extract_constant_metadata(obj, "NONE_CONST", categories)
+
     assert "NONE_CONST" not in categories["constant_metadata"]
 
 
@@ -16957,6 +17062,7 @@ def test_get_package_metadata_license_string():
         pyproject = Path(tmp_dir) / "pyproject.toml"
         pyproject.write_text('[project]\nname = "pkg"\nlicense = "MIT"\n', encoding="utf-8")
         metadata = docs._get_package_metadata()
+
         assert metadata["license"] == "MIT"
 
 
@@ -16970,6 +17076,7 @@ def test_get_package_metadata_license_dict():
             encoding="utf-8",
         )
         metadata = docs._get_package_metadata()
+
         assert metadata["license"] == "Apache-2.0"
 
 
@@ -16984,6 +17091,7 @@ def test_get_package_metadata_maintainers():
             encoding="utf-8",
         )
         metadata = docs._get_package_metadata()
+
         assert len(metadata["maintainers"]) == 1
         assert metadata["maintainers"][0]["name"] == "Maintainer"
 
@@ -16998,6 +17106,7 @@ def test_get_package_metadata_requires_python():
             encoding="utf-8",
         )
         metadata = docs._get_package_metadata()
+
         assert metadata["requires_python"] == ">=3.9"
 
 
@@ -17011,6 +17120,7 @@ def test_get_package_metadata_keywords():
             encoding="utf-8",
         )
         metadata = docs._get_package_metadata()
+
         assert "docs" in metadata["keywords"]
         assert "api" in metadata["keywords"]
 
@@ -17025,6 +17135,7 @@ def test_get_package_metadata_optional_deps():
             encoding="utf-8",
         )
         metadata = docs._get_package_metadata()
+
         assert "dev" in metadata["optional_dependencies"]
 
 
@@ -17039,6 +17150,7 @@ def test_get_package_metadata_setup_cfg_author():
             encoding="utf-8",
         )
         metadata = docs._get_package_metadata()
+
         assert metadata["description"] == "Legacy pkg"
         assert len(metadata["authors"]) == 1
         assert metadata["authors"][0]["name"] == "LegacyDev"
@@ -17056,6 +17168,7 @@ def test_get_package_metadata_setup_cfg_maintainer():
             encoding="utf-8",
         )
         metadata = docs._get_package_metadata()
+
         assert len(metadata["maintainers"]) == 1
         assert metadata["maintainers"][0]["name"] == "MaintDev"
 
@@ -17074,6 +17187,7 @@ def test_get_package_metadata_setup_cfg_project_urls():
         )
         metadata = docs._get_package_metadata()
         urls = metadata.get("urls", {})
+
         assert urls.get("Documentation") == "https://docs.example.com"
         assert urls.get("Source") == "https://github.com/user/repo"
 
@@ -17085,6 +17199,7 @@ def test_get_package_metadata_config_mapping():
         pyproject = Path(tmp_dir) / "pyproject.toml"
         pyproject.write_text('[project]\nname = "pkg"\n', encoding="utf-8")
         metadata = docs._get_package_metadata()
+
         # Check that config-derived keys are present
         assert "source_link_enabled" in metadata
         assert "sidebar_filter_enabled" in metadata
@@ -17641,9 +17756,6 @@ def test_normalize_package_name_various():
         assert docs._normalize_package_name("my-package") == "my_package"
         assert docs._normalize_package_name("my_package") == "my_package"
         assert docs._normalize_package_name("simple") == "simple"
-
-
-# ── Batch 9 Tests ───────────────────────────────────────────────────────
 
 
 def test_detect_package_name_from_setup_cfg():
@@ -18721,11 +18833,6 @@ def test_get_cli_entry_point_name_no_scripts_b9():
         pyproject.write_text('[project]\nname = "mypkg"\n', encoding="utf-8")
         result = docs._get_cli_entry_point_name("mypkg")
         assert result is None
-
-
-# ============================================================================
-# Batch 10: Coverage improvement tests
-# ============================================================================
 
 
 def test_generate_source_links_json_basic():
@@ -20201,9 +20308,6 @@ def test_is_compiled_extension_normal_package():
         assert result is False
 
 
-# ── Batch 11 Tests ───────────────────────────────────────────────────────
-
-
 def test_build_sections_from_reference_config_basic():
     """Test _build_sections_from_reference_config with string items."""
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -20935,9 +21039,6 @@ def test_empty_categories():
         assert isinstance(cats["class_methods"], dict)
 
 
-# ── Batch 11b Tests (branch coverage) ───────────────────────────────────
-
-
 def test_add_frontmatter_option_no_frontmatter():
     """Test _add_frontmatter_option creates frontmatter when none exists."""
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -21346,11 +21447,9 @@ def test_extract_click_command_group():
             pass
 
         result = docs._extract_click_command(cli, "cli")
+
         assert result["name"] == "cli"
         assert len(result.get("commands", [])) >= 1
-
-
-# ── Batch 11c Tests (uncovered methods) ─────────────────────────────────
 
 
 def test_generate_minimal_config():
@@ -21358,6 +21457,7 @@ def test_generate_minimal_config():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._generate_minimal_config(parser="google", dynamic=False)
+
         assert "parser: google" in result
         assert "dynamic: false" in result
 
@@ -21378,6 +21478,7 @@ def test_generate_config_with_reference():
         result = docs._generate_config_with_reference(
             categories, "mypkg", parser="numpy", dynamic=True
         )
+
         assert "parser: numpy" in result
         assert "func_a" in result
         assert "func_b" in result
@@ -21395,6 +21496,7 @@ def test_generate_config_with_reference_large_class():
         result = docs._generate_config_with_reference(
             categories, "pkg", parser="google", dynamic=False
         )
+
         assert "BigClass Methods" in result
         assert "dynamic: false" in result
 
@@ -21411,10 +21513,14 @@ def test_extract_authors_from_pyproject():
         )
         docs = GreatDocs(project_path=tmp_dir)
         authors = docs._extract_authors_from_pyproject()
+
         assert len(authors) == 2
+
         names = [a["name"] for a in authors]
+
         assert "Bob" in names
         assert "Alice" in names
+
         # Bob should be first (maintainer processed first)
         assert authors[0]["name"] == "Bob"
         assert authors[0]["role"] == "Maintainer"
@@ -21425,6 +21531,7 @@ def test_extract_authors_from_pyproject_no_pyproject():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         authors = docs._extract_authors_from_pyproject()
+
         assert authors == []
 
 
@@ -21437,6 +21544,7 @@ def test_format_authors_yaml():
             {"name": "Bob", "role": "Maintainer"},
         ]
         result = docs._format_authors_yaml(authors)
+
         assert "authors:" in result
         assert "name: Alice" in result
         assert "role: Author" in result
@@ -21449,6 +21557,7 @@ def test_format_authors_yaml_empty():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._format_authors_yaml([])
+
         assert result == ""
 
 
@@ -21460,6 +21569,7 @@ def test_format_preserved_extras_yaml_with_values():
         funding={"name": "NSF"},
     )
     dn_yaml, site_yaml, funding_yaml = result
+
     assert "My Package" in dn_yaml
     assert "url" in site_yaml
     assert "NSF" in funding_yaml
@@ -21468,7 +21578,9 @@ def test_format_preserved_extras_yaml_with_values():
 def test_format_preserved_extras_yaml_defaults():
     """Test _format_preserved_extras_yaml with no values."""
     dn_yaml, site_yaml, funding_yaml = GreatDocs._format_preserved_extras_yaml()
+
     assert dn_yaml == ""
+
     # site_yaml should have commented template
     assert isinstance(site_yaml, str)
 
@@ -21478,6 +21590,7 @@ def test_generate_changelog_page_no_repo():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._generate_changelog_page()
+
         assert result is None
 
 
@@ -21517,8 +21630,11 @@ def test_generate_changelog_page_with_releases():
 
         with patch.object(docs, "_fetch_github_releases", return_value=mock_releases):
             result = docs._generate_changelog_page()
+
             assert result == "changelog.qmd"
+
             content = (build_dir / "changelog.qmd").read_text()
+
             assert "Version 1.0" in content
             assert "pre-release" in content
             assert "2024-06-01" in content
@@ -21538,6 +21654,7 @@ def test_get_package_exports_with_all():
         )
         docs = GreatDocs(project_path=tmp_dir)
         exports = docs._get_package_exports("exportpkg_all")
+
         assert exports is not None
         assert "func_a" in exports
         assert "ClassB" in exports
@@ -21559,6 +21676,7 @@ def test_get_package_exports_with_exclusions():
         (Path(tmp_dir) / "great-docs.yml").write_text("exclude:\n  - hidden_b\n", encoding="utf-8")
         docs = GreatDocs(project_path=tmp_dir)
         exports = docs._get_package_exports("exportpkg_excl")
+
         assert exports is not None
         assert "func_a" in exports
         assert "hidden_b" not in exports
@@ -21579,6 +21697,7 @@ def test_get_package_exports_no_all():
         )
         docs = GreatDocs(project_path=tmp_dir)
         exports = docs._get_package_exports("exportpkg_noall")
+
         assert exports is None
 
 
@@ -21589,8 +21708,10 @@ def test_get_package_exports_hyphenated_name():
             '[project]\nname = "my-pkg"\n', encoding="utf-8"
         )
         docs = GreatDocs(project_path=tmp_dir)
+
         # No my_pkg dir exists, so _find_package_init returns None
         exports = docs._get_package_exports("my-pkg")
+
         assert exports is None
 
 
@@ -21607,6 +21728,7 @@ def test_discover_user_guide_with_files():
         )
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._discover_user_guide()
+
         assert result is not None
         assert len(result["files"]) == 2
         assert result["source_dir"] == ug_dir
@@ -21617,6 +21739,7 @@ def test_discover_user_guide_no_dir():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._discover_user_guide()
+
         assert result is None
 
 
@@ -21630,6 +21753,7 @@ def test_discover_user_guide_with_subdirs():
         (sub / "topic.qmd").write_text("---\ntitle: Topic\n---\n\nContent\n", encoding="utf-8")
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._discover_user_guide()
+
         assert result is not None
         assert len(result["files"]) >= 1
 
@@ -21639,7 +21763,9 @@ def test_format_cli_yaml():
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._format_cli_yaml()
+
         assert isinstance(result, str)
+
         # Should contain CLI-related content
         assert "cli" in result.lower() or "CLI" in result
 
@@ -21660,6 +21786,7 @@ def test_inject_section_body_class_with_existing_classes():
         docs._inject_section_body_class("recipes", pages, dest_dir)
 
         content = (dest_dir / "page.qmd").read_text()
+
         assert "existing-class" in content
         assert "gd-section-no-sidebar" in content
 
@@ -21678,4 +21805,5 @@ def test_inject_section_body_class_no_frontmatter():
 
         # Content should be unchanged (no crash)
         content = (dest_dir / "page.qmd").read_text()
+
         assert "No frontmatter" in content

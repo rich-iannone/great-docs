@@ -2,22 +2,21 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
-from great_docs._renderer.pandoc.blocks import (
+from .._format import markdown_escape
+from .._pandoc.inlines import InterLink
+from ..pandoc.blocks import (
     Blocks,
     DefinitionItem,
     Div,
 )
-from great_docs._renderer.pandoc.components import Attr
-
-from .._format import markdown_escape
-from .._pandoc.inlines import InterLink
+from ..pandoc.components import Attr
 from .base import RenderBase
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from great_docs._renderer.layout import Link
-    from great_docs._renderer.pandoc.blocks import DefinitionItem
+    from ..layout import Link
+    from ..pandoc.blocks import DefinitionItem
 
 
 class __RenderLink(RenderBase):

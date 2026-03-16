@@ -6,7 +6,13 @@ from typing import TYPE_CHECKING, TypeAlias, cast
 
 import griffe as gf
 
-from great_docs._renderer.pandoc.blocks import (
+from .._format import formatted_signature, repr_obj
+from .._griffe.docstrings import (
+    DCDocstringSectionInitParameters,
+    DCDocstringSectionParameterAttributes,
+)
+from .._md_renderer import _convert_rst_text
+from ..pandoc.blocks import (
     BlockContent,
     Blocks,
     CodeBlock,
@@ -14,20 +20,12 @@ from great_docs._renderer.pandoc.blocks import (
     DefinitionList,
     Div,
 )
-from great_docs._renderer.pandoc.components import Attr
-from great_docs._renderer.pandoc.inlines import Code
-from great_docs._renderer.renderer import _convert_rst_text
-
-from .._format import formatted_signature, repr_obj
-from .._griffe.docstrings import (
-    DCDocstringSectionInitParameters,
-    DCDocstringSectionParameterAttributes,
-)
+from ..pandoc.components import Attr
+from ..pandoc.inlines import Code
 from .doc import RenderDoc
 
 if TYPE_CHECKING:
-    from great_docs._renderer.layout import DocClass, DocFunction
-
+    from ..layout import DocClass, DocFunction
     from ..typing import DocstringDefinitionType
 
 # singledispatch needs this type at runtime

@@ -18,8 +18,8 @@ if sys.version_info >= (3, 10):
 else:
     TypeAlias = "TypeAlias"
 
-from great_docs._renderer.pandoc.components import Attr
-from great_docs._renderer.pandoc.inlines import (
+from .components import Attr
+from .inlines import (
     Inline,
     InlineContent,
     InlineContentItem,

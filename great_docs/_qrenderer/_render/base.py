@@ -4,21 +4,18 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import TYPE_CHECKING
 
-from great_docs._renderer.pandoc.blocks import (
+from ..pandoc.blocks import (
     Block,
     BlockContent,
     Blocks,
 )
-
 from .extending import extend_base_class
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from great_docs._renderer import layout
-    from great_docs._renderer.pandoc.blocks import DefinitionItem
-
-    from .. import Renderer
+    from .. import Renderer, layout
+    from ..pandoc.blocks import DefinitionItem
 
 
 @dataclass

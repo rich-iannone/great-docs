@@ -5,14 +5,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
-from great_docs._renderer import Builder, get_object, layout
-from great_docs._renderer.pandoc.blocks import (
-    Block,
-    BlockContent,
-    Blocks,
-    Header,
-)
-
+from . import layout
 from ._pandoc.blocks import Meta
 from ._render import (
     RenderDocAttribute,
@@ -20,6 +13,13 @@ from ._render import (
     get_render_type,
 )
 from ._utils import griffe_to_doc, is_protocol, is_typealias, is_typevar
+from .introspection import Builder, get_object
+from .pandoc.blocks import (
+    Block,
+    BlockContent,
+    Blocks,
+    Header,
+)
 
 if TYPE_CHECKING:
     import griffe as gf

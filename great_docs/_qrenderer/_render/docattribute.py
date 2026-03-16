@@ -4,17 +4,16 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import TYPE_CHECKING
 
-from great_docs._renderer.pandoc.blocks import Blocks, Div
-from great_docs._renderer.pandoc.components import Attr
-from great_docs._renderer.pandoc.inlines import Code
-
+from ..pandoc.blocks import Blocks, Div
+from ..pandoc.components import Attr
+from ..pandoc.inlines import Code
 from .doc import RenderDoc
 
 if TYPE_CHECKING:
     import griffe as gf
 
-    from great_docs._renderer import layout
-    from great_docs._renderer.pandoc.blocks import BlockContent
+    from .. import layout
+    from ..pandoc.blocks import BlockContent
 
 
 @dataclass

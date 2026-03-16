@@ -6,20 +6,20 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Literal
 
-from great_docs._renderer import ast as qast
-from great_docs._renderer import layout
-from great_docs._renderer._griffe_compat import dataclasses as dc
-from great_docs._renderer._griffe_compat import docstrings as ds
-from great_docs._renderer._griffe_compat import expressions as expr
-from great_docs._renderer.ast import (
+from . import _ast as qast
+from . import layout
+from ._ast import (
     DocstringSectionNotes,
     DocstringSectionSeeAlso,
     DocstringSectionWarnings,
     ExampleCode,
     ExampleText,
 )
-from great_docs._renderer.pandoc.blocks import DefinitionList
-from great_docs._renderer.pandoc.inlines import Attr, Code, Inlines, Span, Strong
+from ._griffe_compat import dataclasses as dc
+from ._griffe_compat import docstrings as ds
+from ._griffe_compat import expressions as expr
+from .pandoc.blocks import DefinitionList
+from .pandoc.inlines import Attr, Code, Inlines, Span, Strong
 
 if typing.TYPE_CHECKING:
     pass

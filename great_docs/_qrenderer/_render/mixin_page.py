@@ -5,11 +5,10 @@ from typing import TYPE_CHECKING
 from great_docs._qrenderer._render.base import RenderBase
 
 if TYPE_CHECKING:
-    from great_docs._renderer.pandoc.blocks import BlockContent
+    from ..pandoc.blocks import BlockContent
 
 
 class __RenderPageMixin(RenderBase):
-
     def render_metadata(self) -> BlockContent:
         """
         Render the metadata (front-matter) of the page

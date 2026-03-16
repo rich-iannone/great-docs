@@ -5,21 +5,19 @@ from typing import TYPE_CHECKING, cast
 
 from tabulate import tabulate
 
-from great_docs._renderer.pandoc.blocks import (
+from ..pandoc.blocks import (
     BlockContent,
     DefinitionList,
     Div,
     Header,
 )
-from great_docs._renderer.pandoc.components import Attr
-
+from ..pandoc.components import Attr
 from .base import RenderBase
 
 if TYPE_CHECKING:
     from typing import Literal
 
-    from great_docs._renderer.layout import Section
-
+    from ..layout import Section
     from ..typing import RenderObjType
 
 

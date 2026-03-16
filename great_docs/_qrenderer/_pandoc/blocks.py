@@ -5,21 +5,19 @@ from typing import TYPE_CHECKING
 
 import yaml
 
-from great_docs._qrenderer._format import markdown_escape
-from great_docs._renderer.pandoc.blocks import (
+from ..pandoc.blocks import (
     Block,
     BlockContent,
     Blocks,
-    Div,
     Header,
     blockcontent_to_str,
 )
-from great_docs._renderer.pandoc.components import Attr
+from ..pandoc.components import Attr
 
 if TYPE_CHECKING:
     from typing import Any
 
-    from great_docs._renderer.pandoc.inlines import Code
+    from ..pandoc.inlines import Code
 
 
 @dataclass

@@ -6,16 +6,15 @@ from typing import TYPE_CHECKING, cast
 
 from tabulate import tabulate
 
-from great_docs._renderer.layout import Doc, DocClass, MemberPage
-from great_docs._renderer.pandoc.blocks import (
+from .._utils import griffe_to_doc, isDoc
+from ..layout import Doc, DocClass, MemberPage
+from ..pandoc.blocks import (
     Block,
     BlockContent,
     Blocks,
     Header,
 )
-from great_docs._renderer.pandoc.components import Attr
-
-from .._utils import griffe_to_doc, isDoc
+from ..pandoc.components import Attr
 from .doc import RenderDoc
 
 if TYPE_CHECKING:
@@ -23,7 +22,7 @@ if TYPE_CHECKING:
 
     import griffe as gf
 
-    from great_docs._renderer.layout import DocAttribute, DocFunction, DocModule
+    from ..layout import DocAttribute, DocFunction, DocModule
 
 
 @dataclass

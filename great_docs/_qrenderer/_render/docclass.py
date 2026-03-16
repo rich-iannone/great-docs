@@ -14,7 +14,7 @@ from .mixin_call import RenderDocCallMixin
 from .mixin_members import RenderDocMembersMixin
 
 if TYPE_CHECKING:
-    from great_docs._renderer import layout
+    from .. import layout
 
 
 class __RenderDocClass(RenderDocMembersMixin, RenderDocCallMixin, RenderDoc):

@@ -4,20 +4,6 @@ from typing import Literal, TypeAlias
 
 import griffe as gf
 
-from great_docs._renderer.layout import (
-    Doc,
-    DocAttribute,
-    DocClass,
-    DocFunction,
-    DocModule,
-    Layout,
-    Link,
-    MemberPage,
-    Page,
-    Section,
-)
-from great_docs._renderer.pandoc.blocks import InlineContent
-
 from . import (
     RenderAPIPage,
     RenderDoc,
@@ -29,6 +15,19 @@ from . import (
     RenderReferenceSection,
 )
 from ._griffe.docstrings import DCDocstringSection
+from .layout import (
+    Doc,
+    DocAttribute,
+    DocClass,
+    DocFunction,
+    DocModule,
+    Layout,
+    Link,
+    MemberPage,
+    Page,
+    Section,
+)
+from .pandoc.blocks import InlineContent
 
 DisplayNameFormat: TypeAlias = Literal["doc", "full", "name", "short", "relative", "canonical"]
 DocObjectKind: TypeAlias = Literal[

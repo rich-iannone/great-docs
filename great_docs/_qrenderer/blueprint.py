@@ -7,16 +7,17 @@ from textwrap import indent
 
 import yaml
 
-from great_docs._renderer._griffe_compat import (
+from ._base_utils import PydanticTransformer, WorkaroundKeyError, ctx_node
+from ._griffe_compat import (
     AliasResolutionError,
     GriffeLoader,
     LinesCollection,
     ModulesCollection,
     Parser,
 )
-from great_docs._renderer._griffe_compat import dataclasses as dc
-from great_docs._renderer._griffe_compat import docstrings as ds
-from great_docs._renderer.layout import (
+from ._griffe_compat import dataclasses as dc
+from ._griffe_compat import docstrings as ds
+from .layout import (
     MISSING,
     Auto,
     ChoicesChildren,
@@ -28,8 +29,7 @@ from great_docs._renderer.layout import (
     Section,
     _Base,
 )
-from great_docs._renderer.parsers import get_parser_defaults
-from great_docs._renderer.utils import PydanticTransformer, WorkaroundKeyError, ctx_node
+from .parsers import get_parser_defaults
 
 _log = logging.getLogger(__name__)
 
@@ -137,7 +137,7 @@ def _resolve_alias(obj: dc.Alias | dc.Object, get_object):
 class BlueprintTransformer(PydanticTransformer):
     def __init__(self, get_object=None, parser="numpy"):
         if get_object is None:
-            from great_docs._renderer.introspection import get_object as _get_object
+            from .introspection import get_object as _get_object
 
             loader = GriffeLoader(
                 docstring_parser=Parser(parser),

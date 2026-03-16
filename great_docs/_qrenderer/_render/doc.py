@@ -8,23 +8,9 @@ from typing import TYPE_CHECKING, cast
 import griffe as gf
 
 from great_docs._qrenderer._render._label import get_label
-from great_docs._renderer import ast as qast
-from great_docs._renderer import layout
-from great_docs._renderer.pandoc.blocks import (
-    Block,
-    BlockContent,
-    Blocks,
-    CodeBlock,
-    DefinitionList,
-    Div,
-    Header,
-    InlineContent,
-    Para,
-)
-from great_docs._renderer.pandoc.components import Attr
-from great_docs._renderer.pandoc.inlines import Inline, Inlines, Inlines0, Link, Span
-from great_docs._renderer.renderer import _convert_rst_text
 
+from .. import _ast as qast
+from .. import layout
 from .._format import (
     HAS_RUFF,
     format_name,
@@ -35,15 +21,28 @@ from .._format import (
     render_formatted_expr,
     repr_obj,
 )
+from .._md_renderer import _convert_rst_text
 from .._utils import package_info
+from ..pandoc.blocks import (
+    Block,
+    BlockContent,
+    Blocks,
+    CodeBlock,
+    DefinitionList,
+    Div,
+    Header,
+    InlineContent,
+    Para,
+)
+from ..pandoc.components import Attr
+from ..pandoc.inlines import Inline, Inlines, Inlines0, Link, Span
 from .base import RenderBase
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from great_docs._renderer.pandoc.blocks import DefinitionItem
-    from great_docs._renderer.pandoc.inlines import InlineContentItem
-
+    from ..pandoc.blocks import DefinitionItem
+    from ..pandoc.inlines import InlineContentItem
     from ..typing import (
         Annotation,
         AnyDocstringSection,

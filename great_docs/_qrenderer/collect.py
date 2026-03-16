@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from great_docs._renderer import layout
-from great_docs._renderer.utils import PydanticTransformer, ctx_node
+from . import layout
+from ._base_utils import PydanticTransformer, ctx_node
 
 
 class CollectTransformer(PydanticTransformer):

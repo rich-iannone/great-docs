@@ -4,21 +4,21 @@ from functools import cached_property
 from typing import TYPE_CHECKING, cast
 
 from great_docs._qrenderer._render.mixin_page import RenderPageMixin
-from great_docs._renderer.pandoc.inlines import Link
 
-from ..._renderer.pandoc.blocks import (
+from .._format import markdown_escape
+from .._pandoc.blocks import Meta
+from ..pandoc.blocks import (
     BlockContent,
     Blocks,
     DefinitionItem,
 )
-from .._format import markdown_escape
-from .._pandoc.blocks import Meta
+from ..pandoc.inlines import Link
 from .base import RenderBase
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from ..._renderer.layout import Page
+    from ..layout import Page
     from .doc import RenderDoc
 
 

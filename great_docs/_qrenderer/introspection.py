@@ -10,18 +10,18 @@ from typing import Any
 
 import yaml
 
-from great_docs._renderer import layout
-from great_docs._renderer._griffe_compat import (
+from . import layout
+from ._griffe_compat import (
     GriffeLoader,
     LinesCollection,
     ModulesCollection,
     Parser,
     parse,
 )
-from great_docs._renderer._griffe_compat import dataclasses as dc
-from great_docs._renderer.inventory import convert_inventory, create_inventory
-from great_docs._renderer.parsers import get_parser_defaults
-from great_docs._renderer.renderer import Renderer
+from ._griffe_compat import dataclasses as dc
+from ._md_renderer import Renderer
+from .inventory import convert_inventory, create_inventory
+from .parsers import get_parser_defaults
 
 _log = logging.getLogger(__name__)
 
@@ -498,8 +498,8 @@ class Builder:
     def build(self, filter: str = "*"):
         """Build index page, inventory, and individual doc pages."""
 
-        from great_docs._renderer.blueprint import blueprint as _blueprint
-        from great_docs._renderer.collect import collect as _collect
+        from .blueprint import blueprint as _blueprint
+        from .collect import collect as _collect
 
         if self.source_dir:
             import sys

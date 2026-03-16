@@ -17,7 +17,7 @@ if sys.version_info >= (3, 10):
 else:
     TypeAlias = "TypeAlias"
 
-from great_docs._renderer.pandoc.components import Attr
+from .components import Attr
 
 __all__ = (
     "Code",
@@ -69,6 +69,7 @@ class Inlines0(Inline):
     """
     Tight Inline (rendered without space in-between)
     """
+
     elements: Optional[Sequence[InlineContent]] = None
 
     def __str__(self):
@@ -167,7 +168,7 @@ class Image(Inline):
 # Helper functions
 
 
-def join_inline_content(content: Sequence[InlineContent], sep:str = SEP) -> str:
+def join_inline_content(content: Sequence[InlineContent], sep: str = SEP) -> str:
     return sep.join(inlinecontent_to_str(c) for c in content if c)
 
 

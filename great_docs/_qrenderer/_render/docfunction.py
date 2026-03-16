@@ -8,7 +8,7 @@ from .mixin_call import RenderDocCallMixin
 if TYPE_CHECKING:
     import griffe as gf
 
-    from great_docs._renderer import layout
+    from .. import layout
 
 
 class __RenderDocFunction(RenderDocCallMixin, RenderDoc):

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, overload
 
-from great_docs._renderer.layout import (
+from ..layout import (
     DocAttribute,
     DocClass,
     DocFunction,
@@ -11,7 +11,6 @@ from great_docs._renderer.layout import (
     Page,
     Section,
 )
-
 from .api_page import RenderAPIPage
 from .docattribute import RenderDocAttribute
 from .docclass import RenderDocClass

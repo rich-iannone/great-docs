@@ -8,9 +8,6 @@ from typing import TYPE_CHECKING
 
 import griffe as gf
 
-from great_docs._renderer import get_object
-from great_docs._renderer import layout as layout
-
 from . import (
     RenderDocAttribute,
     RenderDocClass,
@@ -18,6 +15,8 @@ from . import (
     RenderDocModule,
     Renderer,
 )
+from . import layout as layout
+from .introspection import get_object
 
 if TYPE_CHECKING:
     from types import MethodType

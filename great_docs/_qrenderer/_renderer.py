@@ -3,10 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from great_docs._renderer import Renderer as _Renderer
+from ._md_renderer import Renderer as _Renderer
 
 if TYPE_CHECKING:
-    from .._renderer import Builder, layout
+    from . import layout
+    from .introspection import Builder
     from .typing import DisplayNameFormat
 
 

@@ -11,16 +11,14 @@ from typing import TYPE_CHECKING, cast
 
 import griffe as gf
 
-from great_docs._renderer.pandoc.components import Attr
-from great_docs._renderer.pandoc.inlines import Span
-
 from ._pandoc.inlines import InterLink
+from .pandoc.components import Attr
+from .pandoc.inlines import Span
 
 if TYPE_CHECKING:
     from typing import Any
 
-    from great_docs._renderer import layout
-
+    from . import layout
     from .typing import DisplayNameFormat
 
 HAS_RUFF = bool(shutil.which("ruff"))

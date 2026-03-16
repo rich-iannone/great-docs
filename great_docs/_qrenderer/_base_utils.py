@@ -4,9 +4,8 @@ import dataclasses
 from contextvars import ContextVar
 from typing import Union
 
-from great_docs._renderer.layout import _Base as LayoutBase
-
 from ._node import Node
+from .layout import _Base as LayoutBase
 
 # Transformer -----------------------------------------------------------------
 

@@ -4,17 +4,17 @@ from typing import TYPE_CHECKING, cast
 
 from great_docs._qrenderer._pandoc.blocks import Meta
 from great_docs._qrenderer._render.mixin_page import RenderPageMixin
-from great_docs._renderer.pandoc.components import Attr
-from great_docs._renderer.pandoc.blocks import (
+
+from ..pandoc.blocks import (
     Blocks,
     Div,
 )
-
+from ..pandoc.components import Attr
 from .base import RenderBase
 
 if TYPE_CHECKING:
-    from great_docs._renderer.layout import Layout
-    from great_docs._renderer.pandoc.blocks import BlockContent
+    from ..layout import Layout
+    from ..pandoc.blocks import BlockContent
 
 
 class __RenderReferencePage(RenderPageMixin, RenderBase):
@@ -45,10 +45,12 @@ class __RenderReferencePage(RenderPageMixin, RenderBase):
         )
 
     def render_metadata(self) -> BlockContent:
-        return Meta({
-            "title": self.layout.title,
-            "body-classes": "doc-reference",
-        })
+        return Meta(
+            {
+                "title": self.layout.title,
+                "body-classes": "doc-reference",
+            }
+        )
 
     def render_body(self) -> BlockContent:
         """

@@ -4,7 +4,7 @@ import re
 import shutil
 import subprocess
 import tempfile
-from functools import lru_cache, partial, singledispatch
+from functools import lru_cache, singledispatch
 from pathlib import Path
 from textwrap import dedent
 from typing import TYPE_CHECKING, cast
@@ -24,9 +24,6 @@ if TYPE_CHECKING:
     from .typing import DisplayNameFormat
 
 HAS_RUFF = bool(shutil.which("ruff"))
-
-# Pickout python identifiers from a string of code
-IDENTIFIER_RE = re.compile(r"\b(?P<identifier>[^\W\d]\w*)", flags=re.UNICODE)
 
 # Pickout quoted strings from a string of code
 STR_RE = re.compile(
@@ -210,17 +207,6 @@ def _(obj: gf.ExprName) -> str:
     return obj.name
 
 
-def canonical_path_lookup_table(el: gf.Expr):
-    # Create lookup table
-    lookup = {"TypeAlias": "typing.TypeAlias"}
-    for o in el.iterate():
-        # Assumes that name of an expresssion is a valid python
-        # identifier
-        if isinstance(o, gf.ExprName):
-            lookup[o.name] = o.canonical_path
-    return lookup
-
-
 def formatted_signature(name: str, params: list[str]) -> str:
     """
     Return a formatted signature of function/method
@@ -269,21 +255,9 @@ def pretty_code(s: str) -> str:
     return escape_quotes(escape_indents(highlight_repr_value(dedent(s))))
 
 
-def interlink_groups(m: re.Match[str], lookup: dict[str, str]) -> str:
-    """
-    Substitute match text with value from lookup table
-    """
-    identifier_str = m.group("identifier")
-    try:
-        canonical_path = lookup[identifier_str]
-    except KeyError:
-        return identifier_str
-    return str(InterLink(identifier_str, canonical_path))
-
-
 def render_formatted_expr(el: gf.Expr) -> str:
     """
-    Format and render expression any the identifiers interlinked
+    Format and render expression
 
     Uses ruff for formatting
 
@@ -296,22 +270,11 @@ def render_formatted_expr(el: gf.Expr) -> str:
     Returns
     -------
     :
-        Expression in markdown with the identifiers interlinked (to be handled by the
-        interlinks filter). Any Spaces are encoded as `&nbsp;` and newlines with the
-        `<br>` tag.
+        Expression formatted with ruff. Spaces are encoded as `&nbsp;` and
+        newlines with the `<br>` tag.
     """
-    # This function works by:
-    # 1. Formatting (with ruff) the str represented by the expression.
-    # 2. Processes the expresssion and builds a {name: cannonical_path}
-    #    lookup table for all the named parts of the expression.
-    # 3. Creates a regex replacement function that uses the lookup table
-    #    and to substitute a matched name (identifier) with an interlink.
-    # 4. Does the regex substitution on the formatted string.
-    # 5. Escapes the result to "hard code" the indentation, etc
     el_str = format_str(str(el))
-    lookup = canonical_path_lookup_table(el)
-    interlink_func = partial(interlink_groups, lookup=lookup)
-    return pretty_code(IDENTIFIER_RE.sub(interlink_func, el_str))
+    return pretty_code(el_str)
 
 
 def _tmp_stdin_filename() -> str:

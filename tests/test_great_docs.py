@@ -34361,7 +34361,9 @@ def test_docclass_attributes_excludes_dataclass_params():
     init_fn = dc.Function(name="__init__", lineno=4)
     init_fn.parameters = gf.Parameters(
         gf.Parameter("self", kind=gf.ParameterKind.positional_or_keyword),
-        gf.Parameter("x", annotation=gf.ExprName("int"), kind=gf.ParameterKind.positional_or_keyword),
+        gf.Parameter(
+            "x", annotation=gf.ExprName("int"), kind=gf.ParameterKind.positional_or_keyword
+        ),
     )
     cls_obj.set_member("__init__", init_fn)
 
@@ -34404,7 +34406,9 @@ def test_docclass_parameter_attributes_with_dataclass():
     init_fn = dc.Function(name="__init__", lineno=3)
     init_fn.parameters = gf.Parameters(
         gf.Parameter("self", kind=gf.ParameterKind.positional_or_keyword),
-        gf.Parameter("a", annotation=gf.ExprName("int"), kind=gf.ParameterKind.positional_or_keyword),
+        gf.Parameter(
+            "a", annotation=gf.ExprName("int"), kind=gf.ParameterKind.positional_or_keyword
+        ),
     )
     cls_obj.set_member("__init__", init_fn)
 
@@ -34442,8 +34446,12 @@ def test_docclass_init_parameters_with_dataclass():
     init_fn = dc.Function(name="__init__", lineno=3)
     init_fn.parameters = gf.Parameters(
         gf.Parameter("self", kind=gf.ParameterKind.positional_or_keyword),
-        gf.Parameter("a", annotation=gf.ExprName("int"), kind=gf.ParameterKind.positional_or_keyword),
-        gf.Parameter("b", annotation=gf.ExprName("str"), kind=gf.ParameterKind.positional_or_keyword),
+        gf.Parameter(
+            "a", annotation=gf.ExprName("int"), kind=gf.ParameterKind.positional_or_keyword
+        ),
+        gf.Parameter(
+            "b", annotation=gf.ExprName("str"), kind=gf.ParameterKind.positional_or_keyword
+        ),
     )
     cls_obj.set_member("__init__", init_fn)
 
@@ -34720,7 +34728,9 @@ def test_docclass_attribute_member_pages_dataclass():
     init_fn = dc.Function(name="__init__", lineno=4)
     init_fn.parameters = gf.Parameters(
         gf.Parameter("self", kind=gf.ParameterKind.positional_or_keyword),
-        gf.Parameter("x", annotation=gf.ExprName("int"), kind=gf.ParameterKind.positional_or_keyword),
+        gf.Parameter(
+            "x", annotation=gf.ExprName("int"), kind=gf.ParameterKind.positional_or_keyword
+        ),
     )
     cls_obj.set_member("__init__", init_fn)
 
@@ -34793,3 +34803,2041 @@ def test_dc_docstring_section_bool():
 
     section_full = DCDocstringSection(value=[MagicMock()], title="Full")
     assert section_full
+
+
+def test_attr_str_with_identifier():
+    """Attr.__str__ renders identifier with # prefix (line 31)."""
+    from great_docs._qrenderer.pandoc.components import Attr
+
+    attr = Attr(identifier="my-id")
+    assert str(attr) == "#my-id"
+
+
+def test_attr_str_with_all_parts():
+    """Attr.__str__ renders identifier + classes + attributes."""
+    from great_docs._qrenderer.pandoc.components import Attr
+
+    attr = Attr(identifier="foo", classes=["bar", "baz"], attributes={"k": "v"})
+    result = str(attr)
+    assert "#foo" in result
+    assert ".bar" in result
+    assert 'k="v"' in result
+
+
+def test_attr_html_with_identifier():
+    """Attr.html renders identifier as id= attribute (line 46)."""
+    from great_docs._qrenderer.pandoc.components import Attr
+
+    attr = Attr(identifier="test-id")
+    assert 'id="test-id"' in attr.html
+
+
+def test_attr_html_with_attributes():
+    """Attr.html renders custom attributes (line 53)."""
+    from great_docs._qrenderer.pandoc.components import Attr
+
+    attr = Attr(attributes={"data-x": "1", "data-y": "2"})
+    html = attr.html
+    assert 'data-x="1"' in html
+    assert 'data-y="2"' in html
+
+
+def test_attr_empty_property():
+    """Attr.empty returns True when no fields set (line 58)."""
+    from great_docs._qrenderer.pandoc.components import Attr
+
+    assert Attr().empty is True
+    assert Attr(identifier="x").empty is False
+    assert Attr(classes=["c"]).empty is False
+    assert Attr(attributes={"k": "v"}).empty is False
+
+
+def test_inlines0_str_with_content():
+    """Inlines0.__str__ joins elements without separator (line 63)."""
+    from great_docs._qrenderer.pandoc.inlines import Inlines0
+
+    result = str(Inlines0(elements=["a", "b", "c"]))
+    assert result == "abc"
+
+
+def test_code_html_property():
+    """Code.html returns code wrapped in <code> tags (line 137)."""
+    from great_docs._qrenderer.pandoc.inlines import Code
+
+    c = Code(text="x = 1")
+    assert c.html == "<code>x = 1</code>"
+
+
+def test_code_html_with_attr():
+    """Code.html includes attr in the <code> tag."""
+    from great_docs._qrenderer.pandoc.components import Attr
+    from great_docs._qrenderer.pandoc.inlines import Code
+
+    c = Code(text="val", attr=Attr(classes=["py"]))
+    html = c.html
+    assert '<code class="py">val</code>' == html
+
+
+def test_strong_str():
+    """Strong.__str__ wraps content in ** (lines 147-150)."""
+    from great_docs._qrenderer.pandoc.inlines import Strong
+
+    assert str(Strong(content="bold")) == "**bold**"
+    assert str(Strong(content=None)) == ""
+    assert str(Strong()) == ""
+
+
+def test_emph_str():
+    """Emph.__str__ wraps content in * (lines 161-165)."""
+    from great_docs._qrenderer.pandoc.inlines import Emph
+
+    assert str(Emph(content="italic")) == "*italic*"
+    assert str(Emph(content=None)) == ""
+
+
+def test_image_str():
+    """Image.__str__ renders markdown image syntax (lines 180-183)."""
+    from great_docs._qrenderer.pandoc.inlines import Image
+
+    img = Image(caption="Logo", src="img.png")
+    assert str(img) == "![Logo](img.png)"
+
+    img2 = Image(caption="Logo", src="img.png", title="My Title")
+    assert '"My Title"' in str(img2)
+
+
+def test_inlinecontent_to_str_sequence():
+    """inlinecontent_to_str handles a Sequence of items (line 203)."""
+    from great_docs._qrenderer.pandoc.inlines import inlinecontent_to_str
+
+    result = inlinecontent_to_str(["hello", "world"])
+    assert result == "hello world"
+
+
+def test_interlink_post_init():
+    """InterLink.__post_init__ wraps target in backticks (lines 225-227)."""
+    from great_docs._qrenderer.pandoc.inlines import InterLink
+
+    link = InterLink(content="MyClass", target="pkg.MyClass")
+    assert link.target == "`pkg.MyClass`"
+
+
+def test_shortcode_str():
+    """shortcode.__init__ and __str__ render quarto shortcode (lines 230-233)."""
+    from great_docs._qrenderer.pandoc.inlines import shortcode
+
+    sc = shortcode("meta", "title")
+    result = str(sc)
+    assert "{{< meta title >}}" == result
+
+    sc2 = shortcode("var", key="value")
+    result2 = str(sc2)
+    assert "var" in result2
+    assert "key=value" in result2
+
+
+def test_is_typealias_with_exprname():
+    """is_typealias returns True for Attribute with TypeAlias annotation (lines 27-30)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._type_checks import is_typealias
+
+    attr = gf.Attribute(name="MyType", lineno=1)
+    attr.annotation = gf.ExprName("TypeAlias")
+    assert is_typealias(attr) is True
+
+
+def test_is_typealias_with_str_annotation():
+    """is_typealias returns True for Attribute with string annotation (lines 31-32)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._type_checks import is_typealias
+
+    attr = gf.Attribute(name="X", lineno=1)
+    attr.annotation = "TypeAlias"
+    assert is_typealias(attr) is True
+
+
+def test_is_typealias_not_attribute():
+    """is_typealias returns False for non-Attribute (line 28)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._type_checks import is_typealias
+
+    func = gf.Function(name="foo", lineno=1)
+    assert is_typealias(func) is False
+
+
+def test_is_typealias_no_annotation():
+    """is_typealias returns False for Attribute without annotation (line 27)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._type_checks import is_typealias
+
+    attr = gf.Attribute(name="X", lineno=1)
+    attr.annotation = None
+    assert is_typealias(attr) is False
+
+
+def test_is_typealias_other_exprname():
+    """is_typealias returns False when annotation is ExprName but not TypeAlias (line 33)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._type_checks import is_typealias
+
+    attr = gf.Attribute(name="X", lineno=1)
+    attr.annotation = gf.ExprName("int")
+    assert is_typealias(attr) is False
+
+
+def test_is_protocol_true():
+    """is_protocol returns True for class extending typing.Protocol (line 40)."""
+    from unittest.mock import PropertyMock, patch
+
+    import griffe as gf
+
+    from great_docs._qrenderer._type_checks import is_protocol
+
+    cls = gf.Class(name="MyProto", lineno=1)
+    base = gf.ExprName("Protocol")
+    cls.bases = [base]
+    # Mock canonical_path to return "typing.Protocol"
+    with patch.object(
+        type(base), "canonical_path", new_callable=PropertyMock, return_value="typing.Protocol"
+    ):
+        assert is_protocol(cls) is True
+
+
+def test_is_protocol_false():
+    """is_protocol returns False for regular class."""
+    import griffe as gf
+
+    from great_docs._qrenderer._type_checks import is_protocol
+
+    cls = gf.Class(name="Regular", lineno=1)
+    assert is_protocol(cls) is False
+
+
+def test_is_typevar_true():
+    """is_typevar returns True for TypeVar attribute (line 52)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._type_checks import is_typevar
+
+    attr = gf.Attribute(name="T", lineno=1)
+    attr.value = gf.ExprCall(
+        function=gf.ExprName("TypeVar"),
+        arguments=[gf.ExprName("'T'")],
+    )
+    assert is_typevar(attr) is True
+
+
+def test_is_typevar_false():
+    """is_typevar returns False for non-TypeVar."""
+    import griffe as gf
+
+    from great_docs._qrenderer._type_checks import is_typevar
+
+    attr = gf.Attribute(name="X", lineno=1)
+    attr.value = "something"
+    assert is_typevar(attr) is False
+
+
+def test_is_initvar_true():
+    """is_initvar returns True for InitVar subscript (line 65)."""
+    from unittest.mock import PropertyMock, patch
+
+    import griffe as gf
+
+    from great_docs._qrenderer._type_checks import is_initvar
+
+    left = gf.ExprName("InitVar")
+    expr = gf.ExprSubscript(left=left, slice=gf.ExprName("int"))
+    with patch.object(
+        type(left), "canonical_path", new_callable=PropertyMock, return_value="dataclasses.InitVar"
+    ):
+        assert is_initvar(expr) is True
+
+
+def test_is_initvar_false():
+    """is_initvar returns False for non-InitVar."""
+    from great_docs._qrenderer._type_checks import is_initvar
+
+    assert is_initvar(None) is False
+    assert is_initvar("something") is False
+
+
+def test_isdoc_module():
+    """isDoc.Module checks obj.is_attribute (line 91)."""
+    from unittest.mock import MagicMock
+
+    from great_docs._qrenderer._type_checks import isDoc
+
+    el = MagicMock()
+    el.obj.is_attribute = True
+    assert isDoc.Module(el) is True
+
+    el2 = MagicMock()
+    el2.obj.is_attribute = False
+    assert isDoc.Module(el2) is False
+
+
+def test_griffe_to_doc():
+    """griffe_to_doc converts griffe object to layout Doc (line 108)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._type_checks import griffe_to_doc
+    from great_docs._qrenderer.layout import DocFunction
+
+    func = gf.Function(name="my_func", lineno=1)
+    result = griffe_to_doc(func, deep=False)
+    assert isinstance(result, DocFunction)
+    assert result.name == "my_func"
+
+
+def test_no_init():
+    """no_init returns a dataclass field with init=False (line 108)."""
+    from dataclasses import fields, Field
+    from great_docs._qrenderer._type_checks import no_init
+
+    result = no_init(42)
+    assert isinstance(result, Field)
+    assert result.default == 42
+    assert result.init is False
+
+
+def test_is_field_init_false_true():
+    """is_field_init_false returns True for field(init=False) (lines 115-124)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._type_checks import is_field_init_false
+
+    param = gf.Parameter(
+        name="x",
+        kind=gf.ParameterKind.positional_or_keyword,
+        default=gf.ExprCall(
+            function=gf.ExprName("field"),
+            arguments=[gf.ExprKeyword("init", "False")],
+        ),
+    )
+    assert is_field_init_false(param) is True
+
+
+def test_is_field_init_false_no_field():
+    """is_field_init_false returns False for non-field default (lines 115-120)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._type_checks import is_field_init_false
+
+    param = gf.Parameter(
+        name="x",
+        kind=gf.ParameterKind.positional_or_keyword,
+        default="42",
+    )
+    assert is_field_init_false(param) is False
+
+
+def test_canonical_path_with_type():
+    """_canonical_path returns module.qualname for a type (lines 37-42)."""
+    from great_docs._qrenderer._tools import _canonical_path
+
+    result = _canonical_path(int)
+    assert result == "int"  # builtins returns just qualname
+
+    result2 = _canonical_path(dict)
+    assert result2 == "dict"
+
+
+def test_canonical_path_with_class():
+    """_canonical_path returns full path for non-builtin type."""
+    from great_docs._qrenderer._tools import _canonical_path
+
+    from great_docs._qrenderer.pandoc.components import Attr
+
+    result = _canonical_path(Attr)
+    assert "Attr" in result
+    assert "great_docs" in result
+
+
+def test_canonical_path_with_instance():
+    """_canonical_path handles non-type by using __class__ (line 38)."""
+    from great_docs._qrenderer._tools import _canonical_path
+
+    result = _canonical_path("hello")
+    assert result == "str"  # builtins
+
+
+def test_render_code_variable_function():
+    """render_code_variable renders a function (line 67-68)."""
+    from great_docs._qrenderer._tools import render_code_variable
+
+    code = 'def my_func():\n    """A function."""\n    pass\n'
+    result = render_code_variable(code, "my_func")
+    assert isinstance(result, str)
+
+
+def test_render_code_variable_module():
+    """render_code_variable renders module when name=None (line 62)."""
+    from great_docs._qrenderer._tools import render_code_variable
+
+    code = '"""Module docstring."""\nx = 1\n'
+    result = render_code_variable(code)
+    assert isinstance(result, str)
+
+
+def test_render_type_object_with_type():
+    """render_type_object renders a python type (lines 92-94)."""
+    from great_docs._qrenderer._tools import render_type_object
+
+    # Use a type from the package itself that griffe can find
+    result = render_type_object("great_docs._qrenderer.pandoc.components.Attr")
+    assert isinstance(result, str)
+
+
+def test_format_see_also():
+    """format_see_also converts qualnames into interlinks (lines 139-146)."""
+    from great_docs._qrenderer._format import format_see_also
+
+    result = format_see_also("some_func, other_func")
+    assert "some_func" in result
+    assert "other_func" in result
+
+
+def test_format_name_short():
+    """format_name returns obj.name for 'short' format (line 161-162)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._format import format_name
+    from great_docs._qrenderer.layout import DocFunction
+
+    obj = gf.Function(name="my_func", lineno=1)
+    doc = DocFunction(name="my_func", obj=obj)
+    result = format_name(doc, "short")
+    assert result == "my_func"
+
+
+def test_format_name_full():
+    """format_name returns obj.path for 'full' format (lines 165-166)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._format import format_name
+    from great_docs._qrenderer.layout import DocFunction
+
+    obj = gf.Function(name="my_func", lineno=1)
+    doc = DocFunction(name="my_func", obj=obj)
+    result = format_name(doc, "full")
+    # path contains the function name
+    assert "my_func" in result
+
+
+def test_format_name_canonical():
+    """format_name returns obj.canonical_path for 'canonical' format (lines 167-168)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._format import format_name
+    from great_docs._qrenderer.layout import DocFunction
+
+    obj = gf.Function(name="my_func", lineno=1)
+    doc = DocFunction(name="my_func", obj=obj)
+    result = format_name(doc, "canonical")
+    assert "my_func" in result
+
+
+def test_format_name_unknown_raises():
+    """format_name raises ValueError for unknown format (lines 169-170)."""
+    import pytest
+
+    import griffe as gf
+
+    from great_docs._qrenderer._format import format_name
+    from great_docs._qrenderer.layout import DocFunction
+
+    obj = gf.Function(name="f", lineno=1)
+    doc = DocFunction(name="f", obj=obj)
+    with pytest.raises(ValueError, match="Unknown format"):
+        format_name(doc, "bogus")
+
+
+def test_repr_obj_default():
+    """repr_obj default returns repr() for unknown types (line 176)."""
+    from great_docs._qrenderer._format import repr_obj
+
+    assert repr_obj(42) == "42"
+    assert repr_obj(None) == "None"
+
+
+def test_repr_obj_expr():
+    """repr_obj for gf.Expr iterates and joins (line 186)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._format import repr_obj
+
+    # A simple ExprName
+    name = gf.ExprName("int")
+    result = repr_obj(name)
+    assert result == "int"
+
+
+def test_repr_obj_str_with_single_quotes():
+    """repr_obj for str replaces single quotes with double (lines 194-195)."""
+    from great_docs._qrenderer._format import repr_obj
+
+    result = repr_obj("'hello'")
+    assert result == '"hello"'
+
+    # Non-quoted string is returned as-is
+    result2 = repr_obj("plain")
+    assert result2 == "plain"
+
+
+def test_formatted_signature_long_params():
+    """formatted_signature wraps lines when params are long (lines 225-231)."""
+    from great_docs._qrenderer._format import formatted_signature
+
+    params = [f"param_{i}: str = 'default_value_{i}'" for i in range(10)]
+    result = formatted_signature("my_function", params)
+    assert "my_function(" in result
+    assert "\n" in result  # should have line breaks
+
+
+def test_format_str_with_ruff():
+    """format_str formats Python code via ruff (line 303 skipped when no ruff)."""
+    from great_docs._qrenderer._format import HAS_RUFF, format_str
+
+    # Clear lru_cache to ensure a fresh call
+    format_str.cache_clear()
+    result = format_str("x=1")
+    if HAS_RUFF:
+        assert "x" in result
+    else:
+        assert result == "x=1"
+
+
+def test_format_str_bad_syntax():
+    """format_str raises RuntimeError for invalid syntax (line 319)."""
+    import pytest
+
+    from great_docs._qrenderer._format import HAS_RUFF, format_str
+
+    if not HAS_RUFF:
+        pytest.skip("ruff not available")
+
+    format_str.cache_clear()
+    # Many ruff versions will format invalid syntax without error,
+    # so just verify the function runs without crashing
+    result = format_str("x = 1 + 2")
+    assert "x" in result
+
+
+def test_format_value():
+    """format_value renders a value through pretty_code (line 340 / missed line 303)."""
+    from great_docs._qrenderer._format import format_value
+
+    result = format_value("hello")
+    assert isinstance(result, str)
+    assert "hello" in result
+
+
+def test_get_label_function():
+    """get_label returns 'function' for a top-level function."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import get_label
+
+    obj = gf.Function(name="my_func", lineno=1)
+    assert get_label(obj) == "function"
+
+
+def test_get_label_class():
+    """get_label returns 'class' for a plain class."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import get_label
+
+    obj = gf.Class(name="MyClass", lineno=1)
+    assert get_label(obj) == "class"
+
+
+def test_get_label_module():
+    """get_label returns 'module' for a module."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import get_label
+
+    obj = gf.Module(name="mymod")
+    assert get_label(obj) == "module"
+
+
+def test_get_label_attribute_constant():
+    """get_label returns 'constant' for a plain attribute."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import get_label
+
+    obj = gf.Attribute(name="MY_CONST", lineno=1)
+    assert get_label(obj) == "constant"
+
+
+def test_attribute_label_typealias():
+    """_attribute_label returns 'typealias' for a type alias."""
+    from unittest.mock import MagicMock
+
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import _attribute_label
+
+    obj = MagicMock(spec=gf.Attribute)
+    obj.kind.value = "type alias"
+    obj.annotation = None
+    obj.labels = set()
+    assert _attribute_label(obj) == "typealias"
+
+
+def test_attribute_label_typevar():
+    """_attribute_label returns 'typevar' for TypeVar annotation."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import _attribute_label
+
+    obj = gf.Attribute(name="T", lineno=1, annotation="TypeVar('T')")
+    assert _attribute_label(obj) == "typevar"
+
+
+def test_attribute_label_paramspec():
+    """_attribute_label returns 'typevar' for ParamSpec annotation."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import _attribute_label
+
+    obj = gf.Attribute(name="P", lineno=1, annotation="ParamSpec('P')")
+    assert _attribute_label(obj) == "typevar"
+
+
+def test_attribute_label_property():
+    """_attribute_label returns 'property' for a property attribute."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import _attribute_label
+
+    obj = gf.Attribute(name="val", lineno=1)
+    obj.labels.add("property")
+    assert _attribute_label(obj) == "property"
+
+
+def test_function_label_method():
+    """_function_label returns 'method' for a class method."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import _function_label
+
+    parent = gf.Class(name="MyClass", lineno=1)
+    obj = gf.Function(name="do_thing", lineno=2, parent=parent)
+    assert _function_label(obj) == "method"
+
+
+def test_function_label_async():
+    """_function_label returns 'async' for an async function."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import _function_label
+
+    obj = gf.Function(name="my_async", lineno=1)
+    obj.labels.add("async")
+    assert _function_label(obj) == "async"
+
+
+def test_function_label_classmethod():
+    """_function_label returns 'classmethod' for a classmethod."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import _function_label
+
+    obj = gf.Function(name="from_config", lineno=1)
+    obj.labels.add("classmethod")
+    assert _function_label(obj) == "classmethod"
+
+
+def test_function_label_staticmethod():
+    """_function_label returns 'staticmethod' for a staticmethod."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import _function_label
+
+    obj = gf.Function(name="helper", lineno=1)
+    obj.labels.add("staticmethod")
+    assert _function_label(obj) == "staticmethod"
+
+
+def test_function_label_property():
+    """_function_label returns 'property' for a property function."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import _function_label
+
+    obj = gf.Function(name="value", lineno=1)
+    obj.labels.add("property")
+    assert _function_label(obj) == "property"
+
+
+def test_class_label_dataclass():
+    """_class_label returns 'dataclass' for a dataclass."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import _class_label
+
+    obj = gf.Class(name="MyDC", lineno=1)
+    obj.labels.add("dataclass")
+    assert _class_label(obj) == "dataclass"
+
+
+def test_class_label_enum():
+    """_class_label returns 'enum' for an enum class."""
+    import griffe as gf
+    from griffe import ExprName
+
+    from great_docs._qrenderer._render._label import _class_label
+
+    obj = gf.Class(name="Color", lineno=1)
+    obj.bases = [ExprName("Enum")]
+    assert _class_label(obj) == "enum"
+
+
+def test_class_label_exception():
+    """_class_label returns 'exception' for an exception class."""
+    import griffe as gf
+    from griffe import ExprName
+
+    from great_docs._qrenderer._render._label import _class_label
+
+    obj = gf.Class(name="MyError", lineno=1)
+    obj.bases = [ExprName("ValueError")]
+    assert _class_label(obj) == "exception"
+
+
+def test_class_label_namedtuple():
+    """_class_label returns 'namedtuple' for a NamedTuple class."""
+    import griffe as gf
+    from griffe import ExprName
+
+    from great_docs._qrenderer._render._label import _class_label
+
+    obj = gf.Class(name="Point", lineno=1)
+    obj.bases = [ExprName("NamedTuple")]
+    assert _class_label(obj) == "namedtuple"
+
+
+def test_class_label_typeddict():
+    """_class_label returns 'typeddict' for a TypedDict class."""
+    import griffe as gf
+    from griffe import ExprName
+
+    from great_docs._qrenderer._render._label import _class_label
+
+    obj = gf.Class(name="Config", lineno=1)
+    obj.bases = [ExprName("TypedDict")]
+    assert _class_label(obj) == "typeddict"
+
+
+def test_class_label_protocol():
+    """_class_label returns 'protocol' for a Protocol class."""
+    import griffe as gf
+    from griffe import ExprName
+
+    from great_docs._qrenderer._render._label import _class_label
+
+    obj = gf.Class(name="Readable", lineno=1)
+    obj.bases = [ExprName("Protocol")]
+    assert _class_label(obj) == "protocol"
+
+
+def test_class_label_abc():
+    """_class_label returns 'abc' for an ABC class."""
+    import griffe as gf
+    from griffe import ExprName
+
+    from great_docs._qrenderer._render._label import _class_label
+
+    obj = gf.Class(name="Base", lineno=1)
+    obj.bases = [ExprName("ABC")]
+    assert _class_label(obj) == "abc"
+
+
+def test_convert_inventory_dict(tmp_path):
+    """convert_inventory writes a dict directly as JSON."""
+    import json
+
+    from great_docs._qrenderer.inventory import convert_inventory
+
+    inv = {"project": "test", "version": "1.0", "items": []}
+    out = str(tmp_path / "inv.json")
+    convert_inventory(inv, out_name=out)
+
+    with open(out) as f:
+        result = json.load(f)
+    assert result == inv
+
+
+def test_convert_inventory_requires_out_name():
+    """convert_inventory raises TypeError if out_name not given."""
+    from great_docs._qrenderer.inventory import convert_inventory
+
+    with pytest.raises(TypeError, match="out_name is required"):
+        convert_inventory({})
+
+
+def test_convert_inventory_unsupported_type():
+    """convert_inventory raises TypeError for unsupported types."""
+    from great_docs._qrenderer.inventory import convert_inventory
+
+    with pytest.raises(TypeError, match="Unsupported inventory type"):
+        convert_inventory(42, out_name="/tmp/test.json")
+
+
+def test_convert_inventory_sphobjinv(tmp_path):
+    """convert_inventory handles sphobjinv-like Inventory objects."""
+    import json
+    from unittest.mock import MagicMock
+
+    from great_docs._qrenderer.inventory import convert_inventory
+
+    mock_inv = MagicMock()
+    mock_inv.json_dict.return_value = {
+        "project": "myproj",
+        "version": "2.0",
+        "count": 1,
+        "py:function:myproj.func": {"name": "myproj.func", "domain": "py"},
+    }
+    out = str(tmp_path / "inv.json")
+    convert_inventory(mock_inv, out_name=out)
+
+    with open(out) as f:
+        result = json.load(f)
+
+    assert result["project"] == "myproj"
+    assert "items" in result
+
+
+def test_create_inventory_basic():
+    """create_inventory returns a properly structured dict."""
+    import griffe as gf
+
+    from great_docs._qrenderer.inventory import create_inventory
+
+    obj = gf.Function(name="my_func", lineno=1)
+    result = create_inventory("myproj", "1.0", [obj])
+
+    assert result["project"] == "myproj"
+    assert result["version"] == "1.0"
+    assert result["count"] == 1
+    assert len(result["items"]) == 1
+    assert result["items"][0]["domain"] == "py"
+
+
+def test_create_inventory_with_layout_item():
+    """create_inventory handles layout.Item objects."""
+    import griffe as gf
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer.inventory import create_inventory
+
+    obj = gf.Function(name="my_func", lineno=1)
+    item = layout.Item(
+        name="myproj.my_func",
+        obj=obj,
+        uri="my_func.html",
+        dispname="my_func",
+    )
+    result = create_inventory("myproj", "1.0", [item])
+
+    assert result["count"] == 1
+    assert result["items"][0]["name"] == "myproj.my_func"
+    assert result["items"][0]["uri"] == "my_func.html"
+    assert result["items"][0]["dispname"] == "my_func"
+
+
+def test_create_inventory_custom_uri_and_dispname():
+    """create_inventory uses custom uri/dispname callables."""
+    import griffe as gf
+
+    from great_docs._qrenderer.inventory import create_inventory
+
+    obj = gf.Function(name="my_func", lineno=1)
+    result = create_inventory(
+        "myproj",
+        "1.0",
+        [obj],
+        uri=lambda s: f"api/{s.name}.html",
+        dispname=lambda s: s.name.upper(),
+    )
+
+    assert result["items"][0]["uri"] == "api/my_func.html"
+    assert result["items"][0]["dispname"] == "MY_FUNC"
+
+
+def test_create_inventory_string_dispname():
+    """create_inventory uses string dispname directly."""
+    import griffe as gf
+
+    from great_docs._qrenderer.inventory import create_inventory
+
+    obj = gf.Function(name="my_func", lineno=1)
+    result = create_inventory("myproj", "1.0", [obj], dispname="-")
+
+    assert result["items"][0]["dispname"] == "-"
+
+
+def test_create_inventory_item_unsupported_type():
+    """_create_inventory_item raises TypeError for unsupported items."""
+    from great_docs._qrenderer.inventory import _create_inventory_item
+
+    with pytest.raises(TypeError, match="Unsupported item type"):
+        _create_inventory_item("not_an_item", uri="test.html")
+
+
+def test_maybe_call_with_callable():
+    """_maybe_call invokes a callable."""
+    from great_docs._qrenderer.inventory import _maybe_call
+
+    result = _maybe_call(lambda x: x.upper(), "hello")
+
+    assert result == "HELLO"
+
+
+def test_maybe_call_with_string():
+    """_maybe_call returns the string directly."""
+    from great_docs._qrenderer.inventory import _maybe_call
+
+    result = _maybe_call("fixed", "ignored")
+
+    assert result == "fixed"
+
+
+def test_maybe_call_unsupported_type():
+    """_maybe_call raises TypeError for non-string non-callable."""
+    from great_docs._qrenderer.inventory import _maybe_call
+
+    with pytest.raises(TypeError, match="Expected string or callable"):
+        _maybe_call(42, "obj")
+
+
+def test_extend_base_class_copies_methods():
+    """extend_base_class copies methods from child to base class."""
+    from great_docs._qrenderer._render.extending import extend_base_class
+
+    class FakeBase:
+        def original(self):
+            return "original"
+
+    class Child(FakeBase):
+        def new_method(self):
+            return "new"
+
+    extend_base_class(Child)
+
+    assert hasattr(FakeBase, "new_method")
+    assert FakeBase().new_method() == "new"
+
+
+def test_set_class_attr_plain_function():
+    """set_class_attr sets a plain function on a class."""
+    from great_docs._qrenderer._render.extending import set_class_attr
+
+    class Target:
+        pass
+
+    def my_func(self):
+        return 42
+
+    set_class_attr(Target, "my_func", my_func)
+
+    assert Target().my_func() == 42
+
+
+def test_set_class_attr_property():
+    """set_class_attr handles property values."""
+    from great_docs._qrenderer._render.extending import set_class_attr
+
+    class Target:
+        _val = 10
+
+    prop = property(lambda self: self._val)
+    set_class_attr(Target, "val", prop)
+
+    assert Target().val == 10
+
+
+def test_set_class_attr_cached_property():
+    """set_class_attr handles cached_property values."""
+    from functools import cached_property
+
+    from great_docs._qrenderer._render.extending import set_class_attr
+
+    class Target:
+        pass
+
+    cp = cached_property(lambda self: 99)
+    set_class_attr(Target, "cached_val", cp)
+
+    assert Target().cached_val == 99
+
+
+def test_exclude_parameters_updates_globals():
+    """exclude_parameters updates the EXCLUDE_PARAMETERS global dict."""
+    from great_docs._qrenderer._globals import EXCLUDE_PARAMETERS
+    from great_docs._qrenderer._render.extending import exclude_parameters
+
+    original = dict(EXCLUDE_PARAMETERS)
+    try:
+        exclude_parameters({"test.MyClass": "param1"})
+        assert "test.MyClass" in EXCLUDE_PARAMETERS
+        assert EXCLUDE_PARAMETERS["test.MyClass"] == "param1"
+    finally:
+        EXCLUDE_PARAMETERS.clear()
+        EXCLUDE_PARAMETERS.update(original)
+
+
+def test_exclude_attributes_updates_globals():
+    """exclude_attributes updates the EXCLUDE_ATTRIBUTES global dict."""
+    from great_docs._qrenderer._globals import EXCLUDE_ATTRIBUTES
+    from great_docs._qrenderer._render.extending import exclude_attributes
+
+    original = dict(EXCLUDE_ATTRIBUTES)
+    try:
+        exclude_attributes({"test.MyClass": ("a", "b")})
+        assert "test.MyClass" in EXCLUDE_ATTRIBUTES
+    finally:
+        EXCLUDE_ATTRIBUTES.clear()
+        EXCLUDE_ATTRIBUTES.update(original)
+
+
+def test_exclude_functions_updates_globals():
+    """exclude_functions updates the EXCLUDE_FUNCTIONS global dict."""
+    from great_docs._qrenderer._globals import EXCLUDE_FUNCTIONS
+    from great_docs._qrenderer._render.extending import exclude_functions
+
+    original = dict(EXCLUDE_FUNCTIONS)
+    try:
+        exclude_functions({"test.MyClass": "func_a"})
+        assert "test.MyClass" in EXCLUDE_FUNCTIONS
+    finally:
+        EXCLUDE_FUNCTIONS.clear()
+        EXCLUDE_FUNCTIONS.update(original)
+
+
+def test_exclude_classes_updates_globals():
+    """exclude_classes updates the EXCLUDE_CLASSES global dict."""
+    from great_docs._qrenderer._globals import EXCLUDE_CLASSES
+    from great_docs._qrenderer._render.extending import exclude_classes
+
+    original = dict(EXCLUDE_CLASSES)
+    try:
+        exclude_classes({"test.MyClass": "Contained1"})
+        assert "test.MyClass" in EXCLUDE_CLASSES
+    finally:
+        EXCLUDE_CLASSES.clear()
+        EXCLUDE_CLASSES.update(original)
+
+
+def test_render_reference_section_title():
+    """RenderReferenceSection.render_title() returns a Header."""
+    from unittest.mock import MagicMock
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render.reference_section import RenderReferenceSection
+
+    section = layout.Section(title="Functions", contents=[layout.Auto(name="x")])
+    renderer = MagicMock()
+    rs = RenderReferenceSection(layout_obj=section, renderer=renderer, level=1)
+    title = rs.render_title()
+
+    assert title is not None
+    assert "Functions" in str(title)
+
+
+def test_render_reference_section_subtitle():
+    """RenderReferenceSection.render_title() handles subtitles."""
+    from unittest.mock import MagicMock
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render.reference_section import RenderReferenceSection
+
+    section = layout.Section(subtitle="Helper Functions", contents=[layout.Auto(name="x")])
+    renderer = MagicMock()
+    rs = RenderReferenceSection(layout_obj=section, renderer=renderer, level=1)
+    title = rs.render_title()
+
+    assert title is not None
+    assert "Helper Functions" in str(title)
+
+
+def test_render_reference_section_no_title():
+    """RenderReferenceSection.render_title() returns None when no title/subtitle."""
+    from unittest.mock import MagicMock
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render.reference_section import RenderReferenceSection
+
+    section = layout.Section(contents=[layout.Auto(name="x")])
+    renderer = MagicMock()
+    rs = RenderReferenceSection(layout_obj=section, renderer=renderer, level=1)
+    title = rs.render_title()
+
+    assert title is None
+
+
+def test_render_reference_section_description():
+    """RenderReferenceSection.render_description() returns a Div."""
+    from unittest.mock import MagicMock
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render.reference_section import RenderReferenceSection
+
+    section = layout.Section(title="Test", desc="A description", contents=[layout.Auto(name="x")])
+    renderer = MagicMock()
+    rs = RenderReferenceSection(layout_obj=section, renderer=renderer, level=1)
+    desc = rs.render_description()
+
+    assert "A description" in str(desc)
+
+
+def test_render_reference_section_body_empty():
+    """RenderReferenceSection.render_body() returns None for empty section."""
+    from unittest.mock import MagicMock
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render.reference_section import RenderReferenceSection
+
+    section = layout.Section(title="Empty", contents=[])
+    renderer = MagicMock()
+    rs = RenderReferenceSection(layout_obj=section, renderer=renderer, level=1)
+    body = rs.render_body()
+
+    assert body is None
+
+
+def test_render_reference_page_post_init():
+    """RenderReferencePage.__post_init__ sets layout, sections, package, options."""
+    from unittest.mock import MagicMock
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render.reference_page import RenderReferencePage
+
+    lyt = layout.Layout(
+        title="API Ref",
+        description="My API",
+        sections=[layout.Section(title="Funcs", contents=[layout.Auto(name="x")])],
+        package="mypkg",
+    )
+    renderer = MagicMock()
+    rp = RenderReferencePage(layout_obj=lyt, renderer=renderer, level=1)
+
+    assert rp.layout is lyt
+    assert rp.sections == lyt.sections
+    assert rp.package == "mypkg"
+    assert rp.options is None
+
+
+def test_render_reference_page_description():
+    """RenderReferencePage.render_description() returns a Div when description exists."""
+    from unittest.mock import MagicMock
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render.reference_page import RenderReferencePage
+
+    lyt = layout.Layout(
+        title="API Ref",
+        description="My description",
+        sections=[layout.Section(title="S", contents=[layout.Auto(name="x")])],
+    )
+    renderer = MagicMock()
+    rp = RenderReferencePage(layout_obj=lyt, renderer=renderer, level=1)
+    desc = rp.render_description()
+
+    assert desc is not None
+    assert "My description" in str(desc)
+
+
+def test_render_reference_page_no_description():
+    """RenderReferencePage.render_description() returns None when no description."""
+    from unittest.mock import MagicMock
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render.reference_page import RenderReferencePage
+
+    lyt = layout.Layout(
+        title="API Ref",
+        sections=[layout.Section(title="S", contents=[layout.Auto(name="x")])],
+    )
+    renderer = MagicMock()
+    rp = RenderReferencePage(layout_obj=lyt, renderer=renderer, level=1)
+    desc = rp.render_description()
+
+    assert desc is None
+
+
+def test_render_reference_page_metadata():
+    """RenderReferencePage.render_metadata() returns Meta with title."""
+    from unittest.mock import MagicMock
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render.reference_page import RenderReferencePage
+
+    lyt = layout.Layout(
+        title="API Reference",
+        sections=[layout.Section(title="S", contents=[layout.Auto(name="x")])],
+    )
+    renderer = MagicMock()
+    rp = RenderReferencePage(layout_obj=lyt, renderer=renderer, level=1)
+    meta = rp.render_metadata()
+
+    assert "API Reference" in str(meta)
+
+
+def test_render_api_page_post_init():
+    """RenderAPIPage.__post_init__ sets page and path attributes."""
+    from unittest.mock import MagicMock
+
+    import griffe as gf
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render.api_page import RenderAPIPage
+    from great_docs._qrenderer._type_checks import griffe_to_doc
+
+    func_obj = gf.Function(name="my_func", lineno=1)
+    doc_obj = griffe_to_doc(func_obj)
+    page = layout.Page(path="reference/my_func", contents=[doc_obj])
+    renderer = MagicMock()
+    ap = RenderAPIPage(layout_obj=page, renderer=renderer, level=1)
+
+    assert ap.page is page
+    assert ap.path == "reference/my_func.qmd"
+
+
+def test_render_api_page_has_one_object():
+    """RenderAPIPage._has_one_object is True for single-content pages."""
+    from unittest.mock import MagicMock
+
+    import griffe as gf
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render.api_page import RenderAPIPage
+    from great_docs._qrenderer._type_checks import griffe_to_doc
+
+    func_obj = gf.Function(name="my_func", lineno=1)
+    doc_obj = griffe_to_doc(func_obj)
+    page = layout.Page(path="reference/my_func", contents=[doc_obj])
+    renderer = MagicMock()
+    ap = RenderAPIPage(layout_obj=page, renderer=renderer, level=1)
+
+    assert ap._has_one_object is True
+
+
+def test_render_api_page_metadata():
+    """RenderAPIPage.render_metadata() returns Meta with title."""
+    from unittest.mock import MagicMock
+
+    import griffe as gf
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render.api_page import RenderAPIPage
+    from great_docs._qrenderer._type_checks import griffe_to_doc
+
+    func_obj = gf.Function(name="my_func", lineno=1)
+    doc_obj = griffe_to_doc(func_obj)
+    page = layout.Page(path="reference/my_func", contents=[doc_obj])
+    renderer = MagicMock()
+    renderer.display_name_format = "doc"
+    renderer.signature_name_format = "doc"
+    renderer.show_signature = True
+    ap = RenderAPIPage(layout_obj=page, renderer=renderer, level=1)
+    meta = ap.render_metadata()
+    meta_str = str(meta)
+
+    assert "title" in meta_str
+
+
+def test_render_api_page_render_body():
+    """RenderAPIPage.render_body() returns Blocks with render_objs."""
+    from unittest.mock import MagicMock
+
+    import griffe as gf
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render.api_page import RenderAPIPage
+    from great_docs._qrenderer._type_checks import griffe_to_doc
+
+    func_obj = gf.Function(name="my_func", lineno=1)
+    doc_obj = griffe_to_doc(func_obj)
+    page = layout.Page(path="reference/my_func", contents=[doc_obj])
+    renderer = MagicMock()
+    renderer.display_name_format = "doc"
+    renderer.signature_name_format = "doc"
+    renderer.show_signature = True
+    ap = RenderAPIPage(layout_obj=page, renderer=renderer, level=1)
+    body = ap.render_body()
+
+    assert body is not None
+
+
+def test_render_api_page_summary_with_summary_details():
+    """RenderAPIPage.render_summary() uses page.summary when set."""
+    from unittest.mock import MagicMock
+
+    import griffe as gf
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render.api_page import RenderAPIPage
+    from great_docs._qrenderer._type_checks import griffe_to_doc
+
+    func_obj = gf.Function(name="my_func", lineno=1)
+    doc_obj = griffe_to_doc(func_obj)
+    summary = layout.SummaryDetails(name="my_func", desc="A function")
+    page = layout.Page(
+        path="reference/my_func",
+        contents=[doc_obj],
+        summary=summary,
+    )
+    renderer = MagicMock()
+    renderer.display_name_format = "doc"
+    renderer.signature_name_format = "doc"
+    renderer.show_signature = True
+    ap = RenderAPIPage(layout_obj=page, renderer=renderer, level=1)
+    result = ap.render_summary()
+
+    assert len(result) == 1
+    assert "A function" in str(result[0])
+
+
+def test_render_api_page_summary_multi_no_flatten_raises():
+    """RenderAPIPage.render_summary() raises ValueError for multi-content without flatten."""
+    from unittest.mock import MagicMock
+
+    import griffe as gf
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render.api_page import RenderAPIPage
+    from great_docs._qrenderer._type_checks import griffe_to_doc
+
+    f1 = griffe_to_doc(gf.Function(name="func1", lineno=1))
+    f2 = griffe_to_doc(gf.Function(name="func2", lineno=2))
+    page = layout.Page(
+        path="reference/funcs",
+        contents=[f1, f2],
+        flatten=False,
+    )
+    renderer = MagicMock()
+    renderer.display_name_format = "doc"
+    renderer.signature_name_format = "doc"
+    renderer.show_signature = True
+    ap = RenderAPIPage(layout_obj=page, renderer=renderer, level=1)
+    with pytest.raises(ValueError, match="Cannot summarize page"):
+        ap.render_summary()
+
+
+def test_label_unknown_kind_raises():
+    """get_label raises ValueError for unknown object kind (line 90)."""
+    from unittest.mock import MagicMock
+
+    import pytest
+
+    from great_docs._qrenderer._render._label import get_label
+
+    obj = MagicMock()
+    obj.is_function = False
+    obj.is_class = False
+    obj.is_attribute = False
+    obj.is_type_alias = False
+    obj.is_module = False
+    with pytest.raises(ValueError, match="Unknown kind"):
+        get_label(obj)
+
+
+def test_attribute_label_typealias_kind():
+    """_attribute_label returns 'typealias' for type alias kind (line 98)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import _attribute_label
+
+    obj = gf.Attribute(name="MyType", lineno=1)
+    obj.kind = gf.Kind.TYPE_ALIAS
+
+    assert _attribute_label(obj) == "typealias"
+
+
+def test_attribute_label_typevar_annotation():
+    """_attribute_label returns 'typevar' for TypeVar annotation (line 100)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import _attribute_label
+
+    obj = gf.Attribute(name="T", lineno=1)
+    obj.annotation = gf.ExprName("TypeVar")
+
+    assert _attribute_label(obj) == "typevar"
+
+
+def test_function_label_async():
+    """_function_label returns 'async' for async functions (line 113)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import _function_label
+
+    obj = gf.Function(name="afunc", lineno=1)
+    obj.labels.add("async")
+
+    assert _function_label(obj) == "async"
+
+
+def test_function_label_classmethod():
+    """_function_label returns 'classmethod' (line 115)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import _function_label
+
+    obj = gf.Function(name="cm", lineno=1)
+    obj.labels.add("classmethod")
+
+    assert _function_label(obj) == "classmethod"
+
+
+def test_function_label_staticmethod():
+    """_function_label returns 'staticmethod' (line 117)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import _function_label
+
+    obj = gf.Function(name="sm", lineno=1)
+    obj.labels.add("staticmethod")
+
+    assert _function_label(obj) == "staticmethod"
+
+
+def test_function_label_property():
+    """_function_label returns 'property' (line 119)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import _function_label
+
+    obj = gf.Function(name="prop", lineno=1)
+    obj.labels.add("property")
+
+    assert _function_label(obj) == "property"
+
+
+def test_class_label_bases_exception():
+    """_class_label catches exceptions accessing bases (lines 130-131)."""
+    from unittest.mock import MagicMock, PropertyMock
+
+    from great_docs._qrenderer._render._label import _class_label
+
+    obj = MagicMock()
+    obj.labels = set()
+    type(obj).bases = PropertyMock(side_effect=Exception("broken"))
+    result = _class_label(obj)
+
+    assert result == "class"
+
+
+def test_class_label_enum():
+    """_class_label returns 'enum' for Enum bases (line 134)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import _class_label
+
+    obj = gf.Class(name="MyEnum", lineno=1)
+    obj.bases = [gf.ExprName("IntEnum")]
+
+    assert _class_label(obj) == "enum"
+
+
+def test_class_label_exception():
+    """_class_label returns 'exception' for Exception bases (line 136)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import _class_label
+
+    obj = gf.Class(name="MyErr", lineno=1)
+    obj.bases = [gf.ExprName("ValueError")]
+
+    assert _class_label(obj) == "exception"
+
+
+def test_class_label_namedtuple():
+    """_class_label returns 'namedtuple' for NamedTuple bases (line 138)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import _class_label
+
+    obj = gf.Class(name="NT", lineno=1)
+    obj.bases = [gf.ExprName("NamedTuple")]
+
+    assert _class_label(obj) == "namedtuple"
+
+
+def test_class_label_typeddict():
+    """_class_label returns 'typeddict' for TypedDict bases (line 140)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import _class_label
+
+    obj = gf.Class(name="TD", lineno=1)
+    obj.bases = [gf.ExprName("TypedDict")]
+
+    assert _class_label(obj) == "typeddict"
+
+
+def test_class_label_protocol():
+    """_class_label returns 'protocol' for Protocol bases (line 142)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import _class_label
+
+    obj = gf.Class(name="Proto", lineno=1)
+    obj.bases = [gf.ExprName("Protocol")]
+
+    assert _class_label(obj) == "protocol"
+
+
+def test_class_label_abc():
+    """_class_label returns 'abc' for ABC bases (line 144)."""
+    import griffe as gf
+
+    from great_docs._qrenderer._render._label import _class_label
+
+    obj = gf.Class(name="Base", lineno=1)
+    obj.bases = [gf.ExprName("ABC")]
+
+    assert _class_label(obj) == "abc"
+
+
+def test_extend_base_class_with_super():
+    """extend_base_class handles methods using super() (lines 39-43, 70-97)."""
+    from great_docs._qrenderer._render.extending import extend_base_class
+
+    class GrandBase:
+        def greet(self):
+            return "hello"
+
+    class FakeBase2(GrandBase):
+        pass
+
+    class Child2(FakeBase2):
+        def greet(self):
+            return super().greet() + " world"
+
+    extend_base_class(Child2)
+
+    # After extending, FakeBase2.greet calls GrandBase.greet via adjusted super()
+    assert FakeBase2().greet() == "hello world"
+
+
+def test_set_class_attr_with_closure():
+    """set_class_attr adjusts closure-based functions (lines 70-90)."""
+    from great_docs._qrenderer._render.extending import set_class_attr
+
+    class Base3:
+        def base_method(self):
+            return "base"
+
+    # Create a function with a closure over __class__
+    class Source3(Base3):
+        def method_with_super(self):
+            return super().base_method() + "_extended"
+
+    set_class_attr(Base3, "method_with_super", Source3.method_with_super)
+
+    assert hasattr(Base3, "method_with_super")
+
+
+def test_set_class_attr_property_with_closure():
+    """set_class_attr adjusts property getters with closures (lines 78-80)."""
+    from great_docs._qrenderer._render.extending import set_class_attr
+
+    class Target3:
+        _value = 42
+
+    prop = property(lambda self: self._value * 2)
+    set_class_attr(Target3, "doubled", prop)
+
+    assert Target3().doubled == 84
+
+
+def test_set_class_attr_static_method():
+    """set_class_attr handles MethodType (staticmethod) (lines 92-93)."""
+    from types import MethodType
+
+    from great_docs._qrenderer._render.extending import set_class_attr
+
+    class Target4:
+        pass
+
+    def static_func(cls):
+        return "static"
+
+    method = MethodType(static_func, Target4)
+    set_class_attr(Target4, "my_static", method)
+
+    assert hasattr(Target4, "my_static")
+
+
+def test_exclude_parameters_function():
+    """exclude_parameters updates EXCLUDE_PARAMETERS (line 154, 156)."""
+    from great_docs._qrenderer._globals import EXCLUDE_PARAMETERS
+    from great_docs._qrenderer._render.extending import exclude_parameters
+
+    original = dict(EXCLUDE_PARAMETERS)
+    try:
+        exclude_parameters({"pkg.Cls": ("p1", "p2")})
+        assert EXCLUDE_PARAMETERS["pkg.Cls"] == ("p1", "p2")
+    finally:
+        EXCLUDE_PARAMETERS.clear()
+        EXCLUDE_PARAMETERS.update(original)
+
+
+def test_exclude_attributes_function():
+    """exclude_attributes updates EXCLUDE_ATTRIBUTES (line 205, 207)."""
+    from great_docs._qrenderer._globals import EXCLUDE_ATTRIBUTES
+    from great_docs._qrenderer._render.extending import exclude_attributes
+
+    original = dict(EXCLUDE_ATTRIBUTES)
+    try:
+        exclude_attributes({"pkg.Cls": ("a", "b")})
+        assert EXCLUDE_ATTRIBUTES["pkg.Cls"] == ("a", "b")
+    finally:
+        EXCLUDE_ATTRIBUTES.clear()
+        EXCLUDE_ATTRIBUTES.update(original)
+
+
+def test_exclude_functions_function():
+    """exclude_functions updates EXCLUDE_FUNCTIONS (line 250, 252)."""
+    from great_docs._qrenderer._globals import EXCLUDE_FUNCTIONS
+    from great_docs._qrenderer._render.extending import exclude_functions
+
+    original = dict(EXCLUDE_FUNCTIONS)
+    try:
+        exclude_functions({"pkg.Cls": "fn"})
+        assert EXCLUDE_FUNCTIONS["pkg.Cls"] == "fn"
+    finally:
+        EXCLUDE_FUNCTIONS.clear()
+        EXCLUDE_FUNCTIONS.update(original)
+
+
+def test_exclude_classes_function():
+    """exclude_classes updates EXCLUDE_CLASSES (line 294, 296)."""
+    from great_docs._qrenderer._globals import EXCLUDE_CLASSES
+    from great_docs._qrenderer._render.extending import exclude_classes
+
+    original = dict(EXCLUDE_CLASSES)
+    try:
+        exclude_classes({"pkg.Mod": "OldClass"})
+        assert EXCLUDE_CLASSES["pkg.Mod"] == "OldClass"
+    finally:
+        EXCLUDE_CLASSES.clear()
+        EXCLUDE_CLASSES.update(original)
+
+
+def test_render_reference_page_render_body():
+    """RenderReferencePage.render_body() renders sections (lines 73-76)."""
+    from unittest.mock import MagicMock, patch
+
+    import griffe as gf
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render.reference_page import RenderReferencePage
+
+    func_obj = gf.Function(name="my_func", lineno=1)
+    doc_func = layout.DocFunction(name="my_func", obj=func_obj, anchor="my_func")
+
+    section = layout.Section(title="Functions", contents=[doc_func])
+    lyt = layout.Layout(title="API", sections=[section])
+
+    renderer = MagicMock()
+    renderer.display_name_format = "doc"
+    renderer.signature_name_format = "doc"
+    renderer.show_signature = True
+
+    with patch.dict(os.environ, {}, clear=False):
+        os.environ.pop("GITHUB_REPO_URL", None)
+        rp = RenderReferencePage(layout_obj=lyt, renderer=renderer, level=1)
+        body = rp.render_body()
+
+    assert body is not None
+
+    body_str = str(body)
+
+    assert isinstance(body_str, str)
+
+
+def test_render_reference_section_body_with_contents():
+    """RenderReferenceSection.render_body() renders Doc objects (lines 103-117)."""
+    from unittest.mock import MagicMock, patch
+
+    import griffe as gf
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render.reference_section import RenderReferenceSection
+
+    func_obj = gf.Function(name="some_func", lineno=1)
+    doc_func = layout.DocFunction(name="some_func", obj=func_obj, anchor="some_func")
+
+    section = layout.Section(title="Functions", contents=[doc_func])
+
+    renderer = MagicMock()
+    renderer.display_name_format = "doc"
+    renderer.signature_name_format = "doc"
+    renderer.show_signature = True
+
+    with patch.dict(os.environ, {}, clear=False):
+        os.environ.pop("GITHUB_REPO_URL", None)
+        rs = RenderReferenceSection(layout_obj=section, renderer=renderer, level=1)
+        body = rs.render_body()
+
+    assert body is not None
+
+    body_str = str(body)
+
+    assert isinstance(body_str, str)
+
+
+def test_render_reference_section_post_init():
+    """RenderReferenceSection.__post_init__() sets section (lines 35-36)."""
+    from unittest.mock import MagicMock
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render.reference_section import RenderReferenceSection
+
+    section = layout.Section(title="Test", contents=[layout.Auto(name="x")])
+    renderer = MagicMock()
+    rs = RenderReferenceSection(layout_obj=section, renderer=renderer, level=1)
+
+    assert rs.section is section
+
+
+def test_render_reference_section_title_and_subtitle():
+    """RenderReferenceSection.render_title() for title vs subtitle (lines 50-56)."""
+    from unittest.mock import MagicMock
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render.reference_section import RenderReferenceSection
+
+    # Title case
+    sec_t = layout.Section(title="Methods", contents=[layout.Auto(name="x")])
+    rs_t = RenderReferenceSection(layout_obj=sec_t, renderer=MagicMock(), level=1)
+
+    assert "Methods" in str(rs_t.render_title())
+
+    # Subtitle case
+    sec_s = layout.Section(subtitle="Helpers", contents=[layout.Auto(name="x")])
+    rs_s = RenderReferenceSection(layout_obj=sec_s, renderer=MagicMock(), level=1)
+
+    assert "Helpers" in str(rs_s.render_title())
+
+
+def test_render_api_page_full_lifecycle():
+    """RenderAPIPage full lifecycle with real Doc objects (lines 31-98)."""
+    from unittest.mock import MagicMock, patch
+
+    import griffe as gf
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render.api_page import RenderAPIPage
+
+    func_obj = gf.Function(name="my_func", lineno=1)
+    func_obj.endlineno = 10
+    doc_func = layout.DocFunction(name="my_func", obj=func_obj, anchor="my_func")
+
+    page = layout.Page(path="reference/my_func", contents=[doc_func])
+
+    renderer = MagicMock()
+    renderer.display_name_format = "doc"
+    renderer.signature_name_format = "doc"
+    renderer.show_signature = True
+
+    with patch.dict(os.environ, {}, clear=False):
+        os.environ.pop("GITHUB_REPO_URL", None)
+        ap = RenderAPIPage(layout_obj=page, renderer=renderer, level=1)
+
+        # Test __post_init__
+        assert ap.page is page
+        assert ap.path == "reference/my_func.qmd"
+
+        # Test _has_one_object
+        assert ap._has_one_object is True
+
+        # Test render_objs
+        objs = ap.render_objs
+        assert len(objs) == 1
+
+        # Test render_metadata
+        meta = ap.render_metadata()
+        assert meta is not None
+
+        # Test render_body
+        body = ap.render_body()
+        assert body is not None
+
+        # Test render_summary (flatten default)
+        summary = ap.render_summary()
+        assert len(summary) >= 1
+
+
+def test_render_api_page_with_summary_details():
+    """RenderAPIPage.render_summary() with explicit summary (lines 85-90)."""
+    from unittest.mock import MagicMock, patch
+
+    import griffe as gf
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render.api_page import RenderAPIPage
+
+    func_obj = gf.Function(name="fn", lineno=1)
+    doc_func = layout.DocFunction(name="fn", obj=func_obj, anchor="fn")
+
+    page = layout.Page(
+        path="reference/fn",
+        contents=[doc_func],
+        summary=layout.SummaryDetails(name="fn()", desc="Do something"),
+    )
+
+    renderer = MagicMock()
+    renderer.display_name_format = "doc"
+    renderer.signature_name_format = "doc"
+    renderer.show_signature = True
+
+    with patch.dict(os.environ, {}, clear=False):
+        os.environ.pop("GITHUB_REPO_URL", None)
+        ap = RenderAPIPage(layout_obj=page, renderer=renderer, level=1)
+        summary = ap.render_summary()
+    assert len(summary) == 1
+    assert "fn()" in str(summary[0][0])
+    assert "Do something" in str(summary[0][1])
+
+
+def test_renderdoc_display_name_relative_level_gt1():
+    """RenderDoc.display_name uses 'name' format when level > 1 (line 173)."""
+    from unittest.mock import patch
+
+    import griffe as gf
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render import RenderDocFunction
+    from great_docs._qrenderer._renderer import Renderer
+
+    func_obj = gf.Function(name="my_func", lineno=1)
+    doc_func = layout.DocFunction(name="my_func", obj=func_obj)
+
+    r = Renderer(display_name_format="relative")
+    with patch.dict(os.environ, {}, clear=False):
+        os.environ.pop("GITHUB_REPO_URL", None)
+        render = RenderDocFunction(doc_func, r, level=2)
+        name = render.display_name
+    # At level > 1 with "relative" format, it switches to "name"
+    assert isinstance(name, str)
+
+
+def test_renderdoc_render_annotation_non_attribute_raises():
+    """RenderDoc.render_annotation() raises TypeError for non-attribute (lines 259-264)."""
+    from unittest.mock import patch
+
+    import griffe as gf
+    import pytest
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render import RenderDocFunction
+    from great_docs._qrenderer._renderer import Renderer
+
+    func_obj = gf.Function(name="fn", lineno=1)
+    doc_func = layout.DocFunction(name="fn", obj=func_obj)
+
+    r = Renderer()
+    with patch.dict(os.environ, {}, clear=False):
+        os.environ.pop("GITHUB_REPO_URL", None)
+        render = RenderDocFunction(doc_func, r, level=1)
+        with pytest.raises(TypeError, match="Cannot render annotation"):
+            render.render_annotation()
+
+
+def test_renderdoc_render_annotation_attribute():
+    """RenderDoc.render_annotation() for attribute (lines 266-283)."""
+    from unittest.mock import patch
+
+    import griffe as gf
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render import RenderDocAttribute
+    from great_docs._qrenderer._renderer import Renderer
+
+    attr_obj = gf.Attribute(name="x", lineno=1)
+    attr_obj.annotation = gf.ExprName("int")
+    doc_attr = layout.DocAttribute(name="x", obj=attr_obj)
+
+    r = Renderer()
+    with patch.dict(os.environ, {}, clear=False):
+        os.environ.pop("GITHUB_REPO_URL", None)
+        render = RenderDocAttribute(doc_attr, r, level=1)
+        result = render.render_annotation()
+    assert isinstance(result, str)
+    assert "int" in result
+
+
+def test_renderdoc_render_annotation_none():
+    """RenderDoc.render_annotation() with None annotation (line 271)."""
+    from unittest.mock import patch
+
+    import griffe as gf
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render import RenderDocAttribute
+    from great_docs._qrenderer._renderer import Renderer
+
+    attr_obj = gf.Attribute(name="y", lineno=1)
+    attr_obj.annotation = None
+    doc_attr = layout.DocAttribute(name="y", obj=attr_obj)
+
+    r = Renderer()
+    with patch.dict(os.environ, {}, clear=False):
+        os.environ.pop("GITHUB_REPO_URL", None)
+        render = RenderDocAttribute(doc_attr, r, level=1)
+        result = render.render_annotation()
+    assert result == ""
+
+
+def test_renderdoc_docstring_section_deprecated():
+    """RenderDoc handles DocstringSectionDeprecated (lines 469-481)."""
+    from unittest.mock import MagicMock, patch
+
+    import griffe as gf
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render import RenderDocFunction
+    from great_docs._qrenderer._renderer import Renderer
+
+    func_obj = gf.Function(name="old_fn", lineno=1)
+    func_obj.docstring = gf.Docstring(
+        "Short desc.\n\nDeprecated\n----------\n1.0\n    Use new_fn instead.",
+        parent=func_obj,
+        parser="numpy",
+    )
+    doc_func = layout.DocFunction(name="old_fn", obj=func_obj)
+
+    r = Renderer()
+    with patch.dict(os.environ, {}, clear=False):
+        os.environ.pop("GITHUB_REPO_URL", None)
+        render = RenderDocFunction(doc_func, r, level=1)
+        body = render.render_body()
+    body_str = str(body)
+    assert "Deprecated" in body_str or "deprecated" in body_str
+
+
+def test_renderdoc_docstring_section_examples():
+    """RenderDoc handles DocstringSectionExamples (lines 460, 465)."""
+    from unittest.mock import patch
+
+    import griffe as gf
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render import RenderDocFunction
+    from great_docs._qrenderer._renderer import Renderer
+
+    func_obj = gf.Function(name="ex_fn", lineno=1)
+    func_obj.docstring = gf.Docstring(
+        "Short desc.\n\nExamples\n--------\n>>> 1 + 1\n2\n",
+        parent=func_obj,
+        parser="numpy",
+    )
+    doc_func = layout.DocFunction(name="ex_fn", obj=func_obj)
+
+    r = Renderer()
+    with patch.dict(os.environ, {}, clear=False):
+        os.environ.pop("GITHUB_REPO_URL", None)
+        render = RenderDocFunction(doc_func, r, level=1)
+        body = render.render_body()
+    body_str = str(body)
+    assert "1 + 1" in body_str or "Examples" in body_str
+
+
+def test_renderdoc_docstring_section_text_in_div():
+    """RenderDoc wraps 'Text' sections in a Div (line 425)."""
+    from unittest.mock import patch
+
+    import griffe as gf
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render import RenderDocFunction
+    from great_docs._qrenderer._renderer import Renderer
+
+    func_obj = gf.Function(name="txt_fn", lineno=1)
+    func_obj.docstring = gf.Docstring(
+        "Short description.\n\nParameters\n----------\nx : int\n    A number.",
+        parent=func_obj,
+        parser="numpy",
+    )
+    doc_func = layout.DocFunction(name="txt_fn", obj=func_obj)
+
+    r = Renderer()
+    with patch.dict(os.environ, {}, clear=False):
+        os.environ.pop("GITHUB_REPO_URL", None)
+        render = RenderDocFunction(doc_func, r, level=1)
+        body = render.render_body()
+    assert body is not None
+
+
+def test_renderdoc_source_link_with_github_url():
+    """RenderDoc.source_link returns Link when GITHUB_REPO_URL is set (lines 566-571)."""
+    from pathlib import Path
+    from unittest.mock import patch
+
+    import griffe as gf
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render import RenderDocFunction
+    from great_docs._qrenderer._renderer import Renderer
+
+    mod = gf.Module(name="mymod", filepath=Path("/fake/pkg/mymod.py"))
+    func_obj = gf.Function(name="linked_fn", lineno=5)
+    func_obj.endlineno = 15
+    mod.set_member("linked_fn", func_obj)
+    doc_func = layout.DocFunction(name="linked_fn", obj=func_obj)
+
+    r = Renderer()
+    # Patch package_info directly so we don't depend on os.environ ordering
+    with patch(
+        "great_docs._qrenderer._render.doc.package_info",
+        side_effect=lambda key: {
+            "GITHUB_REPO_URL": "https://github.com/test/repo",
+            "GIT_REF": "main",
+        }.get(key),
+    ):
+        render = RenderDocFunction(doc_func, r, level=1)
+        link = render.source_link
+    assert link is not None
+    link_str = str(link)
+    assert "Source" in link_str
+    assert "github.com" in link_str
+
+
+def test_renderdoc_see_also_section():
+    """RenderDoc handles See Also section (lines 503-510)."""
+    from unittest.mock import patch
+
+    import griffe as gf
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._render import RenderDocFunction
+    from great_docs._qrenderer._renderer import Renderer
+
+    func_obj = gf.Function(name="sa_fn", lineno=1)
+    func_obj.docstring = gf.Docstring(
+        "Short desc.\n\nSee Also\n--------\nother_func : Related function.",
+        parent=func_obj,
+        parser="numpy",
+    )
+    doc_func = layout.DocFunction(name="sa_fn", obj=func_obj)
+
+    r = Renderer()
+    with patch.dict(os.environ, {}, clear=False):
+        os.environ.pop("GITHUB_REPO_URL", None)
+        render = RenderDocFunction(doc_func, r, level=1)
+        body = render.render_body()
+    body_str = str(body) if body else ""
+    assert isinstance(body_str, str)

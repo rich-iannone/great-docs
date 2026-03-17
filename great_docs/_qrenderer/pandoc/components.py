@@ -10,7 +10,7 @@ import typing
 from dataclasses import dataclass
 
 if typing.TYPE_CHECKING:
-    from typing import Optional, Sequence
+    from typing import Optional, Sequence  # pragma: no cover
 
 __all__ = ("Attr",)
 

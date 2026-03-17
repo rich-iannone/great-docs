@@ -15,7 +15,7 @@ from typing import Optional, Sequence, Union
 if sys.version_info >= (3, 10):
     from typing import TypeAlias
 else:
-    TypeAlias = "TypeAlias"
+    TypeAlias = "TypeAlias"  # pragma: no cover
 
 from .components import Attr
 

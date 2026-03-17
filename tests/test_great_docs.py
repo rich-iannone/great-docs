@@ -13,6 +13,7 @@ from unittest.mock import MagicMock, PropertyMock, call, patch
 
 import pytest
 import yaml
+import click
 from click.testing import CliRunner
 
 from great_docs import GreatDocs, Config, load_config, create_default_config
@@ -29854,3 +29855,1203 @@ def test_builder_single_page_write_index_noop():
     # write_index should return None and not create files
     result = builder.write_index(builder.layout)
     assert result is None
+
+
+# ── Tests for great_docs/cli.py ──────────────────────────────────────────────
+
+
+# ── OrderedGroup ─────────────────────────────────────────────────────────────
+
+
+def test_cli_ordered_group_list_commands():
+    """OrderedGroup.list_commands returns commands in insertion order."""
+    from great_docs.cli import cli
+
+    # Use standalone_mode=False and resilient_parsing to avoid help error
+    ctx = click.Context(cli, info_name="great-docs", resilient_parsing=True)
+    commands = cli.list_commands(ctx)
+    assert isinstance(commands, list)
+    assert len(commands) > 0
+    # Verify they come in insertion order (init, build, preview, uninstall, config, ...)
+    assert commands[0] == "init"
+    assert commands[1] == "build"
+
+
+# ── cli group ────────────────────────────────────────────────────────────────
+
+
+def test_cli_group_help():
+    """The cli group shows help text."""
+    runner = CliRunner()
+    from great_docs.cli import cli
+
+    result = runner.invoke(cli, ["--help"])
+    assert result.exit_code == 0
+    assert "Great Docs" in result.output
+
+
+def test_cli_group_version():
+    """The cli group shows version."""
+    runner = CliRunner()
+    from great_docs.cli import cli
+
+    result = runner.invoke(cli, ["--version"])
+    assert result.exit_code == 0
+    assert "great-docs" in result.output
+
+
+# ── init command ─────────────────────────────────────────────────────────────
+
+
+def test_cli_init_success():
+    """CLI init command calls GreatDocs.install()."""
+    runner = CliRunner()
+    from great_docs.cli import init
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_instance = MagicMock()
+            MockGD.return_value = mock_instance
+
+            result = runner.invoke(init, ["--project-path", tmp_dir])
+            assert result.exit_code == 0
+            MockGD.assert_called_once_with(project_path=tmp_dir)
+            mock_instance.install.assert_called_once_with(force=False)
+
+
+def test_cli_init_with_force():
+    """CLI init command passes force flag."""
+    runner = CliRunner()
+    from great_docs.cli import init
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_instance = MagicMock()
+            MockGD.return_value = mock_instance
+
+            result = runner.invoke(init, ["--project-path", tmp_dir, "--force"])
+            assert result.exit_code == 0
+            mock_instance.install.assert_called_once_with(force=True)
+
+
+def test_cli_init_error():
+    """CLI init command handles errors gracefully."""
+    runner = CliRunner()
+    from great_docs.cli import init
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            MockGD.return_value.install.side_effect = RuntimeError("install failed")
+
+            result = runner.invoke(init, ["--project-path", tmp_dir])
+            assert result.exit_code == 1
+            assert "Error: install failed" in result.output
+
+
+# ── build command ────────────────────────────────────────────────────────────
+
+
+def test_cli_build_success():
+    """CLI build command calls GreatDocs.build()."""
+    runner = CliRunner()
+    from great_docs.cli import build
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_instance = MagicMock()
+            MockGD.return_value = mock_instance
+
+            result = runner.invoke(build, ["--project-path", tmp_dir])
+            assert result.exit_code == 0
+            mock_instance.build.assert_called_once_with(watch=False, refresh=True)
+
+
+def test_cli_build_with_watch():
+    """CLI build command passes watch flag."""
+    runner = CliRunner()
+    from great_docs.cli import build
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_instance = MagicMock()
+            MockGD.return_value = mock_instance
+
+            result = runner.invoke(build, ["--project-path", tmp_dir, "--watch"])
+            assert result.exit_code == 0
+            mock_instance.build.assert_called_once_with(watch=True, refresh=True)
+
+
+def test_cli_build_no_refresh():
+    """CLI build command passes no-refresh flag."""
+    runner = CliRunner()
+    from great_docs.cli import build
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_instance = MagicMock()
+            MockGD.return_value = mock_instance
+
+            result = runner.invoke(build, ["--project-path", tmp_dir, "--no-refresh"])
+            assert result.exit_code == 0
+            mock_instance.build.assert_called_once_with(watch=False, refresh=False)
+
+
+def test_cli_build_keyboard_interrupt():
+    """CLI build handles KeyboardInterrupt gracefully."""
+    runner = CliRunner()
+    from great_docs.cli import build
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            MockGD.return_value.build.side_effect = KeyboardInterrupt()
+
+            result = runner.invoke(build, ["--project-path", tmp_dir])
+            assert result.exit_code == 0
+            assert "Stopped watching" in result.output
+
+
+def test_cli_build_error():
+    """CLI build handles errors gracefully."""
+    runner = CliRunner()
+    from great_docs.cli import build
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            MockGD.return_value.build.side_effect = RuntimeError("build failed")
+
+            result = runner.invoke(build, ["--project-path", tmp_dir])
+            assert result.exit_code == 1
+            assert "Error: build failed" in result.output
+
+
+# ── uninstall command ────────────────────────────────────────────────────────
+
+
+def test_cli_uninstall_success():
+    """CLI uninstall command calls GreatDocs.uninstall()."""
+    runner = CliRunner()
+    from great_docs.cli import uninstall
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_instance = MagicMock()
+            MockGD.return_value = mock_instance
+
+            result = runner.invoke(uninstall, ["--project-path", tmp_dir])
+            assert result.exit_code == 0
+            mock_instance.uninstall.assert_called_once()
+
+
+def test_cli_uninstall_error():
+    """CLI uninstall handles errors gracefully."""
+    runner = CliRunner()
+    from great_docs.cli import uninstall
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            MockGD.return_value.uninstall.side_effect = RuntimeError("uninstall failed")
+
+            result = runner.invoke(uninstall, ["--project-path", tmp_dir])
+            assert result.exit_code == 1
+            assert "Error: uninstall failed" in result.output
+
+
+# ── preview command ──────────────────────────────────────────────────────────
+
+
+def test_cli_preview_success():
+    """CLI preview command calls GreatDocs.preview()."""
+    runner = CliRunner()
+    from great_docs.cli import preview
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_instance = MagicMock()
+            MockGD.return_value = mock_instance
+
+            result = runner.invoke(preview, ["--project-path", tmp_dir])
+            assert result.exit_code == 0
+            mock_instance.preview.assert_called_once_with(port=3000)
+
+
+def test_cli_preview_custom_port():
+    """CLI preview command passes custom port."""
+    runner = CliRunner()
+    from great_docs.cli import preview
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_instance = MagicMock()
+            MockGD.return_value = mock_instance
+
+            result = runner.invoke(preview, ["--project-path", tmp_dir, "--port", "8080"])
+            assert result.exit_code == 0
+            mock_instance.preview.assert_called_once_with(port=8080)
+
+
+def test_cli_preview_keyboard_interrupt():
+    """CLI preview handles KeyboardInterrupt gracefully."""
+    runner = CliRunner()
+    from great_docs.cli import preview
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            MockGD.return_value.preview.side_effect = KeyboardInterrupt()
+
+            result = runner.invoke(preview, ["--project-path", tmp_dir])
+            assert result.exit_code == 0
+            assert "Server stopped" in result.output
+
+
+def test_cli_preview_error():
+    """CLI preview handles errors gracefully."""
+    runner = CliRunner()
+    from great_docs.cli import preview
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            MockGD.return_value.preview.side_effect = RuntimeError("preview failed")
+
+            result = runner.invoke(preview, ["--project-path", tmp_dir])
+            assert result.exit_code == 1
+            assert "Error: preview failed" in result.output
+
+
+# ── config command ───────────────────────────────────────────────────────────
+
+
+def test_cli_config_success():
+    """CLI config command creates a great-docs.yml file."""
+    runner = CliRunner()
+    from great_docs.cli import config
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        result = runner.invoke(config, ["--project-path", tmp_dir, "--force"])
+        assert result.exit_code == 0
+        assert "Created" in result.output
+
+        config_file = Path(tmp_dir) / "great-docs.yml"
+        assert config_file.exists()
+
+
+def test_cli_config_exists_decline():
+    """CLI config command prompts when file exists and user declines."""
+    runner = CliRunner()
+    from great_docs.cli import config
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Create existing config
+        (Path(tmp_dir) / "great-docs.yml").write_text("existing: true")
+
+        result = runner.invoke(config, ["--project-path", tmp_dir], input="n\n")
+        assert result.exit_code == 0
+        assert "Cancelled" in result.output
+
+        # File should be unchanged
+        content = (Path(tmp_dir) / "great-docs.yml").read_text()
+        assert content == "existing: true"
+
+
+def test_cli_config_exists_confirm():
+    """CLI config command overwrites when file exists and user confirms."""
+    runner = CliRunner()
+    from great_docs.cli import config
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Create existing config
+        (Path(tmp_dir) / "great-docs.yml").write_text("existing: true")
+
+        result = runner.invoke(config, ["--project-path", tmp_dir], input="y\n")
+        assert result.exit_code == 0
+        assert "Created" in result.output
+
+
+def test_cli_config_error():
+    """CLI config command handles errors gracefully."""
+    runner = CliRunner()
+    from great_docs.cli import config
+
+    with patch("great_docs.config.create_default_config") as mock_create:
+        mock_create.side_effect = RuntimeError("config error")
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            result = runner.invoke(config, ["--project-path", tmp_dir, "--force"])
+            assert result.exit_code == 1
+            assert "Error: config error" in result.output
+
+
+# ── scan command ─────────────────────────────────────────────────────────────
+
+
+def test_cli_scan_success():
+    """CLI scan command shows discovered exports."""
+    runner = CliRunner()
+    from great_docs.cli import scan
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs._detect_package_name.return_value = "my_package"
+            mock_docs._normalize_package_name.return_value = "my_package"
+            mock_docs._get_package_exports.return_value = ["MyClass", "my_func"]
+            mock_docs._categorize_api_objects.return_value = {
+                "classes": ["MyClass"],
+                "functions": ["my_func"],
+                "class_method_names": {"MyClass": ["method_a"]},
+            }
+            mock_docs._config.reference = [
+                {
+                    "title": "Classes",
+                    "contents": [
+                        {"name": "MyClass", "members": True},
+                    ],
+                }
+            ]
+
+            result = runner.invoke(scan, ["--project-path", tmp_dir])
+            assert result.exit_code == 0
+            assert "Discovery" in result.output
+            assert "my_package" in result.output
+            assert "Classes" in result.output
+            assert "MyClass" in result.output
+            assert "Functions" in result.output
+            assert "my_func" in result.output
+
+
+def test_cli_scan_verbose():
+    """CLI scan --verbose shows additional detail."""
+    runner = CliRunner()
+    from great_docs.cli import scan
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs._detect_package_name.return_value = "my_pkg"
+            mock_docs._normalize_package_name.return_value = "my_pkg"
+            mock_docs._get_package_exports.return_value = ["func"]
+            mock_docs._categorize_api_objects.return_value = {
+                "functions": ["func"],
+                "class_method_names": {},
+            }
+            mock_docs._config.reference = [
+                {
+                    "title": "Functions",
+                    "contents": ["func"],
+                }
+            ]
+
+            result = runner.invoke(scan, ["--project-path", tmp_dir, "--verbose"])
+            assert result.exit_code == 0
+            assert "Functions" in result.output
+            assert "item(s)" in result.output
+
+
+def test_cli_scan_no_package():
+    """CLI scan exits when no package detected."""
+    runner = CliRunner()
+    from great_docs.cli import scan
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs._detect_package_name.return_value = None
+
+            result = runner.invoke(scan, ["--project-path", tmp_dir])
+            assert result.exit_code == 1
+            assert "Could not detect package name" in result.output
+
+
+def test_cli_scan_no_exports():
+    """CLI scan exits when no exports discovered."""
+    runner = CliRunner()
+    from great_docs.cli import scan
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs._detect_package_name.return_value = "my_pkg"
+            mock_docs._normalize_package_name.return_value = "my_pkg"
+            mock_docs._get_package_exports.return_value = []
+
+            result = runner.invoke(scan, ["--project-path", tmp_dir])
+            assert result.exit_code == 0
+            assert "No exports discovered" in result.output
+
+
+def test_cli_scan_no_reference_config():
+    """CLI scan shows guidance when no reference config found."""
+    runner = CliRunner()
+    from great_docs.cli import scan
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs._detect_package_name.return_value = "my_pkg"
+            mock_docs._normalize_package_name.return_value = "my_pkg"
+            mock_docs._get_package_exports.return_value = ["func"]
+            mock_docs._categorize_api_objects.return_value = {
+                "functions": ["func"],
+                "class_method_names": {},
+            }
+            mock_docs._config.reference = []
+
+            result = runner.invoke(scan, ["--project-path", tmp_dir])
+            assert result.exit_code == 0
+            assert "No reference config found" in result.output
+
+
+def test_cli_scan_class_without_members():
+    """CLI scan marks classes with members: false differently."""
+    runner = CliRunner()
+    from great_docs.cli import scan
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs._detect_package_name.return_value = "my_pkg"
+            mock_docs._normalize_package_name.return_value = "my_pkg"
+            mock_docs._get_package_exports.return_value = ["MyClass"]
+            mock_docs._categorize_api_objects.return_value = {
+                "classes": ["MyClass"],
+                "class_method_names": {"MyClass": ["method"]},
+            }
+            mock_docs._config.reference = [
+                {
+                    "title": "Classes",
+                    "contents": [{"name": "MyClass", "members": False}],
+                }
+            ]
+
+            result = runner.invoke(scan, ["--project-path", tmp_dir])
+            assert result.exit_code == 0
+            assert "MyClass" in result.output
+
+
+def test_cli_scan_flat_categories():
+    """CLI scan shows flat categories like enums, exceptions, etc."""
+    runner = CliRunner()
+    from great_docs.cli import scan
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs._detect_package_name.return_value = "my_pkg"
+            mock_docs._normalize_package_name.return_value = "my_pkg"
+            mock_docs._get_package_exports.return_value = [
+                "MyEnum",
+                "MyError",
+                "my_func",
+                "MY_CONST",
+            ]
+            mock_docs._categorize_api_objects.return_value = {
+                "enums": ["MyEnum"],
+                "exceptions": ["MyError"],
+                "functions": ["my_func"],
+                "constants": ["MY_CONST"],
+                "class_method_names": {},
+            }
+            mock_docs._config.reference = [{"title": "All", "contents": ["MyEnum", "my_func"]}]
+
+            result = runner.invoke(scan, ["--project-path", tmp_dir])
+            assert result.exit_code == 0
+            assert "Enumerations" in result.output
+            assert "Exceptions" in result.output
+            assert "Constants" in result.output
+
+
+def test_cli_scan_error():
+    """CLI scan handles errors gracefully."""
+    runner = CliRunner()
+    from great_docs.cli import scan
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            MockGD.side_effect = RuntimeError("scan failed")
+
+            result = runner.invoke(scan, ["--project-path", tmp_dir])
+            assert result.exit_code == 1
+            assert "Error: scan failed" in result.output
+
+
+def test_cli_scan_class_like_categories():
+    """CLI scan shows all class-like categories: dataclasses, abstract classes, protocols."""
+    runner = CliRunner()
+    from great_docs.cli import scan
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs._detect_package_name.return_value = "my_pkg"
+            mock_docs._normalize_package_name.return_value = "my_pkg"
+            mock_docs._get_package_exports.return_value = [
+                "MyDC",
+                "MyABC",
+                "MyProto",
+            ]
+            mock_docs._categorize_api_objects.return_value = {
+                "dataclasses": ["MyDC"],
+                "abstract_classes": ["MyABC"],
+                "protocols": ["MyProto"],
+                "class_method_names": {
+                    "MyDC": [],
+                    "MyABC": [],
+                    "MyProto": [],
+                },
+            }
+            mock_docs._config.reference = []
+
+            result = runner.invoke(scan, ["--project-path", tmp_dir])
+            assert result.exit_code == 0
+            assert "Dataclasses" in result.output
+            assert "Abstract Classes" in result.output
+            assert "Protocols" in result.output
+
+
+def test_cli_scan_string_items_in_reference():
+    """CLI scan handles simple string items in reference contents."""
+    runner = CliRunner()
+    from great_docs.cli import scan
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs._detect_package_name.return_value = "my_pkg"
+            mock_docs._normalize_package_name.return_value = "my_pkg"
+            mock_docs._get_package_exports.return_value = ["my_func"]
+            mock_docs._categorize_api_objects.return_value = {
+                "functions": ["my_func"],
+                "class_method_names": {},
+            }
+            mock_docs._config.reference = [{"title": "Functions", "contents": ["my_func"]}]
+
+            result = runner.invoke(scan, ["--project-path", tmp_dir])
+            assert result.exit_code == 0
+            # my_func should be marked as included
+            assert "my_func" in result.output
+
+
+# ── check-links command ──────────────────────────────────────────────────────
+
+
+def test_cli_check_links_success():
+    """CLI check-links command runs link check."""
+    runner = CliRunner()
+    from great_docs.cli import check_links
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs.check_links.return_value = {
+                "total": 5,
+                "ok": [{"url": "https://example.com"}],
+                "broken": [],
+                "redirects": [],
+                "skipped": [],
+            }
+
+            result = runner.invoke(check_links, ["--project-path", tmp_dir])
+            assert result.exit_code == 0
+            assert "All links are valid" in result.output
+            assert "Link Check Summary" in result.output
+
+
+def test_cli_check_links_broken():
+    """CLI check-links reports broken links and exits with error."""
+    runner = CliRunner()
+    from great_docs.cli import check_links
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs.check_links.return_value = {
+                "total": 3,
+                "ok": [],
+                "broken": [
+                    {
+                        "url": "https://broken.example.com",
+                        "status": 404,
+                        "error": "Not Found",
+                        "files": ["README.md"],
+                    }
+                ],
+                "redirects": [],
+                "skipped": [],
+            }
+
+            result = runner.invoke(check_links, ["--project-path", tmp_dir])
+            assert result.exit_code == 1
+            assert "Broken Links" in result.output
+            assert "broken.example.com" in result.output
+
+
+def test_cli_check_links_with_redirects():
+    """CLI check-links shows redirects."""
+    runner = CliRunner()
+    from great_docs.cli import check_links
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs.check_links.return_value = {
+                "total": 2,
+                "ok": [],
+                "broken": [],
+                "redirects": [
+                    {
+                        "url": "https://old.example.com",
+                        "status": 301,
+                        "location": "https://new.example.com",
+                        "files": ["docs.md"],
+                    }
+                ],
+                "skipped": [],
+            }
+
+            result = runner.invoke(check_links, ["--project-path", tmp_dir])
+            assert result.exit_code == 0
+            assert "Redirects" in result.output
+            assert "old.example.com" in result.output
+
+
+def test_cli_check_links_source_only():
+    """CLI check-links --source-only passes correct flags."""
+    runner = CliRunner()
+    from great_docs.cli import check_links
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs.check_links.return_value = {
+                "total": 0,
+                "ok": [],
+                "broken": [],
+                "redirects": [],
+                "skipped": [],
+            }
+
+            result = runner.invoke(check_links, ["--project-path", tmp_dir, "--source-only"])
+            assert result.exit_code == 0
+            assert "source files only" in result.output
+            call_kwargs = mock_docs.check_links.call_args[1]
+            assert call_kwargs["include_source"] is True
+            assert call_kwargs["include_docs"] is False
+
+
+def test_cli_check_links_docs_only():
+    """CLI check-links --docs-only passes correct flags."""
+    runner = CliRunner()
+    from great_docs.cli import check_links
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs.check_links.return_value = {
+                "total": 0,
+                "ok": [],
+                "broken": [],
+                "redirects": [],
+                "skipped": [],
+            }
+
+            result = runner.invoke(check_links, ["--project-path", tmp_dir, "--docs-only"])
+            assert result.exit_code == 0
+            assert "documentation files only" in result.output
+
+
+def test_cli_check_links_json_output_no_broken():
+    """CLI check-links --json-output outputs JSON."""
+    runner = CliRunner()
+    from great_docs.cli import check_links
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs.check_links.return_value = {
+                "total": 1,
+                "ok": [],
+                "broken": [],
+                "redirects": [],
+                "skipped": [],
+            }
+
+            result = runner.invoke(check_links, ["--project-path", tmp_dir, "--json-output"])
+            assert result.exit_code == 0
+            parsed = json.loads(result.output)
+            assert "total" in parsed
+
+
+def test_cli_check_links_json_output_with_broken():
+    """CLI check-links --json-output exits 1 when there are broken links."""
+    runner = CliRunner()
+    from great_docs.cli import check_links
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs.check_links.return_value = {
+                "total": 1,
+                "ok": [],
+                "broken": [{"url": "x", "status": 404, "error": "fail", "files": ["a.md"]}],
+                "redirects": [],
+                "skipped": [],
+            }
+
+            result = runner.invoke(check_links, ["--project-path", tmp_dir, "--json-output"])
+            assert result.exit_code == 1
+
+
+def test_cli_check_links_custom_ignore():
+    """CLI check-links -i passes custom ignore patterns."""
+    runner = CliRunner()
+    from great_docs.cli import check_links
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs.check_links.return_value = {
+                "total": 0,
+                "ok": [],
+                "broken": [],
+                "redirects": [],
+                "skipped": [],
+            }
+
+            result = runner.invoke(
+                check_links,
+                ["--project-path", tmp_dir, "-i", "github.com"],
+            )
+            assert result.exit_code == 0
+            call_kwargs = mock_docs.check_links.call_args[1]
+            assert "github.com" in call_kwargs["ignore_patterns"]
+
+
+def test_cli_check_links_import_error():
+    """CLI check-links handles ImportError (missing requests)."""
+    runner = CliRunner()
+    from great_docs.cli import check_links
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs.check_links.side_effect = ImportError("No module named 'requests'")
+
+            result = runner.invoke(check_links, ["--project-path", tmp_dir])
+            assert result.exit_code == 1
+            assert "requests" in result.output
+
+
+def test_cli_check_links_error():
+    """CLI check-links handles generic errors."""
+    runner = CliRunner()
+    from great_docs.cli import check_links
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            MockGD.side_effect = RuntimeError("check failed")
+
+            result = runner.invoke(check_links, ["--project-path", tmp_dir])
+            assert result.exit_code == 1
+            assert "Error: check failed" in result.output
+
+
+# ── spell-check command ──────────────────────────────────────────────────────
+
+
+def test_cli_spell_check_success():
+    """CLI spell-check reports no errors cleanly."""
+    runner = CliRunner()
+    from great_docs.cli import spell_check
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs.spell_check.return_value = {
+                "total_words": 100,
+                "misspelled": [],
+                "by_file": {},
+                "skipped_files": [],
+            }
+
+            result = runner.invoke(spell_check, ["--project-path", tmp_dir])
+            assert result.exit_code == 0
+            assert "No spelling errors found" in result.output
+
+
+def test_cli_spell_check_with_errors():
+    """CLI spell-check reports misspellings and exits 1."""
+    runner = CliRunner()
+    from great_docs.cli import spell_check
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs.spell_check.return_value = {
+                "total_words": 100,
+                "misspelled": [
+                    {
+                        "word": "teh",
+                        "suggestions": ["the", "ten"],
+                        "files": ["README.md"],
+                        "contexts": ["Teh quick brown fox"],
+                    }
+                ],
+                "by_file": {"README.md": ["teh"]},
+                "skipped_files": [],
+            }
+
+            result = runner.invoke(spell_check, ["--project-path", tmp_dir])
+            assert result.exit_code == 1
+            assert "teh" in result.output
+            assert "Suggestions" in result.output
+
+
+def test_cli_spell_check_verbose():
+    """CLI spell-check --verbose shows progress."""
+    runner = CliRunner()
+    from great_docs.cli import spell_check
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs.spell_check.return_value = {
+                "total_words": 50,
+                "misspelled": [],
+                "by_file": {},
+                "skipped_files": [],
+            }
+
+            result = runner.invoke(spell_check, ["--project-path", tmp_dir, "--verbose"])
+            assert result.exit_code == 0
+            assert "Checking spelling" in result.output
+
+
+def test_cli_spell_check_custom_dictionary():
+    """CLI spell-check -d passes custom words."""
+    runner = CliRunner()
+    from great_docs.cli import spell_check
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs.spell_check.return_value = {
+                "total_words": 10,
+                "misspelled": [],
+                "by_file": {},
+                "skipped_files": [],
+            }
+
+            result = runner.invoke(
+                spell_check,
+                ["--project-path", tmp_dir, "-d", "myword", "-d", "anotherword"],
+            )
+            assert result.exit_code == 0
+            call_kwargs = mock_docs.spell_check.call_args[1]
+            assert "myword" in call_kwargs["custom_dictionary"]
+            assert "anotherword" in call_kwargs["custom_dictionary"]
+
+
+def test_cli_spell_check_dictionary_file():
+    """CLI spell-check --dictionary-file loads words from file."""
+    runner = CliRunner()
+    from great_docs.cli import spell_check
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        dict_file = Path(tmp_dir) / "words.txt"
+        dict_file.write_text("customword\n# comment\nanotherword\n")
+
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs.spell_check.return_value = {
+                "total_words": 10,
+                "misspelled": [],
+                "by_file": {},
+                "skipped_files": [],
+            }
+
+            result = runner.invoke(
+                spell_check,
+                ["--project-path", tmp_dir, "--dictionary-file", str(dict_file)],
+            )
+            assert result.exit_code == 0
+            call_kwargs = mock_docs.spell_check.call_args[1]
+            assert "customword" in call_kwargs["custom_dictionary"]
+            # Comments should be skipped
+            assert "# comment" not in call_kwargs["custom_dictionary"]
+
+
+def test_cli_spell_check_json_output():
+    """CLI spell-check --json-output outputs JSON."""
+    runner = CliRunner()
+    from great_docs.cli import spell_check
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs.spell_check.return_value = {
+                "total_words": 10,
+                "misspelled": [],
+                "by_file": {},
+                "skipped_files": [],
+            }
+
+            result = runner.invoke(spell_check, ["--project-path", tmp_dir, "--json-output"])
+            assert result.exit_code == 0
+            parsed = json.loads(result.output)
+            assert "total_words" in parsed
+
+
+def test_cli_spell_check_json_output_with_errors():
+    """CLI spell-check --json-output exits 1 when misspellings found."""
+    runner = CliRunner()
+    from great_docs.cli import spell_check
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs.spell_check.return_value = {
+                "total_words": 10,
+                "misspelled": [{"word": "teh", "suggestions": [], "files": [], "contexts": []}],
+                "by_file": {},
+                "skipped_files": [],
+            }
+
+            result = runner.invoke(spell_check, ["--project-path", tmp_dir, "--json-output"])
+            assert result.exit_code == 1
+
+
+def test_cli_spell_check_include_docstrings():
+    """CLI spell-check --include-docstrings passes the flag."""
+    runner = CliRunner()
+    from great_docs.cli import spell_check
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs.spell_check.return_value = {
+                "total_words": 10,
+                "misspelled": [],
+                "by_file": {},
+                "skipped_files": [],
+            }
+
+            result = runner.invoke(spell_check, ["--project-path", tmp_dir, "--include-docstrings"])
+            assert result.exit_code == 0
+            call_kwargs = mock_docs.spell_check.call_args[1]
+            assert call_kwargs["include_docstrings"] is True
+
+
+def test_cli_spell_check_skipped_files():
+    """CLI spell-check shows count of skipped files."""
+    runner = CliRunner()
+    from great_docs.cli import spell_check
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs.spell_check.return_value = {
+                "total_words": 50,
+                "misspelled": [],
+                "by_file": {},
+                "skipped_files": ["binary.dat", "image.png"],
+            }
+
+            result = runner.invoke(spell_check, ["--project-path", tmp_dir])
+            assert result.exit_code == 0
+            assert "Skipped files: 2" in result.output
+
+
+def test_cli_spell_check_many_files_truncated():
+    """CLI spell-check truncates file list when word appears in many files."""
+    runner = CliRunner()
+    from great_docs.cli import spell_check
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs.spell_check.return_value = {
+                "total_words": 100,
+                "misspelled": [
+                    {
+                        "word": "teh",
+                        "suggestions": ["the"],
+                        "files": ["a.md", "b.md", "c.md", "d.md", "e.md"],
+                        "contexts": [],
+                    }
+                ],
+                "by_file": {"a.md": ["teh"]},
+                "skipped_files": [],
+            }
+
+            result = runner.invoke(spell_check, ["--project-path", tmp_dir])
+            assert result.exit_code == 1
+            assert "2 more file(s)" in result.output
+
+
+def test_cli_spell_check_long_context_truncated():
+    """CLI spell-check truncates long context strings."""
+    runner = CliRunner()
+    from great_docs.cli import spell_check
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            long_ctx = "x" * 100
+            mock_docs.spell_check.return_value = {
+                "total_words": 100,
+                "misspelled": [
+                    {
+                        "word": "teh",
+                        "suggestions": [],
+                        "files": ["a.md"],
+                        "contexts": [long_ctx],
+                    }
+                ],
+                "by_file": {"a.md": ["teh"]},
+                "skipped_files": [],
+            }
+
+            result = runner.invoke(spell_check, ["--project-path", tmp_dir])
+            assert result.exit_code == 1
+            assert "..." in result.output
+
+
+def test_cli_spell_check_error():
+    """CLI spell-check handles errors."""
+    runner = CliRunner()
+    from great_docs.cli import spell_check
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            MockGD.side_effect = RuntimeError("spell check failed")
+
+            result = runner.invoke(spell_check, ["--project-path", tmp_dir])
+            assert result.exit_code == 1
+            assert "Error: spell check failed" in result.output
+
+
+# ── changelog command ────────────────────────────────────────────────────────
+
+
+def test_cli_changelog_success():
+    """CLI changelog generates changelog page."""
+    runner = CliRunner()
+    from great_docs.cli import changelog
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs._get_github_repo_info.return_value = ("owner", "repo", "https://github.com")
+            mock_docs._generate_changelog_page.return_value = "great-docs/changelog.qmd"
+            mock_docs.project_path = Path(tmp_dir)
+
+            result = runner.invoke(changelog, ["--project-path", tmp_dir])
+            assert result.exit_code == 0
+            assert "Changelog generated" in result.output
+            mock_docs._add_changelog_to_navbar.assert_called_once()
+
+
+def test_cli_changelog_no_releases():
+    """CLI changelog reports when no releases found."""
+    runner = CliRunner()
+    from great_docs.cli import changelog
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs._get_github_repo_info.return_value = ("owner", "repo", "https://github.com")
+            mock_docs._generate_changelog_page.return_value = None
+
+            result = runner.invoke(changelog, ["--project-path", tmp_dir])
+            assert result.exit_code == 0
+            assert "No published releases found" in result.output
+
+
+def test_cli_changelog_no_github_repo():
+    """CLI changelog reports when no GitHub repo configured."""
+    runner = CliRunner()
+    from great_docs.cli import changelog
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs._get_github_repo_info.return_value = (None, None, None)
+
+            result = runner.invoke(changelog, ["--project-path", tmp_dir])
+            assert result.exit_code == 1
+            assert "No GitHub repository URL found" in result.output
+
+
+def test_cli_changelog_with_max_releases():
+    """CLI changelog --max-releases passes value."""
+    runner = CliRunner()
+    from great_docs.cli import changelog
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            mock_docs = MagicMock()
+            MockGD.return_value = mock_docs
+            mock_docs._get_github_repo_info.return_value = ("owner", "repo", "https://github.com")
+            mock_docs._generate_changelog_page.return_value = "great-docs/changelog.qmd"
+            mock_docs.project_path = Path(tmp_dir)
+            mock_docs._config._config = {}
+
+            result = runner.invoke(changelog, ["--project-path", tmp_dir, "--max-releases", "10"])
+            assert result.exit_code == 0
+            assert mock_docs._config._config["changelog"]["max_releases"] == 10
+
+
+def test_cli_changelog_error():
+    """CLI changelog handles errors."""
+    runner = CliRunner()
+    from great_docs.cli import changelog
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with patch("great_docs.cli.GreatDocs") as MockGD:
+            MockGD.side_effect = RuntimeError("changelog failed")
+
+            result = runner.invoke(changelog, ["--project-path", tmp_dir])
+            assert result.exit_code == 1
+            assert "Error: changelog failed" in result.output
+
+
+# ── main entry point ─────────────────────────────────────────────────────────
+
+
+def test_cli_main_entry_point():
+    """main() calls cli()."""
+
+    with patch("great_docs.cli.cli") as mock_cli:
+        main()
+        mock_cli.assert_called_once()

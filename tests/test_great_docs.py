@@ -7754,7 +7754,10 @@ class TestSignatureDoc:
         obj.labels = set()
 
         doc = layout.DocFunction(
-            name="func", obj=obj, anchor="pkg.mod.func", signature_name="full",
+            name="func",
+            obj=obj,
+            anchor="pkg.mod.func",
+            signature_name="full",
         )
         result = renderer.signature(doc)
         assert "pkg.mod.func" in result
@@ -7953,7 +7956,10 @@ class TestRenderHeaderEnumBranch:
         obj.labels = {"enum"}
 
         doc = layout.DocClass(
-            name="Color", obj=obj, anchor="pkg.Color", signature_name="relative",
+            name="Color",
+            obj=obj,
+            anchor="pkg.Color",
+            signature_name="relative",
         )
         result = renderer.render_header(doc)
         assert ".doc-type-enum" in result
@@ -7967,7 +7973,9 @@ class TestRenderParameterAnnotations:
         from great_docs._qrenderer._md_renderer import MdRenderer
 
         renderer = MdRenderer(show_signature_annotations=True)
-        p = dc.Parameter("x", annotation="int", default="0", kind=dc.ParameterKind.positional_or_keyword)
+        p = dc.Parameter(
+            "x", annotation="int", default="0", kind=dc.ParameterKind.positional_or_keyword
+        )
         result = renderer._render_parameter(p)
         assert result == "x: int = 0"
 
@@ -8031,8 +8039,12 @@ class TestRenderInterlaced:
         obj1 = self._make_func_obj("func_a", "First function.")
         obj2 = self._make_func_obj("func_b", "Second function.")
 
-        doc1 = layout.DocFunction(name="func_a", obj=obj1, anchor="pkg.func_a", signature_name="relative")
-        doc2 = layout.DocFunction(name="func_b", obj=obj2, anchor="pkg.func_b", signature_name="relative")
+        doc1 = layout.DocFunction(
+            name="func_a", obj=obj1, anchor="pkg.func_a", signature_name="relative"
+        )
+        doc2 = layout.DocFunction(
+            name="func_b", obj=obj2, anchor="pkg.func_b", signature_name="relative"
+        )
 
         el = layout.Interlaced(contents=[doc1, doc2])
         result = renderer._render_interlaced(el)
@@ -8074,7 +8086,9 @@ class TestRenderInterlaced:
         renderer = MdRenderer(show_signature=False)
         obj1 = self._make_func_obj("func_a")
 
-        doc1 = layout.DocFunction(name="func_a", obj=obj1, anchor="pkg.func_a", signature_name="relative")
+        doc1 = layout.DocFunction(
+            name="func_a", obj=obj1, anchor="pkg.func_a", signature_name="relative"
+        )
         el = layout.Interlaced(contents=[doc1])
         result = renderer._render_interlaced(el)
         assert "func_a" in result
@@ -8180,14 +8194,21 @@ class TestRenderDocClassModuleAdvanced:
 
         cls_obj = self._make_class_obj("MyClass")
         cls_obj.docstring.parsed = [
-            __import__("great_docs._qrenderer._griffe.docstrings", fromlist=["DocstringSectionText"]).DocstringSectionText(value="A class.")
+            __import__(
+                "great_docs._qrenderer._griffe.docstrings", fromlist=["DocstringSectionText"]
+            ).DocstringSectionText(value="A class.")
         ]
 
         attr_obj = self._make_attr_obj("my_attr")
-        attr_doc = layout.DocAttribute(name="my_attr", obj=attr_obj, anchor="pkg.MyClass.my_attr", signature_name="relative")
+        attr_doc = layout.DocAttribute(
+            name="my_attr", obj=attr_obj, anchor="pkg.MyClass.my_attr", signature_name="relative"
+        )
 
         el = layout.DocClass(
-            name="MyClass", obj=cls_obj, anchor="pkg.MyClass", signature_name="relative",
+            name="MyClass",
+            obj=cls_obj,
+            anchor="pkg.MyClass",
+            signature_name="relative",
             members=[attr_doc],
         )
         result = renderer._render_doc_class_module(el)
@@ -8205,12 +8226,18 @@ class TestRenderDocClassModuleAdvanced:
         child_obj = self._make_class_obj("Child")
 
         child_doc = layout.DocClass(
-            name="Child", obj=child_obj, anchor="pkg.Child", signature_name="relative",
+            name="Child",
+            obj=child_obj,
+            anchor="pkg.Child",
+            signature_name="relative",
             members=[],
         )
 
         el = layout.DocClass(
-            name="Parent", obj=parent_obj, anchor="pkg.Parent", signature_name="relative",
+            name="Parent",
+            obj=parent_obj,
+            anchor="pkg.Parent",
+            signature_name="relative",
             members=[child_doc],
         )
         result = renderer._render_doc_class_module(el)
@@ -8236,11 +8263,17 @@ class TestRenderDocClassModuleAdvanced:
         func_obj.parent.is_class = False
 
         func_doc = layout.DocFunction(
-            name="my_func", obj=func_obj, anchor="pkg.my_func", signature_name="relative",
+            name="my_func",
+            obj=func_obj,
+            anchor="pkg.my_func",
+            signature_name="relative",
         )
 
         el = layout.DocModule(
-            name="mymod", obj=mod_obj, anchor="pkg.mymod", signature_name="relative",
+            name="mymod",
+            obj=mod_obj,
+            anchor="pkg.mymod",
+            signature_name="relative",
             members=[func_doc],
         )
         result = renderer._render_doc_class_module(el)
@@ -8263,18 +8296,27 @@ class TestRenderDocClassModuleAdvanced:
 
         # Field attribute (should be filtered out)
         field_attr = self._make_attr_obj("field1")
-        field_doc = layout.DocAttribute(name="field1", obj=field_attr, anchor="pkg.MyDC.field1", signature_name="relative")
+        field_doc = layout.DocAttribute(
+            name="field1", obj=field_attr, anchor="pkg.MyDC.field1", signature_name="relative"
+        )
 
         # Non-field attribute (should appear in Attributes)
         prop_attr = self._make_attr_obj("my_prop")
-        prop_doc = layout.DocAttribute(name="my_prop", obj=prop_attr, anchor="pkg.MyDC.my_prop", signature_name="relative")
+        prop_doc = layout.DocAttribute(
+            name="my_prop", obj=prop_attr, anchor="pkg.MyDC.my_prop", signature_name="relative"
+        )
 
         el = layout.DocClass(
-            name="MyDC", obj=cls_obj, anchor="pkg.MyDC", signature_name="relative",
+            name="MyDC",
+            obj=cls_obj,
+            anchor="pkg.MyDC",
+            signature_name="relative",
             members=[field_doc, prop_doc],
         )
 
-        with patch("great_docs._qrenderer._md_renderer._get_dataclass_field_names", return_value=["field1"]):
+        with patch(
+            "great_docs._qrenderer._md_renderer._get_dataclass_field_names", return_value=["field1"]
+        ):
             result = renderer._render_doc_class_module(el)
 
         assert "Attributes" in result
@@ -8324,11 +8366,17 @@ class TestRenderDocClassModuleFlat:
         func_obj.docstring = MagicMock(spec=dc.Docstring)
         func_obj.docstring.parsed = [ds.DocstringSectionText(value="Method m.")]
 
-        func_doc = layout.DocFunction(name="m", obj=func_obj, anchor="pkg.Flat.m", signature_name="relative")
+        func_doc = layout.DocFunction(
+            name="m", obj=func_obj, anchor="pkg.Flat.m", signature_name="relative"
+        )
 
         el = layout.DocClass(
-            name="Flat", obj=cls_obj, anchor="pkg.Flat", signature_name="relative",
-            members=[func_doc], flat=True,
+            name="Flat",
+            obj=cls_obj,
+            anchor="pkg.Flat",
+            signature_name="relative",
+            members=[func_doc],
+            flat=True,
         )
         result = renderer._render_doc_class_module(el)
         assert "Methods" in result

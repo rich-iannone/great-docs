@@ -28588,3 +28588,1269 @@ def test_update_quarto_config_no_releases():
             docs._update_quarto_config()
 
         assert not meta_path.exists()
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Tests for _qrenderer/introspection.py
+# ═══════════════════════════════════════════════════════════════════════════
+
+"""Tests for great_docs._qrenderer.introspection — batch 1.
+
+Covers:
+- get_parser_defaults
+- get_object (deprecation, dynamic, aliases, error paths)
+- _resolve_target
+- replace_docstring
+- _canonical_path
+- _is_valueless
+- _insert_contents
+- _merge_frontmatter
+"""
+
+
+# ── get_parser_defaults ──────────────────────────────────────────────────────
+
+
+def test_get_parser_defaults_numpy():
+    from great_docs._qrenderer.introspection import get_parser_defaults
+
+    result = get_parser_defaults("numpy")
+    assert "allow_section_blank_line" in result
+    assert result["allow_section_blank_line"] is True
+
+
+def test_get_parser_defaults_unknown():
+    from great_docs._qrenderer.introspection import get_parser_defaults
+
+    result = get_parser_defaults("unknown_parser")
+    assert result == {}
+
+
+# ── get_object ───────────────────────────────────────────────────────────────
+
+
+def test_get_object_basic():
+    """get_object can load a simple module-level function."""
+    from great_docs._qrenderer.introspection import get_object
+
+    obj = get_object("json:dumps")
+    assert obj.name == "dumps"
+
+
+def test_get_object_module_only():
+    """get_object with no colon returns the module itself."""
+    from great_docs._qrenderer.introspection import get_object
+
+    obj = get_object("json")
+    assert obj.name == "json"
+
+
+def test_get_object_deprecated_object_name():
+    """get_object with the deprecated object_name parameter still works."""
+    import warnings
+
+    from great_docs._qrenderer.introspection import get_object
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        obj = get_object("json", object_name="dumps")
+    assert obj.name == "dumps"
+
+
+def test_get_object_deprecated_object_name_warns():
+    """get_object with object_name emits a DeprecationWarning."""
+    import warnings
+
+    from great_docs._qrenderer.introspection import get_object
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        get_object("json", object_name="dumps")
+    assert any(issubclass(x.category, DeprecationWarning) for x in w)
+
+
+def test_get_object_with_shared_loader():
+    """get_object reuses a loader if provided."""
+    from great_docs._qrenderer.introspection import (
+        GriffeLoader,
+        LinesCollection,
+        ModulesCollection,
+        Parser,
+        get_object,
+    )
+
+    loader = GriffeLoader(
+        docstring_parser=Parser("numpy"),
+        docstring_options={},
+        modules_collection=ModulesCollection(),
+        lines_collection=LinesCollection(),
+    )
+    obj = get_object("json:dumps", loader=loader)
+    assert obj.name == "dumps"
+
+    # Module should now be cached in loader
+    assert "json" in loader.modules_collection
+
+
+def test_get_object_dynamic_mode():
+    """get_object with dynamic=True returns a dynamically loaded object."""
+    from great_docs._qrenderer.introspection import get_object
+
+    obj = get_object("json:dumps", dynamic=True)
+    assert obj is not None
+    assert obj.name == "dumps"
+
+
+def test_get_object_alias_loads_target_module():
+    """get_object with load_aliases=True loads the target module for aliases."""
+    from great_docs._qrenderer.introspection import get_object
+
+    # os.path is typically an alias to posixpath or ntpath
+    obj = get_object("os:path", load_aliases=True)
+    assert obj is not None
+
+
+def test_get_object_nested_path():
+    """get_object can navigate nested class members."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pkg = Path(tmp_dir) / "introtest_nested"
+        pkg.mkdir()
+        (pkg / "__init__.py").write_text(
+            'class Outer:\n    """Outer class."""\n'
+            '    class Inner:\n        """Inner class."""\n'
+            "        def method(self): pass\n",
+            encoding="utf-8",
+        )
+        sys.path.insert(0, tmp_dir)
+        try:
+            from great_docs._qrenderer.introspection import get_object
+
+            obj = get_object("introtest_nested:Outer.Inner")
+            assert obj.name == "Inner"
+        finally:
+            sys.path.remove(tmp_dir)
+            sys.modules.pop("introtest_nested", None)
+
+
+# ── _resolve_target ──────────────────────────────────────────────────────────
+
+
+def test_resolve_target_direct():
+    """_resolve_target returns the target when it's not an Alias."""
+    from great_docs._qrenderer.introspection import _resolve_target
+    from great_docs._qrenderer._griffe import dataclasses as dc
+
+    mod = dc.Module(name="testmod")
+    func = dc.Function(name="my_func", lineno=1)
+    mod.set_member("my_func", func)
+    alias = dc.Alias("my_alias", func, parent=mod)
+    result = _resolve_target(alias)
+    assert result is func
+
+
+def test_resolve_target_chained():
+    """_resolve_target follows chained aliases."""
+    from great_docs._qrenderer.introspection import _resolve_target
+    from great_docs._qrenderer._griffe import dataclasses as dc
+
+    mod = dc.Module(name="testmod")
+    func = dc.Function(name="my_func", lineno=1)
+    mod.set_member("my_func", func)
+    alias1 = dc.Alias("alias1", func, parent=mod)
+    alias2 = dc.Alias("alias2", alias1, parent=mod)
+    result = _resolve_target(alias2)
+    assert result is func
+
+
+# ── replace_docstring ────────────────────────────────────────────────────────
+
+
+def test_replace_docstring_basic():
+    """replace_docstring replaces a function's docstring."""
+    from great_docs._qrenderer.introspection import get_object, replace_docstring
+
+    obj = get_object("json:dumps")
+    old_doc = obj.docstring.value if obj.docstring else ""
+    replace_docstring(obj)
+    # After replace, docstring should come from the actual runtime function
+    assert obj.docstring is not None
+
+
+def test_replace_docstring_with_explicit_function():
+    """replace_docstring uses a provided function's docstring."""
+    from great_docs._qrenderer.introspection import get_object, replace_docstring
+
+    obj = get_object("json:dumps")
+
+    def custom_func():
+        """Custom replacement docstring."""
+
+    replace_docstring(obj, f=custom_func)
+    assert obj.docstring.value == "Custom replacement docstring."
+
+
+def test_replace_docstring_none_doc():
+    """replace_docstring does nothing when function has no docstring."""
+    from great_docs._qrenderer.introspection import get_object, replace_docstring
+
+    obj = get_object("json:dumps")
+
+    def no_doc():
+        pass
+
+    old_docstring = obj.docstring
+    replace_docstring(obj, f=no_doc)
+    # Docstring should be unchanged since f.__doc__ is None
+    assert obj.docstring is old_docstring
+
+
+def test_replace_docstring_class_replaces_members():
+    """replace_docstring on a class recurses into its members."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pkg = Path(tmp_dir) / "introtest_repdoc"
+        pkg.mkdir()
+        (pkg / "__init__.py").write_text(
+            "class MyClass:\n"
+            '    """A class."""\n'
+            "    def method(self):\n"
+            '        """Method doc."""\n'
+            "        pass\n",
+            encoding="utf-8",
+        )
+        sys.path.insert(0, tmp_dir)
+        try:
+            from great_docs._qrenderer.introspection import get_object, replace_docstring
+
+            obj = get_object("introtest_repdoc:MyClass")
+            replace_docstring(obj)
+            # Should not raise
+            assert obj.docstring is not None
+        finally:
+            sys.path.remove(tmp_dir)
+            sys.modules.pop("introtest_repdoc", None)
+
+
+def test_replace_docstring_nested_class():
+    """replace_docstring handles nested class member resolution."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pkg = Path(tmp_dir) / "introtest_nested_cls"
+        pkg.mkdir()
+        (pkg / "__init__.py").write_text(
+            "class Outer:\n"
+            '    """Outer."""\n'
+            "    class Inner:\n"
+            '        """Inner."""\n'
+            "        def method(self):\n"
+            '            """Inner method."""\n'
+            "            pass\n",
+            encoding="utf-8",
+        )
+        sys.path.insert(0, tmp_dir)
+        try:
+            from great_docs._qrenderer.introspection import get_object, replace_docstring
+
+            obj = get_object("introtest_nested_cls:Outer.Inner.method")
+            replace_docstring(obj)
+            assert obj.docstring is not None
+        finally:
+            sys.path.remove(tmp_dir)
+            sys.modules.pop("introtest_nested_cls", None)
+
+
+def test_replace_docstring_alias():
+    """replace_docstring resolves aliases before replacing."""
+    from great_docs._qrenderer.introspection import get_object, replace_docstring
+    from great_docs._qrenderer._griffe import dataclasses as dc
+
+    obj = get_object("json:dumps")
+    mod = get_object("json")
+    alias = dc.Alias("my_alias", obj, parent=mod)
+    replace_docstring(alias)
+    # Should resolve the alias and replace on the target
+
+
+# ── _canonical_path ──────────────────────────────────────────────────────────
+
+
+def test_canonical_path_module():
+    """_canonical_path for a module returns module name."""
+    from great_docs._qrenderer.introspection import _canonical_path
+
+    result = _canonical_path(json, "")
+    assert result == "json"
+
+
+def test_canonical_path_module_with_qualname():
+    """_canonical_path for a module with qualname appends suffix."""
+    from great_docs._qrenderer.introspection import _canonical_path
+
+    result = _canonical_path(json, "dumps")
+    assert result == "json:dumps"
+
+
+def test_canonical_path_function():
+    """_canonical_path for a function returns module:qualname."""
+    from great_docs._qrenderer.introspection import _canonical_path
+
+    result = _canonical_path(json.dumps, "")
+    assert result == "json:dumps"
+
+
+def test_canonical_path_function_with_qualname():
+    """_canonical_path for a function with extra qualname appends it."""
+    from great_docs._qrenderer.introspection import _canonical_path
+
+    result = _canonical_path(json.dumps, "extra")
+    assert result == "json:dumps.extra"
+
+
+def test_canonical_path_class():
+    """_canonical_path for a class returns module:qualname."""
+    from great_docs._qrenderer.introspection import _canonical_path
+
+    result = _canonical_path(json.JSONEncoder, "")
+    assert result == "json.encoder:JSONEncoder"
+
+
+def test_canonical_path_plain_object():
+    """_canonical_path for a plain object (not module/class/function) returns None."""
+    from great_docs._qrenderer.introspection import _canonical_path
+
+    result = _canonical_path(42, "")
+    assert result is None
+
+
+def test_canonical_path_no_module_attr():
+    """_canonical_path returns None when __module__ is missing."""
+    from great_docs._qrenderer.introspection import _canonical_path
+
+    class NoModule:
+        pass
+
+    obj = NoModule()
+    # Instance — not a class/function/module
+    result = _canonical_path(obj, "")
+    assert result is None
+
+
+def test_canonical_path_class_no_module():
+    """_canonical_path returns None when class has no __module__."""
+    from great_docs._qrenderer.introspection import _canonical_path
+
+    cls = type("DynClass", (), {})
+    cls.__module__ = None
+    result = _canonical_path(cls, "")
+    assert result is None
+
+
+# ── _is_valueless ────────────────────────────────────────────────────────────
+
+
+def test_is_valueless_class_attribute_no_value():
+    """_is_valueless returns True for class-attribute with no value."""
+    from great_docs._qrenderer.introspection import _is_valueless
+    from great_docs._qrenderer._griffe import dataclasses as dc
+
+    attr = dc.Attribute(name="x", lineno=1, value=None)
+    attr.labels.add("class-attribute")
+    assert _is_valueless(attr) is True
+
+
+def test_is_valueless_instance_attribute():
+    """_is_valueless returns True for instance-attribute."""
+    from great_docs._qrenderer.introspection import _is_valueless
+    from great_docs._qrenderer._griffe import dataclasses as dc
+
+    attr = dc.Attribute(name="x", lineno=1)
+    attr.labels.add("instance-attribute")
+    assert _is_valueless(attr) is True
+
+
+def test_is_valueless_class_attribute_with_value():
+    """_is_valueless returns False for class-attribute with a value."""
+    from great_docs._qrenderer.introspection import _is_valueless
+    from great_docs._qrenderer._griffe import dataclasses as dc
+
+    attr = dc.Attribute(name="x", lineno=1, value="42")
+    attr.labels.add("class-attribute")
+    assert _is_valueless(attr) is False
+
+
+def test_is_valueless_function():
+    """_is_valueless returns False for a function."""
+    from great_docs._qrenderer.introspection import _is_valueless
+    from great_docs._qrenderer._griffe import dataclasses as dc
+
+    func = dc.Function(name="f", lineno=1)
+    assert _is_valueless(func) is False
+
+
+def test_is_valueless_module_attribute_no_value():
+    """_is_valueless returns True for module-attribute with no value."""
+    from great_docs._qrenderer.introspection import _is_valueless
+    from great_docs._qrenderer._griffe import dataclasses as dc
+
+    attr = dc.Attribute(name="x", lineno=1, value=None)
+    attr.labels.add("module-attribute")
+    assert _is_valueless(attr) is True
+
+
+# ── _insert_contents ─────────────────────────────────────────────────────────
+
+
+def test_insert_contents_list():
+    """_insert_contents splices items into a list at the sentinel."""
+    from great_docs._qrenderer.introspection import _insert_contents
+
+    data = ["before", "{{ contents }}", "after"]
+    result = _insert_contents(data, ["a", "b", "c"])
+    assert result is True
+    assert data == ["before", "a", "b", "c", "after"]
+
+
+def test_insert_contents_dict():
+    """_insert_contents searches dict values for the sentinel."""
+    from great_docs._qrenderer.introspection import _insert_contents
+
+    data = {"key": ["{{ contents }}"]}
+    result = _insert_contents(data, ["x", "y"])
+    assert result is True
+    assert data == {"key": ["x", "y"]}
+
+
+def test_insert_contents_nested():
+    """_insert_contents searches nested structures."""
+    from great_docs._qrenderer.introspection import _insert_contents
+
+    data = {"outer": {"inner": ["before", "{{ contents }}"]}}
+    result = _insert_contents(data, ["item1"])
+    assert result is True
+    assert data["outer"]["inner"] == ["before", "item1"]
+
+
+def test_insert_contents_no_sentinel():
+    """_insert_contents returns False when sentinel is not found."""
+    from great_docs._qrenderer.introspection import _insert_contents
+
+    data = ["a", "b", "c"]
+    result = _insert_contents(data, ["x"])
+    assert result is False
+    assert data == ["a", "b", "c"]
+
+
+def test_insert_contents_nested_list():
+    """_insert_contents searches nested lists for sentinel."""
+    from great_docs._qrenderer.introspection import _insert_contents
+
+    data = [["{{ contents }}"]]
+    result = _insert_contents(data, ["x"])
+    assert result is True
+    assert data == [["x"]]
+
+
+# ── _merge_frontmatter ──────────────────────────────────────────────────────
+
+
+def test_merge_frontmatter_existing():
+    """_merge_frontmatter merges into existing frontmatter."""
+    from great_docs._qrenderer.introspection import _merge_frontmatter
+
+    content = "---\ntitle: Hello\n---\n\nBody text."
+    result = _merge_frontmatter(content, {"page-navigation": False})
+
+    assert "---" in result
+    assert "title: Hello" in result
+    assert "page-navigation: false" in result
+    assert "Body text." in result
+
+
+def test_merge_frontmatter_no_existing():
+    """_merge_frontmatter creates frontmatter when none exists."""
+    from great_docs._qrenderer.introspection import _merge_frontmatter
+
+    content = "# Just a heading\n\nSome content."
+    result = _merge_frontmatter(content, {"page-navigation": False})
+
+    assert result.startswith("---\n")
+    assert "page-navigation: false" in result
+    assert "# Just a heading" in result
+
+
+def test_merge_frontmatter_preserves_body():
+    """_merge_frontmatter preserves the document body."""
+    from great_docs._qrenderer.introspection import _merge_frontmatter
+
+    content = "---\nkey: val\n---\n\nThe body."
+    result = _merge_frontmatter(content, {"new_key": "new_val"})
+
+    assert "The body." in result
+    assert "key: val" in result
+    assert "new_key: new_val" in result
+
+
+def test_merge_frontmatter_updates_existing_key():
+    """_merge_frontmatter updates an existing key."""
+    from great_docs._qrenderer.introspection import _merge_frontmatter
+
+    content = "---\npage-navigation: true\n---\n\nBody."
+    result = _merge_frontmatter(content, {"page-navigation": False})
+
+    assert "page-navigation: false" in result
+
+
+"""Tests for great_docs._qrenderer.introspection — batch 2.
+
+Covers:
+- dynamic_alias
+- Builder (constructor, build, write_index, write_doc_pages, create_inventory,
+  _generate_sidebar, write_sidebar, _page_to_links, from_quarto_config)
+- BuilderPkgdown
+- BuilderSinglePage
+"""
+
+
+# ── dynamic_alias ────────────────────────────────────────────────────────────
+
+
+def test_dynamic_alias_module_only():
+    """dynamic_alias loads a module when no colon in path."""
+    from great_docs._qrenderer.introspection import dynamic_alias
+
+    obj = dynamic_alias("json")
+    assert obj is not None
+
+
+def test_dynamic_alias_function():
+    """dynamic_alias loads a function by path."""
+    from great_docs._qrenderer.introspection import dynamic_alias
+
+    obj = dynamic_alias("json:dumps")
+    assert obj is not None
+    assert obj.name == "dumps"
+
+
+def test_dynamic_alias_class():
+    """dynamic_alias loads a class by path."""
+    from great_docs._qrenderer.introspection import dynamic_alias
+
+    obj = dynamic_alias("json:JSONEncoder")
+    assert obj is not None
+
+
+def test_dynamic_alias_nested_class_method():
+    """dynamic_alias loads a method on a class."""
+    from great_docs._qrenderer.introspection import dynamic_alias
+
+    obj = dynamic_alias("json:JSONEncoder.encode")
+    assert obj is not None
+
+
+def test_dynamic_alias_with_target():
+    """dynamic_alias with explicit target uses that target."""
+    from great_docs._qrenderer.introspection import dynamic_alias
+
+    obj = dynamic_alias("json:dumps", target="json:dumps")
+    assert obj is not None
+    assert obj.name == "dumps"
+
+
+def test_dynamic_alias_nonexistent_attr_raises():
+    """dynamic_alias raises KeyError for nonexistent attributes in a real module."""
+    from great_docs._qrenderer.introspection import dynamic_alias
+
+    with pytest.raises(KeyError):
+        dynamic_alias("json:nonexistent_function_xyz")
+
+
+def test_dynamic_alias_with_loader():
+    """dynamic_alias accepts a shared loader."""
+    from great_docs._qrenderer.introspection import (
+        GriffeLoader,
+        LinesCollection,
+        ModulesCollection,
+        Parser,
+        dynamic_alias,
+    )
+
+    loader = GriffeLoader(
+        docstring_parser=Parser("numpy"),
+        docstring_options={},
+        modules_collection=ModulesCollection(),
+        lines_collection=LinesCollection(),
+    )
+    obj = dynamic_alias("json:dumps", loader=loader)
+    assert obj is not None
+
+
+def test_dynamic_alias_from_test_package():
+    """dynamic_alias loads from a test package."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pkg = Path(tmp_dir) / "introtest_dyn"
+        pkg.mkdir()
+        (pkg / "__init__.py").write_text(
+            'def my_func():\n    """My function."""\n    pass\n',
+            encoding="utf-8",
+        )
+        sys.path.insert(0, tmp_dir)
+        try:
+            from great_docs._qrenderer.introspection import dynamic_alias
+
+            obj = dynamic_alias("introtest_dyn:my_func")
+            assert obj.name == "my_func"
+        finally:
+            sys.path.remove(tmp_dir)
+            sys.modules.pop("introtest_dyn", None)
+
+
+def test_dynamic_alias_canonical_path_match():
+    """dynamic_alias returns the object directly when canonical path matches."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pkg = Path(tmp_dir) / "introtest_canon"
+        pkg.mkdir()
+        (pkg / "__init__.py").write_text(
+            'def hello():\n    """Hello."""\n    pass\n',
+            encoding="utf-8",
+        )
+        sys.path.insert(0, tmp_dir)
+        try:
+            from great_docs._qrenderer.introspection import dynamic_alias
+
+            obj = dynamic_alias("introtest_canon:hello")
+            assert obj.name == "hello"
+        finally:
+            sys.path.remove(tmp_dir)
+            sys.modules.pop("introtest_canon", None)
+
+
+def test_dynamic_alias_reexported_creates_alias():
+    """dynamic_alias creates an Alias when canonical path doesn't match path."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Create a package where a function is re-exported from a submodule
+        pkg = Path(tmp_dir) / "introtest_reexp"
+        pkg.mkdir()
+        (pkg / "__init__.py").write_text(
+            "from .sub import helper\n",
+            encoding="utf-8",
+        )
+        sub = pkg / "sub.py"
+        sub.write_text(
+            'def helper():\n    """A helper."""\n    pass\n',
+            encoding="utf-8",
+        )
+        sys.path.insert(0, tmp_dir)
+        try:
+            from great_docs._qrenderer.introspection import dynamic_alias
+
+            obj = dynamic_alias("introtest_reexp:helper")
+            # Should be either an Alias or the resolved object
+            assert obj is not None
+        finally:
+            sys.path.remove(tmp_dir)
+            sys.modules.pop("introtest_reexp", None)
+            sys.modules.pop("introtest_reexp.sub", None)
+
+
+# ── get_object with dynamic=string (dynamic_alias target) ───────────────────
+
+
+def test_get_object_dynamic_string_target():
+    """get_object with dynamic=<string> passes target to dynamic_alias."""
+    from great_docs._qrenderer.introspection import get_object
+
+    obj = get_object("json:dumps", dynamic="json:dumps")
+    assert obj is not None
+    assert obj.name == "dumps"
+
+
+# ── Builder ──────────────────────────────────────────────────────────────────
+
+
+def test_builder_init_basic():
+    """Builder can be instantiated with minimal args."""
+    from great_docs._qrenderer.introspection import Builder
+
+    builder = Builder(package="json")
+    assert builder.package == "json"
+    assert builder.dir == "reference"
+    assert builder.title == "Function reference"
+    assert builder.version is None
+
+
+def test_builder_init_with_options():
+    """Builder accepts custom options."""
+    from great_docs._qrenderer.introspection import Builder
+
+    builder = Builder(
+        package="json",
+        dir="api",
+        title="API Reference",
+        version="1.0.0",
+        out_index="api-index.qmd",
+        rewrite_all_pages=True,
+        parser="google",
+    )
+    assert builder.dir == "api"
+    assert builder.title == "API Reference"
+    assert builder.out_index == "api-index.qmd"
+    assert builder.rewrite_all_pages is True
+    assert builder.parser == "google"
+
+
+def test_builder_init_sidebar_string():
+    """Builder converts sidebar string to dict."""
+    from great_docs._qrenderer.introspection import Builder
+
+    builder = Builder(package="json", sidebar="my-sidebar.yml")
+    assert builder.sidebar == {"file": "my-sidebar.yml"}
+
+
+def test_builder_init_sidebar_dict_no_file():
+    """Builder adds default file to sidebar dict if missing."""
+    from great_docs._qrenderer.introspection import Builder
+
+    builder = Builder(package="json", sidebar={"id": "api"})
+    assert builder.sidebar["file"] == "_api-reference-sidebar.yml"
+    assert builder.sidebar["id"] == "api"
+
+
+def test_builder_init_sidebar_dict_with_file():
+    """Builder preserves sidebar dict with existing file."""
+    from great_docs._qrenderer.introspection import Builder
+
+    builder = Builder(package="json", sidebar={"file": "custom.yml"})
+    assert builder.sidebar["file"] == "custom.yml"
+
+
+def test_builder_init_no_sidebar():
+    """Builder handles sidebar=None."""
+    from great_docs._qrenderer.introspection import Builder
+
+    builder = Builder(package="json")
+    assert builder.sidebar is None
+
+
+def test_builder_init_source_dir():
+    """Builder converts source_dir to absolute path."""
+    from great_docs._qrenderer.introspection import Builder
+
+    builder = Builder(package="json", source_dir="src")
+    assert builder.source_dir is not None
+    assert Path(builder.source_dir).is_absolute()
+
+
+def test_builder_init_renderer_string():
+    """Builder accepts renderer as string."""
+    from great_docs._qrenderer.introspection import Builder
+
+    builder = Builder(package="json", renderer="markdown")
+    assert builder.renderer is not None
+
+
+def test_builder_init_render_interlinks():
+    """Builder sets render_interlinks on renderer."""
+    from great_docs._qrenderer.introspection import Builder
+
+    builder = Builder(package="json", render_interlinks=True)
+    assert builder.renderer.render_interlinks is True
+
+
+def test_builder_init_css():
+    """Builder accepts css parameter."""
+    from great_docs._qrenderer.introspection import Builder
+
+    builder = Builder(package="json", css="custom.css")
+    assert builder.css == "custom.css"
+
+
+def test_builder_init_dynamic():
+    """Builder accepts dynamic parameter."""
+    from great_docs._qrenderer.introspection import Builder
+
+    builder = Builder(package="json", dynamic=True)
+    assert builder.dynamic is True
+
+    builder2 = Builder(package="json", dynamic=False)
+    assert builder2.dynamic is False
+
+
+def test_builder_init_desc():
+    """Builder accepts desc parameter."""
+    from great_docs._qrenderer.introspection import Builder
+
+    builder = Builder(package="json", desc="A description")
+    assert builder.desc == "A description"
+
+
+def test_builder_load_layout_error():
+    """Builder.load_layout raises ValueError for invalid sections."""
+    from great_docs._qrenderer.introspection import Builder
+
+    with pytest.raises(ValueError):
+        Builder(package="json", sections=123)
+
+
+# ── Builder.build ────────────────────────────────────────────────────────────
+
+
+def test_builder_build_basic():
+    """Builder.build creates index, pages, and inventory."""
+    from great_docs._qrenderer.introspection import Builder
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pkg = Path(tmp_dir) / "introtest_build"
+        pkg.mkdir()
+        (pkg / "__init__.py").write_text(
+            'def greet():\n    """Say hello."""\n    return "hi"\n',
+            encoding="utf-8",
+        )
+
+        sys.path.insert(0, tmp_dir)
+        old_cwd = os.getcwd()
+        os.chdir(tmp_dir)
+        try:
+            builder = Builder(
+                package="introtest_build",
+                sections=[{"title": "Functions", "desc": "", "contents": [{"name": "greet"}]}],
+                dir="reference",
+            )
+            builder.build()
+
+            # Check index was created
+            assert (Path(tmp_dir) / "reference" / "index.qmd").exists()
+
+            # Check doc page was created
+            assert (Path(tmp_dir) / "reference" / "greet.qmd").exists()
+
+            # Check inventory was created
+            assert (Path(tmp_dir) / "objects.json").exists()
+        finally:
+            os.chdir(old_cwd)
+            sys.path.remove(tmp_dir)
+            sys.modules.pop("introtest_build", None)
+
+
+def test_builder_build_with_sidebar():
+    """Builder.build writes sidebar yaml when configured."""
+    from great_docs._qrenderer.introspection import Builder
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pkg = Path(tmp_dir) / "introtest_sidebar"
+        pkg.mkdir()
+        (pkg / "__init__.py").write_text(
+            'def func():\n    """A func."""\n    pass\n',
+            encoding="utf-8",
+        )
+
+        sys.path.insert(0, tmp_dir)
+        old_cwd = os.getcwd()
+        os.chdir(tmp_dir)
+        try:
+            sidebar_file = str(Path(tmp_dir) / "sidebar.yml")
+            builder = Builder(
+                package="introtest_sidebar",
+                sections=[{"title": "Functions", "desc": "", "contents": [{"name": "func"}]}],
+                sidebar=sidebar_file,
+            )
+            builder.build()
+
+            assert Path(sidebar_file).exists()
+        finally:
+            os.chdir(old_cwd)
+            sys.path.remove(tmp_dir)
+            sys.modules.pop("introtest_sidebar", None)
+
+
+def test_builder_build_with_source_dir():
+    """Builder.build adds source_dir to sys.path."""
+    from great_docs._qrenderer.introspection import Builder
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        src = Path(tmp_dir) / "src"
+        src.mkdir()
+        pkg = src / "introtest_srcdir"
+        pkg.mkdir()
+        (pkg / "__init__.py").write_text(
+            'def func():\n    """A func."""\n    pass\n',
+            encoding="utf-8",
+        )
+
+        old_cwd = os.getcwd()
+        os.chdir(tmp_dir)
+        try:
+            builder = Builder(
+                package="introtest_srcdir",
+                sections=[{"title": "Functions", "desc": "", "contents": [{"name": "func"}]}],
+                source_dir=str(src),
+            )
+            builder.build()
+
+            assert (Path(tmp_dir) / "reference" / "func.qmd").exists()
+        finally:
+            os.chdir(old_cwd)
+            if str(src) in sys.path:
+                sys.path.remove(str(src))
+            sys.modules.pop("introtest_srcdir", None)
+
+
+def test_builder_build_with_filter():
+    """Builder.build with filter only writes matching pages."""
+    from great_docs._qrenderer.introspection import Builder
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pkg = Path(tmp_dir) / "introtest_filter"
+        pkg.mkdir()
+        (pkg / "__init__.py").write_text(
+            'def alpha():\n    """Alpha."""\n    pass\ndef beta():\n    """Beta."""\n    pass\n',
+            encoding="utf-8",
+        )
+
+        sys.path.insert(0, tmp_dir)
+        old_cwd = os.getcwd()
+        os.chdir(tmp_dir)
+        try:
+            builder = Builder(
+                package="introtest_filter",
+                sections=[
+                    {
+                        "title": "Funcs",
+                        "desc": "",
+                        "contents": [{"name": "alpha"}, {"name": "beta"}],
+                    }
+                ],
+            )
+            builder.build(filter="alpha")
+
+            # alpha should be written, beta should not
+            assert (Path(tmp_dir) / "reference" / "alpha.qmd").exists()
+            assert not (Path(tmp_dir) / "reference" / "beta.qmd").exists()
+        finally:
+            os.chdir(old_cwd)
+            sys.path.remove(tmp_dir)
+            sys.modules.pop("introtest_filter", None)
+
+
+# ── Builder.write_doc_pages (rewrite_all_pages + unchanged check) ───────────
+
+
+def test_builder_write_doc_pages_skip_unchanged():
+    """Builder.write_doc_pages skips pages with unchanged content."""
+    from great_docs._qrenderer.introspection import Builder
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pkg = Path(tmp_dir) / "introtest_unchanged"
+        pkg.mkdir()
+        (pkg / "__init__.py").write_text(
+            'def func():\n    """A func."""\n    pass\n',
+            encoding="utf-8",
+        )
+
+        sys.path.insert(0, tmp_dir)
+        old_cwd = os.getcwd()
+        os.chdir(tmp_dir)
+        try:
+            builder = Builder(
+                package="introtest_unchanged",
+                sections=[{"title": "Funcs", "desc": "", "contents": [{"name": "func"}]}],
+                rewrite_all_pages=False,
+            )
+            # First build writes everything
+            builder.build()
+            page_path = Path(tmp_dir) / "reference" / "func.qmd"
+            assert page_path.exists()
+            mtime1 = page_path.stat().st_mtime
+
+            # Second build should skip (content unchanged)
+            import time
+
+            time.sleep(0.01)
+            builder.build()
+            mtime2 = page_path.stat().st_mtime
+
+            # File should not have been rewritten
+            assert mtime1 == mtime2
+        finally:
+            os.chdir(old_cwd)
+            sys.path.remove(tmp_dir)
+            sys.modules.pop("introtest_unchanged", None)
+
+
+# ── Builder.create_inventory ─────────────────────────────────────────────────
+
+
+def test_builder_create_inventory():
+    """Builder.create_inventory creates an inventory object."""
+    from great_docs._qrenderer.introspection import Builder
+
+    builder = Builder(package="json")
+    builder.items = []
+    inv = builder.create_inventory(builder.items)
+    assert inv is not None
+
+
+def test_builder_create_inventory_with_version():
+    """Builder.create_inventory uses version when available."""
+    from great_docs._qrenderer.introspection import Builder
+
+    builder = Builder(package="json")
+    builder.version = "2.0.0"
+    builder.items = []
+    inv = builder.create_inventory(builder.items)
+    assert inv is not None
+
+
+# ── Builder._generate_sidebar ────────────────────────────────────────────────
+
+
+def test_builder_generate_sidebar_basic():
+    """Builder._generate_sidebar creates sidebar structure from a blueprint layout."""
+    from great_docs._qrenderer.introspection import Builder
+    from great_docs._qrenderer.blueprint import blueprint as _blueprint
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pkg = Path(tmp_dir) / "introtest_sb"
+        pkg.mkdir()
+        (pkg / "__init__.py").write_text(
+            'def func():\n    """A func."""\n    pass\n',
+            encoding="utf-8",
+        )
+
+        sys.path.insert(0, tmp_dir)
+        old_cwd = os.getcwd()
+        os.chdir(tmp_dir)
+        try:
+            builder = Builder(
+                package="introtest_sb",
+                sections=[{"title": "Functions", "desc": "", "contents": [{"name": "func"}]}],
+            )
+            bp = _blueprint(builder.layout, dynamic=builder.dynamic, parser=builder.parser)
+
+            sidebar = builder._generate_sidebar(bp)
+            assert "website" in sidebar
+            assert "sidebar" in sidebar["website"]
+        finally:
+            os.chdir(old_cwd)
+            sys.path.remove(tmp_dir)
+            sys.modules.pop("introtest_sb", None)
+
+
+def test_builder_generate_sidebar_with_sidebar_config():
+    """Builder._generate_sidebar uses sidebar config overrides."""
+    from great_docs._qrenderer.introspection import Builder
+
+    builder = Builder(
+        package="json",
+        sidebar={"id": "api-sidebar", "file": "sidebar.yml"},
+    )
+    sidebar = builder._generate_sidebar(builder.layout)
+    entries = sidebar["website"]["sidebar"]
+    # First entry should have the custom id
+    assert entries[0]["id"] == "api-sidebar"
+
+
+def test_builder_generate_sidebar_custom_contents():
+    """Builder._generate_sidebar respects custom sidebar contents with sentinel."""
+    from great_docs._qrenderer.introspection import Builder
+
+    builder = Builder(
+        package="json",
+        sidebar={
+            "id": "custom",
+            "file": "sidebar.yml",
+            "contents": ["intro.qmd", "{{ contents }}", "outro.qmd"],
+        },
+    )
+    sidebar = builder._generate_sidebar(builder.layout)
+    entries = sidebar["website"]["sidebar"]
+    # Should contain intro.qmd and outro.qmd with contents spliced in
+    assert "intro.qmd" in entries[0]["contents"]
+    assert "outro.qmd" in entries[0]["contents"]
+
+
+def test_builder_generate_sidebar_no_sentinel():
+    """Builder._generate_sidebar extends contents when no sentinel."""
+    from great_docs._qrenderer.introspection import Builder
+
+    builder = Builder(
+        package="json",
+        sidebar={
+            "id": "custom",
+            "file": "sidebar.yml",
+            "contents": ["intro.qmd"],
+        },
+    )
+    sidebar = builder._generate_sidebar(builder.layout)
+    entries = sidebar["website"]["sidebar"]
+    # Contents should have been extended
+    assert "intro.qmd" in entries[0]["contents"]
+
+
+def test_builder_generate_sidebar_invalid_contents_type():
+    """Builder._generate_sidebar raises TypeError for non-list contents."""
+    from great_docs._qrenderer.introspection import Builder
+
+    builder = Builder(
+        package="json",
+        sidebar={
+            "id": "custom",
+            "file": "sidebar.yml",
+            "contents": "not_a_list",
+        },
+    )
+    with pytest.raises(TypeError, match="must be a list"):
+        builder._generate_sidebar(builder.layout)
+
+
+# ── Builder._page_to_links ──────────────────────────────────────────────────
+
+
+def test_builder_page_to_links():
+    """Builder._page_to_links converts a Page to link paths."""
+    from great_docs._qrenderer.introspection import Builder
+    from great_docs._qrenderer import layout
+
+    builder = Builder(package="json", dir="api")
+    page = layout.Page(path="my_func", contents=[])
+    links = builder._page_to_links(page)
+    assert links == ["api/my_func.qmd"]
+
+
+# ── Builder.from_quarto_config ───────────────────────────────────────────────
+
+
+def test_builder_from_quarto_config_dict():
+    """Builder.from_quarto_config creates builder from dict config."""
+    from great_docs._qrenderer.introspection import Builder
+
+    cfg = {
+        "api-reference": {
+            "package": "json",
+            "sections": [],
+        }
+    }
+    builder = Builder.from_quarto_config(cfg)
+    assert builder.package == "json"
+
+
+def test_builder_from_quarto_config_yaml_file():
+    """Builder.from_quarto_config creates builder from YAML file."""
+    from great_docs._qrenderer.introspection import Builder
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        cfg_file = Path(tmp_dir) / "quarto.yml"
+        cfg_file.write_text(
+            "api-reference:\n  package: json\n  sections: []\n",
+            encoding="utf-8",
+        )
+        builder = Builder.from_quarto_config(str(cfg_file))
+        assert builder.package == "json"
+
+
+def test_builder_from_quarto_config_quartodoc_key():
+    """Builder.from_quarto_config also accepts 'quartodoc' key."""
+    from great_docs._qrenderer.introspection import Builder
+
+    cfg = {
+        "quartodoc": {
+            "package": "json",
+            "sections": [],
+        }
+    }
+    builder = Builder.from_quarto_config(cfg)
+    assert builder.package == "json"
+
+
+def test_builder_from_quarto_config_no_section_raises():
+    """Builder.from_quarto_config raises KeyError when no section found."""
+    from great_docs._qrenderer.introspection import Builder
+
+    with pytest.raises(KeyError, match="No .api-reference"):
+        Builder.from_quarto_config({"other": {}})
+
+
+def test_builder_from_quarto_config_with_style():
+    """Builder.from_quarto_config uses style to pick builder class."""
+    from great_docs._qrenderer.introspection import Builder
+
+    cfg = {
+        "api-reference": {
+            "package": "json",
+            "sections": [],
+            "style": "pkgdown",
+        }
+    }
+    builder = Builder.from_quarto_config(cfg)
+    assert builder.package == "json"
+
+
+def test_builder_from_quarto_config_interlinks_fast():
+    """Builder.from_quarto_config reads interlinks.fast setting."""
+    from great_docs._qrenderer.introspection import Builder
+
+    cfg = {
+        "api-reference": {
+            "package": "json",
+            "sections": [],
+        },
+        "interlinks": {
+            "fast": True,
+        },
+    }
+    builder = Builder.from_quarto_config(cfg)
+    assert builder._fast_inventory is True
+
+
+# ── BuilderPkgdown ───────────────────────────────────────────────────────────
+
+
+def test_builder_pkgdown_style():
+    """BuilderPkgdown has style='pkgdown'."""
+    from great_docs._qrenderer.introspection import BuilderPkgdown
+
+    assert BuilderPkgdown.style == "pkgdown"
+
+
+# ── BuilderSinglePage ───────────────────────────────────────────────────────
+
+
+def test_builder_single_page_style():
+    """BuilderSinglePage has style='single-page'."""
+    from great_docs._qrenderer.introspection import BuilderSinglePage
+
+    assert BuilderSinglePage.style == "single-page"
+
+
+def test_builder_single_page_wraps_sections():
+    """BuilderSinglePage wraps sections in a single Page."""
+    from great_docs._qrenderer.introspection import BuilderSinglePage
+
+    builder = BuilderSinglePage(
+        package="json",
+        sections=[{"title": "Funcs", "desc": "", "contents": [{"name": "dumps"}]}],
+    )
+    # layout.sections should be a single Page
+    assert len(builder.layout.sections) == 1
+
+
+def test_builder_single_page_from_config():
+    """BuilderSinglePage is selected via style='single-page'."""
+    from great_docs._qrenderer.introspection import Builder, BuilderSinglePage
+
+    cfg = {
+        "api-reference": {
+            "package": "json",
+            "sections": [],
+            "style": "single-page",
+        }
+    }
+    builder = Builder.from_quarto_config(cfg)
+    assert isinstance(builder, BuilderSinglePage)
+
+
+def test_builder_single_page_write_index_noop():
+    """BuilderSinglePage.write_index does nothing."""
+    from great_docs._qrenderer.introspection import BuilderSinglePage
+
+    builder = BuilderSinglePage(package="json")
+    # write_index should return None and not create files
+    result = builder.write_index(builder.layout)
+    assert result is None

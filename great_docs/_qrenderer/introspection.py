@@ -26,11 +26,7 @@ _log = logging.getLogger(__name__)
 
 # Parser defaults ==============================================================
 
-DEFAULT_OPTIONS = {
-    "numpy": {
-        "allow_section_blank_line": True,
-    }
-}
+DEFAULT_OPTIONS: dict[str, dict[str, object]] = {}
 
 
 def get_parser_defaults(name: str):

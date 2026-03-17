@@ -30,7 +30,7 @@ from ._rst_converters import (
 from .pandoc.blocks import DefinitionList
 from .pandoc.inlines import Attr, Code, Inlines, Span, Strong
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: no cover
     pass
 
 
@@ -235,7 +235,7 @@ class Renderer:
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
 
-        if hasattr(cls, "style") and cls.style in cls._registry:
+        if hasattr(cls, "style") and cls.style in cls._registry:  # pragma: no cover
             raise KeyError(f"A renderer for style {cls.style} already exists")
 
         if hasattr(cls, "style"):
@@ -272,7 +272,7 @@ class Renderer:
     def render(self, el):
         raise NotImplementedError(f"render method does not support type: {type(el)}")
 
-    def _pages_written(self, builder):
+    def _pages_written(self, builder):  # pragma: no cover
         """Called after all the qmd pages have been rendered and written to disk."""
         ...
 
@@ -374,7 +374,9 @@ class MdRenderer(Renderer):
         elif isinstance(el, (dc.Module, dc.Attribute)):
             return self._signature_module_or_attr(el)
         else:
-            raise NotImplementedError(f"signature not supported for: {type(el)}")
+            raise NotImplementedError(
+                f"signature not supported for: {type(el)}"
+            )  # pragma: no cover
 
     def _signature_doc(self, el: layout.Doc) -> str:
         orig = self.display_name
@@ -401,7 +403,7 @@ class MdRenderer(Renderer):
                 ov_list = el.overloads
                 if ov_list and isinstance(ov_list, list):
                     overloads = ov_list
-            except Exception:
+            except Exception:  # pragma: no cover
                 pass
 
         if overloads:
@@ -457,14 +459,14 @@ class MdRenderer(Renderer):
         try:
             if hasattr(el, "annotation") and el.annotation is not None:
                 parts.append(f": {el.annotation}")
-        except Exception:
+        except Exception:  # pragma: no cover
             pass
         try:
             if hasattr(el, "value") and el.value is not None:
                 val = str(el.value)
                 if len(val) <= 200:
                     parts.append(f" = {val}")
-        except Exception:
+        except Exception:  # pragma: no cover
             pass
 
         sig = "".join(parts)

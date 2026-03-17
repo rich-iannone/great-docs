@@ -32371,3 +32371,515 @@ def test_mixin_render_members_module_uses_functions_slug():
     assert "Functions" in body_str
     assert "Classes" in body_str
     assert "Attributes" in body_str
+
+
+def test_blocks_block_str_raises():
+    """Block.__str__ raises NotImplementedError."""
+    from great_docs._qrenderer.pandoc.blocks import Block
+
+    with pytest.raises(NotImplementedError, match="__str__ method not implemented"):
+        str(Block())
+
+
+def test_blocks_block_html_raises():
+    """Block.html raises NotImplementedError."""
+    from great_docs._qrenderer.pandoc.blocks import Block
+
+    with pytest.raises(NotImplementedError, match="html property method not implemented"):
+        Block().html
+
+
+def test_blocks_blocks_empty():
+    """Blocks with no elements returns empty string."""
+    from great_docs._qrenderer.pandoc.blocks import Blocks
+
+    assert str(Blocks()) == ""
+    assert str(Blocks(None)) == ""
+
+
+def test_blocks_blocks_with_strings():
+    """Blocks renders string elements separated by double newlines."""
+    from great_docs._qrenderer.pandoc.blocks import Blocks
+
+    result = str(Blocks(["a", "b", "c"]))
+    assert result == "a\n\nb\n\nc"
+
+
+def test_blocks_blocks_with_blocks():
+    """Blocks renders Block elements."""
+    from great_docs._qrenderer.pandoc.blocks import Blocks, Plain
+
+    result = str(Blocks([Plain("hello"), Plain("world")]))
+    assert "hello" in result
+    assert "world" in result
+
+
+def test_blocks_blocks_filters_none():
+    """Blocks filters out falsy elements."""
+    from great_docs._qrenderer.pandoc.blocks import Blocks
+
+    result = str(Blocks(["a", None, "b"]))
+    assert result == "a\n\nb"
+
+
+def test_blocks_plain_str():
+    """Plain renders content as-is."""
+    from great_docs._qrenderer.pandoc.blocks import Plain
+
+    assert str(Plain("hello")) == "hello"
+
+
+def test_blocks_plain_none():
+    """Plain with None content returns empty string."""
+    from great_docs._qrenderer.pandoc.blocks import Plain
+
+    assert str(Plain(None)) == ""
+
+
+def test_blocks_para_str():
+    """Para wraps content in newlines."""
+    from great_docs._qrenderer.pandoc.blocks import Para
+
+    result = str(Para("hello"))
+    assert result == "\nhello\n"
+
+
+def test_blocks_para_as_list_item():
+    """Para.as_list_item renders without leading newline."""
+    from great_docs._qrenderer.pandoc.blocks import Para
+
+    result = Para("hello").as_list_item
+    assert result == "hello\n\n"
+
+
+def test_blocks_header_with_attr():
+    """Header renders with hashes and attr."""
+    from great_docs._qrenderer.pandoc.blocks import Header
+    from great_docs._qrenderer.pandoc.components import Attr
+
+    result = str(Header(2, "Title", Attr(classes=["c"])))
+    assert result == "## Title {.c}"
+
+
+def test_blocks_header_no_attr():
+    """Header without attr omits the braces."""
+    from great_docs._qrenderer.pandoc.blocks import Header
+
+    result = str(Header(1, "Title"))
+    assert result == "# Title"
+
+
+def test_blocks_codeblock_single_class():
+    """CodeBlock with single class renders without braces."""
+    from great_docs._qrenderer.pandoc.blocks import CodeBlock
+    from great_docs._qrenderer.pandoc.components import Attr
+
+    result = str(CodeBlock("x=1", Attr(classes=["python"])))
+    assert result == "```python\nx=1\n```"
+
+
+def test_blocks_codeblock_no_attr():
+    """CodeBlock without attr renders plain fences."""
+    from great_docs._qrenderer.pandoc.blocks import CodeBlock
+
+    result = str(CodeBlock("x=1"))
+    assert result == "```\nx=1\n```"
+
+
+def test_blocks_codeblock_multi_class():
+    """CodeBlock with multiple classes renders with braces."""
+    from great_docs._qrenderer.pandoc.blocks import CodeBlock
+    from great_docs._qrenderer.pandoc.components import Attr
+
+    result = str(CodeBlock("x=1", Attr(classes=["py", "cell"])))
+    assert "``` {.py .cell}" in result
+
+
+def test_blocks_codeblock_class_with_attributes():
+    """CodeBlock with class and attributes renders with braces."""
+    from great_docs._qrenderer.pandoc.blocks import CodeBlock
+    from great_docs._qrenderer.pandoc.components import Attr
+
+    result = str(CodeBlock("x=1", Attr(classes=["py"], attributes={"data-x": "1"})))
+    assert "``` {" in result
+    assert ".py" in result
+
+
+def test_blocks_codeblock_none_content():
+    """CodeBlock with None content renders empty body."""
+    from great_docs._qrenderer.pandoc.blocks import CodeBlock
+
+    result = str(CodeBlock(None))
+    assert result == "```\n\n```"
+
+
+def test_blocks_codeblock_html():
+    """CodeBlock.html renders pre/code tags."""
+    from great_docs._qrenderer.pandoc.blocks import CodeBlock
+    from great_docs._qrenderer.pandoc.components import Attr
+
+    result = CodeBlock("x=1", Attr(classes=["py"])).html
+    assert "<pre" in result
+    assert "<code>x=1</code>" in result
+
+
+def test_blocks_codeblock_html_no_attr():
+    """CodeBlock.html without attr has no class."""
+    from great_docs._qrenderer.pandoc.blocks import CodeBlock
+
+    result = CodeBlock("code").html
+    assert "<pre>" in result
+    assert "<code>code</code>" in result
+
+
+def test_blocks_codeblock_as_list_item():
+    """CodeBlock.as_list_item wraps in newlines."""
+    from great_docs._qrenderer.pandoc.blocks import CodeBlock
+
+    result = CodeBlock("x=1").as_list_item
+    assert result.startswith("\n")
+    assert result.endswith("\n\n")
+    assert "```" in result
+
+
+def test_blocks_deflist_basic():
+    """DefinitionList renders terms and definitions."""
+    from great_docs._qrenderer.pandoc.blocks import DefinitionList
+
+    dl = DefinitionList([("term1", "def1"), ("term2", "def2")])
+    result = str(dl)
+    assert "term1" in result
+    assert ":   def1" in result
+    assert "term2" in result
+
+
+def test_blocks_deflist_multiple_defs():
+    """DefinitionList renders multiple definitions per term."""
+    from great_docs._qrenderer.pandoc.blocks import DefinitionList
+
+    dl = DefinitionList([("term", ["def_a", "def_b"])])
+    result = str(dl)
+    assert "term" in result
+    assert ":   def_a" in result
+    assert ":   def_b" in result
+
+
+def test_blocks_deflist_none_definition():
+    """DefinitionList handles None definition."""
+    from great_docs._qrenderer.pandoc.blocks import DefinitionList
+
+    dl = DefinitionList([("term", None)])
+    result = str(dl)
+    assert "term" in result
+    assert ":   " in result
+
+
+def test_blocks_deflist_block_definition():
+    """DefinitionList handles Block as definition."""
+    from great_docs._qrenderer.pandoc.blocks import DefinitionList, Plain
+
+    dl = DefinitionList([("term", Plain("hello"))])
+    result = str(dl)
+    assert "term" in result
+    assert ":   hello" in result
+
+
+def test_blocks_deflist_empty():
+    """DefinitionList with no content returns empty string."""
+    from great_docs._qrenderer.pandoc.blocks import DefinitionList
+
+    assert str(DefinitionList(None)) == ""
+    assert str(DefinitionList([])) == ""
+
+
+def test_blocks_div_with_attr():
+    """Div renders fenced div with attr."""
+    from great_docs._qrenderer.pandoc.blocks import Div
+    from great_docs._qrenderer.pandoc.components import Attr
+
+    result = str(Div("content", Attr(classes=["box"])))
+    assert ":::" in result
+    assert ".box" in result
+    assert "content" in result
+
+
+def test_blocks_div_no_attr():
+    """Div renders without attr."""
+    from great_docs._qrenderer.pandoc.blocks import Div
+
+    result = str(Div("content"))
+    assert ":::" in result
+    assert "content" in result
+
+
+def test_blocks_bulletlist_strings():
+    """BulletList renders string items with * prefix."""
+    from great_docs._qrenderer.pandoc.blocks import BulletList
+
+    result = str(BulletList(["a", "b", "c"]))
+    assert "* a" in result
+    assert "* b" in result
+    assert "* c" in result
+
+
+def test_blocks_bulletlist_empty():
+    """BulletList with no content returns empty string."""
+    from great_docs._qrenderer.pandoc.blocks import BulletList
+
+    assert str(BulletList(None)) == ""
+
+
+def test_blocks_bulletlist_single_string():
+    """BulletList with a single string."""
+    from great_docs._qrenderer.pandoc.blocks import BulletList
+
+    result = str(BulletList("hello"))
+    assert "* hello" in result
+
+
+def test_blocks_bulletlist_block_items():
+    """BulletList with Block items."""
+    from great_docs._qrenderer.pandoc.blocks import BulletList, Plain
+
+    result = str(BulletList([Plain("x"), Plain("y")]))
+    assert "* x" in result
+    assert "* y" in result
+
+
+def test_blocks_orderedlist_strings():
+    """OrderedList renders items with numbered prefixes."""
+    from great_docs._qrenderer.pandoc.blocks import OrderedList
+
+    result = str(OrderedList(["a", "b"]))
+    assert "1. a" in result
+    assert "2. b" in result
+
+
+def test_blocks_orderedlist_empty():
+    """OrderedList with no content returns empty string."""
+    from great_docs._qrenderer.pandoc.blocks import OrderedList
+
+    assert str(OrderedList(None)) == ""
+
+
+def test_blocks_orderedlist_single_string():
+    """OrderedList with a single string."""
+    from great_docs._qrenderer.pandoc.blocks import OrderedList
+
+    result = str(OrderedList("hello"))
+    assert "1. hello" in result
+
+
+def test_blocks_orderedlist_block_items():
+    """OrderedList with Block items."""
+    from great_docs._qrenderer.pandoc.blocks import OrderedList, Plain
+
+    result = str(OrderedList([Plain("x"), Plain("y")]))
+    assert "1. x" in result
+    assert "2. y" in result
+
+
+def test_blocks_blockcontent_to_str_none():
+    """blockcontent_to_str with None returns empty string."""
+    from great_docs._qrenderer.pandoc.blocks import blockcontent_to_str
+
+    assert blockcontent_to_str(None) == ""
+
+
+def test_blocks_blockcontent_to_str_string():
+    """blockcontent_to_str with string returns it stripped."""
+    from great_docs._qrenderer.pandoc.blocks import blockcontent_to_str
+
+    assert blockcontent_to_str("hello\n") == "hello"
+
+
+def test_blocks_blockcontent_to_str_block():
+    """blockcontent_to_str with Block renders it."""
+    from great_docs._qrenderer.pandoc.blocks import Plain, blockcontent_to_str
+
+    assert blockcontent_to_str(Plain("hi")) == "hi"
+
+
+def test_blocks_blockcontent_to_str_sequence():
+    """blockcontent_to_str with sequence joins items."""
+    from great_docs._qrenderer.pandoc.blocks import blockcontent_to_str
+
+    result = blockcontent_to_str(["a", "b"])
+    assert result == "a\n\nb"
+
+
+def test_blocks_blockcontent_to_str_type_error():
+    """blockcontent_to_str raises TypeError for unsupported types."""
+    from great_docs._qrenderer.pandoc.blocks import blockcontent_to_str
+
+    with pytest.raises(TypeError, match="Could not process type"):
+        blockcontent_to_str(12345)
+
+
+def test_blocks_str_items_none():
+    """blockcontent_to_str_items with None returns empty string."""
+    from great_docs._qrenderer.pandoc.blocks import blockcontent_to_str_items
+
+    assert blockcontent_to_str_items(None, "bullet") == ""
+
+
+def test_blocks_str_items_string():
+    """blockcontent_to_str_items with string formats it."""
+    from great_docs._qrenderer.pandoc.blocks import blockcontent_to_str_items
+
+    result = blockcontent_to_str_items("hello", "bullet")
+    assert "* hello" in result
+
+
+def test_blocks_str_items_block():
+    """blockcontent_to_str_items with Block formats it."""
+    from great_docs._qrenderer.pandoc.blocks import Plain, blockcontent_to_str_items
+
+    result = blockcontent_to_str_items(Plain("item"), "bullet")
+    assert "* item" in result
+
+
+def test_blocks_str_items_sequence():
+    """blockcontent_to_str_items with sequence formats all items."""
+    from great_docs._qrenderer.pandoc.blocks import blockcontent_to_str_items
+
+    result = blockcontent_to_str_items(["a", "b", "c"], "bullet")
+    assert "* a" in result
+    assert "* b" in result
+    assert "* c" in result
+
+
+def test_blocks_str_items_ordered():
+    """blockcontent_to_str_items with ordered list uses numbered prefixes."""
+    from great_docs._qrenderer.pandoc.blocks import blockcontent_to_str_items
+
+    result = blockcontent_to_str_items(["x", "y"], "ordered")
+    assert "1. x" in result
+    assert "2. y" in result
+
+
+def test_blocks_str_items_type_error():
+    """blockcontent_to_str_items raises TypeError for unsupported types."""
+    from great_docs._qrenderer.pandoc.blocks import blockcontent_to_str_items
+
+    with pytest.raises(TypeError, match="Could not process type"):
+        blockcontent_to_str_items(12345, "bullet")
+
+
+def test_blocks_str_items_empty_string_returns_empty():
+    """blockcontent_to_str_items fmt skips empty strings."""
+    from great_docs._qrenderer.pandoc.blocks import blockcontent_to_str_items
+
+    result = blockcontent_to_str_items([], "bullet")
+    assert result == ""
+
+
+def test_blocks_str_items_para_items():
+    """blockcontent_to_str_items handles Para items with leading newline."""
+    from great_docs._qrenderer.pandoc.blocks import Para, blockcontent_to_str_items
+
+    result = blockcontent_to_str_items([Para("a"), Para("b")], "bullet")
+    assert "*" in result
+    assert "a" in result
+
+
+def test_blocks_meta_str():
+    """Meta renders YAML front matter."""
+    from great_docs._qrenderer.pandoc.blocks import Meta
+
+    m = Meta({"title": "test", "format": "html"})
+    result = str(m)
+    assert result.startswith("---\n")
+    assert result.endswith("---")
+    assert "title: test" in result
+    assert "format: html" in result
+
+
+def test_blocks_raw_html_with_attr():
+    """RawHTMLBlockTag renders with HTML attr."""
+    from great_docs._qrenderer.pandoc.blocks import RawHTMLBlockTag
+    from great_docs._qrenderer.pandoc.components import Attr
+
+    r = RawHTMLBlockTag("div", "content", Attr(classes=["x"]))
+    result = str(r)
+    assert '<div class="x">' in result
+    assert "content" in result
+    assert "</div>" in result
+
+
+def test_blocks_raw_html_no_attr():
+    """RawHTMLBlockTag renders without attr."""
+    from great_docs._qrenderer.pandoc.blocks import RawHTMLBlockTag
+
+    r = RawHTMLBlockTag("span", "text")
+    result = str(r)
+    assert "<span>" in result
+    assert "text" in result
+    assert "</span>" in result
+
+
+def test_blocks_rendered_doc_object_full():
+    """RenderedDocObject renders title, signature, body."""
+    from great_docs._qrenderer.pandoc.blocks import Header, RenderedDocObject
+
+    rdo = RenderedDocObject(title=Header(1, "Fn"), signature="sig", body="body")
+    result = str(rdo)
+    assert "# Fn" in result
+    assert "sig" in result
+    assert "body" in result
+
+
+def test_blocks_rendered_doc_object_empty():
+    """RenderedDocObject with no parts returns empty string."""
+    from great_docs._qrenderer.pandoc.blocks import RenderedDocObject
+
+    assert str(RenderedDocObject()) == ""
+
+
+def test_blocks_rendered_doc_object_partial():
+    """RenderedDocObject renders only non-None parts."""
+    from great_docs._qrenderer.pandoc.blocks import Header, RenderedDocObject
+
+    rdo = RenderedDocObject(title=Header(2, "Title"))
+    result = str(rdo)
+    assert "## Title" in result
+
+
+def test_blocks_bulletlist_with_inline():
+    """BulletList handles Inline items."""
+    from great_docs._qrenderer.pandoc.blocks import BulletList
+    from great_docs._qrenderer.pandoc.inlines import Str
+
+    result = str(BulletList([Str("a"), Str("b")]))
+    assert "a" in result
+    assert "b" in result
+
+
+def test_blocks_orderedlist_with_inline():
+    """OrderedList handles Inline items."""
+    from great_docs._qrenderer.pandoc.blocks import OrderedList
+    from great_docs._qrenderer.pandoc.inlines import Str
+
+    result = str(OrderedList([Str("x"), Str("y")]))
+    assert "1." in result
+    assert "x" in result
+
+
+def test_blocks_deflist_with_inline_term():
+    """DefinitionList handles Inline as term."""
+    from great_docs._qrenderer.pandoc.blocks import DefinitionList
+    from great_docs._qrenderer.pandoc.inlines import Str
+
+    dl = DefinitionList([(Str("term"), "def")])
+    result = str(dl)
+    assert "term" in result
+    assert ":   def" in result
+
+
+def test_blocks_str_items_single_block():
+    """blockcontent_to_str_items with single Block uses as_list_item."""
+    from great_docs._qrenderer.pandoc.blocks import CodeBlock, blockcontent_to_str_items
+
+    result = blockcontent_to_str_items(CodeBlock("code"), "ordered")
+    assert "1." in result
+    assert "```" in result

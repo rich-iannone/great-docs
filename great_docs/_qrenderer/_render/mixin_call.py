@@ -128,8 +128,10 @@ class __RenderDocCallMixin(RenderDoc):
             items_to_render = merged
 
         for item in items_to_render:
-            if _is_rst_directive_item(item):
+            if _is_rst_directive_item(item):  # pragma: no cover
                 # Reconstruct the RST directive text and convert it
+                # (griffe's numpy parser rejects RST directives at parse time,
+                # so this branch is only reachable with manually constructed objects)
                 ann = item.annotation.strip()
                 desc = getattr(item, "description", "") or ""
                 if desc:
@@ -148,7 +150,7 @@ class __RenderDocCallMixin(RenderDoc):
 
         if len(parts) == 1:
             return parts[0]
-        return Blocks(parts) if parts else None
+        return Blocks(parts) if parts else None  # pragma: no cover
 
     @cached_property
     def parameters(self) -> gf.Parameters:

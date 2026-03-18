@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from textwrap import indent
 from typing import Literal, Optional, Sequence, Union
 
-import yaml
+from yaml12 import format_yaml
 
 if sys.version_info >= (3, 10):
     from typing import TypeAlias
@@ -296,8 +296,8 @@ class Meta(Block):
     table: dict[str, "Any"]
 
     def __str__(self):
-        yml = yaml.dump(self.table, allow_unicode=True, sort_keys=False)
-        return f"---\n{yml}---"
+        yml = format_yaml(self.table)
+        return f"---\n{yml}\n---"
 
 
 RawHTMLBlockTag_TPL = """\

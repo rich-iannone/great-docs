@@ -12,7 +12,7 @@ import textwrap
 from pathlib import Path
 from typing import Any
 
-import yaml
+from yaml12 import format_yaml
 
 
 def generate_package(
@@ -146,6 +146,6 @@ def _toml_value(v: Any) -> str:
 def _write_yaml(path: Path, data: dict[str, Any]) -> None:
     """Write a dict as YAML."""
     path.write_text(
-        yaml.dump(data, default_flow_style=False, sort_keys=False),
+        format_yaml(data),
         encoding="utf-8",
     )

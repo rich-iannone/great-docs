@@ -34,7 +34,7 @@ import textwrap
 import time
 from pathlib import Path
 
-import yaml
+from yaml12 import format_yaml
 
 # ── Path setup ───────────────────────────────────────────────────────────────
 
@@ -1499,7 +1499,7 @@ def _build_file_tree_html(spec: dict, config_path: Path | None = None) -> str:
     if config_path and config_path.exists():
         all_files["great-docs.yml"] = config_path.read_text(encoding="utf-8")
     elif "config" in spec:
-        all_files["great-docs.yml"] = yaml.dump(
+        all_files["great-docs.yml"] = format_yaml(
             spec["config"], default_flow_style=False, sort_keys=False
         )
 

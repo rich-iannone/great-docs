@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any
 
-import yaml
+from yaml12 import read_yaml
 
 # Default configuration values
 DEFAULT_CONFIG: dict[str, Any] = {
@@ -160,11 +160,11 @@ class Config:
         if self.config_path.exists():
             try:
                 with open(self.config_path, "r", encoding="utf-8") as f:
-                    user_config = yaml.safe_load(f) or {}
+                    user_config = read_yaml(f) or {}
 
                 # Deep merge user config with defaults
                 config = self._merge_config(config, user_config)
-            except yaml.YAMLError as e:
+            except ValueError as e:
                 print(f"Warning: Error parsing great-docs.yml: {e}")
             except Exception as e:
                 print(f"Warning: Could not read great-docs.yml: {e}")

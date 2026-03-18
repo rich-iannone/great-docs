@@ -1605,11 +1605,11 @@ def test_R4_cli_sidebar_structure_flat():
     if not _has_rendered_site(pkg):
         pytest.skip("gdtest_cli_click not rendered")
 
-    import yaml
+    from yaml12 import parse_yaml, read_yaml
 
     quarto_yml = _RENDERED_DIR / pkg / "great-docs" / "_quarto.yml"
     with open(quarto_yml) as f:
-        config = yaml.safe_load(f)
+        config = read_yaml(f)
 
     sidebar = config.get("website", {}).get("sidebar", [])
     cli_section = next(
@@ -1631,11 +1631,11 @@ def test_R4_cli_sidebar_structure_nested():
     if not _has_rendered_site(pkg):
         pytest.skip("gdtest_cli_nested not rendered")
 
-    import yaml
+    from yaml12 import parse_yaml, read_yaml
 
     quarto_yml = _RENDERED_DIR / pkg / "great-docs" / "_quarto.yml"
     with open(quarto_yml) as f:
-        config = yaml.safe_load(f)
+        config = read_yaml(f)
 
     sidebar = config.get("website", {}).get("sidebar", [])
     cli_section = next(
@@ -1695,11 +1695,11 @@ def test_R4_cli_sidebar_no_raw_qmd_paths_in_nested():
     if not _has_rendered_site(pkg):
         pytest.skip("gdtest_cli_nested not rendered")
 
-    import yaml
+    from yaml12 import parse_yaml, read_yaml
 
     quarto_yml = _RENDERED_DIR / pkg / "great-docs" / "_quarto.yml"
     with open(quarto_yml) as f:
-        config = yaml.safe_load(f)
+        config = read_yaml(f)
 
     sidebar = config.get("website", {}).get("sidebar", [])
     cli_section = next(
@@ -2009,11 +2009,11 @@ def test_R4_directives_stripped_from_html(pkg_name: str):
 
 def _load_quarto_yml(pkg_name: str) -> dict:
     """Load and parse the _quarto.yml for a rendered package."""
-    import yaml
+    from yaml12 import parse_yaml, read_yaml
 
     qpath = _RENDERED_DIR / pkg_name / "great-docs" / "_quarto.yml"
     with open(qpath) as f:
-        return yaml.safe_load(f)
+        return read_yaml(f)
 
 
 @requires_bs4
@@ -2414,7 +2414,7 @@ def test_R3_deep_nesting_pages_exist():
 
 def test_R4_changelog_config_propagated():
     """Changelog config should be written to great-docs.yml with enabled + max_releases."""
-    import yaml
+    from yaml12 import parse_yaml, read_yaml
 
     pkg = "gdtest_config_changelog"
     if not _has_rendered_site(pkg):
@@ -2423,7 +2423,7 @@ def test_R4_changelog_config_propagated():
     gd_yml = _RENDERED_DIR / pkg / "great-docs.yml"
     assert gd_yml.exists(), "great-docs.yml should exist"
 
-    cfg = yaml.safe_load(gd_yml.read_text())
+    cfg = parse_yaml(gd_yml.read_text())
     changelog = cfg.get("changelog", {})
     assert changelog.get("enabled") is True, "changelog.enabled should be True"
     assert changelog.get("max_releases") == 5, "changelog.max_releases should be 5"
@@ -2495,7 +2495,7 @@ def test_R4_config_combo_b_opt_out_flags():
 
 def test_R4_config_ug_list_sections_in_yml():
     """user_guide as list of section dicts should propagate to great-docs.yml."""
-    import yaml
+    from yaml12 import parse_yaml, read_yaml
 
     pkg = "gdtest_config_ug_list"
     if not _has_rendered_site(pkg):
@@ -2504,7 +2504,7 @@ def test_R4_config_ug_list_sections_in_yml():
     gd_yml = _RENDERED_DIR / pkg / "great-docs.yml"
     assert gd_yml.exists(), "great-docs.yml should exist"
 
-    cfg = yaml.safe_load(gd_yml.read_text())
+    cfg = parse_yaml(gd_yml.read_text())
     ug = cfg.get("user_guide", [])
     assert isinstance(ug, list), "user_guide should be a list"
     assert len(ug) == 2, "user_guide should have 2 sections"
@@ -2709,7 +2709,7 @@ def test_R4_ug_deep_nest_multi_level_structure():
 
 def test_R4_ug_explicit_order_config_sections():
     """Explicit user guide ordering should produce titled sections in great-docs.yml."""
-    import yaml
+    from yaml12 import parse_yaml, read_yaml
 
     pkg = "gdtest_ug_explicit_order"
     if not _has_rendered_site(pkg):
@@ -2718,7 +2718,7 @@ def test_R4_ug_explicit_order_config_sections():
     gd_yml = _RENDERED_DIR / pkg / "great-docs.yml"
     assert gd_yml.exists(), "great-docs.yml should exist"
 
-    cfg = yaml.safe_load(gd_yml.read_text())
+    cfg = parse_yaml(gd_yml.read_text())
     ug = cfg.get("user_guide", [])
     assert isinstance(ug, list), "user_guide should be a list"
     assert len(ug) == 2, f"user_guide should have 2 sections, got {len(ug)}"
@@ -3866,9 +3866,9 @@ def test_md_disabled_config_written():
     if not gd_yml.exists():
         pytest.skip("great-docs.yml not found")
 
-    import yaml
+    from yaml12 import parse_yaml, read_yaml
 
-    cfg = yaml.safe_load(gd_yml.read_text(encoding="utf-8"))
+    cfg = parse_yaml(gd_yml.read_text(encoding="utf-8"))
     assert cfg["markdown_pages"] is False
 
 
@@ -3952,9 +3952,9 @@ def test_md_no_widget_config_written():
     if not gd_yml.exists():
         pytest.skip("great-docs.yml not found")
 
-    import yaml
+    from yaml12 import parse_yaml, read_yaml
 
-    cfg = yaml.safe_load(gd_yml.read_text(encoding="utf-8"))
+    cfg = parse_yaml(gd_yml.read_text(encoding="utf-8"))
     assert isinstance(cfg["markdown_pages"], dict)
     assert cfg["markdown_pages"]["widget"] is False
 

@@ -12,7 +12,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, PropertyMock, call, patch
 
 import pytest
-import yaml
+from yaml12 import format_yaml, parse_yaml, read_yaml, write_yaml
 import click
 from click.testing import CliRunner
 
@@ -329,7 +329,7 @@ def test_setup_github_pages_command():
         # Check the content is valid YAML and contains expected keys
 
         with open(workflow_file) as f:
-            workflow = yaml.safe_load(f)
+            workflow = read_yaml(f)
 
         assert "name" in workflow
         assert workflow["name"] == "CI Docs"
@@ -1643,7 +1643,7 @@ def test_citation_year_from_date_released():
             "date-released": "2023-05-15",
             "url": "https://example.com",
         }
-        citation_cff.write_text(yaml.dump(citation_data))
+        citation_cff.write_text(format_yaml(citation_data))
 
         # Create README.md
         readme = project_path / "README.md"
@@ -1687,7 +1687,7 @@ def test_citation_year_defaults_to_current():
             "version": "0.2.0",
             "url": "https://example.com",
         }
-        citation_cff.write_text(yaml.dump(citation_data))
+        citation_cff.write_text(format_yaml(citation_data))
 
         # Create README.md
         readme = project_path / "README.md"
@@ -1734,7 +1734,7 @@ def test_citation_year_handles_invalid_date():
             "date-released": "invalid-date-format",
             "url": "https://example.com",
         }
-        citation_cff.write_text(yaml.dump(citation_data))
+        citation_cff.write_text(format_yaml(citation_data))
 
         # Create README.md
         readme = project_path / "README.md"
@@ -2350,7 +2350,7 @@ def test_assets_added_to_quarto_config():
         assert quarto_yml.exists()
 
         with open(quarto_yml, "r") as f:
-            config = yaml.safe_load(f)
+            config = read_yaml(f)
 
         # Check that assets/** is in resources
         assert "project" in config
@@ -2382,7 +2382,7 @@ def test_assets_not_added_to_quarto_config_when_missing():
         assert quarto_yml.exists()
 
         with open(quarto_yml, "r") as f:
-            config = yaml.safe_load(f)
+            config = read_yaml(f)
 
         # Check that assets/** is NOT in resources
         assert "project" in config
@@ -2414,7 +2414,7 @@ def test_assets_added_to_config_after_copy():
         # Read initial config - should NOT have assets/**
         quarto_yml = docs.project_path / "_quarto.yml"
         with open(quarto_yml, "r") as f:
-            initial_config = yaml.safe_load(f)
+            initial_config = read_yaml(f)
 
         assert "assets/**" not in initial_config["project"]["resources"]
 
@@ -2427,7 +2427,7 @@ def test_assets_added_to_config_after_copy():
 
         # Read updated config - should NOW have assets/**
         with open(quarto_yml, "r") as f:
-            updated_config = yaml.safe_load(f)
+            updated_config = read_yaml(f)
 
         assert "project" in updated_config
         assert "resources" in updated_config["project"]
@@ -2458,7 +2458,7 @@ def test_assets_config_update_only_when_copied():
         # Config should still not have assets/** since copy returned False
         quarto_yml = docs.project_path / "_quarto.yml"
         with open(quarto_yml, "r") as f:
-            config = yaml.safe_load(f)
+            config = read_yaml(f)
 
         assert "assets/**" not in config["project"]["resources"]
 
@@ -3586,7 +3586,7 @@ def test_add_changelog_to_navbar_manual_yaml():
         docs._add_changelog_to_navbar()
 
         with open(quarto_yml, "r") as f:
-            config = yaml.safe_load(f)
+            config = read_yaml(f)
 
         navbar_items = config["website"]["navbar"]["left"]
         changelog_items = [
@@ -3615,7 +3615,7 @@ def test_add_changelog_to_navbar_idempotent_double_call():
         docs._add_changelog_to_navbar()
 
         with open(quarto_yml, "r") as f:
-            config = yaml.safe_load(f)
+            config = read_yaml(f)
 
         changelog_items = [
             i
@@ -3909,7 +3909,7 @@ def test_process_sections_discovers_and_copies():
         # Check navbar was updated
 
         with open(quarto_yml) as f:
-            config = yaml.safe_load(f)
+            config = read_yaml(f)
         navbar_texts = [
             item.get("text")
             for item in config["website"]["navbar"]["left"]
@@ -3976,7 +3976,7 @@ def test_process_sections_no_index_by_default():
         # Check navbar links to first page, not index
 
         with open(quarto_yml) as f:
-            config = yaml.safe_load(f)
+            config = read_yaml(f)
         examples_item = next(
             item
             for item in config["website"]["navbar"]["left"]
@@ -4073,7 +4073,7 @@ def test_process_sections_navbar_after():
         docs._process_sections()
 
         with open(quarto_yml) as f:
-            config = yaml.safe_load(f)
+            config = read_yaml(f)
         texts = [
             item.get("text")
             for item in config["website"]["navbar"]["left"]
@@ -4114,7 +4114,7 @@ def test_process_sections_default_navbar_before_reference():
         docs._process_sections()
 
         with open(quarto_yml) as f:
-            config = yaml.safe_load(f)
+            config = read_yaml(f)
         texts = [
             item.get("text")
             for item in config["website"]["navbar"]["left"]
@@ -4159,7 +4159,7 @@ def test_process_sections_multiple():
         assert result == 2
 
         with open(quarto_yml) as f:
-            config = yaml.safe_load(f)
+            config = read_yaml(f)
         texts = [
             item.get("text")
             for item in config["website"]["navbar"]["left"]
@@ -4199,7 +4199,7 @@ def test_process_sections_idempotent():
         docs._process_sections()
 
         with open(quarto_yml) as f:
-            config = yaml.safe_load(f)
+            config = read_yaml(f)
 
         # Only one navbar link
         example_links = [
@@ -4298,7 +4298,7 @@ def test_navbar_no_home_new_build():
         docs._update_quarto_config()
 
         with open(quarto_yml) as f:
-            config = yaml.safe_load(f)
+            config = read_yaml(f)
 
         navbar_items = config["website"]["navbar"]["left"]
         texts = [item.get("text") for item in navbar_items if isinstance(item, dict)]
@@ -4333,7 +4333,7 @@ def test_navbar_home_removed_from_existing():
         docs._update_quarto_config()
 
         with open(quarto_yml) as f:
-            config = yaml.safe_load(f)
+            config = read_yaml(f)
 
         navbar_items = config["website"]["navbar"]["left"]
         texts = [item.get("text") for item in navbar_items if isinstance(item, dict)]
@@ -9753,7 +9753,7 @@ class TestFaviconLinkInjection:
         # Read the generated _quarto.yml
         quarto_yml = docs.project_path / "_quarto.yml"
         with open(quarto_yml) as f:
-            return yaml.safe_load(f)
+            return read_yaml(f)
 
     def test_auto_detect_injects_link_tags(self):
         """Auto-detected logo should inject favicon <link> tags."""
@@ -9976,7 +9976,7 @@ def test_config_markdown_pages_disabled():
 
         quarto_yml = docs.project_path / "_quarto.yml"
         with open(quarto_yml, "r") as f:
-            config = yaml.safe_load(f)
+            config = read_yaml(f)
 
         # copy-page.js should NOT be in resources
         resources = config["project"].get("resources", [])
@@ -10013,7 +10013,7 @@ def test_config_markdown_pages_widget_disabled():
         quarto_yml = docs.project_path / "_quarto.yml"
 
         with open(quarto_yml, "r") as f:
-            config = yaml.safe_load(f)
+            config = read_yaml(f)
 
         # copy-page.js should NOT be in resources
         resources = config["project"].get("resources", [])
@@ -10041,7 +10041,7 @@ def test_config_markdown_pages_default_enabled():
 
         quarto_yml = docs.project_path / "_quarto.yml"
         with open(quarto_yml, "r") as f:
-            config = yaml.safe_load(f)
+            config = read_yaml(f)
 
         # copy-page.js SHOULD be in resources
         resources = config["project"].get("resources", [])
@@ -10076,7 +10076,7 @@ class TestPositBadgeInjection:
 
         quarto_yml = docs.project_path / "_quarto.yml"
         with open(quarto_yml) as f:
-            return yaml.safe_load(f)
+            return read_yaml(f)
 
     def _header_has_posit_badge(self, config: dict) -> bool:
         header = config.get("format", {}).get("html", {}).get("include-in-header", [])
@@ -10149,7 +10149,7 @@ class TestPositBadgeInjection:
             quarto_yml = docs.project_path / "_quarto.yml"
 
             with open(quarto_yml) as f:
-                config = yaml.safe_load(f)
+                config = read_yaml(f)
 
             header = config.get("format", {}).get("html", {}).get("include-in-header", [])
             badge_count = sum(1 for item in header if "supported-by-posit" in str(item))
@@ -11142,7 +11142,7 @@ def test_count_cli_sidebar_items_empty_list():
 
 import json
 import shutil
-import yaml
+from yaml12 import format_yaml, parse_yaml, read_yaml, write_yaml
 
 
 def test_copy_blog_files_basic_explicit_list():
@@ -11392,7 +11392,7 @@ def test_add_section_sidebar_creates_sidebar():
 
         config = {"website": {"sidebar": [], "navbar": {"left": []}}}
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         pages = [
             {"filename": "page1.qmd", "title": "Page 1"},
@@ -11401,7 +11401,7 @@ def test_add_section_sidebar_creates_sidebar():
         docs._add_section_sidebar("Recipes", "recipes", pages, has_user_index=True)
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         sidebar = result["website"]["sidebar"]
 
@@ -11421,13 +11421,13 @@ def test_add_section_sidebar_skips_single_page():
 
         config = {"website": {"sidebar": [], "navbar": {"left": []}}}
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         pages = [{"filename": "only.qmd", "title": "Only"}]
         docs._add_section_sidebar("Solo", "solo", pages, has_user_index=False)
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         assert result["website"]["sidebar"] == []
 
@@ -11447,7 +11447,7 @@ def test_add_section_sidebar_replaces_existing():
             }
         }
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         pages = [
             {"filename": "new1.qmd", "title": "New 1"},
@@ -11456,7 +11456,7 @@ def test_add_section_sidebar_replaces_existing():
         docs._add_section_sidebar("Recipes", "recipes", pages, has_user_index=True)
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         sidebar = result["website"]["sidebar"]
 
@@ -11563,12 +11563,12 @@ def test_add_section_to_navbar_basic():
 
         config = {"website": {"sidebar": [], "navbar": {"left": []}}}
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         docs._add_section_to_navbar("Recipes", "recipes/index.qmd")
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         items = result["website"]["navbar"]["left"]
 
@@ -11590,12 +11590,12 @@ def test_add_section_to_navbar_idempotent_project_root():
             }
         }
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         docs._add_section_to_navbar("Recipes", "recipes/index.qmd")
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         items = result["website"]["navbar"]["left"]
         recipe_count = sum(1 for i in items if isinstance(i, dict) and i.get("text") == "Recipes")
@@ -11623,12 +11623,12 @@ def test_add_section_to_navbar_after():
             }
         }
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         docs._add_section_to_navbar("Recipes", "recipes/", navbar_after="Guide")
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         items = result["website"]["navbar"]["left"]
         texts = [i.get("text") for i in items if isinstance(i, dict)]
@@ -11656,12 +11656,12 @@ def test_add_section_to_navbar_before_reference():
             }
         }
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         docs._add_section_to_navbar("Blog", "blog/")
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         items = result["website"]["navbar"]["left"]
         texts = [i.get("text") for i in items if isinstance(i, dict)]
@@ -11680,7 +11680,7 @@ def test_add_section_to_navbar_no_navbar():
         config = {"website": {"sidebar": []}}
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         # Should not raise
         docs._add_section_to_navbar("X", "x/")
@@ -11706,12 +11706,12 @@ def test_add_section_to_navbar_after_not_found():
             }
         }
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         docs._add_section_to_navbar("Extra", "extra/", navbar_after="NonExistent")
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         items = result["website"]["navbar"]["left"]
         texts = [i.get("text") for i in items if isinstance(i, dict)]
@@ -11731,12 +11731,12 @@ def test_add_changelog_to_navbar():
         config = {"website": {"navbar": {"left": [{"text": "Guide", "href": "guide/"}]}}}
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         docs._add_changelog_to_navbar()
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         items = result["website"]["navbar"]["left"]
 
@@ -11753,12 +11753,12 @@ def test_add_changelog_to_navbar_idempotent_v2():
 
         config = {"website": {"navbar": {"left": [{"text": "Changelog", "href": "changelog.qmd"}]}}}
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         docs._add_changelog_to_navbar()
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         items = result["website"]["navbar"]["left"]
         changelog_count = sum(
@@ -12120,12 +12120,12 @@ def test_update_sidebar_with_cli_new():
 
         config = {"website": {"sidebar": []}}
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         docs._update_sidebar_with_cli(["reference/cli/cmd1.qmd", "reference/cli/cmd2.qmd"])
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         sidebar = result["website"]["sidebar"]
         cli = next(s for s in sidebar if isinstance(s, dict) and s.get("id") == "cli-reference")
@@ -12150,12 +12150,12 @@ def test_update_sidebar_with_cli_updates_existing_no_subdir():
             }
         }
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         docs._update_sidebar_with_cli(["new1.qmd", "new2.qmd"])
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         cli = next(
             s
@@ -12177,12 +12177,12 @@ def test_update_sidebar_with_cli_empty():
         config = {"website": {"sidebar": []}}
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         docs._update_sidebar_with_cli([])
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         assert result["website"]["sidebar"] == []
 
@@ -12207,12 +12207,12 @@ def test_update_sidebar_with_cli_adds_api_link():
             }
         }
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         docs._update_sidebar_with_cli(["cli/cmd.qmd"])
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         ref = next(
             s
@@ -12497,7 +12497,7 @@ def test_process_sections_default_section():
         docs.project_path.mkdir(parents=True, exist_ok=True)
         config = {"website": {"sidebar": [], "navbar": {"left": []}}}
         with open(docs.project_path / "_quarto.yml", "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         result = docs._process_sections()
 
@@ -12523,7 +12523,7 @@ def test_process_sections_blog_section():
         docs.project_path.mkdir(parents=True, exist_ok=True)
         config = {"website": {"sidebar": [], "navbar": {"left": []}}}
         with open(docs.project_path / "_quarto.yml", "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         result = docs._process_sections()
 
@@ -12583,12 +12583,12 @@ def test_process_sections_with_navbar_after():
             }
         }
         with open(docs.project_path / "_quarto.yml", "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         docs._process_sections()
 
         with open(docs.project_path / "_quarto.yml") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         items = result["website"]["navbar"]["left"]
         texts = [i.get("text") for i in items if isinstance(i, dict)]
@@ -12627,7 +12627,7 @@ def test_read_quarto_config_existing():
 
         quarto_yml = docs.project_path / "_quarto.yml"
         with open(quarto_yml, "w") as f:
-            yaml.dump({"project": {"type": "website"}}, f)
+            write_yaml({"project": {"type": "website"}}, f)
 
         config = docs._read_quarto_config(quarto_yml)
 
@@ -13141,7 +13141,7 @@ def test_update_config_with_user_guide_adds_sidebar():
             }
         }
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         src = tmp / "user_guide"
         src.mkdir()
@@ -13157,7 +13157,7 @@ def test_update_config_with_user_guide_adds_sidebar():
         docs._update_config_with_user_guide(guide_info)
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         # Should add user-guide sidebar
         sidebar_ids = [s.get("id") for s in result["website"]["sidebar"] if isinstance(s, dict)]
@@ -13201,7 +13201,7 @@ def test_update_config_with_user_guide_idempotent():
             }
         }
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         src = tmp / "user_guide"
         src.mkdir()
@@ -13217,7 +13217,7 @@ def test_update_config_with_user_guide_idempotent():
         docs._update_config_with_user_guide(guide_info)
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         ug_sidebars = [
             s
@@ -13262,7 +13262,7 @@ def test_process_user_guide_with_pages():
         docs.project_path.mkdir(parents=True, exist_ok=True)
         config = {"website": {"sidebar": [], "navbar": {"left": []}}}
         with open(docs.project_path / "_quarto.yml", "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         assert docs._process_user_guide() is True
         assert (docs.project_path / "user-guide").exists()
@@ -13284,14 +13284,14 @@ def test_process_user_guide_with_sections():
         config = {"website": {"sidebar": [], "navbar": {"left": []}}}
 
         with open(docs.project_path / "_quarto.yml", "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         result = docs._process_user_guide()
 
         assert result is True
 
         with open(docs.project_path / "_quarto.yml") as f:
-            result_config = yaml.safe_load(f)
+            result_config = read_yaml(f)
         ug_sidebar = next(
             s
             for s in result_config["website"]["sidebar"]
@@ -13541,7 +13541,7 @@ def test_write_quarto_yml_no_header_check():
         docs._write_quarto_yml(quarto_yml, config)
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         assert result["website"]["title"] == "Test"
 
@@ -14311,7 +14311,7 @@ def test_build_metadata_margin_authors_with_rich_metadata():
         pyproject.write_text('[project]\nname = "pkg"\n', encoding="utf-8")
         gd_yml = Path(tmp_dir) / "great-docs.yml"
         gd_yml.write_text(
-            yaml.dump(
+            format_yaml(
                 {
                     "authors": [
                         {
@@ -14539,7 +14539,7 @@ def test_generate_llms_full_txt_creates_file():
             }
         }
         with open(quarto_yml, "w") as f:
-            yaml.dump(quarto_config, f)
+            write_yaml(quarto_config, f)
         docs = GreatDocs(project_path=tmp_dir)
         docs._generate_llms_full_txt()
         llms_full = gd_dir / "llms-full.txt"
@@ -14572,7 +14572,7 @@ def test_generate_llms_full_txt_no_api_reference_with_title():
         quarto_yml = gd_dir / "_quarto.yml"
 
         with open(quarto_yml, "w") as f:
-            yaml.dump({"website": {"title": "Test"}}, f)
+            write_yaml({"website": {"title": "Test"}}, f)
 
         docs = GreatDocs(project_path=tmp_dir)
         docs._generate_llms_full_txt()
@@ -14590,7 +14590,7 @@ def test_generate_llms_full_txt_no_package():
         quarto_yml = gd_dir / "_quarto.yml"
 
         with open(quarto_yml, "w") as f:
-            yaml.dump({"api-reference": {"sections": []}}, f)
+            write_yaml({"api-reference": {"sections": []}}, f)
 
         docs = GreatDocs(project_path=tmp_dir)
         docs._generate_llms_full_txt()
@@ -14607,7 +14607,7 @@ def test_generate_llms_full_txt_import_error():
         gd_dir.mkdir()
         quarto_yml = gd_dir / "_quarto.yml"
         with open(quarto_yml, "w") as f:
-            yaml.dump(
+            write_yaml(
                 {
                     "api-reference": {
                         "package": "nonexistent_package_xyz_123",
@@ -14648,7 +14648,7 @@ def test_generate_llms_full_txt_with_sections():
             }
         }
         with open(quarto_yml, "w") as f:
-            yaml.dump(quarto_config, f)
+            write_yaml(quarto_config, f)
         docs = GreatDocs(project_path=tmp_dir)
         docs._generate_llms_full_txt()
         llms_full = gd_dir / "llms-full.txt"
@@ -14681,7 +14681,7 @@ def test_generate_llms_full_txt_dict_item_format():
             }
         }
         with open(quarto_yml, "w") as f:
-            yaml.dump(quarto_config, f)
+            write_yaml(quarto_config, f)
         docs = GreatDocs(project_path=tmp_dir)
         docs._generate_llms_full_txt()
         llms_full = gd_dir / "llms-full.txt"
@@ -14716,7 +14716,7 @@ def test_get_github_repo_info_from_gd_yml():
         )
         gd_yml = Path(tmp_dir) / "great-docs.yml"
         gd_yml.write_text(
-            yaml.dump({"repo": "https://github.com/new/new"}),
+            format_yaml({"repo": "https://github.com/new/new"}),
             encoding="utf-8",
         )
         docs = GreatDocs(project_path=tmp_dir)
@@ -14780,7 +14780,7 @@ def test_build_hero_section_disabled_no_logo():
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         gd_yml = Path(tmp_dir) / "great-docs.yml"
-        gd_yml.write_text(yaml.dump({"hero": False}), encoding="utf-8")
+        gd_yml.write_text(format_yaml({"hero": False}), encoding="utf-8")
         gd_dir = Path(tmp_dir) / "great-docs"
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
@@ -14798,7 +14798,7 @@ def test_build_hero_section_with_name_and_tagline():
         pyproject.write_text('[project]\nname = "testpkg"\n', encoding="utf-8")
         gd_yml = Path(tmp_dir) / "great-docs.yml"
         gd_yml.write_text(
-            yaml.dump(
+            format_yaml(
                 {
                     "hero": {
                         "enabled": True,
@@ -14827,7 +14827,7 @@ def test_build_hero_section_with_string_logo():
         pyproject.write_text('[project]\nname = "testpkg"\n', encoding="utf-8")
         gd_yml = Path(tmp_dir) / "great-docs.yml"
         gd_yml.write_text(
-            yaml.dump(
+            format_yaml(
                 {
                     "hero": {
                         "enabled": True,
@@ -14855,7 +14855,7 @@ def test_build_hero_section_with_badges():
         pyproject.write_text('[project]\nname = "testpkg"\n', encoding="utf-8")
         gd_yml = Path(tmp_dir) / "great-docs.yml"
         gd_yml.write_text(
-            yaml.dump({"hero": {"enabled": True, "name": "Test"}}),
+            format_yaml({"hero": {"enabled": True, "name": "Test"}}),
             encoding="utf-8",
         )
         gd_dir = Path(tmp_dir) / "great-docs"
@@ -14874,7 +14874,7 @@ def test_build_hero_section_badge_from_config():
         pyproject.write_text('[project]\nname = "testpkg"\n', encoding="utf-8")
         gd_yml = Path(tmp_dir) / "great-docs.yml"
         gd_yml.write_text(
-            yaml.dump(
+            format_yaml(
                 {
                     "hero": {
                         "enabled": True,
@@ -15106,7 +15106,7 @@ def test_build_metadata_margin_with_funding():
         pyproject.write_text('[project]\nname = "pkg"\n', encoding="utf-8")
         gd_yml = Path(tmp_dir) / "great-docs.yml"
         gd_yml.write_text(
-            yaml.dump(
+            format_yaml(
                 {
                     "funding": {
                         "name": "Science Foundation",
@@ -15135,7 +15135,7 @@ def test_build_metadata_margin_with_funding_ror():
         pyproject.write_text('[project]\nname = "pkg"\n', encoding="utf-8")
         gd_yml = Path(tmp_dir) / "great-docs.yml"
         gd_yml.write_text(
-            yaml.dump(
+            format_yaml(
                 {
                     "funding": {
                         "name": "Research Inc",
@@ -15213,7 +15213,7 @@ def test_detect_git_ref_configured_branch_via_yaml():
         pyproject.write_text('[project]\nname = "pkg"\n', encoding="utf-8")
         gd_yml = Path(tmp_dir) / "great-docs.yml"
         gd_yml.write_text(
-            yaml.dump({"source": {"branch": "develop"}}),
+            format_yaml({"source": {"branch": "develop"}}),
             encoding="utf-8",
         )
         docs = GreatDocs(project_path=tmp_dir)
@@ -15263,7 +15263,7 @@ def test_create_index_from_readme_with_citation():
             "title": "TestPkg",
             "authors": [{"given-names": "Alice", "family-names": "Smith"}],
         }
-        (Path(tmp_dir) / "CITATION.cff").write_text(yaml.dump(citation_data), encoding="utf-8")
+        (Path(tmp_dir) / "CITATION.cff").write_text(format_yaml(citation_data), encoding="utf-8")
         pyproject = Path(tmp_dir) / "pyproject.toml"
         pyproject.write_text('[project]\nname = "testpkg"\n', encoding="utf-8")
         gd_dir = Path(tmp_dir) / "great-docs"
@@ -15455,11 +15455,11 @@ def test_add_section_to_navbar():
         quarto_yml = gd_dir / "_quarto.yml"
         config = {"website": {"navbar": {"left": [{"text": "Home", "href": "index.qmd"}]}}}
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
         docs = GreatDocs(project_path=tmp_dir)
         docs._add_section_to_navbar("Guide", "user-guide/index.qmd")
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
         left = result["website"]["navbar"]["left"]
 
         assert any(item.get("text") == "Guide" for item in left if isinstance(item, dict))
@@ -15483,11 +15483,11 @@ def test_add_section_to_navbar_no_duplicate():
             }
         }
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
         docs = GreatDocs(project_path=tmp_dir)
         docs._add_section_to_navbar("Guide", "user-guide/index.qmd")
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
         guide_count = sum(
             1
             for item in result["website"]["navbar"]["left"]
@@ -15568,7 +15568,7 @@ def test_build_hero_section_with_light_dark_logo():
         pyproject.write_text('[project]\nname = "testpkg"\n', encoding="utf-8")
         gd_yml = Path(tmp_dir) / "great-docs.yml"
         gd_yml.write_text(
-            yaml.dump(
+            format_yaml(
                 {
                     "hero": {
                         "enabled": True,
@@ -15613,7 +15613,7 @@ def test_build_hero_section_metadata_fallback_name():
         pyproject = Path(tmp_dir) / "pyproject.toml"
         pyproject.write_text('[project]\nname = "cool-pkg"\n', encoding="utf-8")
         gd_yml = Path(tmp_dir) / "great-docs.yml"
-        gd_yml.write_text(yaml.dump({"hero": {"enabled": True}}), encoding="utf-8")
+        gd_yml.write_text(format_yaml({"hero": {"enabled": True}}), encoding="utf-8")
         gd_dir = Path(tmp_dir) / "great-docs"
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
@@ -15633,7 +15633,7 @@ def test_build_hero_section_metadata_fallback_tagline():
             encoding="utf-8",
         )
         gd_yml = Path(tmp_dir) / "great-docs.yml"
-        gd_yml.write_text(yaml.dump({"hero": {"enabled": True}}), encoding="utf-8")
+        gd_yml.write_text(format_yaml({"hero": {"enabled": True}}), encoding="utf-8")
         gd_dir = Path(tmp_dir) / "great-docs"
         gd_dir.mkdir()
         docs = GreatDocs(project_path=tmp_dir)
@@ -15657,7 +15657,7 @@ def test_create_index_from_readme_citation_bibtex():
             ],
             "repository-code": "https://github.com/test/testpkg",
         }
-        (Path(tmp_dir) / "CITATION.cff").write_text(yaml.dump(citation_data), encoding="utf-8")
+        (Path(tmp_dir) / "CITATION.cff").write_text(format_yaml(citation_data), encoding="utf-8")
         pyproject = Path(tmp_dir) / "pyproject.toml"
         pyproject.write_text('[project]\nname = "testpkg"\n', encoding="utf-8")
         gd_dir = Path(tmp_dir) / "great-docs"
@@ -15690,7 +15690,7 @@ def test_create_index_from_readme_citation_two_authors():
                 {"given-names": "Bob", "family-names": "Jones"},
             ],
         }
-        (Path(tmp_dir) / "CITATION.cff").write_text(yaml.dump(citation_data), encoding="utf-8")
+        (Path(tmp_dir) / "CITATION.cff").write_text(format_yaml(citation_data), encoding="utf-8")
         pyproject = Path(tmp_dir) / "pyproject.toml"
         pyproject.write_text('[project]\nname = "testpkg"\n', encoding="utf-8")
         gd_dir = Path(tmp_dir) / "great-docs"
@@ -16110,12 +16110,12 @@ def test_update_sidebar_from_sections_basic():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         docs._update_sidebar_from_sections()
 
         with open(quarto_yml, "r") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         sidebar = result["website"]["sidebar"]
 
@@ -16163,12 +16163,12 @@ def test_update_sidebar_from_sections_dict_items():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         docs._update_sidebar_from_sections()
 
         with open(quarto_yml, "r") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         sidebar = result["website"]["sidebar"]
         section = sidebar[0]["contents"][1]  # First section after API link
@@ -16189,7 +16189,7 @@ def test_update_sidebar_no_api_reference():
         config = {"project": {"type": "website"}, "website": {"sidebar": []}}
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         # Should not raise
         docs._update_sidebar_from_sections()
@@ -16280,7 +16280,7 @@ def test_generate_llms_txt_no_api_reference():
         quarto_yml.parent.mkdir(parents=True, exist_ok=True)
 
         with open(quarto_yml, "w") as f:
-            yaml.dump({"project": {"type": "website"}}, f)
+            write_yaml({"project": {"type": "website"}}, f)
 
         docs._generate_llms_txt()
 
@@ -16317,7 +16317,7 @@ def test_generate_llms_txt_writes_file():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         docs._generate_llms_txt()
 
@@ -16360,7 +16360,7 @@ def test_generate_llms_txt_with_site_url():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         docs._generate_llms_txt()
 
@@ -16381,7 +16381,7 @@ def test_generate_llms_full_txt_no_api_reference():
         quarto_yml.parent.mkdir(parents=True, exist_ok=True)
 
         with open(quarto_yml, "w") as f:
-            yaml.dump({"project": {"type": "website"}}, f)
+            write_yaml({"project": {"type": "website"}}, f)
 
         docs._generate_llms_full_txt()
 
@@ -16404,7 +16404,7 @@ def test_generate_llms_full_txt_no_package_name():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         docs._generate_llms_full_txt()
 
@@ -16437,12 +16437,12 @@ def test_update_quarto_config_navbar_color_light_dark():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(base_config, f)
+            write_yaml(base_config, f)
 
         docs._update_quarto_config()
 
         with open(quarto_yml, "r") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         # The navbar color CSS should be injected as a style in after-body
         after_body = result["format"]["html"].get("include-after-body", [])
@@ -16474,12 +16474,12 @@ def test_update_quarto_config_navbar_color_light_only():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(base_config, f)
+            write_yaml(base_config, f)
 
         docs._update_quarto_config()
 
         with open(quarto_yml, "r") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         after_body = result["format"]["html"].get("include-after-body", [])
         css_items = [str(item) for item in after_body if "navbar_color overrides" in str(item)]
@@ -16516,12 +16516,12 @@ def test_update_quarto_config_announcement_banner():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(base_config, f)
+            write_yaml(base_config, f)
 
         docs._update_quarto_config()
 
         with open(quarto_yml, "r") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         header = result["format"]["html"].get("include-in-header", [])
         after_body = result["format"]["html"].get("include-after-body", [])
@@ -16566,12 +16566,12 @@ def test_update_quarto_config_content_style():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(base_config, f)
+            write_yaml(base_config, f)
 
         docs._update_quarto_config()
 
         with open(quarto_yml, "r") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         header = result["format"]["html"].get("include-in-header", [])
         after_body = result["format"]["html"].get("include-after-body", [])
@@ -16609,12 +16609,12 @@ def test_update_quarto_config_navbar_style():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(base_config, f)
+            write_yaml(base_config, f)
 
         docs._update_quarto_config()
 
         with open(quarto_yml, "r") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         header = result["format"]["html"].get("include-in-header", [])
         after_body = result["format"]["html"].get("include-after-body", [])
@@ -16648,12 +16648,12 @@ def test_update_quarto_config_dark_mode_toggle():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(base_config, f)
+            write_yaml(base_config, f)
 
         docs._update_quarto_config()
 
         with open(quarto_yml, "r") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         after_body = result["format"]["html"].get("include-after-body", [])
         has_dark_mode = any("dark-mode-toggle" in str(item) for item in after_body)
@@ -16689,12 +16689,12 @@ def test_update_quarto_config_cli_enabled_adds_ref_switcher():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(base_config, f)
+            write_yaml(base_config, f)
 
         docs._update_quarto_config()
 
         with open(quarto_yml, "r") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         after_body = result["format"]["html"].get("include-after-body", [])
         has_ref_switcher = any("reference-switcher" in str(item) for item in after_body)
@@ -16726,12 +16726,12 @@ def test_update_quarto_config_page_footer_with_authors():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(base_config, f)
+            write_yaml(base_config, f)
 
         docs._update_quarto_config()
 
         with open(quarto_yml, "r") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         footer = result["website"].get("page-footer", {})
         footer_text = footer.get("center", "")
@@ -16770,12 +16770,12 @@ def test_update_quarto_config_page_footer_with_funding():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(base_config, f)
+            write_yaml(base_config, f)
 
         docs._update_quarto_config()
 
         with open(quarto_yml, "r") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         footer = result["website"].get("page-footer", {})
         footer_text = footer.get("center", "")
@@ -16807,12 +16807,12 @@ def test_update_quarto_config_page_footer_funding_no_authors():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(base_config, f)
+            write_yaml(base_config, f)
 
         docs._update_quarto_config()
 
         with open(quarto_yml, "r") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         footer = result["website"].get("page-footer", {})
         footer_text = footer.get("center", "")
@@ -16844,12 +16844,12 @@ def test_update_quarto_config_posit_badge():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(base_config, f)
+            write_yaml(base_config, f)
 
         docs._update_quarto_config()
 
         with open(quarto_yml, "r") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         header = result["format"]["html"].get("include-in-header", [])
         has_posit = any("supported-by-posit" in str(item) for item in header)
@@ -16876,12 +16876,12 @@ def test_update_quarto_config_sidebar_filter():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(base_config, f)
+            write_yaml(base_config, f)
 
         docs._update_quarto_config()
 
         with open(quarto_yml, "r") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         after_body = result["format"]["html"].get("include-after-body", [])
         has_sidebar_filter = any("sidebar-filter" in str(item) for item in after_body)
@@ -16912,12 +16912,12 @@ def test_update_quarto_config_sidebar_filter_custom_min_items():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(base_config, f)
+            write_yaml(base_config, f)
 
         docs._update_quarto_config()
 
         with open(quarto_yml, "r") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         after_body = result["format"]["html"].get("include-after-body", [])
         has_min_items = any("sidebarFilterMinItems" in str(item) for item in after_body)
@@ -16948,12 +16948,12 @@ def test_update_quarto_config_attribution():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(base_config, f)
+            write_yaml(base_config, f)
 
         docs._update_quarto_config()
 
         with open(quarto_yml, "r") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         footer = result["website"].get("page-footer", {})
         footer_text = footer.get("center", "")
@@ -16984,7 +16984,7 @@ def test_update_quarto_config_version_badge_metadata():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(base_config, f)
+            write_yaml(base_config, f)
 
         # Mock _fetch_github_releases to return a release
         fake_releases = [{"tag_name": "v2.0.0", "published_at": "2024-01-15T00:00:00Z"}]
@@ -17024,7 +17024,7 @@ def test_update_quarto_config_version_badge_no_releases():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(base_config, f)
+            write_yaml(base_config, f)
 
         # Create a stale meta file
         meta_path = docs.project_path / "_package_meta.json"
@@ -17328,7 +17328,7 @@ def test_refresh_api_reference_config_no_api_reference():
         quarto_yml.parent.mkdir(parents=True, exist_ok=True)
 
         with open(quarto_yml, "w") as f:
-            yaml.dump({"project": {"type": "website"}}, f)
+            write_yaml({"project": {"type": "website"}}, f)
 
         docs._refresh_api_reference_config()
 
@@ -17345,7 +17345,7 @@ def test_refresh_api_reference_config_no_package():
         config = {"api-reference": {"sections": []}}
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         docs._refresh_api_reference_config()
 
@@ -17374,14 +17374,14 @@ def test_refresh_api_reference_config_updates_sections():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         new_sections = [{"title": "New", "desc": "", "contents": ["NewClass", "new_func"]}]
         with patch.object(docs, "_create_api_sections_with_config", return_value=new_sections):
             docs._refresh_api_reference_config()
 
         with open(quarto_yml, "r") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         assert result["api-reference"]["sections"] == new_sections
 
@@ -17418,7 +17418,7 @@ def test_refresh_api_reference_config_fallback_to_explicit():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         # Auto-discovery returns None
         with patch.object(docs, "_create_api_sections_with_config", return_value=None):
@@ -17429,7 +17429,7 @@ def test_refresh_api_reference_config_fallback_to_explicit():
                 docs._refresh_api_reference_config()
 
         with open(quarto_yml, "r") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         assert result["api-reference"]["sections"] == fallback_sections
 
@@ -17451,7 +17451,7 @@ def test_add_api_reference_config_disabled():
         quarto_yml.parent.mkdir(parents=True, exist_ok=True)
 
         with open(quarto_yml, "w") as f:
-            yaml.dump({"project": {"type": "website"}}, f)
+            write_yaml({"project": {"type": "website"}}, f)
 
         docs._add_api_reference_config()
 
@@ -17471,7 +17471,7 @@ def test_add_api_reference_config_no_exports():
         quarto_yml.parent.mkdir(parents=True, exist_ok=True)
 
         with open(quarto_yml, "w") as f:
-            yaml.dump({"project": {"type": "website"}}, f)
+            write_yaml({"project": {"type": "website"}}, f)
 
         with patch.object(docs, "_create_api_sections_with_config", return_value=None):
             docs._add_api_reference_config()
@@ -17496,13 +17496,13 @@ def test_add_api_reference_config_already_exists():
             "api-reference": {"package": "mypkg", "sections": []},
         }
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         docs._add_api_reference_config()
 
         # Should not have changed
         with open(quarto_yml, "r") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         assert result["api-reference"]["package"] == "mypkg"
 
@@ -17524,7 +17524,7 @@ def test_add_api_reference_config_with_sections():
             "website": {"navbar": {"left": []}, "sidebar": []},
         }
         with open(quarto_yml, "w") as f:
-            yaml.dump(base_config, f)
+            write_yaml(base_config, f)
 
         fake_sections = [{"title": "Core", "desc": "", "contents": ["Widget", "helper_fn"]}]
         with patch.object(docs, "_create_api_sections_with_config", return_value=fake_sections):
@@ -17533,7 +17533,7 @@ def test_add_api_reference_config_with_sections():
         assert docs._has_api_reference is True
 
         with open(quarto_yml, "r") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         assert "api-reference" in result
         assert result["api-reference"]["package"] == "mypkg"
@@ -17921,12 +17921,12 @@ def test_update_quarto_config_page_footer_three_authors():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(base_config, f)
+            write_yaml(base_config, f)
 
         docs._update_quarto_config()
 
         with open(quarto_yml, "r") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         footer_text = result["website"]["page-footer"]["center"]
 
@@ -17956,12 +17956,12 @@ def test_update_quarto_config_page_footer_single_author():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(base_config, f)
+            write_yaml(base_config, f)
 
         docs._update_quarto_config()
 
         with open(quarto_yml, "r") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         footer_text = result["website"]["page-footer"]["center"]
 
@@ -17998,12 +17998,12 @@ def test_update_quarto_config_page_footer_author_homepage():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(base_config, f)
+            write_yaml(base_config, f)
 
         docs._update_quarto_config()
 
         with open(quarto_yml, "r") as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         footer_text = result["website"]["page-footer"]["center"]
 
@@ -18041,7 +18041,7 @@ def test_generate_llms_txt_dict_items_in_sections():
         }
 
         with open(quarto_yml, "w") as f:
-            yaml.dump(config, f)
+            write_yaml(config, f)
 
         docs._generate_llms_txt()
 
@@ -19439,11 +19439,11 @@ def test_add_changelog_to_navbar_creates_entry():
         quarto_yml.parent.mkdir(parents=True, exist_ok=True)
         config = {"website": {"navbar": {"left": [{"text": "Home", "href": "index.qmd"}]}}}
 
-        import yaml as _yaml
+        from yaml12 import format_yaml as _format_yaml, parse_yaml as _parse_yaml
 
-        quarto_yml.write_text(_yaml.dump(config), encoding="utf-8")
+        quarto_yml.write_text(_format_yaml(config), encoding="utf-8")
         docs._add_changelog_to_navbar()
-        content = _yaml.safe_load(quarto_yml.read_text(encoding="utf-8"))
+        content = _parse_yaml(quarto_yml.read_text(encoding="utf-8"))
         texts = [i.get("text") for i in content["website"]["navbar"]["left"] if isinstance(i, dict)]
 
         assert "Changelog" in texts
@@ -19466,11 +19466,11 @@ def test_add_changelog_to_navbar_idempotent():
             }
         }
 
-        import yaml as _yaml
+        from yaml12 import format_yaml as _format_yaml, parse_yaml as _parse_yaml
 
-        quarto_yml.write_text(_yaml.dump(config), encoding="utf-8")
+        quarto_yml.write_text(_format_yaml(config), encoding="utf-8")
         docs._add_changelog_to_navbar()
-        content = _yaml.safe_load(quarto_yml.read_text(encoding="utf-8"))
+        content = _parse_yaml(quarto_yml.read_text(encoding="utf-8"))
         count = sum(
             1
             for i in content["website"]["navbar"]["left"]
@@ -19558,10 +19558,10 @@ def test_process_sections_default_type():
         build_dir = Path(tmp_dir) / "great-docs"
         build_dir.mkdir(parents=True)
         quarto_yml = build_dir / "_quarto.yml"
-        import yaml as _yaml
+        from yaml12 import format_yaml as _format_yaml, parse_yaml as _parse_yaml
 
         quarto_yml.write_text(
-            _yaml.dump(
+            _format_yaml(
                 {
                     "project": {"type": "website"},
                     "website": {
@@ -20092,7 +20092,7 @@ def test_add_section_to_navbar_creates_link():
         docs = GreatDocs(project_path=tmp_dir)
         quarto_yml = Path(tmp_dir) / "great-docs" / "_quarto.yml"
         quarto_yml.parent.mkdir(parents=True, exist_ok=True)
-        import yaml as _yaml
+        from yaml12 import format_yaml as _format_yaml, parse_yaml as _parse_yaml
 
         config = {
             "website": {
@@ -20100,9 +20100,9 @@ def test_add_section_to_navbar_creates_link():
                 "sidebar": [],
             }
         }
-        quarto_yml.write_text(_yaml.dump(config), encoding="utf-8")
+        quarto_yml.write_text(_format_yaml(config), encoding="utf-8")
         docs._add_section_to_navbar("Recipes", "recipes/index.qmd")
-        content = _yaml.safe_load(quarto_yml.read_text(encoding="utf-8"))
+        content = _parse_yaml(quarto_yml.read_text(encoding="utf-8"))
         texts = [i.get("text") for i in content["website"]["navbar"]["left"] if isinstance(i, dict)]
         assert "Recipes" in texts
 
@@ -20113,7 +20113,7 @@ def test_add_section_to_navbar_idempotent():
         docs = GreatDocs(project_path=tmp_dir)
         quarto_yml = Path(tmp_dir) / "great-docs" / "_quarto.yml"
         quarto_yml.parent.mkdir(parents=True, exist_ok=True)
-        import yaml as _yaml
+        from yaml12 import format_yaml as _format_yaml, parse_yaml as _parse_yaml
 
         config = {
             "website": {
@@ -20126,9 +20126,9 @@ def test_add_section_to_navbar_idempotent():
                 "sidebar": [],
             }
         }
-        quarto_yml.write_text(_yaml.dump(config), encoding="utf-8")
+        quarto_yml.write_text(_format_yaml(config), encoding="utf-8")
         docs._add_section_to_navbar("Recipes", "recipes/index.qmd")
-        content = _yaml.safe_load(quarto_yml.read_text(encoding="utf-8"))
+        content = _parse_yaml(quarto_yml.read_text(encoding="utf-8"))
         count = sum(
             1
             for i in content["website"]["navbar"]["left"]
@@ -20143,7 +20143,7 @@ def test_add_section_to_navbar_after_item():
         docs = GreatDocs(project_path=tmp_dir)
         quarto_yml = Path(tmp_dir) / "great-docs" / "_quarto.yml"
         quarto_yml.parent.mkdir(parents=True, exist_ok=True)
-        import yaml as _yaml
+        from yaml12 import format_yaml as _format_yaml, parse_yaml as _parse_yaml
 
         config = {
             "website": {
@@ -20156,9 +20156,9 @@ def test_add_section_to_navbar_after_item():
                 "sidebar": [],
             }
         }
-        quarto_yml.write_text(_yaml.dump(config), encoding="utf-8")
+        quarto_yml.write_text(_format_yaml(config), encoding="utf-8")
         docs._add_section_to_navbar("Recipes", "recipes/index.qmd", navbar_after="Home")
-        content = _yaml.safe_load(quarto_yml.read_text(encoding="utf-8"))
+        content = _parse_yaml(quarto_yml.read_text(encoding="utf-8"))
         texts = [i.get("text") for i in content["website"]["navbar"]["left"] if isinstance(i, dict)]
         assert texts.index("Recipes") == 1  # After Home
 
@@ -20248,14 +20248,14 @@ def test_update_sidebar_with_cli_creates_section():
         docs = GreatDocs(project_path=tmp_dir)
         quarto_yml = Path(tmp_dir) / "great-docs" / "_quarto.yml"
         quarto_yml.parent.mkdir(parents=True, exist_ok=True)
-        import yaml as _yaml
+        from yaml12 import format_yaml as _format_yaml, parse_yaml as _parse_yaml
 
         config = {
             "website": {"sidebar": [{"id": "reference", "title": "API Reference", "contents": []}]}
         }
-        quarto_yml.write_text(_yaml.dump(config), encoding="utf-8")
+        quarto_yml.write_text(_format_yaml(config), encoding="utf-8")
         docs._update_sidebar_with_cli(["reference/cli-main.qmd"])
-        content = _yaml.safe_load(quarto_yml.read_text(encoding="utf-8"))
+        content = _parse_yaml(quarto_yml.read_text(encoding="utf-8"))
         sidebar_ids = [s.get("id") for s in content["website"]["sidebar"] if isinstance(s, dict)]
         assert "cli-reference" in sidebar_ids
 
@@ -20266,7 +20266,7 @@ def test_update_sidebar_with_cli_updates_existing():
         docs = GreatDocs(project_path=tmp_dir)
         quarto_yml = Path(tmp_dir) / "great-docs" / "_quarto.yml"
         quarto_yml.parent.mkdir(parents=True, exist_ok=True)
-        import yaml as _yaml
+        from yaml12 import format_yaml as _format_yaml, parse_yaml as _parse_yaml
 
         config = {
             "website": {
@@ -20275,9 +20275,9 @@ def test_update_sidebar_with_cli_updates_existing():
                 ]
             }
         }
-        quarto_yml.write_text(_yaml.dump(config), encoding="utf-8")
+        quarto_yml.write_text(_format_yaml(config), encoding="utf-8")
         docs._update_sidebar_with_cli(["new-cli.qmd"])
-        content = _yaml.safe_load(quarto_yml.read_text(encoding="utf-8"))
+        content = _parse_yaml(quarto_yml.read_text(encoding="utf-8"))
         cli_section = next(
             s for s in content["website"]["sidebar"] if s.get("id") == "cli-reference"
         )
@@ -20776,7 +20776,7 @@ def test_update_config_with_user_guide():
         # Create build dir with quarto config
         build_dir = Path(tmp_dir) / "great-docs"
         build_dir.mkdir(parents=True, exist_ok=True)
-        import yaml as _yaml
+        from yaml12 import format_yaml as _format_yaml, parse_yaml as _parse_yaml
 
         quarto_yml = build_dir / "_quarto.yml"
         config = {
@@ -20785,7 +20785,7 @@ def test_update_config_with_user_guide():
                 "sidebar": [],
             }
         }
-        quarto_yml.write_text(_yaml.dump(config), encoding="utf-8")
+        quarto_yml.write_text(_format_yaml(config), encoding="utf-8")
 
         # Create user guide files
         ug_dir = Path(tmp_dir) / "user_guide"
@@ -20799,7 +20799,7 @@ def test_update_config_with_user_guide():
 
         docs._update_config_with_user_guide(guide_info)
 
-        result = _yaml.safe_load(quarto_yml.read_text(encoding="utf-8"))
+        result = _parse_yaml(quarto_yml.read_text(encoding="utf-8"))
         # Should have added user-guide sidebar
         sidebar_ids = [s.get("id") for s in result["website"]["sidebar"] if isinstance(s, dict)]
         assert "user-guide" in sidebar_ids
@@ -21010,11 +21010,11 @@ def test_process_user_guide_returns_true():
         # Create build dir with quarto config
         build_dir = Path(tmp_dir) / "great-docs"
         build_dir.mkdir(parents=True, exist_ok=True)
-        import yaml as _yaml
+        from yaml12 import format_yaml as _format_yaml, parse_yaml as _parse_yaml
 
         quarto_yml = build_dir / "_quarto.yml"
         quarto_yml.write_text(
-            _yaml.dump(
+            _format_yaml(
                 {
                     "website": {
                         "navbar": {"left": [{"text": "Reference", "href": "reference/index.qmd"}]},
@@ -21103,11 +21103,11 @@ def test_add_section_sidebar():
         docs = GreatDocs(project_path=tmp_dir)
         build_dir = Path(tmp_dir) / "great-docs"
         build_dir.mkdir(parents=True, exist_ok=True)
-        import yaml as _yaml
+        from yaml12 import format_yaml as _format_yaml, parse_yaml as _parse_yaml
 
         quarto_yml = build_dir / "_quarto.yml"
         quarto_yml.write_text(
-            _yaml.dump(
+            _format_yaml(
                 {
                     "website": {"sidebar": [], "navbar": {"left": []}},
                 }
@@ -21121,7 +21121,7 @@ def test_add_section_sidebar():
         ]
         docs._add_section_sidebar("Recipes", "recipes", copied, False, False)
 
-        result = _yaml.safe_load(quarto_yml.read_text(encoding="utf-8"))
+        result = _parse_yaml(quarto_yml.read_text(encoding="utf-8"))
         sidebar_ids = [s.get("id") for s in result["website"]["sidebar"] if isinstance(s, dict)]
         assert "recipes" in sidebar_ids
 
@@ -21359,9 +21359,9 @@ def test_update_quarto_config_creates_structure():
 
         docs._update_quarto_config()
 
-        import yaml as _yaml
+        from yaml12 import format_yaml as _format_yaml, parse_yaml as _parse_yaml
 
-        result = _yaml.safe_load(quarto_yml.read_text(encoding="utf-8"))
+        result = _parse_yaml(quarto_yml.read_text(encoding="utf-8"))
         assert "post-render" in result.get("project", {})
         theme = result.get("format", {}).get("html", {}).get("theme", [])
         assert "great-docs.scss" in theme
@@ -21379,11 +21379,11 @@ def test_update_quarto_config_no_existing_file():
 
         docs._update_quarto_config()
 
-        import yaml as _yaml
+        from yaml12 import format_yaml as _format_yaml, parse_yaml as _parse_yaml
 
         quarto_yml = build_dir / "_quarto.yml"
         assert quarto_yml.exists()
-        result = _yaml.safe_load(quarto_yml.read_text(encoding="utf-8"))
+        result = _parse_yaml(quarto_yml.read_text(encoding="utf-8"))
         assert result["project"]["type"] == "website"
 
 
@@ -22493,7 +22493,7 @@ def test_add_section_sidebar():
         docs._add_section_sidebar("Tutorials", "tutorials", copied, False, False)
 
         with open(quarto_yml) as f:
-            config = yaml.safe_load(f)
+            config = read_yaml(f)
         sidebars = config["website"]["sidebar"]
         assert any(isinstance(s, dict) and s.get("id") == "tutorials" for s in sidebars)
 
@@ -22840,7 +22840,7 @@ def test_update_quarto_config_with_assets():
         docs._update_quarto_config()
 
         with open(quarto_yml) as f:
-            config = yaml.safe_load(f)
+            config = read_yaml(f)
         # Should have added assets/ to resources
         resources = config.get("project", {}).get("resources", [])
         assert "assets/**" in resources or any("assets" in str(r) for r in resources)
@@ -23933,7 +23933,7 @@ def test_add_section_to_navbar_with_navbar_after():
         docs._add_section_to_navbar("Recipes", "recipes/index.qmd", "Guide")
 
         with open(quarto_yml) as f:
-            config = yaml.safe_load(f)
+            config = read_yaml(f)
         items = config["website"]["navbar"]["left"]
         texts = [it.get("text", "") for it in items if isinstance(it, dict)]
         # Recipes should be after Guide
@@ -24119,7 +24119,7 @@ def test_add_changelog_to_navbar_adds_entry():
         docs._add_changelog_to_navbar()
 
         with open(quarto_yml) as f:
-            config = yaml.safe_load(f)
+            config = read_yaml(f)
         items = config["website"]["navbar"]["left"]
         assert any(it.get("text") == "Changelog" for it in items if isinstance(it, dict))
 
@@ -24140,7 +24140,7 @@ def test_add_changelog_to_navbar_idempotent():
         docs._add_changelog_to_navbar()
 
         with open(quarto_yml) as f:
-            config = yaml.safe_load(f)
+            config = read_yaml(f)
         items = config["website"]["navbar"]["left"]
         changelog_count = sum(
             1 for it in items if isinstance(it, dict) and it.get("text") == "Changelog"
@@ -24704,7 +24704,7 @@ def test_build_dynamic_fallback_to_static():
 
             docs.project_path.mkdir(parents=True, exist_ok=True)
             (docs.project_path / "_quarto.yml").write_text(
-                yaml.dump({"api-reference": {"package": "mypkg", "dynamic": True}}),
+                format_yaml({"api-reference": {"package": "mypkg", "dynamic": True}}),
                 encoding="utf-8",
             )
 
@@ -24749,7 +24749,7 @@ def test_build_static_mode_failure_exits():
 
             docs.project_path.mkdir(parents=True, exist_ok=True)
             (docs.project_path / "_quarto.yml").write_text(
-                yaml.dump({"api-reference": {"package": "mypkg", "dynamic": True}}),
+                format_yaml({"api-reference": {"package": "mypkg", "dynamic": True}}),
                 encoding="utf-8",
             )
 
@@ -24795,7 +24795,7 @@ def test_build_non_dynamic_failure_exits():
 
             docs.project_path.mkdir(parents=True, exist_ok=True)
             (docs.project_path / "_quarto.yml").write_text(
-                yaml.dump({"api-reference": {"package": "mypkg"}}),
+                format_yaml({"api-reference": {"package": "mypkg"}}),
                 encoding="utf-8",
             )
 
@@ -26054,7 +26054,7 @@ def test_generate_llms_full_txt_no_api_reference():
         docs.project_path.mkdir()
 
         (docs.project_path / "_quarto.yml").write_text(
-            yaml.dump({"project": {"type": "website"}}),
+            format_yaml({"project": {"type": "website"}}),
             encoding="utf-8",
         )
 
@@ -26093,7 +26093,7 @@ def test_generate_llms_full_txt_basic():
                 ],
             },
         }
-        (docs.project_path / "_quarto.yml").write_text(yaml.dump(config), encoding="utf-8")
+        (docs.project_path / "_quarto.yml").write_text(format_yaml(config), encoding="utf-8")
 
         sys.path.insert(0, tmp_dir)
         try:
@@ -26137,7 +26137,7 @@ def test_generate_llms_full_txt_with_cli_and_user_guide():
                 ],
             },
         }
-        (docs.project_path / "_quarto.yml").write_text(yaml.dump(config), encoding="utf-8")
+        (docs.project_path / "_quarto.yml").write_text(format_yaml(config), encoding="utf-8")
 
         sys.path.insert(0, tmp_dir)
         try:
@@ -27065,7 +27065,7 @@ def test_add_api_reference_config_already_exists():
 
         docs.project_path.mkdir(parents=True, exist_ok=True)
         (docs.project_path / "_quarto.yml").write_text(
-            yaml.dump({"api-reference": {"package": "existing"}}),
+            format_yaml({"api-reference": {"package": "existing"}}),
             encoding="utf-8",
         )
 
@@ -27082,7 +27082,9 @@ def test_add_api_reference_config_no_package():
         docs._config.reference_enabled = True
 
         docs.project_path.mkdir(parents=True, exist_ok=True)
-        (docs.project_path / "_quarto.yml").write_text(yaml.dump({"website": {}}), encoding="utf-8")
+        (docs.project_path / "_quarto.yml").write_text(
+            format_yaml({"website": {}}), encoding="utf-8"
+        )
 
         with (
             patch.object(docs, "_detect_package_name", return_value=None),
@@ -27102,7 +27104,9 @@ def test_add_api_reference_config_no_exports():
         docs._config.reference_enabled = True
 
         docs.project_path.mkdir(parents=True, exist_ok=True)
-        (docs.project_path / "_quarto.yml").write_text(yaml.dump({"website": {}}), encoding="utf-8")
+        (docs.project_path / "_quarto.yml").write_text(
+            format_yaml({"website": {}}), encoding="utf-8"
+        )
 
         with (
             patch.object(docs, "_detect_package_name", return_value="mypkg"),
@@ -27130,7 +27134,7 @@ def test_add_api_reference_config_success():
 
         docs.project_path.mkdir(parents=True, exist_ok=True)
         config = {"website": {"navbar": {"left": []}, "sidebar": []}}
-        (docs.project_path / "_quarto.yml").write_text(yaml.dump(config), encoding="utf-8")
+        (docs.project_path / "_quarto.yml").write_text(format_yaml(config), encoding="utf-8")
 
         sections = [{"title": "Functions", "contents": ["func_a"]}]
 
@@ -27155,7 +27159,9 @@ def test_add_api_reference_config_eof_error():
         docs._config.reference_enabled = True
 
         docs.project_path.mkdir(parents=True, exist_ok=True)
-        (docs.project_path / "_quarto.yml").write_text(yaml.dump({"website": {}}), encoding="utf-8")
+        (docs.project_path / "_quarto.yml").write_text(
+            format_yaml({"website": {}}), encoding="utf-8"
+        )
 
         with (
             patch.object(docs, "_detect_package_name", return_value=None),
@@ -27185,7 +27191,9 @@ def test_refresh_api_reference_config_no_api_ref():
         docs = GreatDocs(project_path=tmp_dir)
         docs.project_path = Path(tmp_dir) / "great-docs"
         docs.project_path.mkdir()
-        (docs.project_path / "_quarto.yml").write_text(yaml.dump({"project": {}}), encoding="utf-8")
+        (docs.project_path / "_quarto.yml").write_text(
+            format_yaml({"project": {}}), encoding="utf-8"
+        )
 
         docs._refresh_api_reference_config()
 
@@ -27199,7 +27207,7 @@ def test_refresh_api_reference_config_fallback_to_explicit():
         docs.project_path.mkdir()
 
         config = {"api-reference": {"package": "mypkg"}}
-        (docs.project_path / "_quarto.yml").write_text(yaml.dump(config), encoding="utf-8")
+        (docs.project_path / "_quarto.yml").write_text(format_yaml(config), encoding="utf-8")
 
         docs._config = MagicMock()
         docs._config.parser = "numpy"
@@ -28076,7 +28084,7 @@ def _make_uqc_docs(tmp_dir, gd_yml_content="", pyproject_content=None, quarto_co
         }
 
     with open(quarto_yml, "w") as f:
-        yaml.dump(quarto_content, f)
+        write_yaml(quarto_content, f)
 
     return docs, quarto_yml
 
@@ -28096,7 +28104,7 @@ def test_update_quarto_config_resources_string():
         docs._update_quarto_config()
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         assert isinstance(result["project"]["resources"], list)
         assert "single-resource.txt" in result["project"]["resources"]
@@ -28118,7 +28126,7 @@ def test_update_quarto_config_include_in_header_string():
         docs._update_quarto_config()
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         header = result["format"]["html"]["include-in-header"]
         assert isinstance(header, list)
@@ -28146,7 +28154,7 @@ def test_update_quarto_config_github_icon_fallback():
             docs._update_quarto_config()
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         navbar = result["website"]["navbar"]
         right_items = navbar.get("right", [])
@@ -28172,7 +28180,7 @@ def test_update_quarto_config_dark_logo():
             docs._update_quarto_config()
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         navbar = result["website"]["navbar"]
         assert "logo" in navbar
@@ -28200,7 +28208,7 @@ def test_update_quarto_config_logo_name_collision():
             docs._update_quarto_config()
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         navbar = result["website"]["navbar"]
         assert navbar["logo"] == "logo-light.png"
@@ -28256,7 +28264,7 @@ def test_update_quarto_config_favicon_file():
             docs._update_quarto_config()
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         assert result["website"].get("favicon") is not None
 
@@ -28301,7 +28309,7 @@ def test_update_quarto_config_include_after_body_string():
             docs._update_quarto_config()
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         after_body = result["format"]["html"]["include-after-body"]
         assert isinstance(after_body, list)
@@ -28322,7 +28330,7 @@ def test_update_quarto_config_footer_author_string():
         docs._update_quarto_config()
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         footer = result["website"]["page-footer"]["center"]
         assert "Alice" in footer
@@ -28343,7 +28351,7 @@ def test_update_quarto_config_footer_funding_no_url():
         docs._update_quarto_config()
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         footer = result["website"]["page-footer"]["center"]
         assert "ACME" in footer or "Supported by" in footer
@@ -28361,7 +28369,7 @@ def test_update_quarto_config_funding_only_no_authors():
         docs._update_quarto_config()
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         footer = result["website"].get("page-footer", {})
         center = footer.get("center", "")
@@ -28379,7 +28387,7 @@ def test_update_quarto_config_attribution_v2():
         docs._update_quarto_config()
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         footer = result["website"]["page-footer"]["center"]
         assert "Great" in footer
@@ -28403,7 +28411,7 @@ def test_update_quarto_config_announcement_banner_v2():
         docs._update_quarto_config()
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         header = result["format"]["html"]["include-in-header"]
         has_announcement = any("gd-announcement" in str(item) for item in header)
@@ -28427,7 +28435,7 @@ def test_update_quarto_config_navbar_style_v2():
         docs._update_quarto_config()
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         header = result["format"]["html"]["include-in-header"]
         has_navbar_style = any("gd-navbar-style" in str(item) for item in header)
@@ -28445,7 +28453,7 @@ def test_update_quarto_config_content_style_v2():
         docs._update_quarto_config()
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         header = result["format"]["html"]["include-in-header"]
         has_content_style = any("gd-content-style" in str(item) for item in header)
@@ -28472,7 +28480,7 @@ def test_update_quarto_config_logo_href():
             docs._update_quarto_config()
 
         with open(quarto_yml) as f:
-            result = yaml.safe_load(f)
+            result = read_yaml(f)
 
         navbar = result["website"]["navbar"]
         assert navbar["logo-href"] == "https://example.com"

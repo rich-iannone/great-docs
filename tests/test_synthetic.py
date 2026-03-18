@@ -284,10 +284,10 @@ def test_L2_init_creates_config(pkg_name: str, tmp_path: Path):
     assert config_path.exists(), "great-docs.yml was not created"
 
     # Config should be parseable YAML
-    import yaml
+    from yaml12 import format_yaml, parse_yaml, read_yaml
 
     with open(config_path, encoding="utf-8") as f:
-        config_data = yaml.safe_load(f)
+        config_data = read_yaml(f)
 
     # Should not be None/empty
     assert config_data is not None, "great-docs.yml is empty"
@@ -305,11 +305,11 @@ def test_L2_init_detects_correct_exports(pkg_name: str, tmp_path: Path):
     docs.install(force=True)
 
     # Read the generated config and check reference sections
-    import yaml
+    from yaml12 import format_yaml, parse_yaml, read_yaml
 
     config_path = pkg_dir / "great-docs.yml"
     with open(config_path, encoding="utf-8") as f:
-        config_data = yaml.safe_load(f)
+        config_data = read_yaml(f)
 
     # Collect all content items from reference sections
     reference = config_data.get("reference", [])
@@ -470,7 +470,7 @@ def test_L2_explicit_reference_survives_init(pkg_name: str, tmp_path: Path):
     if not expected.get("explicit_reference"):
         pytest.skip("Not an explicit reference config spec")
 
-    import yaml
+    from yaml12 import format_yaml, parse_yaml, read_yaml
 
     config = spec.get("config", {})
     original_reference = config.get("reference", [])
@@ -485,7 +485,7 @@ def test_L2_explicit_reference_survives_init(pkg_name: str, tmp_path: Path):
     # Re-read the generated config
     config_path = pkg_dir / "great-docs.yml"
     with open(config_path, encoding="utf-8") as f:
-        config_data = yaml.safe_load(f)
+        config_data = read_yaml(f)
 
     regenerated_reference = config_data.get("reference", [])
     assert regenerated_reference, "reference sections are missing after init --force"
@@ -736,7 +736,7 @@ def test_L3_cli_navbar_link(pkg_name: str, tmp_path: Path):
     if not expected.get("cli_enabled"):
         pytest.skip("No 'cli_enabled' in spec")
 
-    import yaml
+    from yaml12 import format_yaml, parse_yaml, read_yaml
 
     docs = GreatDocs(project_path=str(pkg_dir))
     docs.install(force=True)
@@ -757,7 +757,7 @@ def test_L3_cli_navbar_link(pkg_name: str, tmp_path: Path):
     assert quarto_yml.exists(), "_quarto.yml was not created"
 
     with open(quarto_yml, encoding="utf-8") as f:
-        config = yaml.safe_load(f)
+        config = read_yaml(f)
 
     # CLI Reference should NOT appear as a separate navbar entry —
     # navigation between API and CLI is handled by the reference-switcher widget
@@ -788,7 +788,7 @@ def test_L3_cli_and_user_guide_navbar(pkg_name: str, tmp_path: Path):
     if not (expected.get("cli_enabled") and expected.get("has_user_guide")):
         pytest.skip("Need both 'cli_enabled' and 'has_user_guide' in spec")
 
-    import yaml
+    from yaml12 import format_yaml, parse_yaml, read_yaml
 
     docs = GreatDocs(project_path=str(pkg_dir))
     docs.install(force=True)
@@ -807,7 +807,7 @@ def test_L3_cli_and_user_guide_navbar(pkg_name: str, tmp_path: Path):
 
     quarto_yml = docs.project_path / "_quarto.yml"
     with open(quarto_yml, encoding="utf-8") as f:
-        config = yaml.safe_load(f)
+        config = read_yaml(f)
 
     navbar_left = config.get("website", {}).get("navbar", {}).get("left", [])
     navbar_texts = [item.get("text") for item in navbar_left if isinstance(item, dict)]
@@ -836,13 +836,13 @@ def test_L2_cli_config_preserved(pkg_name: str, tmp_path: Path):
     docs = GreatDocs(project_path=str(pkg_dir))
     docs.install(force=True)
 
-    import yaml
+    from yaml12 import format_yaml, parse_yaml, read_yaml
 
     config_path = pkg_dir / "great-docs.yml"
     assert config_path.exists(), "great-docs.yml was not created"
 
     with open(config_path, encoding="utf-8") as f:
-        config_data = yaml.safe_load(f)
+        config_data = read_yaml(f)
 
     assert config_data is not None, "great-docs.yml is empty"
     cli_section = config_data.get("cli")
@@ -916,7 +916,7 @@ def _setup_blended_homepage(pkg_dir: Path, spec: dict) -> GreatDocs:
     strips unknown keys like `homepage`.  This helper merges the spec's
     `config` dict back into the generated file and reloads before proceeding.
     """
-    import yaml
+    from yaml12 import format_yaml, parse_yaml, read_yaml, write_yaml
 
     from great_docs.config import Config
 
@@ -927,10 +927,10 @@ def _setup_blended_homepage(pkg_dir: Path, spec: dict) -> GreatDocs:
     if "config" in spec:
         config_path = docs._find_package_root() / "great-docs.yml"
         with open(config_path, "r", encoding="utf-8") as f:
-            existing = yaml.safe_load(f) or {}
+            existing = read_yaml(f) or {}
         existing.update(spec["config"])
         with open(config_path, "w", encoding="utf-8") as f:
-            yaml.dump(existing, f, default_flow_style=False, sort_keys=False)
+            write_yaml(existing, f)
         docs._config = Config(docs._find_package_root())
 
     docs._prepare_build_directory()
@@ -993,7 +993,7 @@ def test_L3_blended_homepage_remaining_pages(pkg_name: str, tmp_path: Path):
 @pytest.mark.parametrize("pkg_name", _AVAILABLE_PACKAGES)
 def test_L3_blended_homepage_no_navbar_user_guide(pkg_name: str, tmp_path: Path):
     """In blended mode, 'User Guide' should NOT appear as a navbar link."""
-    import yaml
+    from yaml12 import format_yaml, parse_yaml, read_yaml
 
     pkg_dir, spec = _make_package(pkg_name, tmp_path)
     expected = spec.get("expected", {})
@@ -1006,7 +1006,7 @@ def test_L3_blended_homepage_no_navbar_user_guide(pkg_name: str, tmp_path: Path)
     assert quarto_yml.exists(), "_quarto.yml was not created"
 
     with open(quarto_yml, encoding="utf-8") as f:
-        config = yaml.safe_load(f)
+        config = read_yaml(f)
 
     navbar_left = config.get("website", {}).get("navbar", {}).get("left", [])
     navbar_texts = [item.get("text") for item in navbar_left if isinstance(item, dict)]
@@ -1020,7 +1020,7 @@ def test_L3_blended_homepage_no_navbar_user_guide(pkg_name: str, tmp_path: Path)
 @pytest.mark.parametrize("pkg_name", _AVAILABLE_PACKAGES)
 def test_L3_blended_homepage_sidebar_first_entry(pkg_name: str, tmp_path: Path):
     """In blended mode, the sidebar's first entry should point to index.qmd."""
-    import yaml
+    from yaml12 import format_yaml, parse_yaml, read_yaml
 
     pkg_dir, spec = _make_package(pkg_name, tmp_path)
     expected = spec.get("expected", {})
@@ -1031,7 +1031,7 @@ def test_L3_blended_homepage_sidebar_first_entry(pkg_name: str, tmp_path: Path):
 
     quarto_yml = docs.project_path / "_quarto.yml"
     with open(quarto_yml, encoding="utf-8") as f:
-        config = yaml.safe_load(f)
+        config = read_yaml(f)
 
     sidebar = config.get("website", {}).get("sidebar", [])
     ug_sidebar = next(

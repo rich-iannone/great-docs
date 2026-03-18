@@ -8,7 +8,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any
 
-import yaml
+from yaml12 import format_yaml, parse_yaml, read_yaml, write_yaml
 
 from . import layout
 from ._griffe import (
@@ -338,13 +338,13 @@ def _merge_frontmatter(content: str, extra: dict) -> str:
         end = content.index("\n---", 4)
         existing_yaml = content[4 : end + 1]  # noqa: E203
         rest = content[end + 4 :]  # after closing ---
-        existing = yaml.safe_load(existing_yaml) or {}
+        existing = parse_yaml(existing_yaml) or {}
         existing.update(extra)
-        new_yaml = yaml.dump(existing, allow_unicode=True, sort_keys=False)
-        return f"---\n{new_yaml}---{rest}"
+        new_yaml = format_yaml(existing)
+        return f"---\n{new_yaml}\n---{rest}"
     else:
-        new_yaml = yaml.dump(extra, allow_unicode=True, sort_keys=False)
-        return f"---\n{new_yaml}---\n\n{content}"
+        new_yaml = format_yaml(extra)
+        return f"---\n{new_yaml}\n---\n\n{content}"
 
 
 # Builder =====================================================================
@@ -606,7 +606,7 @@ class Builder:
         """Write a yaml config file for API sidebar."""
 
         d_sidebar = self._generate_sidebar(blueprint_layout)
-        yaml.dump(d_sidebar, open(self.sidebar["file"], "w"))
+        write_yaml(d_sidebar, self.sidebar["file"])
 
     def _page_to_links(self, el: layout.Page) -> list[str]:
         return [f"{self.dir}/{el.path}{self.out_page_suffix}"]
@@ -618,9 +618,7 @@ class Builder:
         """Construct a Builder from a configuration object (or yaml file)."""
 
         if isinstance(quarto_cfg, str):
-            import yaml
-
-            quarto_cfg = yaml.safe_load(open(quarto_cfg))
+            quarto_cfg = read_yaml(quarto_cfg)
 
         cfg = quarto_cfg.get("api-reference") or quarto_cfg.get("quartodoc")
         if cfg is None:

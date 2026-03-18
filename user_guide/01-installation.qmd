@@ -118,7 +118,7 @@ Great Docs automatically installs these dependencies:
 |---------|---------|
 | `griffe` | Static analysis and API discovery |
 | `click` | Command-line interface |
-| `pyyaml` | YAML configuration handling |
+| `py-yaml12` | YAML configuration handling |
 
 ## Next Steps
 

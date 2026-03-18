@@ -5,7 +5,7 @@ import shutil
 from importlib import resources
 from pathlib import Path
 
-import yaml
+from yaml12 import format_yaml, parse_yaml, read_yaml, write_yaml
 
 from .config import Config
 
@@ -1377,7 +1377,7 @@ class GreatDocs:
             return
 
         with open(quarto_yml, "r") as f:
-            config = yaml.safe_load(f) or {}
+            config = read_yaml(f) or {}
 
         navbar = config.get("website", {}).get("navbar")
         if not navbar or "left" not in navbar:
@@ -1565,7 +1565,7 @@ class GreatDocs:
                 parts = content.split("---", 2)
                 if len(parts) >= 3:
                     try:
-                        fm = yaml.safe_load(parts[1])
+                        fm = parse_yaml(parts[1])
                         if isinstance(fm, dict):
                             title = fm.get("title", title)
                             description = fm.get("description", "")
@@ -1577,11 +1577,9 @@ class GreatDocs:
                                 fm["bread-crumbs"] = False
                                 changed = True
                             if changed:
-                                parts[1] = "\n" + yaml.dump(
-                                    fm, default_flow_style=False, sort_keys=False
-                                )
+                                parts[1] = "\n" + format_yaml(fm) + "\n"
                                 content = "---".join(parts)
-                    except yaml.YAMLError:
+                    except ValueError:
                         pass
 
             dest_file.write_text(content, encoding="utf-8")
@@ -1646,11 +1644,11 @@ class GreatDocs:
                 parts = content.split("---", 2)
                 if len(parts) >= 3:
                     try:
-                        fm = yaml.safe_load(parts[1])
+                        fm = parse_yaml(parts[1])
                         if isinstance(fm, dict):
                             title = fm.get("title", title)
                             description = fm.get("description", "")
-                    except yaml.YAMLError:
+                    except ValueError:
                         pass
 
             dest_file.write_text(content, encoding="utf-8")
@@ -1893,10 +1891,10 @@ class GreatDocs:
                 continue
 
             try:
-                fm = yaml.safe_load(parts[1])
+                fm = parse_yaml(parts[1])
                 if not isinstance(fm, dict):
                     continue
-            except yaml.YAMLError:
+            except ValueError:
                 continue
 
             # Merge body-classes
@@ -1905,7 +1903,7 @@ class GreatDocs:
             if "gd-section-no-sidebar" not in classes:
                 classes.append("gd-section-no-sidebar")
                 fm["body-classes"] = " ".join(classes)
-                parts[1] = "\n" + yaml.dump(fm, default_flow_style=False, sort_keys=False)
+                parts[1] = "\n" + format_yaml(fm) + "\n"
                 qmd_path.write_text("---".join(parts), encoding="utf-8")
 
     def _add_section_to_navbar(
@@ -1968,7 +1966,7 @@ class GreatDocs:
         """Read and return the _quarto.yml config, ensuring website.sidebar exists."""
         if quarto_yml.exists():
             with open(quarto_yml, "r") as f:
-                config = yaml.safe_load(f) or {}
+                config = read_yaml(f) or {}
         else:
             config = {}
 
@@ -2370,7 +2368,7 @@ class GreatDocs:
             return
 
         with open(quarto_yml, "r") as f:
-            config = yaml.safe_load(f) or {}
+            config = read_yaml(f) or {}
 
         if "website" not in config:
             config["website"] = {}
@@ -2689,8 +2687,8 @@ class GreatDocs:
             parts = content.split("---", 2)
             if len(parts) >= 3:
                 try:
-                    frontmatter = yaml.safe_load(parts[1]) or {}
-                except yaml.YAMLError:
+                    frontmatter = parse_yaml(parts[1]) or {}
+                except ValueError:
                     pass
 
         # Get title from frontmatter or derive from filename
@@ -3141,7 +3139,7 @@ class GreatDocs:
             return
 
         with open(quarto_yml, "r") as f:
-            config = yaml.safe_load(f) or {}
+            config = read_yaml(f) or {}
 
         if "website" not in config:
             config["website"] = {}
@@ -7315,10 +7313,9 @@ title: "License"
             metadata = self._get_package_metadata()
 
             # Parse CITATION.cff for structured data
-            import yaml
 
             with open(citation_path, "r", encoding="utf-8") as f:
-                citation_data = yaml.safe_load(f)
+                citation_data = read_yaml(f)
 
             # Get package name for intro paragraph
             package_name = metadata.get("name", "this package")
@@ -7654,7 +7651,7 @@ toc: false
         quarto_yml = self.project_path / "_quarto.yml"
 
         with open(quarto_yml, "r") as f:
-            config = yaml.safe_load(f) or {}
+            config = read_yaml(f) or {}
 
         # Check if API reference config already exists
         if "api-reference" in config:
@@ -7802,7 +7799,7 @@ toc: false
             return
 
         with open(quarto_yml, "r") as f:
-            config = yaml.safe_load(f) or {}
+            config = read_yaml(f) or {}
 
         if "api-reference" not in config:
             print("Error: No API reference configuration found. Run 'great-docs init' first.")
@@ -7895,7 +7892,7 @@ toc: false
         )
         with open(quarto_yml, "w") as f:
             f.write(header_comment)
-            yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+            write_yaml(config, f)
 
     def _update_quarto_config(self) -> None:
         """
@@ -7918,7 +7915,7 @@ toc: false
         else:
             # Load existing configuration
             with open(quarto_yml, "r") as f:
-                config = yaml.safe_load(f) or {}
+                config = read_yaml(f) or {}
 
         # Ensure required structure exists
         if "project" not in config:
@@ -8779,7 +8776,7 @@ toc: false
             return
 
         with open(quarto_yml, "r") as f:
-            config = yaml.safe_load(f) or {}
+            config = read_yaml(f) or {}
 
         # Get API reference sections if they exist
         if "api-reference" not in config or "sections" not in config["api-reference"]:
@@ -8872,7 +8869,7 @@ toc: false
             return
 
         with open(quarto_yml, "r") as f:
-            config = yaml.safe_load(f) or {}
+            config = read_yaml(f) or {}
 
         # Get API reference sections and package info
         if "api-reference" not in config:
@@ -9034,7 +9031,7 @@ toc: false
             return
 
         with open(quarto_yml, "r") as f:
-            config = yaml.safe_load(f) or {}
+            config = read_yaml(f) or {}
 
         # Get API reference sections and package info
         if "api-reference" not in config:
@@ -9564,12 +9561,12 @@ toc: false
                         print("   Retrying with static analysis (dynamic: false)...\n")
 
                         with open(quarto_yml, "r") as f:
-                            qconfig = yaml.safe_load(f) or {}
+                            qconfig = read_yaml(f) or {}
 
                         if "api-reference" in qconfig:
                             qconfig["api-reference"]["dynamic"] = False
                             with open(quarto_yml, "w") as f:
-                                yaml.dump(qconfig, f, default_flow_style=False, sort_keys=False)
+                                write_yaml(qconfig, f)
 
                         try:
                             builder = Builder.from_quarto_config(str(quarto_yml))

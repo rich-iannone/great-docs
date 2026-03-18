@@ -5,7 +5,7 @@ from enum import Enum
 from functools import partial
 from textwrap import indent
 
-import yaml
+from yaml12 import format_yaml
 
 from . import layout
 from ._griffe import (
@@ -305,7 +305,7 @@ class BlueprintTransformer(PydanticTransformer):
                 "Use the following configuration to recreate the automatically",
                 " generated site:\n\n\n",
                 "api-reference:\n",
-                indent(yaml.safe_dump(_to_simple_dict(new_el), sort_keys=False), " " * 2),
+                indent(format_yaml(_to_simple_dict(new_el)), " " * 2),
                 "\n",
                 sep="",
             )

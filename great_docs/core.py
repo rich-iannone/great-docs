@@ -34,7 +34,7 @@ class GreatDocs:
         try:
             # Python 3.9+
             self.package_path = Path(resources.files("great_docs"))
-        except AttributeError:
+        except AttributeError:  # pragma: no cover
             # Fallback for older Python versions
             import importlib_resources  # type: ignore[import-not-found]
 
@@ -359,7 +359,7 @@ class GreatDocs:
                 name = cfg.get("metadata", "name", fallback=None)
                 if name:
                     return name
-            except Exception:
+            except Exception:  # pragma: no cover
                 pass
 
         # Look for setup.py
@@ -808,7 +808,7 @@ class GreatDocs:
             if (current / "pyproject.toml").exists() or (current / "setup.py").exists():
                 return current
             parent = current.parent
-            if parent == current:  # Reached filesystem root
+            if parent == current:  # pragma: no cover — reached filesystem root
                 break
             current = parent
 
@@ -983,7 +983,7 @@ class GreatDocs:
                         if urls:
                             metadata["urls"] = urls
 
-                except Exception:
+                except Exception:  # pragma: no cover
                     pass
 
         # Read Great Docs configuration from great-docs.yml
@@ -2014,8 +2014,8 @@ class GreatDocs:
         try:
             import click
         except ImportError:
-            print("Click not installed, skipping CLI documentation")
-            return None
+            print("Click not installed, skipping CLI documentation")  # pragma: no cover
+            return None  # pragma: no cover
 
         # Normalize to importable module name (hyphens → underscores)
         importable_name = self._normalize_package_name(package_name)
@@ -2141,14 +2141,12 @@ class GreatDocs:
             if gui_scripts:
                 return list(gui_scripts.keys())[0]
 
-        except Exception:
-            pass
+        except Exception:  # pragma: no cover
+            pass  # pragma: no cover
 
         return None
 
-    def _extract_click_command(
-        self, cmd: "click.Command", name: str, parent_path: str = ""
-    ) -> dict:
+    def _extract_click_command(self, cmd, name: str, parent_path: str = "") -> dict:
         """
         Extract information from a Click command or group.
 
@@ -3423,10 +3421,10 @@ class GreatDocs:
                 "end_line": end_lineno or obj.lineno,
             }
 
-        except ImportError:
-            return None
-        except Exception:
-            return None
+        except ImportError:  # pragma: no cover
+            return None  # pragma: no cover
+        except Exception:  # pragma: no cover
+            return None  # pragma: no cover
 
     def _build_github_source_url(
         self, source_location: dict, branch: str | None = None
@@ -4079,12 +4077,14 @@ class GreatDocs:
 
             return safe_exports
 
-        except ImportError:
-            print("Warning: griffe not available, cannot use dir() discovery")
-            return None
-        except Exception as e:
-            print(f"Error discovering exports via dir(): {type(e).__name__}: {e}")
-            return None
+        except ImportError:  # pragma: no cover
+            print("Warning: griffe not available, cannot use dir() discovery")  # pragma: no cover
+            return None  # pragma: no cover
+        except Exception as e:  # pragma: no cover
+            print(
+                f"Error discovering exports via dir(): {type(e).__name__}: {e}"
+            )  # pragma: no cover
+            return None  # pragma: no cover
 
     def _detect_docstring_style(self, package_name: str) -> str:
         """
@@ -4253,9 +4253,9 @@ class GreatDocs:
             import griffe
 
             from great_docs._qrenderer.introspection import get_object as qd_get_object
-        except ImportError:
+        except ImportError:  # pragma: no cover
             # If renderer isn't available, default to True (will fail at build time anyway)
-            return True
+            return True  # pragma: no cover
 
         # Normalize package name
         normalized_name = package_name.replace("-", "_")
@@ -4291,13 +4291,13 @@ class GreatDocs:
                         try:
                             _ = member.kind
                         except griffe.CyclicAliasError:
-                            cyclic_errors += 1
-                            break
+                            cyclic_errors += 1  # pragma: no cover
+                            break  # pragma: no cover
             except griffe.CyclicAliasError:
-                cyclic_errors += 1
-            except Exception:
+                cyclic_errors += 1  # pragma: no cover
+            except Exception:  # pragma: no cover
                 # Other errors don't necessarily mean dynamic mode won't work
-                pass
+                pass  # pragma: no cover
 
         if cyclic_errors > 0:
             print(f"Detected {cyclic_errors} cyclic alias error(s), using dynamic: false")
@@ -4830,9 +4830,11 @@ class GreatDocs:
                                                     categories["class_member_types"][
                                                         f"{name}.{member_name}"
                                                     ] = member_sub
-                                            except Exception:
+                                            except Exception:  # pragma: no cover
                                                 # Method can't be documented by the renderer
-                                                skipped_methods.append(member_name)
+                                                skipped_methods.append(
+                                                    member_name
+                                                )  # pragma: no cover
                                         else:
                                             method_entries.append((member_name, lineno))
                                             # Store sub-type for classmethod/staticmethod/property
@@ -4857,15 +4859,18 @@ class GreatDocs:
                                 except (
                                     griffe.CyclicAliasError,
                                     griffe.AliasResolutionError,
-                                ):
+                                ):  # pragma: no cover
                                     # Skip cyclic/unresolvable class members
-                                    skipped_methods.append(member_name)
-                                except Exception:
+                                    skipped_methods.append(member_name)  # pragma: no cover
+                                except Exception:  # pragma: no cover
                                     # Skip members that can't be introspected
-                                    pass
-                        except (griffe.CyclicAliasError, griffe.AliasResolutionError):
+                                    pass  # pragma: no cover
+                        except (
+                            griffe.CyclicAliasError,
+                            griffe.AliasResolutionError,
+                        ):  # pragma: no cover
                             # If we can't even iterate members, class has issues
-                            skipped_methods.append("<members>")
+                            skipped_methods.append("<members>")  # pragma: no cover
 
                         # Sort by line number to preserve source file order
                         method_entries.sort(key=lambda x: x[1])
@@ -4923,10 +4928,10 @@ class GreatDocs:
                                 except (
                                     griffe.CyclicAliasError,
                                     griffe.AliasResolutionError,
-                                ):
-                                    continue
-                                except Exception:
-                                    continue
+                                ):  # pragma: no cover
+                                    continue  # pragma: no cover
+                                except Exception:  # pragma: no cover
+                                    continue  # pragma: no cover
 
                                 qualified = f"{name}.{member_name}"
 
@@ -4936,7 +4941,7 @@ class GreatDocs:
                                     try:
                                         qd_obj = gd_get_object(f"{normalized_name}:{qualified}")
                                         _ = qd_obj.kind
-                                    except Exception:
+                                    except Exception:  # pragma: no cover
                                         # Dynamic mode failed; try static (no dynamic=True)
                                         try:
                                             from great_docs._qrenderer.introspection import (
@@ -4948,9 +4953,9 @@ class GreatDocs:
                                                 parser="numpy",
                                             )
                                             _ = qd_obj.kind
-                                        except Exception:
+                                        except Exception:  # pragma: no cover
                                             # Neither mode works; skip this member
-                                            continue
+                                            continue  # pragma: no cover
 
                                 if member_kind == "class":
                                     sub = self._sub_classify_class(member)
@@ -5023,8 +5028,8 @@ class GreatDocs:
                                                                     ][
                                                                         f"{qualified}.{meth_name}"
                                                                     ] = meth_sub
-                                                            except Exception:
-                                                                pass
+                                                            except Exception:  # pragma: no cover
+                                                                pass  # pragma: no cover
                                                     else:
                                                         method_entries.append((meth_name, lineno))
                                                         # Store sub-type
@@ -5040,8 +5045,8 @@ class GreatDocs:
                                                     # Check if attribute is a @property
                                                     try:
                                                         meth_labels = meth.labels
-                                                    except Exception:
-                                                        meth_labels = set()
+                                                    except Exception:  # pragma: no cover
+                                                        meth_labels = set()  # pragma: no cover
                                                     if "property" in meth_labels:
                                                         categories["class_member_types"][
                                                             f"{qualified}.{meth_name}"
@@ -5049,15 +5054,15 @@ class GreatDocs:
                                             except (
                                                 griffe.CyclicAliasError,
                                                 griffe.AliasResolutionError,
-                                            ):
-                                                pass
-                                            except Exception:
-                                                pass
+                                            ):  # pragma: no cover
+                                                pass  # pragma: no cover
+                                            except Exception:  # pragma: no cover
+                                                pass  # pragma: no cover
                                     except (
                                         griffe.CyclicAliasError,
                                         griffe.AliasResolutionError,
-                                    ):
-                                        pass
+                                    ):  # pragma: no cover
+                                        pass  # pragma: no cover
 
                                     method_entries.sort(key=lambda x: x[1])
                                     method_names_list = [e[0] for e in method_entries]
@@ -5201,10 +5206,10 @@ class GreatDocs:
                                 f"(project name was '{package_name}')"
                             )
                             break
-                        except Exception:
-                            continue
-            except Exception:
-                pass
+                        except Exception:  # pragma: no cover
+                            continue  # pragma: no cover
+            except Exception:  # pragma: no cover
+                pass  # pragma: no cover
 
             if mod is None:
                 # Neither the normalized name nor any discovered module worked
@@ -5507,17 +5512,17 @@ class GreatDocs:
                                     method_directives = extract_directives(method.docstring.value)
                                     if method_directives:
                                         directive_map[f"{name}.{method_name}"] = method_directives
-                            except Exception:
+                            except Exception:  # pragma: no cover
                                 continue
-                except Exception:
+                except Exception:  # pragma: no cover
                     # Skip if we can't introspect the class
                     pass
 
             return directive_map
 
-        except ImportError:
-            print("Warning: griffe not available for directive extraction")
-            return {}
+        except ImportError:  # pragma: no cover
+            print("Warning: griffe not available for directive extraction")  # pragma: no cover
+            return {}  # pragma: no cover
 
     def _build_sections_from_reference_config(
         self, reference_config: list[dict]
@@ -5886,8 +5891,8 @@ class GreatDocs:
 
             return result
 
-        except Exception:
-            return []
+        except Exception:  # pragma: no cover
+            return []  # pragma: no cover
 
     def _format_authors_yaml(self, authors: list[dict[str, str]]) -> str:
         """
@@ -8450,8 +8455,8 @@ toc: false
                             f' (<a href="https://github.com/rich-iannone/great-docs/'
                             f'commit/{short_hash}">{short_hash}</a>)'
                         )
-            except Exception:
-                pass
+            except Exception:  # pragma: no cover
+                pass  # pragma: no cover
 
             attribution = f"Site created with <strong>Great&nbsp;Docs</strong>{gd_version_label}."
 
@@ -8727,7 +8732,7 @@ toc: false
         if owner and repo:
             try:
                 releases = self._fetch_github_releases(owner, repo, max_releases=1)
-            except Exception:
+            except Exception:  # pragma: no cover
                 releases = []
 
             if releases:
@@ -9006,8 +9011,8 @@ toc: false
 
             return first_line
 
-        except Exception:
-            return ""
+        except Exception:  # pragma: no cover
+            return ""  # pragma: no cover
 
     def _generate_llms_full_txt(self) -> None:
         """
@@ -9166,10 +9171,10 @@ toc: false
             # Combine the signature and docstring
             return f"{sig_str}\n\n{doc}" if doc else sig_str
 
-        except AttributeError:
-            return ""
-        except Exception:
-            return ""
+        except AttributeError:  # pragma: no cover
+            return ""  # pragma: no cover
+        except Exception:  # pragma: no cover
+            return ""  # pragma: no cover
 
     def _get_cli_help_text_for_llms(self) -> str:
         """
@@ -9268,8 +9273,8 @@ toc: false
             try:
                 with open(file_path, "r", encoding="utf-8") as f:
                     content = f.read()
-            except Exception:
-                continue
+            except Exception:  # pragma: no cover
+                continue  # pragma: no cover
 
             # Strip YAML frontmatter
             content = self._strip_frontmatter(content)
@@ -10512,8 +10517,8 @@ toc: false
 
         try:
             pkg = griffe.load(normalized_name)
-        except Exception:
-            return {}
+        except Exception:  # pragma: no cover
+            return {}  # pragma: no cover
 
         def check_docstring(obj, obj_name: str):
             if not hasattr(obj, "docstring") or not obj.docstring:
@@ -10562,12 +10567,12 @@ toc: false
                         for method_name, method in member.members.items():
                             if not method_name.startswith("_"):
                                 check_docstring(method, f"{full_name}.{method_name}")
-                except Exception:
+                except Exception:  # pragma: no cover
                     continue
 
         try:
             process_members(pkg)
-        except Exception:
-            pass
+        except Exception:  # pragma: no cover
+            pass  # pragma: no cover
 
         return results

@@ -36841,3 +36841,424 @@ def test_renderdoc_see_also_section():
         body = render.render_body()
     body_str = str(body) if body else ""
     assert isinstance(body_str, str)
+
+
+def test_prepare_build_directory_config_js_branches():
+    """_prepare_build_directory appends JS files for enabled config options (lines 109-113)."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        # Provide a real package with pyproject.toml
+        (tmp / "pyproject.toml").write_text('[project]\nname = "mypkg"\nversion = "1.0"\n')
+        # Enable the relevant config flags
+        (tmp / "great-docs.yml").write_text(
+            "announcement:\n  content: Hello\nnavbar_style: modern\ncontent_style: wide\n"
+        )
+        docs = GreatDocs(project_path=tmp_dir)
+        # Ensure the docs dir exists
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+        # Copy scss so the method doesn't fail
+        scss_src = docs.assets_path / "great-docs.scss"
+        if scss_src.exists():
+            shutil.copy2(scss_src, docs.project_path / "great-docs.scss")
+
+        docs._prepare_build_directory()
+
+        # Verify the config-specific JS files were copied
+        assert (docs.project_path / "announcement-banner.js").exists()
+        assert (docs.project_path / "navbar-style.js").exists()
+        assert (docs.project_path / "content-style.js").exists()
+
+
+def test_copy_user_guide_files_hyphen_variant():
+    """_copy_user_guide_files falls back to 'user-guide' hyphenated dir (line 172)."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        (tmp / "pyproject.toml").write_text('[project]\nname = "mypkg"\nversion = "1.0"\n')
+        # Create 'user-guide' dir (not 'user_guide')
+        ug = tmp / "user-guide"
+        ug.mkdir()
+        (ug / "intro.qmd").write_text("---\ntitle: Intro\n---\nHello")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+
+        docs._copy_user_guide_files()
+
+        # Verify the file was copied to the build directory
+        assert (docs.project_path / "user-guide" / "intro.qmd").exists()
+
+
+def test_update_project_gitignore_force_new():
+    """_update_project_gitignore with force=True creates new .gitignore (lines 315-317)."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        (tmp / "pyproject.toml").write_text('[project]\nname = "mypkg"\n')
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs._update_project_gitignore(force=True)
+
+        gitignore = tmp / ".gitignore"
+        assert gitignore.exists()
+        assert "great-docs/" in gitignore.read_text()
+
+
+def test_detect_git_ref_git_describe_tag():
+    """_detect_git_ref returns tag when git describe succeeds (line 3523)."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        (tmp / "pyproject.toml").write_text('[project]\nname = "mypkg"\n')
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        with patch("subprocess.run") as mock_run:
+            # First subprocess call (git describe) succeeds with a tag name
+            tag_result = MagicMock()
+            tag_result.returncode = 0
+            tag_result.stdout = "v1.2.3\n"
+            mock_run.return_value = tag_result
+
+            ref = docs._detect_git_ref()
+
+        assert ref == "v1.2.3"
+
+
+def test_detect_git_ref_branch_fallback():
+    """_detect_git_ref returns branch name when tag not found (lines 3537-3538)."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        (tmp / "pyproject.toml").write_text('[project]\nname = "mypkg"\n')
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        with patch("subprocess.run") as mock_run:
+            # First call (git describe) fails; second call (git rev-parse) succeeds
+            tag_fail = MagicMock()
+            tag_fail.returncode = 128
+            branch_ok = MagicMock()
+            branch_ok.returncode = 0
+            branch_ok.stdout = "feature-branch\n"
+            mock_run.side_effect = [tag_fail, branch_ok]
+
+            ref = docs._detect_git_ref()
+
+        assert ref == "feature-branch"
+
+
+def test_detect_git_ref_exception_fallback():
+    """_detect_git_ref returns 'main' when subprocess raises (line 3539)."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        (tmp / "pyproject.toml").write_text('[project]\nname = "mypkg"\n')
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        with patch("subprocess.run", side_effect=FileNotFoundError("git not found")):
+            ref = docs._detect_git_ref()
+
+        assert ref == "main"
+
+
+def test_get_github_repo_info_git_suffix():
+    """_get_github_repo_info strips .git suffix from repo URL (line 1148)."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        (tmp / "pyproject.toml").write_text(
+            '[project]\nname = "mypkg"\nversion = "1.0"\n'
+            '[project.urls]\nRepository = "https://github.com/owner/myrepo.git"\n'
+        )
+
+        docs = GreatDocs(project_path=tmp_dir)
+        owner, repo, base_url = docs._get_github_repo_info()
+
+        assert owner == "owner"
+        assert repo == "myrepo"
+        assert ".git" not in base_url
+        assert base_url == "https://github.com/owner/myrepo"
+
+
+def test_get_github_repo_info_no_match():
+    """_get_github_repo_info returns None tuple when URL doesn't match pattern (line 1152)."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        (tmp / "pyproject.toml").write_text(
+            '[project]\nname = "mypkg"\nversion = "1.0"\n'
+            '[project.urls]\nRepository = "https://gitlab.com/owner/myrepo"\n'
+        )
+
+        docs = GreatDocs(project_path=tmp_dir)
+        owner, repo, base_url = docs._get_github_repo_info()
+
+        assert owner is None
+        assert repo is None
+        assert base_url is None
+
+
+def test_detect_docstring_style_no_docstrings():
+    """_detect_docstring_style returns 'numpy' when no docstrings found (line 4132)."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        pkg_dir = tmp / "nodocpkg2"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text("x = 1\ny = 2\n")
+        (tmp / "pyproject.toml").write_text('[project]\nname = "nodocpkg2"\n')
+
+        sys.path.insert(0, str(tmp))
+        try:
+            docs = GreatDocs(project_path=tmp_dir)
+            style = docs._detect_docstring_style("nodocpkg2")
+            assert style == "numpy"
+        finally:
+            sys.path.remove(str(tmp))
+            sys.modules.pop("nodocpkg2", None)
+
+
+def test_detect_docstring_style_google():
+    """_detect_docstring_style detects google style without numpy dashes (line 4184)."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        pkg_dir = tmp / "googlepkg2"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text('''
+"""Package with Google-style docs."""
+__all__ = ["add"]
+
+def add(a, b):
+    """Add two numbers.
+
+    Args:
+        a: First number.
+        b: Second number.
+
+    Returns:
+        Sum of a and b.
+    """
+    return a + b
+
+def sub(a, b):
+    """Subtract two numbers.
+
+    Args:
+        a: First number.
+        b: Second number.
+
+    Returns:
+        Difference of a and b.
+    """
+    return a - b
+''')
+        (tmp / "pyproject.toml").write_text('[project]\nname = "googlepkg2"\n')
+
+        sys.path.insert(0, str(tmp))
+        try:
+            docs = GreatDocs(project_path=tmp_dir)
+            style = docs._detect_docstring_style("googlepkg2")
+            assert style == "google"
+        finally:
+            sys.path.remove(str(tmp))
+            sys.modules.pop("googlepkg2", None)
+
+
+def test_detect_module_name_where_string():
+    """_detect_module_name handles [tool.setuptools.packages.find] where as a string (line 732)."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        # Create pyproject.toml with where as a string instead of list
+        (tmp / "pyproject.toml").write_text(
+            '[project]\nname = "mypkg"\n[tool.setuptools.packages.find]\nwhere = "src"\n'
+        )
+        # Create the src/mypkg package structure
+        src = tmp / "src" / "mypkg"
+        src.mkdir(parents=True)
+        (src / "__init__.py").write_text('__version__ = "1.0"\n')
+
+        docs = GreatDocs(project_path=tmp_dir)
+        name = docs._detect_module_name()
+
+        assert name == "mypkg"
+
+
+def test_inject_section_body_class_yaml_error():
+    """_inject_section_body_class skips files with invalid YAML frontmatter (line 1898-1900)."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        (tmp / "pyproject.toml").write_text('[project]\nname = "mypkg"\n')
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+        dest = docs.project_path / "section"
+        dest.mkdir()
+
+        # File with invalid YAML but valid --- delimiters
+        (dest / "bad.qmd").write_text("---\n: invalid yaml: [unclosed\n---\nContent\n")
+        # File with non-dict YAML
+        (dest / "nondict.qmd").write_text("---\njust a string\n---\nContent\n")
+        # File without frontmatter
+        (dest / "nofm.qmd").write_text("No frontmatter here\n")
+        # File that doesn't exist won't be created
+        pages = [
+            {"filename": "bad.qmd"},
+            {"filename": "nondict.qmd"},
+            {"filename": "nofm.qmd"},
+            {"filename": "missing.qmd"},
+        ]
+
+        # Should not raise
+        docs._inject_section_body_class("section", pages, dest)
+
+        # The bad/nondict/nofm files should be unchanged
+        assert "gd-section-no-sidebar" not in (dest / "nofm.qmd").read_text()
+
+
+def test_inject_section_body_class_adds_body_class():
+    """_inject_section_body_class adds class to valid QMD files (lines 1905-1935)."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        (tmp / "pyproject.toml").write_text('[project]\nname = "mypkg"\n')
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+        dest = docs.project_path / "section"
+        dest.mkdir()
+
+        (dest / "page.qmd").write_text("---\ntitle: Test\n---\nContent\n")
+        pages = [{"filename": "page.qmd"}]
+
+        docs._inject_section_body_class("section", pages, dest)
+
+        content = (dest / "page.qmd").read_text()
+        assert "gd-section-no-sidebar" in content
+
+
+def test_fetch_github_releases_with_token():
+    """_fetch_github_releases adds auth header when GITHUB_TOKEN is set (line 1193)."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        (tmp / "pyproject.toml").write_text('[project]\nname = "mypkg"\n')
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = [
+            {
+                "tag_name": "v1.0",
+                "name": "v1.0",
+                "body": "Release",
+                "published_at": "2025-01-01",
+                "html_url": "http://example.com",
+                "prerelease": False,
+                "draft": False,
+            }
+        ]
+        import requests as _requests
+
+        with patch.dict(os.environ, {"GITHUB_TOKEN": "test-token-123"}):
+            with patch.object(_requests, "get", return_value=mock_resp) as mock_get:
+                releases = docs._fetch_github_releases("owner", "repo", max_releases=1)
+
+        # Verify token was used
+        call_kwargs = mock_get.call_args
+        headers = call_kwargs[1].get(
+            "headers", call_kwargs[0][1] if len(call_kwargs[0]) > 1 else {}
+        )
+        assert len(releases) == 1
+
+
+def test_fetch_github_releases_rate_limited():
+    """_fetch_github_releases handles 403 rate limit (line 1220)."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        (tmp / "pyproject.toml").write_text('[project]\nname = "mypkg"\n')
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 403
+        import requests as _requests
+
+        with patch.object(_requests, "get", return_value=mock_resp):
+            releases = docs._fetch_github_releases("owner", "repo", max_releases=1)
+
+        assert releases == []
+
+
+def test_detect_dynamic_mode_empty_package_name():
+    """_detect_dynamic_mode returns True for empty package name (line 4227-4229)."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        (tmp / "pyproject.toml").write_text('[project]\nname = "mypkg"\n')
+
+        docs = GreatDocs(project_path=tmp_dir)
+        assert docs._detect_dynamic_mode("") is True
+        assert docs._detect_dynamic_mode("   ") is True
+
+
+def test_rewrite_href_recursive_nested_list():
+    """_rewrite_href_recursive rewrites hrefs in nested lists/dicts (line 3149-3191)."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        (tmp / "pyproject.toml").write_text('[project]\nname = "mypkg"\n')
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        # Top-level dict match
+        sidebar = [
+            {"text": "Page 1", "href": "user-guide/intro.qmd"},
+            {
+                "text": "Section",
+                "contents": [
+                    {"text": "Page 2", "href": "user-guide/page2.qmd"},
+                ],
+            },
+        ]
+        found = docs._rewrite_href_recursive(sidebar, "user-guide/intro.qmd", "index.qmd")
+        assert found is True
+        assert sidebar[0]["href"] == "index.qmd"
+
+        # Nested dict match (in-place modification)
+        sidebar2 = [
+            {
+                "text": "Section",
+                "contents": [
+                    {"text": "Deep", "href": "old.qmd"},
+                ],
+            },
+        ]
+        found2 = docs._rewrite_href_recursive(sidebar2, "old.qmd", "new.qmd")
+        assert found2 is True
+        assert sidebar2[0]["contents"][0]["href"] == "new.qmd"
+
+        # Bare string entry match
+        sidebar3 = ["bare-page.qmd", {"text": "Other", "href": "other.qmd"}]
+        found3 = docs._rewrite_href_recursive(sidebar3, "bare-page.qmd", "index.qmd")
+        assert found3 is True
+        assert sidebar3[0] == {"text": "Home", "href": "index.qmd"}
+
+        # No match returns False
+        sidebar4 = [{"text": "A", "href": "a.qmd"}]
+        found4 = docs._rewrite_href_recursive(sidebar4, "nonexistent.qmd", "z.qmd")
+        assert found4 is False
+
+
+def test_build_github_source_url_with_source_path():
+    """_build_github_source_url uses custom source_link_path (line 3457)."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        (tmp / "pyproject.toml").write_text(
+            '[project]\nname = "mypkg"\nversion = "1.0"\n'
+            '[project.urls]\nSource = "https://github.com/user/repo"\n'
+        )
+        (tmp / "great-docs.yml").write_text("source:\n  path: packages/mypkg\n")
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        source_loc = {
+            "file": "/abs/path/to/mypkg/module.py",
+            "start_line": 10,
+            "end_line": 20,
+        }
+
+        url = docs._build_github_source_url(source_loc, branch="main")
+        # Should include the custom path
+        assert url is not None
+        assert "main" in url

@@ -1,6 +1,7 @@
 # pyright: reportPrivateUsage=false
 import json
 import os
+import requests
 import shutil
 import subprocess
 import sys
@@ -3457,11 +3458,10 @@ def test_fetch_github_releases_rate_limited():
 
 def test_fetch_github_releases_network_error():
     """Test graceful handling of network errors."""
-    import requests as req_lib
 
     docs = GreatDocs()
 
-    with patch("requests.get", side_effect=req_lib.ConnectionError("offline")):
+    with patch("requests.get", side_effect=requests.ConnectionError("offline")):
         releases = docs._fetch_github_releases("owner", "repo")
 
     assert releases == []
@@ -22364,7 +22364,6 @@ def test_fetch_github_releases_skips_drafts():
 
 def test_fetch_github_releases_request_error():
     """Test _fetch_github_releases handles request exceptions."""
-    import requests
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
@@ -23692,7 +23691,6 @@ def test_fetch_github_releases_skips_drafts():
 
 def test_fetch_github_releases_request_exception():
     """Test _fetch_github_releases handles network errors."""
-    import requests
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
@@ -26576,8 +26574,6 @@ def test_check_links_skips_code_blocks():
             encoding="utf-8",
         )
 
-        import requests
-
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.headers = {}
@@ -26676,8 +26672,6 @@ def test_check_links_broken():
 def test_check_links_timeout():
     """Test check_links handles timeout."""
 
-    import requests
-
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         ug_dir = Path(tmp_dir) / "user_guide"
@@ -26700,8 +26694,6 @@ def test_check_links_timeout():
 def test_check_links_ssl_error():
     """Test check_links handles SSL errors."""
 
-    import requests
-
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)
         ug_dir = Path(tmp_dir) / "user_guide"
@@ -26723,8 +26715,6 @@ def test_check_links_ssl_error():
 
 def test_check_links_connection_error():
     """Test check_links handles connection errors."""
-
-    import requests
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)

@@ -37262,3 +37262,569 @@ def test_build_github_source_url_with_source_path():
         # Should include the custom path
         assert url is not None
         assert "main" in url
+
+
+def test_type_sections_empty_lists():
+    """TypeSections with no items produces empty Blocks output."""
+    from unittest.mock import MagicMock
+
+    from great_docs._qrenderer._renderer import Renderer
+    from great_docs._qrenderer.typing_information import TypeSections
+
+    r = Renderer()
+    ts = TypeSections(
+        protocols_items=[],
+        typevars_items=[],
+        typealiases_items=[],
+        renderer=r,
+    )
+
+    assert ts.protocols_renders == []
+    assert ts.typevars_renders == []
+    assert ts.typealiases_renders == []
+    assert ts.items == []
+    body = ts.render_body()
+    assert str(body) == ""
+    assert str(ts) == ""
+
+
+def test_type_sections_items_combines_all():
+    """TypeSections.items returns protocols + typevars + typealiases combined."""
+    from unittest.mock import MagicMock, patch
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._renderer import Renderer
+    from great_docs._qrenderer.typing_information import TypeSections
+
+    p_item = layout.Item(name="P", obj=MagicMock(), uri="ref/P.html#P", dispname="P")
+    tv_item = layout.Item(name="TV", obj=MagicMock(), uri="ref/TV.html#TV", dispname="TV")
+    ta_item = layout.Item(name="TA", obj=MagicMock(), uri="ref/TA.html#TA", dispname="TA")
+
+    r = Renderer()
+
+    mock_render = MagicMock()
+    mock_render_cls = MagicMock(return_value=mock_render)
+
+    with (
+        patch("great_docs._qrenderer.typing_information.griffe_to_doc") as mock_g2d,
+        patch(
+            "great_docs._qrenderer.typing_information.get_render_type", return_value=mock_render_cls
+        ),
+    ):
+        mock_g2d.return_value = MagicMock()
+        ts = TypeSections(
+            protocols_items=[p_item],
+            typevars_items=[tv_item],
+            typealiases_items=[ta_item],
+            renderer=r,
+        )
+
+    assert ts.items == [p_item, tv_item, ta_item]
+    assert len(ts.protocols_renders) == 1
+    assert len(ts.typevars_renders) == 1
+    assert len(ts.typealiases_renders) == 1
+
+
+def test_type_sections_post_init_protocols_no_summary():
+    """TypeSections.__post_init__ sets show_members_summary=False on protocols."""
+    from unittest.mock import MagicMock, patch
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._renderer import Renderer
+    from great_docs._qrenderer.typing_information import TypeSections
+
+    p_item = layout.Item(name="Proto", obj=MagicMock())
+
+    mock_render = MagicMock()
+    mock_render_cls = MagicMock(return_value=mock_render)
+
+    r = Renderer()
+
+    with (
+        patch("great_docs._qrenderer.typing_information.griffe_to_doc"),
+        patch(
+            "great_docs._qrenderer.typing_information.get_render_type", return_value=mock_render_cls
+        ),
+    ):
+        ts = TypeSections(
+            protocols_items=[p_item],
+            typevars_items=[],
+            typealiases_items=[],
+            renderer=r,
+        )
+
+    assert mock_render.show_members_summary is False
+
+
+def test_type_sections_post_init_typevars_no_sig_name():
+    """TypeSections.__post_init__ sets show_signature_name=False on typevars."""
+    from unittest.mock import MagicMock, patch
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._renderer import Renderer
+    from great_docs._qrenderer.typing_information import TypeSections
+
+    tv_item = layout.Item(name="T", obj=MagicMock())
+
+    mock_render = MagicMock()
+    mock_render_cls = MagicMock(return_value=mock_render)
+
+    r = Renderer()
+
+    with (
+        patch("great_docs._qrenderer.typing_information.griffe_to_doc"),
+        patch(
+            "great_docs._qrenderer.typing_information.get_render_type", return_value=mock_render_cls
+        ),
+    ):
+        ts = TypeSections(
+            protocols_items=[],
+            typevars_items=[tv_item],
+            typealiases_items=[],
+            renderer=r,
+        )
+
+    assert mock_render.show_signature_name is False
+
+
+def test_type_sections_post_init_typealiases_settings():
+    """TypeSections.__post_init__ sets show_signature_name=False and show_signature_annotation=False on typealiases."""
+    from unittest.mock import MagicMock, patch
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._renderer import Renderer
+    from great_docs._qrenderer.typing_information import TypeSections
+
+    ta_item = layout.Item(name="MyAlias", obj=MagicMock())
+
+    mock_render = MagicMock()
+    mock_render_cls = MagicMock(return_value=mock_render)
+
+    r = Renderer()
+
+    with (
+        patch("great_docs._qrenderer.typing_information.griffe_to_doc"),
+        patch(
+            "great_docs._qrenderer.typing_information.get_render_type", return_value=mock_render_cls
+        ),
+    ):
+        ts = TypeSections(
+            protocols_items=[],
+            typevars_items=[],
+            typealiases_items=[ta_item],
+            renderer=r,
+        )
+
+    assert mock_render.show_signature_name is False
+    assert mock_render.show_signature_annotation is False
+
+
+def test_type_sections_render_body_protocols_section():
+    """TypeSections.render_body includes 'Protocols' header when protocols exist."""
+    from unittest.mock import MagicMock, patch
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._renderer import Renderer
+    from great_docs._qrenderer.typing_information import TypeSections
+
+    p_item = layout.Item(name="P", obj=MagicMock())
+
+    mock_render = MagicMock()
+    mock_render.__str__ = MagicMock(return_value="<protocol-rendered>")
+    mock_render_cls = MagicMock(return_value=mock_render)
+
+    r = Renderer()
+
+    with (
+        patch("great_docs._qrenderer.typing_information.griffe_to_doc"),
+        patch(
+            "great_docs._qrenderer.typing_information.get_render_type", return_value=mock_render_cls
+        ),
+    ):
+        ts = TypeSections(
+            protocols_items=[p_item],
+            typevars_items=[],
+            typealiases_items=[],
+            renderer=r,
+        )
+
+    body_str = str(ts.render_body())
+    assert "Protocols" in body_str
+    assert "<protocol-rendered>" in body_str
+    assert "Type Variables" not in body_str
+    assert "Type Aliases" not in body_str
+
+
+def test_type_sections_render_body_typevars_section():
+    """TypeSections.render_body includes 'Type Variables' header when typevars exist."""
+    from unittest.mock import MagicMock, patch
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._renderer import Renderer
+    from great_docs._qrenderer.typing_information import TypeSections
+
+    tv_item = layout.Item(name="T", obj=MagicMock())
+
+    mock_render = MagicMock()
+    mock_render.__str__ = MagicMock(return_value="<typevar-rendered>")
+    mock_render_cls = MagicMock(return_value=mock_render)
+
+    r = Renderer()
+
+    with (
+        patch("great_docs._qrenderer.typing_information.griffe_to_doc"),
+        patch(
+            "great_docs._qrenderer.typing_information.get_render_type", return_value=mock_render_cls
+        ),
+    ):
+        ts = TypeSections(
+            protocols_items=[],
+            typevars_items=[tv_item],
+            typealiases_items=[],
+            renderer=r,
+        )
+
+    body_str = str(ts.render_body())
+    assert "Type Variables" in body_str
+    assert "<typevar-rendered>" in body_str
+
+
+def test_type_sections_render_body_typealiases_section():
+    """TypeSections.render_body includes 'Type Aliases' header when typealiases exist."""
+    from unittest.mock import MagicMock, patch
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._renderer import Renderer
+    from great_docs._qrenderer.typing_information import TypeSections
+
+    ta_item = layout.Item(name="A", obj=MagicMock())
+
+    mock_render = MagicMock()
+    mock_render.__str__ = MagicMock(return_value="<alias-rendered>")
+    mock_render_cls = MagicMock(return_value=mock_render)
+
+    r = Renderer()
+
+    with (
+        patch("great_docs._qrenderer.typing_information.griffe_to_doc"),
+        patch(
+            "great_docs._qrenderer.typing_information.get_render_type", return_value=mock_render_cls
+        ),
+    ):
+        ts = TypeSections(
+            protocols_items=[],
+            typevars_items=[],
+            typealiases_items=[ta_item],
+            renderer=r,
+        )
+
+    body_str = str(ts.render_body())
+    assert "Type Aliases" in body_str
+    assert "<alias-rendered>" in body_str
+
+
+def test_type_sections_render_body_all_sections():
+    """TypeSections.render_body includes all three section headers when all types present."""
+    from unittest.mock import MagicMock, patch
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._renderer import Renderer
+    from great_docs._qrenderer.typing_information import TypeSections
+
+    p_item = layout.Item(name="P", obj=MagicMock())
+    tv_item = layout.Item(name="T", obj=MagicMock())
+    ta_item = layout.Item(name="A", obj=MagicMock())
+
+    mock_render = MagicMock()
+    mock_render.__str__ = MagicMock(return_value="<rendered>")
+    mock_render_cls = MagicMock(return_value=mock_render)
+
+    r = Renderer()
+
+    with (
+        patch("great_docs._qrenderer.typing_information.griffe_to_doc"),
+        patch(
+            "great_docs._qrenderer.typing_information.get_render_type", return_value=mock_render_cls
+        ),
+    ):
+        ts = TypeSections(
+            protocols_items=[p_item],
+            typevars_items=[tv_item],
+            typealiases_items=[ta_item],
+            renderer=r,
+        )
+
+    body_str = str(ts.render_body())
+    assert "Protocols" in body_str
+    assert "Type Variables" in body_str
+    assert "Type Aliases" in body_str
+
+
+def test_type_information_post_init():
+    """TypeInformation.__post_init__ sets package and dir from builder."""
+    from unittest.mock import MagicMock
+
+    from great_docs._qrenderer._renderer import Renderer
+    from great_docs._qrenderer.typing_information import TypeInformation
+
+    r = Renderer()
+    mock_builder = MagicMock()
+    mock_builder.package = "mypkg"
+    mock_builder.dir = "reference"
+
+    ti = TypeInformation(module_path="mypkg.types", renderer=r, builder=mock_builder)
+
+    assert ti.package == "mypkg"
+    assert ti.dir == "reference"
+
+
+def test_type_information_base_uri_strips_package():
+    """TypeInformation.base_uri strips the package prefix from module_path."""
+    from unittest.mock import MagicMock
+
+    from great_docs._qrenderer._renderer import Renderer
+    from great_docs._qrenderer.typing_information import TypeInformation
+
+    r = Renderer()
+    mock_builder = MagicMock()
+    mock_builder.package = "mypkg"
+    mock_builder.dir = "reference"
+
+    ti = TypeInformation(module_path="mypkg.sub.types", renderer=r, builder=mock_builder)
+    assert ti.base_uri == "reference/sub.types"
+
+
+def test_type_information_base_uri_no_package_prefix():
+    """TypeInformation.base_uri keeps full path when module doesn't start with package."""
+    from unittest.mock import MagicMock
+
+    from great_docs._qrenderer._renderer import Renderer
+    from great_docs._qrenderer.typing_information import TypeInformation
+
+    r = Renderer()
+    mock_builder = MagicMock()
+    mock_builder.package = "mypkg"
+    mock_builder.dir = "reference"
+
+    ti = TypeInformation(module_path="otherpkg.types", renderer=r, builder=mock_builder)
+    assert ti.base_uri == "reference/otherpkg.types"
+
+
+def test_type_information_sections_calls_get_object():
+    """TypeInformation.sections calls get_object and classifies members."""
+    from unittest.mock import MagicMock, patch
+
+    from great_docs._qrenderer._renderer import Renderer
+    from great_docs._qrenderer.typing_information import TypeInformation
+
+    r = Renderer()
+    mock_builder = MagicMock()
+    mock_builder.package = "mypkg"
+    mock_builder.dir = "reference"
+
+    # Create mock members with canonical_path
+    mock_proto = MagicMock()
+    mock_proto.canonical_path = "mypkg.types.MyProto"
+    mock_tv = MagicMock()
+    mock_tv.canonical_path = "mypkg.types.T"
+    mock_alias = MagicMock()
+    mock_alias.canonical_path = "mypkg.types.MyAlias"
+
+    mock_module = MagicMock()
+    mock_module.members = {"MyProto": mock_proto, "T": mock_tv, "MyAlias": mock_alias}
+
+    mock_render_obj = MagicMock()
+    mock_render_cls = MagicMock(return_value=mock_render_obj)
+
+    with (
+        patch("great_docs._qrenderer.typing_information.get_object", return_value=mock_module),
+        patch(
+            "great_docs._qrenderer.typing_information.is_protocol",
+            side_effect=lambda m: m is mock_proto,
+        ),
+        patch(
+            "great_docs._qrenderer.typing_information.is_typevar",
+            side_effect=lambda m: m is mock_tv,
+        ),
+        patch(
+            "great_docs._qrenderer.typing_information.is_typealias",
+            side_effect=lambda m: m is mock_alias,
+        ),
+        patch("great_docs._qrenderer.typing_information.griffe_to_doc"),
+        patch(
+            "great_docs._qrenderer.typing_information.get_render_type", return_value=mock_render_cls
+        ),
+    ):
+        ti = TypeInformation(module_path="mypkg.types", renderer=r, builder=mock_builder)
+        sections = ti.sections
+
+    assert len(sections.protocols_items) == 1
+    assert sections.protocols_items[0].name == "mypkg.types.MyProto"
+    assert len(sections.typevars_items) == 1
+    assert sections.typevars_items[0].name == "mypkg.types.T"
+    assert len(sections.typealiases_items) == 1
+    assert sections.typealiases_items[0].name == "mypkg.types.MyAlias"
+
+
+def test_type_information_sections_item_uris():
+    """TypeInformation.sections creates items with correct URIs based on base_uri."""
+    from unittest.mock import MagicMock, patch
+
+    from great_docs._qrenderer._renderer import Renderer
+    from great_docs._qrenderer.typing_information import TypeInformation
+
+    r = Renderer()
+    mock_builder = MagicMock()
+    mock_builder.package = "mypkg"
+    mock_builder.dir = "reference"
+
+    mock_attr = MagicMock()
+    mock_attr.canonical_path = "mypkg.sub.MyAlias"
+
+    mock_module = MagicMock()
+    mock_module.members = {"MyAlias": mock_attr}
+
+    mock_render_obj = MagicMock()
+    mock_render_cls = MagicMock(return_value=mock_render_obj)
+
+    with (
+        patch("great_docs._qrenderer.typing_information.get_object", return_value=mock_module),
+        patch("great_docs._qrenderer.typing_information.is_protocol", return_value=False),
+        patch("great_docs._qrenderer.typing_information.is_typevar", return_value=False),
+        patch("great_docs._qrenderer.typing_information.is_typealias", return_value=True),
+        patch("great_docs._qrenderer.typing_information.griffe_to_doc"),
+        patch(
+            "great_docs._qrenderer.typing_information.get_render_type", return_value=mock_render_cls
+        ),
+    ):
+        ti = TypeInformation(module_path="mypkg.sub", renderer=r, builder=mock_builder)
+        sections = ti.sections
+
+    item = sections.typealiases_items[0]
+    assert item.uri == "reference/sub.html#mypkg.sub.MyAlias"
+    assert item.dispname == "mypkg.sub.MyAlias"
+
+
+def test_type_information_content_has_meta_and_sections():
+    """TypeInformation.content returns Blocks with Meta title and TypeSections."""
+    from unittest.mock import MagicMock, patch
+
+    from great_docs._qrenderer._renderer import Renderer
+    from great_docs._qrenderer.typing_information import TypeInformation
+
+    r = Renderer()
+    mock_builder = MagicMock()
+    mock_builder.package = "mypkg"
+    mock_builder.dir = "reference"
+
+    mock_module = MagicMock()
+    mock_module.members = {}
+
+    with patch("great_docs._qrenderer.typing_information.get_object", return_value=mock_module):
+        ti = TypeInformation(module_path="mypkg.types", renderer=r, builder=mock_builder)
+        content = ti.content
+
+    content_str = str(content)
+    assert "Typing Information" in content_str
+
+
+def test_type_information_str_delegates_to_content():
+    """TypeInformation.__str__ returns str(self.content)."""
+    from unittest.mock import MagicMock, patch
+
+    from great_docs._qrenderer._renderer import Renderer
+    from great_docs._qrenderer.typing_information import TypeInformation
+
+    r = Renderer()
+    mock_builder = MagicMock()
+    mock_builder.package = "mypkg"
+    mock_builder.dir = "reference"
+
+    mock_module = MagicMock()
+    mock_module.members = {}
+
+    with patch("great_docs._qrenderer.typing_information.get_object", return_value=mock_module):
+        ti = TypeInformation(module_path="mypkg.types", renderer=r, builder=mock_builder)
+        result = str(ti)
+
+    assert "Typing Information" in result
+
+
+def test_type_information_write_creates_file():
+    """TypeInformation.write() extends builder items and writes the qmd file."""
+    import tempfile
+    from unittest.mock import MagicMock, patch
+
+    from great_docs._qrenderer._renderer import Renderer
+    from great_docs._qrenderer.typing_information import TypeInformation
+
+    r = Renderer()
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        mock_builder = MagicMock()
+        mock_builder.package = "mypkg"
+        mock_builder.dir = str(Path(tmp_dir) / "reference")
+        mock_builder.items = []
+
+        mock_module = MagicMock()
+        mock_module.members = {}
+
+        with patch("great_docs._qrenderer.typing_information.get_object", return_value=mock_module):
+            ti = TypeInformation(module_path="mypkg.types", renderer=r, builder=mock_builder)
+
+            # Ensure the output directory exists
+            Path(ti.base_uri).parent.mkdir(parents=True, exist_ok=True)
+            ti.write()
+
+        filepath = Path(f"{ti.base_uri}.qmd")
+        assert filepath.exists()
+        content = filepath.read_text()
+        assert "Typing Information" in content
+
+
+def test_type_information_write_extends_builder_items():
+    """TypeInformation.write() adds all section items to builder.items."""
+    import tempfile
+    from unittest.mock import MagicMock, patch
+
+    from great_docs._qrenderer import layout
+    from great_docs._qrenderer._renderer import Renderer
+    from great_docs._qrenderer.typing_information import TypeInformation
+
+    r = Renderer()
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        ref_dir = str(Path(tmp_dir) / "reference")
+
+        mock_builder = MagicMock()
+        mock_builder.package = "mypkg"
+        mock_builder.dir = ref_dir
+        mock_builder.items = []
+
+        mock_member = MagicMock()
+        mock_member.canonical_path = "mypkg.types.T"
+
+        mock_module = MagicMock()
+        mock_module.members = {"T": mock_member}
+
+        mock_render_obj = MagicMock()
+        mock_render_cls = MagicMock(return_value=mock_render_obj)
+
+        with (
+            patch("great_docs._qrenderer.typing_information.get_object", return_value=mock_module),
+            patch("great_docs._qrenderer.typing_information.is_protocol", return_value=False),
+            patch("great_docs._qrenderer.typing_information.is_typevar", return_value=True),
+            patch("great_docs._qrenderer.typing_information.is_typealias", return_value=False),
+            patch("great_docs._qrenderer.typing_information.griffe_to_doc"),
+            patch(
+                "great_docs._qrenderer.typing_information.get_render_type",
+                return_value=mock_render_cls,
+            ),
+        ):
+            ti = TypeInformation(module_path="mypkg.types", renderer=r, builder=mock_builder)
+
+            Path(ref_dir).mkdir(parents=True, exist_ok=True)
+            ti.write()
+
+        assert len(mock_builder.items) == 1
+        assert mock_builder.items[0].name == "mypkg.types.T"

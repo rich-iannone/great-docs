@@ -789,8 +789,8 @@ def _parse_google_raises(body: str) -> list[tuple[str, str]]:
 
 
 def _convert_google_sections(text: str, heading_level: int) -> str:
-    """Parse Google-style docstring sections (``Args:``, ``Returns:``, etc.)
-    and generate proper QMD section headings with tables or prose blocks.
+    """Parse Google-style docstring sections (`Args:`, `Returns:`, etc.) and generate proper QMD
+    section headings with tables or prose blocks.
     """
     if not _GOOGLE_SECTION_RE.search(text):
         return text

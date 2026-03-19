@@ -441,7 +441,7 @@ cli.add_command(scan)
     is_flag=True,
     help="Overwrite existing workflow file without prompting",
 )
-def setup_github_pages(project_path, main_branch, python_version, force):
+def setup_github_pages(project_path: str | None, main_branch: str, python_version: str, force: bool) -> None:
     """Set up automatic deployment to GitHub Pages.
 
     This command creates a GitHub Actions workflow that automatically builds
@@ -572,7 +572,7 @@ cli.add_command(setup_github_pages)
     is_flag=True,
     help="Output results as JSON",
 )
-def check_links(project_path, source_only, docs_only, timeout, ignore, verbose, json_output):
+def check_links(project_path: str | None, source_only: bool, docs_only: bool, timeout: int, ignore: tuple[str, ...], verbose: bool, json_output: bool) -> None:
     """Check for broken links in source code and documentation.
 
     This command scans Python source files and documentation (`.qmd`, `.md`)
@@ -871,7 +871,7 @@ cli.add_command(spell_check)
     default=None,
     help="Maximum number of releases to include (default: from config or 50)",
 )
-def changelog(project_path, max_releases):
+def changelog(project_path: str | None, max_releases: int | None) -> None:
     """Generate a Changelog page from GitHub Releases.
 
     Fetches published releases from the GitHub API and renders them as a
@@ -914,7 +914,7 @@ def changelog(project_path, max_releases):
 cli.add_command(changelog)
 
 
-def main():
+def main() -> None:
     """Main CLI entry point for great-docs."""
     cli()
 

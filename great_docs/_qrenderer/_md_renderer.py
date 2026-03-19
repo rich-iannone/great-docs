@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import typing
+from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Literal
@@ -307,7 +308,7 @@ class MdRenderer(Renderer):
         self.crnt_header_level = self.header_level
 
     @contextmanager
-    def _increment_header(self, n: int = 1):
+    def _increment_header(self, n: int = 1) -> Generator[None, None, None]:
         self.crnt_header_level += n
         try:
             yield

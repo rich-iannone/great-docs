@@ -125,7 +125,7 @@ def _resolve_target(obj: dc.Alias) -> dc.Object:
     return target
 
 
-def replace_docstring(obj: dc.Object | dc.Alias, f=None):
+def replace_docstring(obj: dc.Object | dc.Alias, f: object = None) -> None:
     """Replace (in place) a docstring for a griffe object.
 
     Parameters

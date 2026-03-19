@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import logging
+from collections.abc import Generator
 from dataclasses import dataclass, field
 from dataclasses import fields as dc_fields
 from enum import Enum
@@ -19,11 +20,11 @@ _log = logging.getLogger(__name__)
 class _Base:
     """Any data class that might appear in the config."""
 
-    def copy(self):
+    def copy(self) -> _Base:
         """Return a shallow copy (mirrors pydantic .copy())."""
         return copy.copy(self)
 
-    def _iter_fields(self):
+    def _iter_fields(self) -> "Generator[tuple[str, object], None, None]":
         """Yield (field_name, value) pairs — replaces pydantic __iter__."""
         for f in dc_fields(self):
             yield f.name, getattr(self, f.name)
@@ -56,7 +57,7 @@ class Layout(_Structural):
     package: Union[str, None, MISSING] = field(default_factory=MISSING)
     options: Optional[AutoOptions] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Coerce raw dicts from YAML into proper layout objects.
 
         When constructed from YAML config, sections arrive as plain dicts.
@@ -98,7 +99,7 @@ class Section(_Structural):
     contents: list[Union[DocClass, DocFunction, DocAttribute, DocModule, Page]] = field(default_factory=list["Union[DocClass, DocFunction, DocAttribute, DocModule, Page]"])
     options: Optional[AutoOptions] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.title is None and self.subtitle is None and not self.contents:
             raise ValueError("Section must specify a title, subtitle, or contents field")
         elif self.title is not None and self.subtitle is not None:

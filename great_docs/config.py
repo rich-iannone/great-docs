@@ -122,6 +122,18 @@ DEFAULT_CONFIG: dict[str, Any] = {
     # str: inline HTML text (e.g., a <script> or <link> tag)
     # list[str | dict]: list of inline text strings or {"text": ...} / {"file": ...} entries
     "include_in_header": [],
+    # Agent Skills (skill.md) generation
+    # Generates a SKILL.md file conforming to the Agent Skills specification
+    # (https://agentskills.io/) so coding agents can learn to use the package.
+    "skill": {
+        "enabled": True,
+        "file": None,  # Path to a hand-written SKILL.md (overrides auto-generation)
+        "well_known": True,  # Also serve at /.well-known/skills/default/SKILL.md
+        "gotchas": [],  # List of gotcha strings for the Gotchas section
+        "best_practices": [],  # List of best-practice strings
+        "decision_table": [],  # Manual rows: [{"need": "...", "use": "..."}]
+        "extra_body": None,  # Path to extra Markdown to append to the generated body
+    },
 }
 
 
@@ -283,6 +295,41 @@ class Config:
     def cli_name(self) -> str | None:
         """Get the CLI command name."""
         return self.get("cli.name")
+
+    @property
+    def skill_enabled(self) -> bool:
+        """Check if skill.md generation is enabled."""
+        return self.get("skill.enabled", True)
+
+    @property
+    def skill_file(self) -> str | None:
+        """Get the path to a hand-written SKILL.md override."""
+        return self.get("skill.file")
+
+    @property
+    def skill_well_known(self) -> bool:
+        """Check if .well-known/skills/default/SKILL.md should be generated."""
+        return self.get("skill.well_known", True)
+
+    @property
+    def skill_gotchas(self) -> list[str]:
+        """Get the list of gotcha strings for the SKILL.md Gotchas section."""
+        return self.get("skill.gotchas", [])
+
+    @property
+    def skill_best_practices(self) -> list[str]:
+        """Get the list of best-practice strings for the SKILL.md."""
+        return self.get("skill.best_practices", [])
+
+    @property
+    def skill_decision_table(self) -> list[dict]:
+        """Get manual decision table rows for the SKILL.md."""
+        return self.get("skill.decision_table", [])
+
+    @property
+    def skill_extra_body(self) -> str | None:
+        """Get the path to extra Markdown to append to the generated SKILL.md body."""
+        return self.get("skill.extra_body")
 
     @property
     def changelog_enabled(self) -> bool:

@@ -6995,11 +6995,15 @@ jupyter: python3
         if links_added or metadata.get("urls"):
             margin_sections.append("[llms.txt](llms.txt)<br>")
             margin_sections.append("[llms-full.txt](llms-full.txt)<br>")
+            if self._config.skill_enabled:
+                margin_sections.append("[skill.md](skill.md)<br>")
         else:
             # If no links section exists yet, create one just for llms.txt files
             margin_sections.append("#### Links\n")
             margin_sections.append("[llms.txt](llms.txt)<br>")
             margin_sections.append("[llms-full.txt](llms-full.txt)<br>")
+            if self._config.skill_enabled:
+                margin_sections.append("[skill.md](skill.md)<br>")
 
         # License section
         if license_link:
@@ -7955,6 +7959,25 @@ toc: false
         if assets_dir.exists() and assets_dir.is_dir():
             if "assets/**" not in config["project"]["resources"]:
                 config["project"]["resources"].append("assets/**")
+
+        # Add skill.md and .well-known to resources (so Quarto copies them to _site)
+        # Also exclude them from rendering so Quarto doesn't convert them to HTML
+        if self._config.skill_enabled:
+            if "skill.md" not in config["project"]["resources"]:
+                config["project"]["resources"].append("skill.md")
+
+            # Exclude skill.md from rendering (Quarto renders .md by default)
+            # The render list needs "**" first (render everything), then exclusions
+            if "render" not in config["project"]:
+                config["project"]["render"] = ["**"]
+            if "!skill.md" not in config["project"]["render"]:
+                config["project"]["render"].append("!skill.md")
+
+            if self._config.skill_well_known:
+                if ".well-known/**" not in config["project"]["resources"]:
+                    config["project"]["resources"].append(".well-known/**")
+                if "!.well-known/**" not in config["project"]["render"]:
+                    config["project"]["render"].append("!.well-known/**")
 
         # Apply site settings from great-docs.yml (forwarded to format.html)
         site_settings = self._config.site
@@ -9177,6 +9200,241 @@ toc: false
         except Exception:  # pragma: no cover
             return ""  # pragma: no cover
 
+    def _generate_skill_md(self) -> None:
+        """
+        Generate a SKILL.md file conforming to the Agent Skills specification.
+
+        Creates a skill file that gives AI coding agents structured context about the
+        documented package — its capabilities, API decision table, gotchas, and links
+        to comprehensive documentation.
+
+        If the user has provided a hand-written SKILL.md via ``skill.file`` in
+        ``great-docs.yml``, that file is copied verbatim instead of generating one.
+
+        The generated file is written to ``<docs>/skill.md`` and optionally copied to
+        ``<docs>/.well-known/skills/default/SKILL.md`` for auto-discovery.
+        """
+        import shutil
+
+        if not self._config.skill_enabled:
+            return
+
+        package_root = self._find_package_root()
+
+        # If user provided a hand-written SKILL.md via config, copy it
+        if self._config.skill_file:
+            src = package_root / self._config.skill_file
+            if src.exists():
+                dest = self.project_path / "skill.md"
+                shutil.copy2(src, dest)
+                print(f"Copied user SKILL.md from {src}")
+                self._place_well_known_skill(dest)
+                return
+            else:
+                print(f"Warning: skill.file '{src}' not found, falling back to discovery")
+
+        # Check for a curated skill in skills/<package-name>/SKILL.md
+        # This is the standard Agent Skills repo layout for distribution
+        package_name_for_skill = self._detect_package_name() or ""
+        install_name = package_name_for_skill.replace("_", "-") if package_name_for_skill else ""
+
+        for candidate_name in [install_name, package_name_for_skill]:
+            if not candidate_name:
+                continue
+            skills_path = package_root / "skills" / candidate_name / "SKILL.md"
+            if skills_path.exists():
+                dest = self.project_path / "skill.md"
+                shutil.copy2(skills_path, dest)
+                print(f"Using curated skill from {skills_path}")
+                self._place_well_known_skill(dest)
+                return
+
+        quarto_yml = self.project_path / "_quarto.yml"
+        if not quarto_yml.exists():
+            return
+
+        with open(quarto_yml, "r") as f:
+            config = read_yaml(f) or {}
+
+        # Get API reference sections and package info
+        api_ref_config = config.get("api-reference", {})
+        sections = api_ref_config.get("sections", [])
+        package_name = api_ref_config.get("package", "")
+
+        # Get package metadata
+        metadata = self._get_package_metadata()
+        description = metadata.get("description", "")
+        license_text = metadata.get("license", "")
+        requires_python = metadata.get("requires_python", "")
+
+        # Get site URL
+        urls = metadata.get("urls", {})
+        site_url = urls.get("Documentation", "") or config.get("website", {}).get("site-url", "")
+        if site_url and "#" in site_url:
+            site_url = site_url.split("#")[0]
+        if site_url and not site_url.endswith("/"):
+            site_url += "/"
+
+        repo_url = urls.get("Repository", "") or urls.get("Source", "")
+
+        # Derive install name from package name (PyPI name uses hyphens)
+        install_name = package_name.replace("_", "-") if package_name else ""
+
+        # Build skill name: lowercase, hyphens only, max 64 chars
+        skill_name = install_name.lower()[:64] if install_name else "package"
+
+        # Build frontmatter
+        lines = ["---"]
+        lines.append(f"name: {skill_name}")
+
+        # Build description (max 1024 chars)
+        desc_parts = []
+        if description:
+            desc_parts.append(description.rstrip(".") + ".")
+        if package_name:
+            desc_parts.append(f"Use when writing Python code that uses the {package_name} package.")
+        skill_desc = " ".join(desc_parts)[:1024] if desc_parts else f"Use the {skill_name} package."
+        lines.append("description: >")
+        lines.append(f"  {skill_desc}")
+
+        if license_text:
+            lines.append(f"license: {license_text}")
+        if requires_python:
+            lines.append(f"compatibility: Requires Python {requires_python}.")
+        lines.append("---")
+        lines.append("")
+
+        # Body: Package header
+        display_name = self._config.display_name or package_name or skill_name
+        lines.append(f"# {display_name}")
+        lines.append("")
+        if description:
+            lines.append(description)
+            lines.append("")
+
+        # Installation section
+        if install_name:
+            lines.append("## Installation")
+            lines.append("")
+            lines.append("```bash")
+            lines.append(f"pip install {install_name}")
+            lines.append("```")
+            lines.append("")
+
+        # API decision table
+        if sections:
+            # Collect manual decision table rows from config
+            manual_rows = self._config.skill_decision_table
+
+            if manual_rows:
+                lines.append("## When to use what")
+                lines.append("")
+                lines.append("| Need | Use |")
+                lines.append("|------|-----|")
+                for row in manual_rows:
+                    need = row.get("need", "")
+                    use = row.get("use", "")
+                    lines.append(f"| {need} | `{use}` |")
+                lines.append("")
+
+            # API capabilities by section
+            lines.append("## API overview")
+            lines.append("")
+
+            for section in sections:
+                section_title = section.get("title", "")
+                section_desc = section.get("desc", "")
+
+                if section_title:
+                    lines.append(f"### {section_title}")
+                    if section_desc:
+                        lines.append("")
+                        lines.append(section_desc)
+                    lines.append("")
+
+                for item in section.get("contents", []):
+                    if isinstance(item, str):
+                        item_name = item
+                    elif isinstance(item, dict):
+                        item_name = item.get("name", str(item))
+                    else:
+                        continue
+
+                    item_desc = self._get_docstring_summary(package_name, item_name)
+                    if item_desc:
+                        lines.append(f"- `{item_name}`: {item_desc}")
+                    else:
+                        lines.append(f"- `{item_name}`")
+
+                lines.append("")
+
+        # Gotchas section
+        gotchas = self._config.skill_gotchas
+        if gotchas:
+            lines.append("## Gotchas")
+            lines.append("")
+            for i, gotcha in enumerate(gotchas, 1):
+                lines.append(f"{i}. {gotcha}")
+            lines.append("")
+
+        # Best practices section
+        best_practices = self._config.skill_best_practices
+        if best_practices:
+            lines.append("## Best practices")
+            lines.append("")
+            for practice in best_practices:
+                lines.append(f"- {practice}")
+            lines.append("")
+
+        # Append extra body content if provided
+        if self._config.skill_extra_body:
+            extra_path = package_root / self._config.skill_extra_body
+            if extra_path.exists():
+                extra_content = extra_path.read_text(encoding="utf-8")
+                lines.append(extra_content)
+                lines.append("")
+
+        # Links section
+        lines.append("## Resources")
+        lines.append("")
+        if site_url:
+            lines.append(f"- [Full documentation]({site_url})")
+        lines.append("- [llms.txt](llms.txt) — Indexed API reference for LLMs")
+        lines.append("- [llms-full.txt](llms-full.txt) — Comprehensive documentation for LLMs")
+        if repo_url:
+            lines.append(f"- [Source code]({repo_url})")
+        lines.append("")
+
+        # Write the skill.md file
+        skill_path = self.project_path / "skill.md"
+        with open(skill_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines))
+
+        print(f"Created {skill_path}")
+
+        # Place in .well-known if enabled
+        self._place_well_known_skill(skill_path)
+
+    def _place_well_known_skill(self, skill_path: "Path") -> None:
+        """
+        Copy the SKILL.md to .well-known/skills/default/ for auto-discovery.
+
+        Parameters
+        ----------
+        skill_path
+            Path to the skill.md file to copy.
+        """
+        import shutil
+
+        if not self._config.skill_well_known:
+            return
+
+        well_known_dir = self.project_path / ".well-known" / "skills" / "default"
+        well_known_dir.mkdir(parents=True, exist_ok=True)
+
+        dest = well_known_dir / "SKILL.md"
+        shutil.copy2(skill_path, dest)
+
     def _get_cli_help_text_for_llms(self) -> str:
         """
         Get CLI help text formatted for llms-full.txt.
@@ -9463,6 +9721,11 @@ toc: false
             print("\n📝 Generating llms.txt and llms-full.txt...")
             self._generate_llms_txt()
             self._generate_llms_full_txt()
+
+            # Step 0.65: Generate SKILL.md (Agent Skills specification)
+            if self._config.skill_enabled:
+                print("\n🤖 Generating SKILL.md...")
+                self._generate_skill_md()
 
             # Step 0.7: Generate source links JSON
             print("\n🔗 Generating source links...")

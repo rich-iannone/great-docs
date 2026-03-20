@@ -14,8 +14,56 @@ class GreatDocs:
     """
     GreatDocs class for creating beautiful API documentation sites.
 
-    This class provides methods to install assets and configure
-    Quarto projects with the great-docs styling and functionality.
+    This class provides methods to install assets and configure Quarto projects with the great-docs
+    styling and functionality. It handles package discovery, API reference generation, Quarto
+    configuration, and site building with a consistent, polished look.
+
+    Parameters
+    ----------
+    project_path
+        Path to the project root directory. If `None` (the default), the current working directory
+        is used.
+
+    Attributes
+    ----------
+    project_root
+        Absolute path to the project root directory.
+    docs_dir
+        Relative path to the documentation build directory (`great-docs`).
+    project_path
+        Full absolute path to the documentation build directory (`project_root / docs_dir`).
+
+    Examples
+    --------
+    Create a documentation site for a Python package:
+
+    ```python
+    from great_docs import GreatDocs
+
+    gd = GreatDocs()
+
+    # One-time setup: generates great-docs.yml and discovers exports
+    gd.install()
+
+    # Build the documentation site
+    gd.build()
+
+    # Preview locally in a browser
+    gd.preview()
+    ```
+
+    Build from a different directory:
+
+    ```python
+    gd = GreatDocs(project_path="/path/to/my-package")
+    gd.build()
+    ```
+
+    Notes
+    -----
+    The typical workflow is: `install()` once to scaffold configuration, then `build()` (and
+    optionally `preview()`) as you iterate. The `build()` method re-discovers package exports by
+    default, so new functions and classes are picked up automatically.
     """
 
     def __init__(self, project_path: str | None = None):

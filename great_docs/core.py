@@ -9466,9 +9466,7 @@ toc: false
         lines.append("")
 
         # ── npx (universal installer) ──
-        lines.append(
-            "**Any agent** --- install with [npx](https://github.com/nicepkg/agent-skills):"
-        )
+        lines.append("**Any agent** --- install with [npx](https://github.com/vercel-labs/skills):")
         lines.append("")
         if site_url:
             lines.append("```bash")
@@ -9485,7 +9483,7 @@ toc: false
         lines.append("")
         lines.append(
             "Works with Claude Code, GitHub Copilot, Cursor, Gemini CLI, Codex, "
-            "and [30+ other agents](https://github.com/nicepkg/agent-skills)."
+            "and [30+ other agents](https://github.com/vercel-labs/skills)."
         )
         lines.append("")
 

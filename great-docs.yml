@@ -52,6 +52,14 @@ github_style: widget
 #   path: src/package          # Custom source path for monorepos (default: auto-detect)
 #   placement: usage           # Where to place the link: "usage" (default) or "title"
 
+# Analytics
+# ---------
+# Privacy-friendly analytics by Plausible
+include_in_header:
+  - text: |
+      <script async src="https://plausible.io/js/pa-yHre5TSMnLYTqBNSF-0Yv.js"></script>
+      <script>window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()</script>
+
 # Display Name
 # ------------
 # Custom display name for your package in the site navbar/title.

@@ -693,9 +693,9 @@ def test_get_github_repo_info():
     docs = GreatDocs()
     owner, repo, base_url = docs._get_github_repo_info()
 
-    assert owner == "rich-iannone"
+    assert owner == "posit-dev"
     assert repo == "great-docs"
-    assert base_url == "https://github.com/rich-iannone/great-docs"
+    assert base_url == "https://github.com/posit-dev/great-docs"
 
 
 def test_get_github_repo_info_no_repo():
@@ -1015,7 +1015,7 @@ def test_build_github_source_url():
     url = docs._build_github_source_url(source_loc, branch="main")
 
     assert url is not None
-    assert "https://github.com/rich-iannone/great-docs" in url
+    assert "https://github.com/posit-dev/great-docs" in url
     assert "blob/main" in url
     assert "#L42-L58" in url
 
@@ -13771,7 +13771,9 @@ def test_build_metadata_margin_with_license():
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._build_metadata_margin()
 
-        assert "#### License" in result
+        # License now appears under the Community section
+        assert "#### Community" in result
+        assert "MIT" in result
 
 
 def test_build_metadata_margin_with_license_qmd():
@@ -14726,7 +14728,8 @@ def test_build_metadata_margin_with_funding():
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._build_metadata_margin()
 
-        assert "#### Funding" in result
+        # Funding now appears under the Developers section
+        assert "#### Developers" in result
         assert "Science Foundation" in result
         assert "Sponsor" in result
 
@@ -14805,7 +14808,8 @@ def test_build_metadata_margin_citation_section():
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._build_metadata_margin()
 
-        assert "#### Citation" in result
+        # Citation now appears under the Community section
+        assert "#### Community" in result
         assert "citation.qmd" in result
 
 
@@ -40028,3 +40032,283 @@ api-reference:
 
         content = (great_docs_dir / "skill.md").read_text()
         assert "# Hyphenated" in content
+
+
+def test_generate_skills_page_basic():
+    """Test that skills.qmd is generated alongside skill.md."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs = GreatDocs(project_path=tmp_dir)
+
+        pyproject = Path(tmp_dir) / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test-package"\ndescription = "A test package"\n')
+
+        great_docs_dir = Path(tmp_dir) / "great-docs"
+        great_docs_dir.mkdir()
+        quarto_yml = great_docs_dir / "_quarto.yml"
+        quarto_yml.write_text(
+            "api-reference:\n"
+            "  package: test_package\n"
+            "  sections:\n"
+            "    - title: Main\n"
+            "      contents:\n"
+            "        - foo\n"
+        )
+
+        docs._generate_skill_md()
+
+        skills_qmd = great_docs_dir / "skills.qmd"
+        assert skills_qmd.exists()
+
+        content = skills_qmd.read_text()
+
+        # Check Quarto frontmatter
+        assert "title: Skills" in content
+        assert "page-layout: full" in content
+
+        # Check install section (collapsible component)
+        assert "Install this skill" in content
+        assert "gd-skills-install-toggle" in content
+        assert "npx skills add" in content
+
+        # Check frontmatter appears inside raw markdown block
+        assert "name: test-package" in content
+
+        # Check body is rendered as raw markdown in a pre block
+        assert "gd-skills-raw" in content
+        assert "````markdown" in content
+
+
+def test_generate_skills_page_github_repo_detection():
+    """Test that GitHub owner/repo is auto-detected for install instructions."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs = GreatDocs(project_path=tmp_dir)
+
+        pyproject = Path(tmp_dir) / "pyproject.toml"
+        pyproject.write_text(
+            "[project]\n"
+            'name = "test-package"\n'
+            'description = "A test package"\n'
+            "\n"
+            "[project.urls]\n"
+            'Repository = "https://github.com/myorg/test-package"\n'
+        )
+
+        great_docs_dir = Path(tmp_dir) / "great-docs"
+        great_docs_dir.mkdir()
+        quarto_yml = great_docs_dir / "_quarto.yml"
+        quarto_yml.write_text(
+            "api-reference:\n"
+            "  package: test_package\n"
+            "  sections:\n"
+            "    - title: Main\n"
+            "      contents:\n"
+            "        - foo\n"
+        )
+
+        docs._generate_skill_md()
+
+        content = (great_docs_dir / "skills.qmd").read_text()
+
+        # Should have GitHub-specific install command
+        assert "npx skills add myorg/test-package" in content
+        # Codex / OpenCode section should reference the GitHub repo
+        assert "Codex / OpenCode" in content
+        assert "github.com/myorg/test-package" in content
+
+
+def test_generate_skills_page_site_url():
+    """Test that site URL is used when no GitHub repo is available."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs = GreatDocs(project_path=tmp_dir)
+
+        pyproject = Path(tmp_dir) / "pyproject.toml"
+        pyproject.write_text(
+            "[project]\n"
+            'name = "test-package"\n'
+            'description = "A test package"\n'
+            "\n"
+            "[project.urls]\n"
+            'Documentation = "https://example.com/docs"\n'
+        )
+
+        great_docs_dir = Path(tmp_dir) / "great-docs"
+        great_docs_dir.mkdir()
+        quarto_yml = great_docs_dir / "_quarto.yml"
+        quarto_yml.write_text(
+            "api-reference:\n"
+            "  package: test_package\n"
+            "  sections:\n"
+            "    - title: Main\n"
+            "      contents:\n"
+            "        - foo\n"
+        )
+
+        docs._generate_skill_md()
+
+        content = (great_docs_dir / "skills.qmd").read_text()
+
+        # Should use site URL for npx install
+        assert "npx skills add https://example.com/docs/" in content
+        # Codex / OpenCode section should use site URL for skill file
+        assert "Codex / OpenCode" in content
+        assert "example.com/docs/skill.md" in content
+
+
+def test_generate_skills_page_frontmatter_display():
+    """Test that SKILL.md frontmatter is displayed as YAML, not Quarto FM."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs = GreatDocs(project_path=tmp_dir)
+
+        pyproject = Path(tmp_dir) / "pyproject.toml"
+        pyproject.write_text(
+            "[project]\n"
+            'name = "test-package"\n'
+            'description = "A test package"\n'
+            'license = "MIT"\n'
+            'requires-python = ">=3.10"\n'
+        )
+
+        great_docs_dir = Path(tmp_dir) / "great-docs"
+        great_docs_dir.mkdir()
+        quarto_yml = great_docs_dir / "_quarto.yml"
+        quarto_yml.write_text(
+            "api-reference:\n"
+            "  package: test_package\n"
+            "  sections:\n"
+            "    - title: Main\n"
+            "      contents:\n"
+            "        - foo\n"
+        )
+
+        docs._generate_skill_md()
+
+        content = (great_docs_dir / "skills.qmd").read_text()
+
+        # The full skill.md content should appear as raw markdown
+        assert "gd-skills-raw" in content
+        assert "````markdown" in content
+        assert "name: test-package" in content
+
+        # The Quarto frontmatter should only have "title: Skills"
+        lines = content.split("\n")
+        assert lines[0] == "---"
+        assert "title: Skills" in lines[1]
+
+
+def test_generate_skills_page_curated_skill():
+    """Test that skills.qmd is generated from a curated skill."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs = GreatDocs(project_path=tmp_dir)
+
+        pyproject = Path(tmp_dir) / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test-package"\ndescription = "A test package"\n')
+
+        # Create curated skill
+        skills_dir = Path(tmp_dir) / "skills" / "test-package"
+        skills_dir.mkdir(parents=True)
+        (skills_dir / "SKILL.md").write_text(
+            "---\n"
+            "name: test-package\n"
+            "description: Custom curated skill\n"
+            "---\n"
+            "\n"
+            "# My Custom Skill\n"
+            "\n"
+            "## Gotchas\n"
+            "\n"
+            "1. Don't do this\n"
+            "2. Also avoid that\n"
+        )
+
+        great_docs_dir = Path(tmp_dir) / "great-docs"
+        great_docs_dir.mkdir()
+
+        docs._generate_skill_md()
+
+        skills_qmd = great_docs_dir / "skills.qmd"
+        assert skills_qmd.exists()
+
+        content = skills_qmd.read_text()
+
+        # Body from curated skill should appear as raw markdown
+        assert "My Custom Skill" in content
+        assert "Gotchas" in content
+        assert "gd-skills-raw" in content
+
+
+def test_generate_skills_page_disabled():
+    """Test that skills.qmd is NOT generated when skill is disabled."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        config_path = Path(tmp_dir) / "great-docs.yml"
+        config_path.write_text("skill:\n  enabled: false\n")
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        great_docs_dir = Path(tmp_dir) / "great-docs"
+        great_docs_dir.mkdir()
+
+        docs._generate_skill_md()
+
+        assert not (great_docs_dir / "skills.qmd").exists()
+
+
+def test_generate_skills_page_well_known_disabled():
+    """Test skills.qmd doesn't show .well-known link when disabled."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        config_path = Path(tmp_dir) / "great-docs.yml"
+        config_path.write_text("skill:\n  well_known: false\n")
+
+        docs = GreatDocs(project_path=tmp_dir)
+
+        pyproject = Path(tmp_dir) / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "test-package"\ndescription = "A test package"\n')
+
+        great_docs_dir = Path(tmp_dir) / "great-docs"
+        great_docs_dir.mkdir()
+        quarto_yml = great_docs_dir / "_quarto.yml"
+        quarto_yml.write_text(
+            "api-reference:\n"
+            "  package: test_package\n"
+            "  sections:\n"
+            "    - title: Main\n"
+            "      contents:\n"
+            "        - foo\n"
+        )
+
+        docs._generate_skill_md()
+
+        content = (great_docs_dir / "skills.qmd").read_text()
+
+        # Should still have skill.md link (raw HTML format)
+        assert 'href="skill.md"' in content
+        # But NOT the .well-known link
+        assert ".well-known" not in content
+
+
+def test_homepage_sidebar_skills_link_position():
+    """Test that Skills link appears before llms.txt in the sidebar."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs = GreatDocs(project_path=tmp_dir)
+
+        pyproject = Path(tmp_dir) / "pyproject.toml"
+        pyproject.write_text(
+            "[project]\n"
+            'name = "test-package"\n'
+            'description = "A test package"\n'
+            "\n"
+            "[project.urls]\n"
+            'Repository = "https://github.com/test-org/test-package"\n'
+        )
+
+        great_docs_dir = Path(tmp_dir) / "great-docs"
+        great_docs_dir.mkdir()
+
+        margin = docs._build_metadata_margin()
+
+        # Skills link should appear before llms.txt
+        skills_pos = margin.find("[Skills](skills.html)")
+        llms_pos = margin.find("[llms.txt](llms.txt)")
+
+        assert skills_pos != -1, "Skills link not found in sidebar"
+        assert llms_pos != -1, "llms.txt link not found in sidebar"
+        assert skills_pos < llms_pos, "Skills should appear before llms.txt"

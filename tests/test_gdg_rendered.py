@@ -1246,6 +1246,10 @@ def test_R4_landing_page_has_title(pkg_name: str):
 
     # In blended-homepage mode the title block is intentionally empty and the
     # visible heading comes from the body content.  Accept any non-empty <h1>.
+    # Hero-mode pages use .gd-hero instead of <h1>.
+    hero = soup.select(".gd-hero")
+    if hero:
+        return  # hero section provides the title
     all_h1 = soup.select("h1")
     assert all_h1, f"{pkg_name}: landing page has no <h1>"
     has_text = any(h.get_text().strip() for h in all_h1)

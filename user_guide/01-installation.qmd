@@ -67,17 +67,17 @@ pip install great-docs
 Install the latest development version directly from GitHub:
 
 ```{.bash filename="Terminal"}
-pip install git+https://github.com/rich-iannone/great-docs.git
+pip install git+https://github.com/posit-dev/great-docs.git
 ```
 
 Or install a specific version:
 
 ```{.bash filename="Terminal"}
 # Install from a specific branch
-pip install git+https://github.com/rich-iannone/great-docs.git@main
+pip install git+https://github.com/posit-dev/great-docs.git@main
 
 # Install from a specific tag
-pip install git+https://github.com/rich-iannone/great-docs.git@v0.1.0
+pip install git+https://github.com/posit-dev/great-docs.git@v0.1.0
 ```
 
 ### Development Installation
@@ -86,7 +86,7 @@ For contributing to Great Docs or testing the latest features:
 
 ```{.bash filename="Terminal"}
 # Clone the repository
-git clone https://github.com/rich-iannone/great-docs.git
+git clone https://github.com/posit-dev/great-docs.git
 cd great-docs
 
 # Install in editable mode

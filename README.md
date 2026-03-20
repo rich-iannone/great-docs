@@ -82,10 +82,18 @@ The User Guide covers:
 - [Installation](https://posit-dev.github.io/great-docs/user-guide/installation.html)
 - [Quick Start](https://posit-dev.github.io/great-docs/user-guide/quickstart.html)
 - [Configuration](https://posit-dev.github.io/great-docs/user-guide/configuration.html)
+- [Theming & Appearance](https://posit-dev.github.io/great-docs/user-guide/theming.html)
+- [Cross-Referencing](https://posit-dev.github.io/great-docs/user-guide/cross-referencing.html)
 - [API Documentation](https://posit-dev.github.io/great-docs/user-guide/api-documentation.html)
 - [CLI Documentation](https://posit-dev.github.io/great-docs/user-guide/cli-documentation.html)
 - [User Guides](https://posit-dev.github.io/great-docs/user-guide/user-guides.html)
+- [Custom Sections](https://posit-dev.github.io/great-docs/user-guide/custom-sections.html)
+- [Blog](https://posit-dev.github.io/great-docs/user-guide/blog.html)
+- [Building & Previewing](https://posit-dev.github.io/great-docs/user-guide/building.html)
 - [Deployment](https://posit-dev.github.io/great-docs/user-guide/deployment.html)
+- [Link Checker](https://posit-dev.github.io/great-docs/user-guide/link-checker.html)
+- [Spell Checking](https://posit-dev.github.io/great-docs/user-guide/spell-checker.html)
+- [Changelog](https://posit-dev.github.io/great-docs/user-guide/changelog.html)
 
 ## License
 

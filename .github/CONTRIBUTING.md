@@ -8,7 +8,7 @@ Thank you for your interest in contributing to Great Docs! We welcome contributi
 
 If you find a bug or have a suggestion for improvement:
 
-1. Check if the issue already exists in the [issue tracker](https://github.com/rich-iannone/great-docs/issues)
+1. Check if the issue already exists in the [issue tracker](https://github.com/posit-dev/great-docs/issues)
 2. If not, create a new issue with a clear description
 3. Include steps to reproduce (for bugs) or use cases (for features)
 

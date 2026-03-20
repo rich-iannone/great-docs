@@ -165,8 +165,8 @@ homepage: user_guide # Use the first user guide page as landing
 
 ## Resources
 
-- [Full documentation](https://rich-iannone.github.io/great-docs/)
-- [llms.txt](https://rich-iannone.github.io/great-docs/llms.txt) — Indexed API reference
-- [llms-full.txt](https://rich-iannone.github.io/great-docs/llms-full.txt) — Comprehensive docs
-- [Configuration guide](https://rich-iannone.github.io/great-docs/user-guide/03-configuration.html)
-- [GitHub repository](https://github.com/rich-iannone/great-docs)
+- [Full documentation](https://posit-dev.github.io/great-docs/)
+- [llms.txt](https://posit-dev.github.io/great-docs/llms.txt) — Indexed API reference
+- [llms-full.txt](https://posit-dev.github.io/great-docs/llms-full.txt) — Comprehensive docs
+- [Configuration guide](https://posit-dev.github.io/great-docs/user-guide/03-configuration.html)
+- [GitHub repository](https://github.com/posit-dev/great-docs)

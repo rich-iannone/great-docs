@@ -4,7 +4,7 @@
 [![PyPI](https://img.shields.io/pypi/v/great-docs?logo=python&logoColor=white&color=orange)](https://pypi.org/project/great-docs/)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/great-docs)](https://pypistats.org/packages/great-docs)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://choosealicense.com/licenses/mit/)
-[![CI Build](https://github.com/rich-iannone/great-docs/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/rich-iannone/great-docs/actions/workflows/test.yml)
+[![CI Build](https://github.com/posit-dev/great-docs/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/posit-dev/great-docs/actions/workflows/test.yml)
 [![Repo Status](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.1%20adopted-ff69b4.svg)](https://www.contributor-covenant.org/version/2/1/code_of_conduct.html)
 
@@ -29,7 +29,7 @@ Great Docs automatically creates professional documentation with auto-generated 
 Great Docs is not yet available on PyPI, so, install from GitHub:
 
 ```bash
-pip install git+https://github.com/rich-iannone/great-docs.git
+pip install git+https://github.com/posit-dev/great-docs.git
 ```
 
 ### Initialize
@@ -79,14 +79,14 @@ Creates a GitHub Actions workflow for automatic deployment.
 
 The User Guide covers:
 
-- [Installation](https://rich-iannone.github.io/great-docs/user-guide/installation.html)
-- [Quick Start](https://rich-iannone.github.io/great-docs/user-guide/quickstart.html)
-- [Configuration](https://rich-iannone.github.io/great-docs/user-guide/configuration.html)
-- [API Documentation](https://rich-iannone.github.io/great-docs/user-guide/api-documentation.html)
-- [CLI Documentation](https://rich-iannone.github.io/great-docs/user-guide/cli-documentation.html)
-- [User Guides](https://rich-iannone.github.io/great-docs/user-guide/user-guides.html)
-- [Deployment](https://rich-iannone.github.io/great-docs/user-guide/deployment.html)
+- [Installation](https://posit-dev.github.io/great-docs/user-guide/installation.html)
+- [Quick Start](https://posit-dev.github.io/great-docs/user-guide/quickstart.html)
+- [Configuration](https://posit-dev.github.io/great-docs/user-guide/configuration.html)
+- [API Documentation](https://posit-dev.github.io/great-docs/user-guide/api-documentation.html)
+- [CLI Documentation](https://posit-dev.github.io/great-docs/user-guide/cli-documentation.html)
+- [User Guides](https://posit-dev.github.io/great-docs/user-guide/user-guides.html)
+- [Deployment](https://posit-dev.github.io/great-docs/user-guide/deployment.html)
 
 ## License
 
-MIT License. See [LICENSE](https://rich-iannone.github.io/great-docs/license.html) for details.
+MIT License. See [LICENSE](https://posit-dev.github.io/great-docs/license.html) for details.

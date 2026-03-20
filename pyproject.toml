@@ -60,10 +60,10 @@ docs = [
 
 
 [project.urls]
-Homepage = "https://github.com/rich-iannone/great-docs"
-Repository = "https://github.com/rich-iannone/great-docs"
-Documentation = "https://rich-iannone.github.io/great-docs/"
-"Bug Tracker" = "https://github.com/rich-iannone/great-docs/issues"
+Homepage = "https://github.com/posit-dev/great-docs"
+Repository = "https://github.com/posit-dev/great-docs"
+Documentation = "https://posit-dev.github.io/great-docs/"
+"Bug Tracker" = "https://github.com/posit-dev/great-docs/issues"
 
 [project.scripts]
 great-docs = "great_docs.cli:main"

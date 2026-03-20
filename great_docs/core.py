@@ -221,6 +221,12 @@ class GreatDocs:
         with discovered exports and sensible defaults. The docs directory and assets
         will be created later during the build process.
 
+        ::: {.callout-note}
+        In practice, you would normally use the `great-docs init` CLI command rather
+        than calling this method directly. See the
+        [CLI reference](cli/init.qmd) for details.
+        :::
+
         Parameters
         ----------
         force
@@ -9829,6 +9835,12 @@ toc: false
         This method deletes the great-docs.yml configuration file and the great-docs/
         build directory (if it exists).
 
+        ::: {.callout-note}
+        In practice, you would normally use the `great-docs uninstall` CLI command
+        rather than calling this method directly. See the
+        [CLI reference](cli/uninstall.qmd) for details.
+        :::
+
         Examples
         --------
         Uninstall great-docs from the current directory:
@@ -9868,6 +9880,12 @@ toc: false
 
         Generates API reference pages followed by `quarto render`. By default, re-discovers package exports
         and updates the API reference configuration before building.
+
+        ::: {.callout-note}
+        In practice, you would normally use the `great-docs build` CLI command rather
+        than calling this method directly. See the
+        [CLI reference](cli/build.qmd) for details.
+        :::
 
         Parameters
         ----------
@@ -10152,6 +10170,12 @@ toc: false
         browser.  If the site hasn't been built yet, it will be built first.
         Use ``great-docs build`` to rebuild the site if you've made changes.
 
+        ::: {.callout-note}
+        In practice, you would normally use the `great-docs preview` CLI command
+        rather than calling this method directly. See the
+        [CLI reference](cli/preview.qmd) for details.
+        :::
+
         Parameters
         ----------
         port
@@ -10226,6 +10250,12 @@ toc: false
     ) -> dict:
         """
         Check all links in source code and documentation for broken links.
+
+        ::: {.callout-note}
+        In practice, you would normally use the `great-docs check-links` CLI command
+        rather than calling this method directly. See the
+        [CLI reference](cli/check_links.qmd) for details.
+        :::
 
         This method scans Python source files and documentation files (`.qmd`, `.md`)
         for URLs and checks their HTTP status. It reports broken links (404s) and
@@ -10564,6 +10594,12 @@ toc: false
     ) -> dict:
         """
         Check spelling in documentation files and optionally docstrings.
+
+        ::: {.callout-note}
+        In practice, you would normally use the `great-docs spell-check` CLI command
+        rather than calling this method directly. See the
+        [CLI reference](cli/spell_check.qmd) for details.
+        :::
 
         This method scans documentation files (`.qmd`, `.md`) for spelling errors using a
         dictionary-based approach. It intelligently skips code blocks, inline code, URLs, and common

@@ -1,0 +1,68 @@
+---
+title: "Customizing with an LLM"
+description: "Use an AI coding agent to tweak theming, add sections, and write user guide content without touching YAML by hand."
+---
+
+# Customizing with an LLM
+
+Once your documentation site is up and running, an AI coding agent can handle many of the ongoing customization tasks. This recipe covers common customization scenarios and the right way to prompt your agent for each one.
+
+## Theming and visual style
+
+Great Docs offers gradient presets, navbar colors, dark mode toggling, and announcement banners, all controlled through `great-docs.yml`. Rather than memorizing every option, describe what you want and let the agent figure out the right keys.
+
+Some examples:
+
+> Change the navbar gradient to `peach` and set a warm-toned content glow using `sunset`.
+
+> Remove the announcement banner and set a solid navbar color of `#2d3748` for light mode and `#1a202c` for dark mode.
+
+> Enable the hero section with a custom tagline: "Fast, beautiful Python docs".
+
+The agent will edit `great-docs.yml` with the correct syntax. After each change, rebuild to see the result. If the colors do not look the way you expected, describe what you want adjusted ("the navbar is too bright, try a darker preset") and the agent will iterate.
+
+## Adding custom sections
+
+Custom sections let you add groups of pages beyond the default User Guide, Recipes, and Reference. Tell your agent what content you want to add:
+
+> Create a new section called "Tutorials" with a directory called `tutorials/` and add it to the navbar after the User Guide.
+
+The agent will update the `sections` list in `great-docs.yml` and create the directory. You can then ask it to populate the section:
+
+> Add a tutorial page about building a REST API client. Cover installation, authentication, and making requests.
+
+## Reworking user guide pages
+
+If an existing page is too long or too short, describe the problem:
+
+> The Configuration page is very long. Split the theming options (gradients, dark mode, banners) into a separate page called "Theming & Visual Options".
+
+The agent will create the new file with the right numeric prefix, move the relevant content, and update any cross-references. It will also add a pointer in the original page so readers know where the content moved.
+
+## Adding and modifying CSS
+
+For visual changes that go beyond the built-in presets, you can ask the agent to write custom CSS:
+
+> Add CSS to make the sidebar headings uppercase and slightly smaller.
+
+The agent will either add rules to an existing custom stylesheet or create a new one and wire it into the configuration. See [Add Custom CSS](add-custom-css.html) for more about how custom stylesheets work in Great Docs.
+
+## Recipes and supplementary content
+
+You can also ask the agent to write new recipe pages:
+
+> Write a recipe explaining how to set up spell checking with a custom dictionary that includes domain-specific terms.
+
+The agent will create a `.qmd` file in the `recipes/` directory with an appropriate title and description. Since recipes are discovered automatically, the page will appear on the next build.
+
+## Reviewing changes
+
+After any customization session, it is a good practice to do a final review. Ask the agent:
+
+> Build the site and list any warnings or errors from the build output.
+
+This catches issues like broken cross-references, missing assets, or YAML syntax problems before you deploy. If the build output contains warnings, you can paste them back to the agent and ask it to fix whatever is wrong.
+
+## When to make changes by hand
+
+The agent is effective for most configuration and content tasks, but some changes are easier to do yourself. Fine-tuning sentence wording in a user guide page, for instance, is often faster to edit directly than to describe in a prompt. Use the agent for structural and mechanical work (adding pages, changing config, wiring up sections) and do your own prose editing for final polish.

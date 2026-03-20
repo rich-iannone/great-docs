@@ -1,6 +1,6 @@
 ---
 title: "API Documentation"
-guide-section: "Core Concepts"
+guide-section: "Site Content"
 bread-crumbs: false
 ---
 
@@ -279,189 +279,11 @@ will automatically expand to document `parser.parse`, `parser.parser`, `parser.P
 
 This is particularly useful for packages like `dateutil` that organize their API into topical submodules rather than exporting everything from the top-level `__init__.py`.
 
-## Great Docs Linking System (GDLS)
+## Cross-Referencing
 
-Great Docs provides a linking system that automatically creates clickable navigation between your API reference pages. GDLS operates at three levels:
+Great Docs includes a linking system (GDLS) that automatically creates clickable navigation between your API reference pages. It supports `%seealso` directives in docstrings, inline interlinks using Markdown syntax, and automatic code-to-link conversion for inline code that matches documented symbols.
 
-1. **See Also sections** — structured links between related items (`%seealso` directive or NumPy-style sections)
-2. **Inline interlinks** — Markdown link syntax to reference other API items anywhere in prose
-3. **Code autolinks** — inline code like `` `MyClass` `` is automatically linked when it matches a documented symbol
-
-All three mechanisms resolve against the same `objects.json` inventory that Great Docs generates during the build. To preview which symbols are available before building, run `great-docs scan`.
-
-### The `%seealso` Directive
-
-The `%seealso` directive adds a "See Also" section to a reference page. Place it anywhere in a docstring with a comma-separated list of related names:
-
-```python
-def encode(data: bytes, encoding: str = "utf-8") -> str:
-    """Encode bytes to a string.
-
-    %seealso decode, transcode
-    """
-    ...
-```
-
-Great Docs strips the directive from the rendered output and generates a "See Also" section with clickable links at the bottom of the page.
-
-Names can reference any exported symbol, including class methods using dotted notation:
-
-```python
-class Validator:
-    def check(self, data):
-        """Run all validation checks.
-
-        %seealso Validator.reset, Report
-        """
-        ...
-```
-
-### `%seealso` with Descriptions
-
-You can add a short description after each name, separated by a colon:
-
-```python
-def load(path: str) -> dict:
-    """Load data from a file.
-
-    %seealso save : Write data back to a file, validate : Check data integrity
-    """
-    ...
-```
-
-When descriptions are present, the See Also section renders as a list with each link followed by its description. Without descriptions, the links appear as a compact comma-separated line.
-
-You can mix entries with and without descriptions freely:
-
-```python
-def transform(data: dict) -> dict:
-    """Transform data before processing.
-
-    %seealso validate : Check data integrity first, load, save
-    """
-    ...
-```
-
-### NumPy-style See Also Sections
-
-If your docstrings use the NumPy docstring format, you can write a standard See Also section instead of (or in addition to) the `%seealso` directive:
-
-```python
-def connect(host: str, port: int = 5432):
-    """Open a connection to the server.
-
-    Parameters
-    ----------
-    host
-        The server hostname.
-    port
-        The port number.
-
-    See Also
-    --------
-    disconnect : Close an open connection.
-    send : Transmit data over the connection.
-    """
-    ...
-```
-
-Great Docs recognizes this format, preserves the descriptions, and merges it with any `%seealso` entries on the same page. Duplicate references are deduplicated automatically.
-
-### Inline Interlinks
-
-You can create inline links to other API items anywhere in your docstring text using the interlinks syntax. There are several forms:
-
-- **Shortened**: write `` [](`~mypackage.MyClass`) `` to display just `MyClass`. The `~` prefix strips the package path and shows only the short name.
-- **Fully qualified**: write `` [](`mypackage.MyClass`) `` to display the full path `mypackage.MyClass`.
-- **Custom text**: write `` [see this class](`mypackage.MyClass`) `` to display `see this class` as the link text.
-- **Custom text + tilde**: write `` [see this class](`~mypackage.MyClass`) `` — this also displays `see this class`. When you supply custom link text in the brackets, it's always used as-is regardless of the `~` prefix.
-
-This is particularly useful for class hierarchies and overview docstrings:
-
-```python
-class BaseStore:
-    """Base class for all stores.
-
-    Available implementations:
-
-    - [](`~mypackage.DuckDBStore`): local storage with embedded search.
-    - [](`~mypackage.ChromaDBStore`): vector storage using ChromaDB.
-
-    See [](`mypackage.BaseStore`) for the full API, or
-    [the DuckDB guide](`~mypackage.DuckDBStore`) for a walkthrough.
-    """
-    ...
-```
-
-In the rendered documentation, each interlinks reference becomes a clickable link pointing to the target's reference page.
-
-Interlinks work in any part of a docstring: the summary line, extended description, parameter descriptions, notes, or any other section.
-
-### Code Autolinks
-
-Great Docs automatically converts inline code in docstrings into clickable links when the code matches a documented API symbol. No special syntax is needed, you just use standard backtick code formatting:
-
-```python
-class Engine:
-    """Core processing engine.
-
-    Use `Pipeline` to chain multiple engines together.
-    Call `run_pipeline()` to execute a full pipeline.
-    """
-    ...
-```
-
-In the rendered output, `` `Pipeline` `` and `` `run_pipeline()` `` become clickable links to their respective reference pages.
-
-#### Shortening Prefixes
-
-For qualified names, you can control the display text with `~~` prefixes:
-
-- **Full path**: `` `mypackage.MyClass` `` displays as `mypackage.MyClass`.
-- **Full path with parens**: `` `mypackage.my_func()` `` displays as `mypackage.my_func()`.
-- **Shortened**: `` `~~mypackage.MyClass` `` displays as `MyClass`. The `~~` prefix strips everything before the last component.
-- **Shortened with parens**: `` `~~mypackage.my_func()` `` displays as `my_func()`.
-- **Dot-prefixed short**: `` `~~.mypackage.MyClass` `` displays as `.MyClass`, retaining a leading dot to hint at the omitted path.
-- **Unmatched (no link)**: if the name doesn't match any documented symbol (e.g., `` `~~unknown_func()` ``), it renders as plain code (`unknown_func()`) with no link.
-
-#### What Gets Autolinked
-
-Any inline code that looks like an identifier or dotted path is a candidate for autolinking. Parentheses at the end are allowed:
-
-**Linked** (if name exists in API):
-
-- `` `MyClass` ``
-- `` `my_func()` ``
-- `` `mypackage.MyClass` ``
-
-**Not linked** (contains arguments, spaces, or operators):
-
-- `` `my_func(x=1)` ``
-- `` `a + b` ``
-- `` `-MyClass` ``
-
-#### Disabling Autolinks
-
-To prevent a specific piece of inline code from being autolinked, add the `{.gd-no-link}` class:
-
-```markdown
-The `Config`{.gd-no-link} parameter is a plain dictionary, not the Config class.
-```
-
-This is the same `{.gd-no-link}` directive used by the [link checker](link-checker.qmd#skipped) to skip URL validation.
-
-::: {.callout-tip}
-All GDLS features require the target to exist in your package's `objects.json` inventory, which is generated automatically during the build. Only items that are documented as part of your API reference can be linked to.
-:::
-
-### How GDLS Resolves Links
-
-All GDLS mechanisms (`%seealso`, NumPy See Also, interlinks, and code autolinks) go through the same resolution pipeline:
-
-1. **During build** — Great Docs generates an `objects.json` inventory mapping every documented symbol to its reference page URI
-2. **During post-render** — References are resolved against this inventory
-3. **Name matching** — Both exact matches (`mypackage.MyClass`) and suffix matches (`MyClass`) are supported
-4. **Unresolved references** — Names that can't be resolved are shown as plain text (no broken links)
+See [Cross-Referencing](cross-referencing.qmd) for the full guide to all linking features.
 
 ## Sphinx & RST Cleanup
 
@@ -553,5 +375,7 @@ great-docs build --no-refresh
 
 ## Next Steps
 
-- **[CLI Documentation](cli-documentation.qmd)** – Document your Click CLI
-- **[User Guides](user-guides.qmd)** – Add narrative documentation
+- [Cross-Referencing](cross-referencing.qmd) covers the full linking system (GDLS) for connecting API pages
+- [CLI Documentation](cli-documentation.qmd) covers Click CLI documentation
+- [User Guides](user-guides.qmd) explains how to add narrative documentation
+- [Configuration](configuration.qmd) covers all `great-docs.yml` options

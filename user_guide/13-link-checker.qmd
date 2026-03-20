@@ -1,6 +1,6 @@
 ---
 title: "Link Checker"
-guide-section: "Quality Assurance"
+guide-section: "Quality & Maintenance"
 ---
 
 # Link Checker

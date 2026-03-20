@@ -1,6 +1,6 @@
 ---
 title: "Spell Checking"
-guide-section: "Quality Assurance"
+guide-section: "Quality & Maintenance"
 ---
 
 Good documentation requires accurate spelling. Great-Docs includes a built-in spell checker that scans your documentation source files for spelling errors while intelligently skipping code, URLs, and technical terms.

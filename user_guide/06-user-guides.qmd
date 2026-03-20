@@ -1,6 +1,6 @@
 ---
 title: "User Guides"
-guide-section: "Core Concepts"
+guide-section: "Site Content"
 ---
 
 # User Guides
@@ -359,4 +359,4 @@ Group related content into sections that make sense for your users. A common pat
 
 ## Next Steps
 
-- **[Deployment](deployment.qmd)** – Publish your documentation to GitHub Pages
+- [Deployment](deployment.qmd) covers publishing your documentation to GitHub Pages

@@ -1,6 +1,6 @@
 ---
 title: "Custom Sections"
-guide-section: "Core Concepts"
+guide-section: "Site Content"
 bread-crumbs: false
 ---
 
@@ -227,6 +227,6 @@ sections:
 
 ## Next Steps
 
-- **[Blog](blog.qmd)** – Set up a blog with Quarto's listing directive
-- **[Configuration](configuration.qmd)** – See all available `great-docs.yml` options
-- **[User Guides](user-guides.qmd)** – Set up the User Guide section
+- [Blog](blog.qmd) covers setting up a blog with Quarto's listing directive
+- [Configuration](configuration.qmd) covers all available `great-docs.yml` options
+- [User Guides](user-guides.qmd) covers the User Guide section setup

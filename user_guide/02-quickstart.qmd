@@ -200,8 +200,8 @@ docs.build()
 
 Your documentation site is ready! Here's what to explore next:
 
-- **[Configuration](configuration.qmd)** – Customize Great Docs behavior
-- **[API Documentation](api-documentation.qmd)** – Understand how API discovery works
-- **[CLI Documentation](cli-documentation.qmd)** – Document your Click CLI
-- **[User Guides](user-guides.qmd)** – Add narrative documentation
-- **[Deployment](deployment.qmd)** – Publish to GitHub Pages
+- [Configuration](configuration.qmd) covers customizing Great Docs behavior
+- [API Documentation](api-documentation.qmd) explains how API discovery works
+- [CLI Documentation](cli-documentation.qmd) covers Click CLI documentation
+- [User Guides](user-guides.qmd) explains how to add narrative documentation
+- [Deployment](deployment.qmd) covers publishing to GitHub Pages

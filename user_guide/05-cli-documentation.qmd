@@ -1,6 +1,6 @@
 ---
 title: "CLI Documentation"
-guide-section: "Core Concepts"
+guide-section: "Site Content"
 bread-crumbs: false
 ---
 
@@ -229,5 +229,5 @@ If commands show minimal help:
 
 ## Next Steps
 
-- **[User Guides](user-guides.qmd)** – Add narrative documentation
-- **[Deployment](deployment.qmd)** – Publish to GitHub Pages
+- [User Guides](user-guides.qmd) explains how to add narrative documentation
+- [Deployment](deployment.qmd) covers publishing to GitHub Pages

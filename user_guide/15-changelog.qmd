@@ -1,6 +1,6 @@
 ---
 title: "Changelog"
-guide-section: "Core Concepts"
+guide-section: "Quality & Maintenance"
 bread-crumbs: false
 ---
 
@@ -140,5 +140,6 @@ In all cases, the build completes successfully — the changelog is never a hard
 
 ## Next Steps
 
-- **[Configuration](configuration.qmd)** – See all available `great-docs.yml` options
-- **[Deployment](deployment.qmd)** – Deploy your docs (including the changelog) to GitHub Pages
+- [Configuration](configuration.qmd) covers all available `great-docs.yml` options
+- [Deployment](deployment.qmd) covers publishing your docs (including the changelog) to GitHub Pages
+- [Link Checker](link-checker.qmd) explains how to validate links across your site

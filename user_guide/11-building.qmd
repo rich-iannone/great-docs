@@ -1,0 +1,153 @@
+---
+title: "Building & Previewing"
+guide-section: "Build & Deploy"
+bread-crumbs: false
+---
+
+# Building & Previewing
+
+The `great-docs build` command is the main way you interact with Great Docs on a day-to-day basis. It reads your `great-docs.yml` configuration, discovers your package's API, generates Quarto source files, and renders everything into a static HTML site. This page explains what happens during a build, how to preview your site locally, and how to troubleshoot common issues.
+
+## The Build Pipeline
+
+When you run `great-docs build`, the following steps execute in order:
+
+1. The `great-docs/` output directory is created (or refreshed) with all required assets: stylesheets, JavaScript files for dark mode toggling, sidebar filtering, the GitHub stars widget, and other interactive features.
+
+2. Your `great-docs.yml` is read. A `_quarto.yml` file is generated (or updated) in the output directory with the Quarto project configuration, including navbar links, sidebar structure, and theme settings.
+
+3. A landing page (`index.qmd`) is generated from your project's `README.md`. If you have a logo configured, a hero section with the logo, package name, tagline, and badges is added automatically.
+
+4. If a user guide directory exists (by default `user_guide/`), all `.qmd` files are copied into the output directory with numeric prefixes stripped from filenames. The sidebar is organized by `guide-section` frontmatter metadata.
+
+5. If Click CLI documentation is enabled, Great Docs discovers your CLI commands and generates a reference page for each one.
+
+6. Custom sections defined in `great-docs.yml` (examples, tutorials, blog posts, etc.) are processed and copied to the output directory.
+
+7. If the changelog is enabled and a GitHub repository URL exists in `pyproject.toml`, GitHub Releases are fetched and a `changelog.qmd` file is generated.
+
+8. The Agent Skills file (`skill.md`) is generated or copied. If you have a curated `SKILL.md` in `skills/<package-name>/`, it is used directly. Otherwise, a skill file is auto-generated from your package metadata.
+
+9. `llms.txt` and `llms-full.txt` files are generated. These provide AI-friendly summaries of your package documentation.
+
+10. Source link metadata (`_source_links.json`) is generated, mapping each documented symbol to its file and line numbers on GitHub.
+
+11. Quarto renders all the source files into HTML. A post-render script runs to apply final transformations: injecting source links, processing cross-references (GDLS), cleaning up Sphinx/RST artifacts, and generating companion Markdown (`.md`) files for each page.
+
+After all steps complete, the finished site is in `great-docs/_site/`.
+
+## Preview Mode
+
+To view your site locally with live reload:
+
+```{.bash filename="Terminal"}
+great-docs preview
+```
+
+This starts a local development server and opens your default browser. When you edit source files (user guide pages, docstrings, configuration), the site rebuilds automatically and the browser refreshes to show your changes.
+
+Preview mode is ideal during the writing process because it lets you see how content will look in the final rendered site without committing or deploying anything.
+
+## Build Options
+
+The `great-docs build` command accepts several options that control its behavior.
+
+### Watch Mode
+
+Watch mode keeps the build process running and automatically rebuilds when files change. This is similar to preview mode but without starting a local server:
+
+```{.bash filename="Terminal"}
+great-docs build --watch
+```
+
+This is useful when you want to rebuild continuously but view the output in a different way (for example, opening the HTML files directly or using a separate static file server).
+
+### Clean Build
+
+If you suspect stale files in the output directory are causing issues, you can force a completely fresh build. Delete the `great-docs/` directory and rebuild:
+
+```{.bash filename="Terminal"}
+rm -rf great-docs/ && great-docs build
+```
+
+Since the `great-docs/` directory is ephemeral and fully generated from `great-docs.yml` plus your source files, deleting it is always safe.
+
+## Build Output Structure
+
+After a successful build, the output directory has this layout:
+
+```{.default filename="great-docs/"}
+great-docs/
+├── _quarto.yml          # Generated Quarto config
+├── index.qmd            # Landing page
+├── great-docs.scss      # Theme stylesheet
+├── *.js                 # Interactive features (dark mode, sidebar, etc.)
+├── llms.txt             # LLM-friendly summary
+├── llms-full.txt        # Full API docs for LLMs
+├── skill.md             # Agent Skills file
+├── _source_links.json   # GitHub source link metadata
+├── reference/           # API reference pages
+│   ├── index.qmd
+│   ├── MyClass.qmd
+│   └── ...
+├── user-guide/          # User guide pages (from user_guide/)
+├── recipes/             # Recipe pages (from recipes/)
+├── scripts/
+│   └── post-render.py   # HTML post-processing script
+└── _site/               # Final rendered HTML
+    ├── index.html
+    └── ...
+```
+
+The `_site/` subdirectory contains the final HTML output. This is the directory you deploy to your hosting service (GitHub Pages, Netlify, Vercel, etc.).
+
+Everything outside of `_site/` is intermediate Quarto source. You generally do not need to inspect these files, but they can be useful for debugging rendering issues.
+
+## Using the Python API
+
+In addition to the CLI, you can drive the build programmatically:
+
+```{.python filename="Python"}
+from great_docs import GreatDocs
+
+docs = GreatDocs()
+docs.install()   # Initialize the output directory
+docs.build()     # Run the full build pipeline
+docs.preview()   # Start the preview server
+```
+
+The `GreatDocs` class accepts a `project_path` argument if your working directory is not the project root:
+
+```{.python filename="Python"}
+docs = GreatDocs(project_path="/path/to/my-project")
+docs.install()
+docs.build()
+```
+
+## Troubleshooting
+
+### Quarto Errors
+
+If the build fails during the Quarto rendering step, the error output will include Quarto's own messages. Common causes include:
+
+- A `.qmd` file with invalid YAML frontmatter. Check that all frontmatter blocks are enclosed between `---` markers and that the YAML is well-formed.
+- A reference to a file that does not exist. If you renamed or deleted a user guide page, make sure the `guide-section` frontmatter in other files does not depend on it.
+- A Quarto version incompatibility. Great Docs is tested with Quarto 1.4 and later. Run `quarto --version` to check your installed version.
+
+### Missing API Reference Pages
+
+If some symbols are missing from the rendered API reference, run `great-docs scan` to see what Great Docs discovers. Items that appear in the scan output but not in the reference may be excluded by the `exclude` list in `great-docs.yml` or may not be listed in the `reference` config sections.
+
+### Dynamic Introspection Failures
+
+If Great Docs reports an error during dynamic introspection, it will automatically retry with static analysis. If you see this retry message frequently, you can set `dynamic: false` in `great-docs.yml` to skip the dynamic pass entirely. See [Configuration](configuration.qmd) for details.
+
+### Stale Output
+
+If your site looks correct in some places but outdated in others, the most reliable fix is a clean rebuild: delete the `great-docs/` directory and run `great-docs build` again. The output directory is fully regenerated each time, so there is no risk in deleting it.
+
+## Next Steps
+
+- [Deployment](deployment.qmd) covers publishing your built site to GitHub Pages
+- [Configuration](configuration.qmd) covers all `great-docs.yml` options
+- [Link Checker](link-checker.qmd) explains how to validate links across your site

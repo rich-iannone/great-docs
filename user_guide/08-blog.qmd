@@ -1,6 +1,6 @@
 ---
 title: "Blog"
-guide-section: "Core Concepts"
+guide-section: "Site Content"
 bread-crumbs: false
 ---
 
@@ -202,5 +202,5 @@ None in this release.
 
 ## Next Steps
 
-- **[Custom Sections](custom-sections.qmd)** – Add non-blog sections (examples, tutorials, etc.)
-- **[Configuration](configuration.qmd)** – See all available `great-docs.yml` options
+- [Custom Sections](custom-sections.qmd) covers adding non-blog sections (examples, tutorials, etc.)
+- [Configuration](configuration.qmd) covers all available `great-docs.yml` options

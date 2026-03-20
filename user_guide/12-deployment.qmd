@@ -1,6 +1,6 @@
 ---
 title: "Deployment"
-guide-section: "Deployment"
+guide-section: "Build & Deploy"
 ---
 
 # Deployment

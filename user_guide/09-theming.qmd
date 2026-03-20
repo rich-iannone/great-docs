@@ -1,0 +1,423 @@
+---
+title: "Theming & Appearance"
+guide-section: "Configuration & Theming"
+bread-crumbs: false
+---
+
+# Theming & Appearance
+
+Great Docs ships with a polished default look, but every visual layer of the site is configurable. You can adjust the color scheme, add animated gradients to the navbar and content areas, enable dark mode, display an announcement banner, inject custom HTML into the page head, configure logos, and set up a hero section on your landing page. All of these options live in `great-docs.yml`.
+
+This page covers the visual customization options. For functional settings (API discovery, parsers, GitHub integration, etc.), see [Configuration](configuration.qmd).
+
+## Dark Mode Toggle
+
+Great Docs includes a light/dark mode toggle in the navbar. It respects the visitor's system preference on first visit and remembers their choice in local storage for subsequent visits. The toggle is enabled by default.
+
+To enable or disable the toggle:
+
+```{.yaml filename="great-docs.yml"}
+dark_mode_toggle: true   # Enabled by default
+```
+
+```{.yaml filename="great-docs.yml"}
+dark_mode_toggle: false  # Disable the toggle
+```
+
+When enabled, the toggle provides instant switching without a page reload. Visitors who prefer reduced motion in their operating system settings will still see the theme change, but without the transition animation.
+
+## Announcement Banner
+
+A site-wide banner can be displayed above the navbar to highlight important news, releases, or alerts. The banner appears on every page and can optionally be dismissed by the visitor.
+
+### Simple Form
+
+The simplest way to add a banner is with a string value. This creates a blue, info-styled banner that visitors can dismiss:
+
+```{.yaml filename="great-docs.yml"}
+announcement: "Version 2.0 is now available!"
+```
+
+### Full Configuration
+
+For more control over the banner's appearance and behavior, use a dictionary with `content`, `type`, `dismissable`, and `url` keys:
+
+```{.yaml filename="great-docs.yml"}
+announcement:
+  content: "We've moved to a new domain. Please update your bookmarks!"
+  type: warning        # info (default), warning, success, or danger
+  dismissable: true    # Allow visitors to close the banner (default: true)
+  url: https://example.com/blog/migration  # Optional: makes the text a link
+```
+
+The available banner types and their colors:
+
+| Type | Light Mode | Dark Mode |
+|------|-----------|-----------|
+| `info` | Blue | Dark blue |
+| `warning` | Yellow (dark text) | Dark yellow |
+| `success` | Green | Dark green |
+| `danger` | Red | Dark red |
+
+### Dismiss Behavior
+
+When `dismissable: true` (the default), visitors can click the close button to hide the banner. The dismissal is stored in `sessionStorage`, so the banner stays hidden for the rest of the browsing session but reappears after the browser is closed. If you change the announcement text, the new message will appear even for visitors who dismissed the previous one.
+
+### Disabling the Banner
+
+To remove a previously configured banner, either set the key to `false` or remove it from the file entirely:
+
+```{.yaml filename="great-docs.yml"}
+announcement: false
+```
+
+## Animated Gradient Presets
+
+The announcement banner, navbar, and content area all support gradient backgrounds. The banner and navbar use animated gradients that shift slowly across the element, creating a subtle, eye-catching effect. The content area uses a soft radial glow at the top of each page. Each preset includes paired light-mode and dark-mode color palettes.
+
+### Available Presets
+
+Great Docs ships with eight gradient presets:
+
+| Preset | Description |
+|--------|-------------|
+| `sky` | Soft sky blues |
+| `peach` | Peach and blush |
+| `prism` | Mint, sky, and lavender |
+| `lilac` | Lilac and pink |
+| `slate` | Cool grays |
+| `honey` | Warm cream and apricot |
+| `dusk` | Soft lavender-blue |
+| `mint` | Pale aqua |
+
+### Gradient on the Announcement Banner
+
+Add a `style` key to the announcement config to apply a gradient background instead of the solid color:
+
+```{.yaml filename="great-docs.yml"}
+announcement:
+  content: "Version 2.0 is now available!"
+  style: sky
+```
+
+When `style` is set, it overrides the solid-color `type` background with the animated gradient. The `type` key is still used for semantic class names but has no visual effect on the background when a gradient is active.
+
+### Gradient on the Navbar
+
+Use the top-level `navbar_style` key to apply the animated gradient to the site's top navigation bar:
+
+```{.yaml filename="great-docs.yml"}
+navbar_style: peach
+```
+
+In dark mode, text and icons are automatically adjusted to white for readability.
+
+### Gradient on the Content Area
+
+Use the top-level `content_style` key to add a subtle radial glow at the top of the main content area:
+
+```{.yaml filename="great-docs.yml"}
+content_style: lilac
+```
+
+The glow fades out smoothly and does not interfere with text or interactive elements. It uses the same preset names as the banner and navbar gradients.
+
+By default the glow appears on all pages. To restrict it to the homepage only, use the dictionary form with a `pages` key:
+
+```{.yaml filename="great-docs.yml"}
+content_style:
+  preset: lilac
+  pages: homepage    # "all" (default) or "homepage"
+```
+
+### Combining All Three
+
+You can use the same preset or different presets for the banner, navbar, and content area. Here is an example that mixes two presets:
+
+```{.yaml filename="great-docs.yml"}
+announcement:
+  content: "New release!"
+  style: sky
+
+navbar_style: sky
+content_style:
+  preset: lilac
+  pages: homepage
+```
+
+## Navbar Color
+
+If you prefer a solid color over an animated gradient, the `navbar_color` option sets a flat background on the navbar with automatic contrast-aware text. Great Docs uses the [APCA (Accessible Perceptual Contrast Algorithm)](https://github.com/Myndex/SAPC-APCA) to determine whether white or black text provides maximum readability against your chosen background.
+
+### Single Color for Both Modes
+
+A plain string applies the same navbar color in both light and dark mode. Any CSS named color (e.g., `navy`, `tomato`, `teal`) or hex value works:
+
+```{.yaml filename="great-docs.yml"}
+navbar_color: steelblue
+```
+
+### Per-Mode Colors
+
+Use a dictionary with `light` and `dark` keys to set different navbar colors for each mode. You can also set only one mode, and the other keeps the default navbar styling:
+
+```{.yaml filename="great-docs.yml"}
+navbar_color:
+  light: "#2c3e50"
+  dark: "#1a237e"
+```
+
+### How Text Color is Chosen
+
+You do not need to specify a text color. Great Docs automatically picks white or black text (and adjusts icons, search button, toggle, and hover states) based on the APCA contrast algorithm. Dark backgrounds get white text; light backgrounds get black text.
+
+### Precedence with `navbar_style`
+
+If both `navbar_style` (animated gradient) and `navbar_color` are set, the gradient takes precedence and `navbar_color` is ignored. To use a solid color, remove or comment out `navbar_style`:
+
+```{.yaml filename="great-docs.yml"}
+# navbar_style: peach      # commented out, so navbar_color takes effect
+navbar_color: "#2c3e50"
+```
+
+## Custom Head Content {#include-in-header}
+
+Use `include_in_header` to inject custom HTML into the `<head>` of every page. This is useful for adding analytics scripts, custom meta tags, external stylesheets, or any other head content that needs to load before the page renders.
+
+A single string is treated as inline HTML:
+
+```{.yaml filename="great-docs.yml"}
+include_in_header: '<link rel="stylesheet" href="https://example.com/custom.css">'
+```
+
+For multiple entries, use a list. Each item can be a string (inline HTML) or a dictionary with a `text` or `file` key:
+
+```{.yaml filename="great-docs.yml"}
+include_in_header:
+  - text: |
+      <script>
+        console.log("hello from great-docs");
+      </script>
+  - text: '<meta name="custom" content="value">'
+  - file: custom-head.html
+```
+
+Your entries are merged with Great Docs' own head injections (Font Awesome, theme scripts, etc.) so everything cooperates automatically.
+
+## Logo
+
+Great Docs can display a logo in the navbar instead of the plain-text package name. Logos are automatically detected from conventional file locations, or you can configure them explicitly.
+
+### Auto-Detection
+
+If you place logo files in your project using common naming conventions, Great Docs will find and use them automatically with no configuration needed:
+
+```
+my-package/
+├── logo.svg              # Primary logo
+├── assets/
+│   ├── logo.svg          # Also auto-detected
+│   └── logo-dark.svg     # Dark-mode variant
+```
+
+Auto-detection checks these paths in priority order:
+
+1. `logo.svg` / `logo.png` (project root)
+2. `assets/logo.svg` / `assets/logo.png`
+3. `docs/assets/logo.svg` / `docs/assets/logo.png`
+4. `{package_name}_logo.svg` / `{package_name}_logo.png`
+
+If a file named `logo-dark.svg` (or `{stem}-dark.{ext}`) exists alongside the primary logo, it is automatically used for dark mode.
+
+### Explicit Configuration
+
+For full control, configure the logo in `great-docs.yml`:
+
+```{.yaml filename="great-docs.yml"}
+logo:
+  light: assets/logo.svg
+  dark: assets/logo-dark.svg
+```
+
+You can also set additional options:
+
+```{.yaml filename="great-docs.yml"}
+logo:
+  light: assets/logo.svg
+  dark: assets/logo-dark.svg
+  alt: My Package         # Alt text (defaults to display_name)
+  href: https://example.com  # Logo link target (defaults to site root)
+
+logo_show_title: true      # Show text title alongside logo (default: false)
+```
+
+### What Happens When a Logo Is Set
+
+When a logo is configured (or auto-detected):
+
+- The logo image replaces the text title in the navbar.
+- A dark-mode variant is used automatically when the user switches themes.
+- The text title is hidden by default (set `logo_show_title: true` to show both).
+- Favicons are generated automatically from the logo (see below).
+
+## Favicon
+
+Great Docs automatically generates a complete set of favicons for your site. If a logo is configured, favicons are derived from it with no extra setup needed. You can also specify a dedicated favicon image.
+
+### Automatic Generation from Logo
+
+When a logo is set, Great Docs generates all standard favicon formats automatically:
+
+| File | Purpose |
+|------|---------|
+| `favicon.ico` | Classic favicon (16, 32, and 48px embedded) |
+| `favicon.svg` | Modern browsers (SVG, infinite scaling) |
+| `favicon-16x16.png` | Small icon contexts |
+| `favicon-32x32.png` | Standard tab icon |
+| `apple-touch-icon.png` | iOS home screen (180x180) |
+
+These files are created in the build directory and proper `<link>` tags are injected into every page's `<head>`.
+
+### Dedicated Favicon
+
+If you want a different image for your favicon (for example, a simplified icon rather than the full logo), set the `favicon` option:
+
+```{.yaml filename="great-docs.yml"}
+favicon: assets/favicon.svg
+```
+
+This generates the same set of raster variants as the logo-based approach, but uses your dedicated favicon source image instead. Both SVG and PNG source files are supported.
+
+### Non-Square Source Images
+
+Source images do not need to be perfectly square. Non-square images are automatically centered on a transparent canvas, preserving the original aspect ratio. This means wide logos will not be distorted; they will be padded with transparency above and below.
+
+## Hero Section
+
+The hero section is a prominent banner displayed at the top of the landing page, showcasing the package logo, name, tagline, and badges. It is generated automatically when a logo is present and gives your documentation a polished, professional look.
+
+### Auto-Enable Behavior
+
+The hero section auto-enables when a logo is configured (or auto-detected). No explicit configuration is needed: if you have a logo, you get a hero. The hero displays:
+
+- The package logo (with dark-mode support)
+- The package display name
+- The package description from `pyproject.toml`
+- Badges auto-extracted from the README (shields.io badges, etc.)
+
+### Disabling the Hero
+
+To disable the hero entirely (for example, if you prefer your `index.qmd` or `README.md` rendered as-is):
+
+```{.yaml filename="great-docs.yml"}
+hero: false
+```
+
+### Customizing the Hero
+
+Each hero component can be overridden or suppressed individually:
+
+```{.yaml filename="great-docs.yml"}
+hero:
+  name: "My Package"                    # Override the auto-detected name
+  tagline: "A better way to build things"  # Override the description
+  logo_height: 120px                    # Default: 200px
+  badges: false                         # Suppress badge display
+```
+
+Set any component to `false` to suppress it:
+
+```{.yaml filename="great-docs.yml"}
+hero:
+  name: false              # Hide the name (logo and tagline only)
+  badges: false            # No badges
+```
+
+### Hero Logo vs. Navbar Logo
+
+By default, the hero uses the same logo as the navbar. But you may want a different image for the hero, for example a detailed wordmark instead of a compact lettermark.
+
+Set a separate hero logo with light/dark variants:
+
+```{.yaml filename="great-docs.yml"}
+# Navbar: compact lettermark
+logo:
+  light: assets/logo-lettermark.svg
+  dark: assets/logo-lettermark-dark.svg
+
+# Hero: expanded wordmark
+hero:
+  logo:
+    light: assets/logo-wordmark.svg
+    dark: assets/logo-wordmark-dark.svg
+  logo_height: 150px
+```
+
+Or use a simple string for a single hero logo image:
+
+```{.yaml filename="great-docs.yml"}
+hero:
+  logo: assets/hero-logo.svg
+```
+
+### Hero Logo Auto-Detection
+
+Great Docs can also auto-detect hero-specific logo files from conventional file locations, with no configuration needed. Place files using these naming conventions:
+
+```
+my-package/
+├── assets/
+│   ├── logo-hero.svg          # Hero logo (single image)
+│   ├── logo-hero-light.svg    # Hero logo (light variant)
+│   └── logo-hero-dark.svg     # Hero logo (dark variant)
+```
+
+Auto-detection checks these paths in priority order:
+
+1. `logo-hero.svg` / `logo-hero.png` (project root)
+2. `assets/logo-hero.svg` / `assets/logo-hero.png`
+3. `logo-hero-light.svg` / `logo-hero-light.png` (project root)
+4. `assets/logo-hero-light.svg` / `assets/logo-hero-light.png`
+
+If a file named `logo-hero-dark.svg` (or `logo-hero-dark.png`) exists alongside the primary hero logo, it is automatically used for dark mode.
+
+When hero logo files are detected, the hero section auto-enables even if no `logo` or `hero` config is set in `great-docs.yml`.
+
+The full logo fallback chain for the hero is:
+
+1. Explicit `hero.logo` in `great-docs.yml`
+2. Auto-detected hero logo files (`logo-hero.*`)
+3. Explicit top-level `logo` in `great-docs.yml`
+4. Auto-detected navbar logo files (`logo.*`)
+
+### Explicit Badge List
+
+By default, badges are auto-extracted from the README. You can provide an explicit list instead:
+
+```{.yaml filename="great-docs.yml"}
+hero:
+  badges:
+    - alt: PyPI version
+      img: https://img.shields.io/pypi/v/my-package
+      url: https://pypi.org/project/my-package/
+    - alt: License
+      img: https://img.shields.io/badge/license-MIT-green
+      url: https://opensource.org/licenses/MIT
+```
+
+### Hero Section Summary
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `hero` | `bool` / `dict` | auto | `false` to disable; `true` or `{}` to enable; dict to customize |
+| `hero.name` | `str` / `false` | display name | Package name shown in hero |
+| `hero.tagline` | `str` / `false` | description | Tagline shown below the name |
+| `hero.logo` | `str` / `dict` / `false` | auto-detect | Hero-specific logo (can have `light`/`dark` keys); auto-detects `logo-hero.*` files |
+| `hero.logo_height` | `str` | `200px` | CSS max-height for the hero logo |
+| `hero.badges` | `list` / `false` | `auto` | Explicit badge list or `false` to suppress |
+
+## Next Steps
+
+- [Configuration](configuration.qmd) covers the functional settings (API discovery, parsers, GitHub integration)
+- [User Guides](user-guides.qmd) explains how to write and organize narrative documentation
+- [Deployment](deployment.qmd) shows how to publish your site to GitHub Pages

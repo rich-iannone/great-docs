@@ -302,6 +302,14 @@ ALL_PACKAGES: list[str] = [
     "gdtest_interlinks_prose",  # 148
     # 149: Autolink inline code
     "gdtest_autolink",  # 149
+    # 150–155: Agent Skills (skill.md)
+    "gdtest_skill_default",  # 150
+    "gdtest_skill_curated",  # 151
+    "gdtest_skill_config",  # 152
+    "gdtest_skill_disabled",  # 153
+    "gdtest_skill_rich",  # 154
+    "gdtest_skill_combo",  # 155
+    "gdtest_skill_complex",  # 156
 ]
 
 
@@ -503,6 +511,14 @@ DIMENSIONS: dict[str, dict[str, str]] = {
     "Q5": {"axis": "theme", "label": "TOC depth 3"},
     "Q6": {"axis": "theme", "label": "Custom TOC title"},
     "Q7": {"axis": "theme", "label": "Site combo"},
+    # Skill axes
+    "S1": {"axis": "skill", "label": "Auto-generated skill"},
+    "S2": {"axis": "skill", "label": "Curated skill"},
+    "S3": {"axis": "skill", "label": "Enriched skill (config)"},
+    "S4": {"axis": "skill", "label": "Skill disabled"},
+    "S5": {"axis": "skill", "label": "Rich curated skill"},
+    "S6": {"axis": "skill", "label": "Skill + UG + hero combo"},
+    "S7": {"axis": "skill", "label": "Skill with subdirs (refs/scripts/assets)"},
 }
 
 
@@ -1696,6 +1712,50 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "Three classes and a function using inline code (`Name`, `Name()`, "
         "`~~pkg.Name`, `~~.pkg.Name`) that gets auto-converted into clickable "
         "links to reference pages by the post-render autolink pass."
+    ),
+    "gdtest_skill_default": (
+        "Auto-generated skill.md with no config overrides and no curated skill "
+        "directory. Tests baseline skill generation from package metadata. The "
+        "Skills page should show frontmatter, an install panel-tabset, and the "
+        "auto-generated body with heading hierarchy and inline formatting."
+    ),
+    "gdtest_skill_curated": (
+        "A hand-crafted SKILL.md in skills/gdtest-skill-curated/. Great Docs "
+        "should detect and use the curated file instead of auto-generating. "
+        "Tests curated-skill priority, table rendering, gotchas section, and "
+        "the full Markdown-to-HTML rendering pipeline on the Skills page."
+    ),
+    "gdtest_skill_config": (
+        "Auto-generated skill enriched with gotchas, best_practices, "
+        "decision_table, and extra_body from great-docs.yml. Tests that config "
+        "overrides are injected into the generated skill.md body and rendered "
+        "correctly on the Skills page with styled tables and code blocks."
+    ),
+    "gdtest_skill_disabled": (
+        "Skill generation explicitly disabled via skill.enabled: false. No "
+        "skill.md, skills.qmd, or .well-known directory should be created. "
+        "The sidebar should not show a Skills link."
+    ),
+    "gdtest_skill_rich": (
+        "Curated skill with extensive Markdown: multiple heading levels, "
+        "fenced code blocks in Python/YAML/Bash, tables, inline formatting, "
+        "plus config-level gotchas and best_practices layered on top. Exercises "
+        "the full _render_skill_body_html() pipeline and all SCSS skill styles."
+    ),
+    "gdtest_skill_combo": (
+        "Cross-feature integration: curated skill combined with a user guide, "
+        "hero section, GitHub repo URL, site_url, and config-level gotchas/ "
+        "best_practices/decision_table. Verifies Skills page install tabs use "
+        "the GitHub URL, sidebar ordering (Skills above llms.txt), and "
+        "coexistence with hero/user-guide features."
+    ),
+    "gdtest_skill_complex": (
+        "Sophisticated skill composition: curated SKILL.md accompanied by the "
+        "full Agent Skills directory structure — references/ (API cheatsheet, "
+        "migration guide), scripts/ (setup helper, test runner), and assets/ "
+        "(config template). The SKILL.md body cross-references companion files "
+        "with directory tree diagrams, tables, and embedded code samples. Tests "
+        "that the raw rendering handles complex multi-file skill structures."
     ),
 }
 

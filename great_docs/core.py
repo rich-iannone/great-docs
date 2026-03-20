@@ -9492,19 +9492,21 @@ toc: false
         lines.append("**Codex / OpenCode** --- tell the agent:")
         lines.append("")
         if skill_file_url:
-            lines.append(
-                f"> Fetch the skill file at `{skill_file_url}` and follow the instructions."
-            )
+            lines.append("```")
+            lines.append(f"Fetch the skill file at {skill_file_url} and follow the instructions.")
+            lines.append("```")
         elif github_owner_repo:
+            lines.append("```")
             lines.append(
-                f"> Fetch the skill file from "
-                f"`https://github.com/{github_owner_repo}` "
+                f"Fetch the skill file from "
+                f"https://github.com/{github_owner_repo} "
                 "and follow the instructions."
             )
+            lines.append("```")
         else:
-            lines.append(
-                "> Fetch the skill file at `<site-url>/skill.md` and follow the instructions."
-            )
+            lines.append("```")
+            lines.append("Fetch the skill file at <site-url>/skill.md and follow the instructions.")
+            lines.append("```")
         lines.append("")
 
         # ── Manual (curl + raw links) ──

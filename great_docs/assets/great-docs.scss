@@ -55,6 +55,10 @@ header p {
    @extend .mb-2;
 }
 
+.description {
+   font-style: italic;
+}
+
 table {
    @extend .table-bordered;
 }

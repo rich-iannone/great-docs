@@ -1278,6 +1278,18 @@ body.quarto-light .navbar .gd-navbar-icon:hover {
     position: relative;
 }
 
+// Override Quarto's `div.sourceCode { overflow: auto }` so the outer div
+// does NOT scroll — only the <pre> inside scrolls.  This keeps .gd-code-nav
+// (position: absolute) anchored to the visible top-right corner.
+div.sourceCode {
+    overflow: visible;
+    position: relative;
+
+    > pre {
+        overflow-x: auto;
+    }
+}
+
 /* ---- Custom copy-code button (gd-code-nav) ---- */
 .gd-code-nav {
     position: absolute;

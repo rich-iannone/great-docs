@@ -6988,8 +6988,9 @@ jupyter: python3
         Generates Markdown for the right-hand margin containing project metadata
         in five sections: Links, AI / Agents, Developers, Community, and Meta.
 
-        As a side effect, creates `contributing.qmd` and `code-of-conduct.qmd`
-        in the project directory if the corresponding source files exist.
+        As a side effect, creates `contributing.qmd`, `code-of-conduct.qmd`,
+        and `roadmap.qmd` in the project directory if the corresponding source
+        files exist.
 
         Returns
         -------
@@ -7195,7 +7196,7 @@ jupyter: python3
                         f'<div style="padding-top: 10px;">{funder_div_content}</div>'
                     )
 
-        # ── 4. Community (Contributing, CoC, License, Citation) ──────────
+        # ── 4. Community (Contributing, CoC, Roadmap, License, Citation) ──
         community_items: list[str] = []
 
         # Check for CONTRIBUTING.md in root or .github directory
@@ -7245,6 +7246,28 @@ title: "Code of Conduct"
 """
             with open(coc_qmd, "w", encoding="utf-8") as f:
                 f.write(coc_qmd_content)
+
+        # Check for ROADMAP.md in root
+        roadmap_path = package_root / "ROADMAP.md"
+
+        if roadmap_path.exists():
+            community_items.append("[Project roadmap](roadmap.qmd)<br>")
+            with open(roadmap_path, "r", encoding="utf-8") as f:
+                roadmap_content = f.read()
+
+            lines = roadmap_content.split("\n")
+            if lines and lines[0].startswith("# "):
+                roadmap_content = "\n".join(lines[1:]).lstrip()
+
+            roadmap_qmd = self.project_path / "roadmap.qmd"
+            roadmap_qmd_content = f"""---
+title: "Roadmap"
+---
+
+{roadmap_content}
+"""
+            with open(roadmap_qmd, "w", encoding="utf-8") as f:
+                f.write(roadmap_qmd_content)
 
         # License (folded into Community)
         if license_link:
@@ -8334,8 +8357,7 @@ toc: false
 
         copy_code_entry = {"text": '<script src="copy-code.js"></script>'}
         has_copy_code = any(
-            "copy-code.js" in str(item)
-            for item in config["format"]["html"]["include-after-body"]
+            "copy-code.js" in str(item) for item in config["format"]["html"]["include-after-body"]
         )
         if not has_copy_code:
             config["format"]["html"]["include-after-body"].append(copy_code_entry)

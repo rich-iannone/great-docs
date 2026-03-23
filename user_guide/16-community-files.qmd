@@ -1,0 +1,149 @@
+---
+title: "Community Files"
+guide-section: "Quality & Maintenance"
+bread-crumbs: false
+---
+
+# Community Files
+
+Great Docs automatically detects standard community files in your project root and integrates them into your documentation site. When found, these files become navigable pages with links in the **Community** section of the homepage's right sidebar.
+
+## Supported Files
+
+| File | Generated Page | Sidebar Link |
+|------|---------------|--------------|
+| `CONTRIBUTING.md` | `contributing.qmd` | "Contributor guidelines" |
+| `CODE_OF_CONDUCT.md` | `code-of-conduct.qmd` | "Code of conduct" |
+| `ROADMAP.md` | `roadmap.qmd` | "Project roadmap" |
+
+These files follow the common conventions used by most open-source projects, so if you already have them, they'll work automatically.
+
+## How It Works
+
+During `great-docs build`, the following happens for each detected community file:
+
+1. **Detects the file** – checks for the file in your project root
+2. **Strips the title** – removes the first `# ` heading line (since Great Docs adds its own title)
+3. **Generates a `.qmd` file** – writes the content to the build directory with appropriate frontmatter
+4. **Adds a sidebar link** – adds an entry to the Community section of the homepage's right margin
+
+The original Markdown content is preserved, so any formatting, images, or links in your community files carry through to the documentation site.
+
+## Example
+
+A project with these files:
+
+```
+my-package/
+├── CONTRIBUTING.md
+├── CODE_OF_CONDUCT.md
+├── ROADMAP.md
+├── great-docs.yml
+└── pyproject.toml
+```
+
+Will produce a homepage sidebar like:
+
+```
+Community
+├── Contributor guidelines
+├── Code of conduct
+└── Project roadmap
+```
+
+Clicking any link navigates to the corresponding page.
+
+## ROADMAP.md
+
+A `ROADMAP.md` file is ideal for communicating your project's future direction to users and contributors. Common sections include:
+
+- **In Progress** – features currently being developed
+- **Near Term** – planned for the next release cycle
+- **Medium Term** – targeted for upcoming major versions
+- **Long Term** – aspirational features on the horizon
+
+### Example Structure
+
+```markdown
+# Roadmap
+
+A summary of planned features and improvements.
+
+## In Progress
+
+### Feature Name
+Brief description...
+
+## Near Term
+
+### Feature Name
+Brief description...
+
+## Long Term
+
+### Feature Name
+Brief description...
+```
+
+::: {.callout-tip}
+## Keep it forward-looking
+Focus on unshipped features. Shipped features are better documented in your Changelog (auto-generated from GitHub Releases) or release notes.
+:::
+
+## CONTRIBUTING.md
+
+The `CONTRIBUTING.md` file tells potential contributors how to get involved. Common sections:
+
+- Development setup instructions
+- How to run tests
+- Code style guidelines
+- Pull request process
+- Issue reporting guidelines
+
+### Example Structure
+
+```markdown
+# Contributing
+
+We welcome contributions! Here's how to get started.
+
+## Development Setup
+
+1. Clone the repo
+2. Install dependencies: `pip install -e ".[dev]"`
+3. Run tests: `pytest`
+
+## Pull Request Process
+
+1. Fork the repo and create a branch
+2. Make your changes with tests
+3. Submit a PR describing your changes
+```
+
+## CODE_OF_CONDUCT.md
+
+A code of conduct sets expectations for community behavior and helps create a welcoming environment. Most projects adopt a standard like the [Contributor Covenant](https://www.contributor-covenant.org/).
+
+### Using the Contributor Covenant
+
+Download version 2.1 from the official site:
+
+```bash
+curl -o CODE_OF_CONDUCT.md https://www.contributor-covenant.org/version/2/1/code_of_conduct/code_of_conduct.md
+```
+
+Then customize the contact email at the bottom of the file.
+
+## Fallback Behavior
+
+If a community file doesn't exist, the build continues without error. The corresponding link simply won't appear in the sidebar. You can add community files at any time — they'll be automatically detected on the next build.
+
+## Combining with Citation
+
+Great Docs also auto-detects `CITATION.cff` files. Unlike community files, the citation is displayed as a formatted block in the homepage sidebar (not as a separate page). See [pyproject.toml metadata](#) for details on how citation information is surfaced.
+
+## Next Steps
+
+- [Changelog](changelog.qmd) covers auto-generated changelog from GitHub Releases
+- [Configuration](configuration.qmd) covers all `great-docs.yml` options
+- [Building & Previewing](building.qmd) explains the full build pipeline

@@ -22,11 +22,11 @@ great-docs preview   # view at localhost:3000
 
 Great Docs inspects your Python package to generate a full documentation site:
 
-- **API Reference** — classes, functions, methods, and attributes organized into structured pages with parameter tables, return types, examples, and source links
-- **CLI Reference** — Click-based CLIs documented automatically with terminal-style help output
-- **Landing Page** — your README transformed into a homepage with a metadata sidebar
-- **User Guide** — narrative documentation from your `user_guide/` directory
-- **Custom Sections** — recipes, blog posts, tutorials, or any other content you add
+- **API Reference**: classes, functions, methods, and attributes organized into structured pages with parameter tables, return types, examples, and source links
+- **CLI Reference**: Click-based CLIs documented automatically with terminal-style help output
+- **Landing Page**: your README transformed into a homepage with a metadata sidebar
+- **User Guide**: narrative documentation from your `user_guide/` directory
+- **Custom Sections**: recipes, blog posts, tutorials, or any other content you add
 
 Everything is rendered by [Quarto](https://quarto.org/) into a static site you can host anywhere.
 

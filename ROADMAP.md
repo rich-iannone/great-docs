@@ -95,10 +95,12 @@ Display creation and modification dates at the bottom of main content with optio
 Display author information with circular GitHub-style avatars on authored pages.
 
 - Author name and image from page YAML frontmatter (`author: {name, image, url}`)
+- Multiple author avatars displayed in a row
 - Circular avatar images (falls back to initials when no image)
+- Hover tooltip shows full author name
 - Author lookup from `great-docs.yml` `authors:` list for full metadata
 - Only shown on authored pages (user guide, blog, recipes) with explicit `author:` frontmatter
-- Auto-generated pages (reference, changelog) show dates only, no author
+- Auto-generated pages (reference, changelog) show timestamps only, no author
 - Optional `team_author:` config for a catch-all team attribution (e.g., "Great Tables Team")
 - `site.show_author: true/false` to enable/disable author display
 

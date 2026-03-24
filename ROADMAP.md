@@ -107,6 +107,16 @@ Improve the built-in search with modern capabilities.
 - Keyboard navigation in search results
 - Recent searches history
 
+### Navigation Icons
+
+Add icon support for sidebar and navbar entries.
+
+- Prepend icons to navigation titles (`icon: book` in YAML)
+- [Lucide](https://lucide.dev/) icon set (lightweight, 1500+ icons)
+- SVG inlining for crisp rendering at any size
+- Dark mode color adaptation
+- Consistent sizing and alignment across navigation levels
+
 ---
 
 ## Planned — Medium Term

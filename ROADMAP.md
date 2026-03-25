@@ -26,17 +26,6 @@ A `great-docs lint` command for documentation quality checks.
 - Family/directive consistency checks
 - Machine-readable JSON output for CI integration
 
-### Harper Grammar Checker
-
-Replace pyspellchecker with [harper](https://github.com/elijah-potter/harper), a fast local grammar checker.
-
-- Faster checking with Rust-based tooling
-- Grammar checking in addition to spelling
-- Custom dictionary support (project-specific terms)
-- Language server integration for interactive editing
-- CI-friendly CLI via `harper-cli`
-- Drop-in replacement for current `great-docs spell` command
-
 ### Mermaid Diagram Rendering
 
 Render Mermaid.js diagrams embedded in docstrings or Markdown content.

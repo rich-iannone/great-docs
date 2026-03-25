@@ -216,10 +216,8 @@
       datesSection.appendChild(modifiedItem);
     }
 
-    // Created date (file-plus icon) - only show if different from modified
-    // This handles shallow clone scenarios where git returns identical dates
-    const showCreated = created && created !== modified;
-    if (showCreated) {
+    // Created date (file-plus icon)
+    if (created) {
       const createdItem = document.createElement("span");
       createdItem.className = "gd-metadata-item";
       createdItem.innerHTML = `<span class="gd-icon">${ICONS.filePlus}</span>`;

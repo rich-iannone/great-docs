@@ -70,9 +70,9 @@
   }
 
   /**
-   * Format a date for display in tooltip (absolute date).
+   * Format a date for display in tooltip (absolute datetime with UTC).
    * @param {string} isoDate - ISO 8601 date string
-   * @returns {string} - Formatted date string (e.g., "March 24, 2026")
+   * @returns {string} - Formatted datetime string (e.g., "March 24, 2026 at 14:30 UTC")
    */
   function formatAbsoluteDate(isoDate) {
     if (!isoDate) return "";
@@ -81,11 +81,19 @@
       const date = new Date(isoDate);
       if (isNaN(date.getTime())) return "";
 
-      return date.toLocaleDateString("en-US", {
+      const datePart = date.toLocaleDateString("en-US", {
         year: "numeric",
         month: "long",
         day: "numeric",
+        timeZone: "UTC",
       });
+      const timePart = date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+        timeZone: "UTC",
+      });
+      return `${datePart} at ${timePart} UTC`;
     } catch {
       return "";
     }

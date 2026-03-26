@@ -4415,6 +4415,150 @@ html.quarto-dark .dark-mode-only {
 }
 
 
+/* ==========================================================================
+   Responsive Tables
+   Enhances table display on narrow viewports with:
+   - Horizontal scroll containers for wide tables
+   - Scroll indicators showing more content
+   - Touch-friendly interactions
+   - Smaller font size on narrow viewports
+
+   Uses double-wrapper structure for Safari compatibility:
+   - Outer wrapper (.gd-table-responsive) has position:relative for indicators
+   - Inner wrapper (.gd-table-scroll) has overflow-x:auto for scrolling
+   ========================================================================== */
+
+/* Responsive table outer wrapper - positions indicators */
+.gd-table-responsive {
+    position: relative;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+/* Inner scroll container - handles the actual scrolling */
+.gd-table-scroll {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;  /* Smooth momentum scrolling on iOS */
+
+    /* Focus state for keyboard navigation */
+    &:focus {
+        outline: 2px solid $primary;
+        outline-offset: 2px;
+    }
+
+    &:focus:not(:focus-visible) {
+        outline: none;
+    }
+
+    /* Table inside the scroll container - prevent auto-shrink, allow scroll */
+    > table {
+        margin-bottom: 0;
+        width: max-content;
+        min-width: 100%;
+    }
+}
+
+/* Scroll indicators - appear at edges when content is scrollable */
+.gd-table-scroll-indicator {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 2;
+
+    &.visible {
+        opacity: 1;
+        pointer-events: auto;
+        cursor: pointer;
+    }
+}
+
+.gd-table-scroll-left {
+    left: 0;
+    background: linear-gradient(to right, rgba(255, 255, 255, 0.95) 0%, transparent 100%);
+    padding-left: 4px;
+}
+
+.gd-table-scroll-right {
+    right: 0;
+    background: linear-gradient(to left, rgba(255, 255, 255, 0.95) 0%, transparent 100%);
+    padding-right: 4px;
+}
+
+.gd-scroll-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.06);
+    color: $gray-600;
+    font-size: 1.25rem;
+    font-weight: 300;
+    line-height: 1;
+    transition: background 0.15s ease, color 0.15s ease;
+
+    .gd-table-scroll-indicator:hover & {
+        background: rgba(0, 0, 0, 0.12);
+        color: $gray-800;
+    }
+}
+
+/* Smaller font size on narrow viewports */
+@media (max-width: 767.98px) {
+    .gd-table-scroll > table {
+        font-size: 0.85em;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .gd-table-scroll > table {
+        font-size: 0.8em;
+    }
+}
+
+/* Dark mode overrides for responsive tables */
+body.quarto-dark,
+html[data-bs-theme="dark"] {
+    .gd-table-scroll-left {
+        background: linear-gradient(to right, rgba(26, 26, 26, 0.95) 0%, transparent 100%);
+    }
+
+    .gd-table-scroll-right {
+        background: linear-gradient(to left, rgba(26, 26, 26, 0.95) 0%, transparent 100%);
+    }
+
+    .gd-scroll-arrow {
+        background: rgba(255, 255, 255, 0.08);
+        color: $gray-400;
+
+        .gd-table-scroll-indicator:hover & {
+            background: rgba(255, 255, 255, 0.15);
+            color: $gray-200;
+        }
+    }
+}
+
+/* Print: disable scroll and show full table */
+@media print {
+    .gd-table-scroll {
+        overflow: visible;
+    }
+
+    .gd-table-scroll-indicator {
+        display: none;
+    }
+}
+
+
 /*-- scss:functions --*/
 
 /*-- scss:uses --*/

@@ -37,15 +37,6 @@ Display author information with circular GitHub-style avatars on authored pages.
 - Optional `team_author:` config for a catch-all team attribution (e.g., "Great Tables Team")
 - `site.show_author: true/false` to enable/disable author display
 
-### Responsive Tables
-
-Improve table display on narrow viewports (mobile devices, split-screen windows).
-
-- Horizontal scroll containers for wide tables
-- Collapsed/stacked view for data tables
-- Touch-friendly interactions
-- Consistent styling with dark mode
-
 ### Enhanced Search
 
 Improve the built-in search with modern capabilities.

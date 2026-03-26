@@ -14,6 +14,15 @@ A `great-docs lint` command for documentation quality checks.
 - Family/directive consistency checks
 - Machine-readable JSON output for CI integration
 
+### Internationalization (i18n) — UI Text
+
+Translate Great Docs interface text into multiple languages.
+
+- `site.language` config key (default: `en`)
+- Translation files for navbar, sidebar, and widget labels
+- Community-contributed language packs
+- RTL (right-to-left) layout support for Arabic, Hebrew, etc.
+
 ### Social Cards & Open Graph
 
 Auto-generate `<meta>` tags for social media previews.
@@ -120,15 +129,6 @@ Generate a downloadable PDF of the entire documentation site.
 - Styled to match the site theme
 - Auto-generated link on homepage or configurable placement
 - Optional per-build regeneration or manual `great-docs pdf` command
-
-### Internationalization (i18n) — UI Text
-
-Translate Great Docs interface text into multiple languages.
-
-- `site.language` config key (default: `en`)
-- Translation files for navbar, sidebar, and widget labels
-- Community-contributed language packs
-- RTL (right-to-left) layout support for Arabic, Hebrew, etc.
 
 ### Monorepo / Multi-Project Support
 

@@ -1,17 +1,5 @@
 # Great Docs — Roadmap
 
-## In Progress
-
-Work that's underway or nearing completion.
-
-### Robustness Hardening
-
-- Continued testing against real-world packages with unusual structures (PyO3/Rust bindings, namespace packages, monorepos)
-- Improving error messages for common failure modes
-- Graceful degradation when griffe can't resolve aliases
-
----
-
 ## Planned — Near Term
 
 High-value features that build on existing infrastructure.

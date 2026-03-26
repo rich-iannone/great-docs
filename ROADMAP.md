@@ -23,18 +23,6 @@ Auto-generate `<meta>` tags for social media previews.
 - Per-page and site-level defaults
 - Optional custom image template
 
-### Page Metadata Timestamps
-
-Display creation and modification dates at the bottom of main content with optional author attribution.
-
-- Horizontal layout: `[edit icon] 4 months ago  [create icon] 2 years ago  ───  [author avatars]`
-- Relative timestamps by default ("4 months ago"), configurable to absolute dates
-- Git history or file metadata as date sources
-- "Refreshed X ago" for auto-generated pages (reference, changelog, CLI docs)
-- Hover tooltips show absolute dates
-- `site.show_dates: true` config option to enable globally
-- `site.date_format: "relative"` (default) or strftime pattern
-
 ### Author Attribution & Avatars
 
 Display author information with circular GitHub-style avatars on authored pages.

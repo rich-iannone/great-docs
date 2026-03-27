@@ -84,6 +84,12 @@ This is the only command you need day-to-day and in CI. It:
 The built site is in `great-docs/_site/`.
 
 ::: {.callout-tip}
+## Images in README.md
+
+If your README contains images with relative paths (like `![](images/screenshot.png)`), they will be copied to the build directory automatically. For the most portable setup (working in both GitHub and your docs site) place images in the `assets/` directory at your project root.
+:::
+
+::: {.callout-tip}
 ## Ephemeral Build Directory
 
 The `great-docs/` directory is created fresh on each build. You can safely delete it between builds—it will be recreated from `great-docs.yml` and your source files.

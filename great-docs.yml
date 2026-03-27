@@ -165,4 +165,3 @@ reference:
         - GreatDocs.build
         - GreatDocs.preview
         - GreatDocs.check_links
-        - GreatDocs.spell_check

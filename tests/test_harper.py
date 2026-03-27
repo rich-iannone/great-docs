@@ -336,15 +336,3 @@ class TestProofreadCLI:
             # Compact output should have file:line:col format
             if result.exit_code == 1:  # Issues found
                 assert "README.md:" in result.output
-
-
-class TestSpellCheckDeprecation:
-    """Tests for spell-check deprecation warning."""
-
-    def test_spell_check_help_shows_deprecated(self):
-        """Test spell-check --help shows deprecated notice."""
-        runner = CliRunner()
-        result = runner.invoke(cli, ["spell-check", "--help"])
-        assert result.exit_code == 0
-        assert "DEPRECATED" in result.output or "deprecated" in result.output.lower()
-        assert "proofread" in result.output.lower()

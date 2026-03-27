@@ -36,7 +36,6 @@ dependencies = [
     "griffe>=0.35.0,<2.0.0",
     "pygments>=2.0.0",
     "requests>=2.25.0",
-    "pyspellchecker>=0.7.0",
     "Pillow>=9.0.0",
     "cairosvg>=2.5.0",
     "ruff>=0.9.9",

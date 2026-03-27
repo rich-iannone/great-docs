@@ -7,7 +7,7 @@
 # Simple form: announcement: "Your message here"
 # Dict form with options:
 announcement:
-  content: "🎉 Great Docs `v0.1` is now available on PyPI! Install with: `pip install great-docs`"
+  content: "🎉 Great Docs is now available on PyPI! Install with: `pip install great-docs`"
   type: info
   style: mint
   dismissable: true

@@ -46,15 +46,14 @@ Display author information with circular GitHub-style avatars on authored pages.
 - Optional `team_author:` config for a catch-all team attribution (e.g., "Great Tables Team")
 - `site.show_author: true/false` to enable/disable author display
 
-### Enhanced Search
+### Back-to-Top Button
 
-Improve the built-in search with modern capabilities.
+Floating button to quickly return to page top.
 
-- Fuzzy matching and typo tolerance
-- Search suggestions and completions
-- Highlighting of matched terms in results
-- Keyboard navigation in search results
-- Recent searches history
+- Appears after scrolling down
+- Smooth scroll animation
+- Respects reduced-motion preferences
+- Customizable icon and position
 
 ### Navigation Icons
 
@@ -65,18 +64,6 @@ Add icon support for sidebar and navbar entries.
 - SVG inlining for crisp rendering at any size
 - Dark mode color adaptation
 - Consistent sizing and alignment across navigation levels
-
-### Page Tags
-
-Categorize pages with tags for improved discoverability.
-
-- Add tags via frontmatter (`tags: [Python, Testing, API]`)
-- Auto-generated tags index page listing all tags and linked pages
-- Tags rendered above page title with links to tag index
-- Nested/hierarchical tags (e.g., `Python/Testing`)
-- Shadow tags for internal organization (hidden from public view)
-- Scoped tag listings per documentation section
-- Optional tag icons
 
 ### Page Status Badges
 
@@ -320,14 +307,27 @@ Tabbed content blocks for alternative instructions.
 - Keyboard accessible
 - Code blocks and prose supported inside tabs
 
-### Back-to-Top Button
+### Page Tags
 
-Floating button to quickly return to page top.
+Categorize pages with tags for improved discoverability.
 
-- Appears after scrolling down
-- Smooth scroll animation
-- Respects reduced-motion preferences
-- Customizable icon and position
+- Add tags via frontmatter (`tags: [Python, Testing, API]`)
+- Auto-generated tags index page listing all tags and linked pages
+- Tags rendered above page title with links to tag index
+- Nested/hierarchical tags (e.g., `Python/Testing`)
+- Shadow tags for internal organization (hidden from public view)
+- Scoped tag listings per documentation section
+- Optional tag icons
+
+### Enhanced Search
+
+Improve the built-in search with modern capabilities.
+
+- Fuzzy matching and typo tolerance
+- Search suggestions and completions
+- Highlighting of matched terms in results
+- Keyboard navigation in search results
+- Recent searches history
 
 ---
 

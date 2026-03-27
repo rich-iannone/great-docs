@@ -3108,6 +3108,15 @@ def inject_page_metadata():
             if os.path.exists(path):
                 return path
 
+        # Special case: security -> SECURITY.md
+        if base == "security":
+            path = os.path.join(project_root, "SECURITY.md")
+            if os.path.exists(path):
+                return path
+            path = os.path.join(project_root, ".github", "SECURITY.md")
+            if os.path.exists(path):
+                return path
+
         # user-guide/ pages -> user_guide/ with potential numeric prefixes
         if base.startswith("user-guide/"):
             page_name = base.replace("user-guide/", "")

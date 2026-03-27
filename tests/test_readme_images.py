@@ -1,5 +1,3 @@
-"""Tests for README image copying functionality."""
-
 import tempfile
 from pathlib import Path
 

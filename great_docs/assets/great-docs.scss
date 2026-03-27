@@ -5,6 +5,8 @@
 // - https://getbootstrap.com/docs/5.3/utilities/text
 
 /*-- scss:defaults --*/
+$h2-font-size: 1.5rem;
+$h3-font-size: 1.3rem;
 
 /*-- scss:mixins --*/
 $headings-font-weight: 300 !default;
@@ -45,6 +47,12 @@ a.gdls-code {
 // quarto changes it for h1, h2, h3!
 h1, .h2, h2, .h2, h3, .h3 {
    @extend .fw-medium;
+}
+
+// Remove h2 underline (Quarto/Bootstrap adds border-bottom to h2 elements)
+h2, .h2 {
+   border-bottom: none;
+   padding-bottom: 0;
 }
 
 h5, .h5 {
@@ -852,6 +860,15 @@ summary::marker {
 
 #quarto-margin-sidebar nav ul li a {
     color: #595959;
+}
+
+#quarto-margin-sidebar nav ul li a:hover {
+    color: #333;
+}
+
+#quarto-margin-sidebar nav ul li a.active {
+    color: #0d6efd;
+    font-weight: 500;
 }
 
 #navbarCollapse > ul.navbar-nav.navbar-nav-scroll.me-auto > li > a:hover {

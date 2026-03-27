@@ -110,16 +110,6 @@ quarto --version
 
 You should see the Great Docs help message and the Quarto version number.
 
-## Dependencies
-
-Great Docs automatically installs these dependencies:
-
-| Package | Purpose |
-|---------|---------|
-| `griffe` | Static analysis and API discovery |
-| `click` | Command-line interface |
-| `py-yaml12` | YAML configuration handling |
-
 ## Next Steps
 
 Now that Great Docs is installed, let's create your first documentation site in the [Quick Start](quickstart.qmd) guide.

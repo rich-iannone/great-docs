@@ -142,6 +142,25 @@ Simple syntax for embedding videos from popular platforms.
 - Caption/transcript support for accessibility
 - Example: `{{< video youtube="dQw4w9WgXcQ" >}}` or `::: {.video src="demo.mp4"}`
 
+### Enhanced CLI Reference
+
+API-reference-style rendering for CLI applications.
+
+- **Click** (primary): Parse command/group decorators to extract structure
+- **Typer**: Leverage Click internals via Typer's underlying Click commands
+- **argparse**: Parse `ArgumentParser` definitions and subparsers
+- **Fire**: Introspect Python functions/classes exposed as CLI
+- **Extensible**: Plugin interface for additional CLI frameworks
+- Generate `.qmd` pages with prose sections for each command and subcommand
+- Render arguments, options, and flags in styled parameter tables (like API reference)
+- Include type annotations, defaults, and help text
+- Auto-generate usage examples from framework-specific example metadata
+- Cross-reference between subcommands and parent groups
+- Search integration: CLI commands indexed alongside API symbols
+- Support for command aliases and deprecated commands
+- Environment variable documentation
+- Alternative to raw `--help` output: richer formatting, navigation, and discoverability
+
 ---
 
 ## Planned — Medium Term

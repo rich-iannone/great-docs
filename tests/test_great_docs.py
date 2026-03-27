@@ -227,6 +227,8 @@ from great_docs._qrenderer.pandoc.inlines import (
 )
 from great_docs._qrenderer.typing_information import TypeInformation, TypeSections
 from great_docs.cli import (
+    _detect_optional_dependencies,
+    _detect_package_manager,
     _detect_python_version_from_pyproject,
     build,
     changelog,
@@ -722,6 +724,192 @@ requires-python = ">=3.12"
         workflow_file = Path(tmp_dir) / ".github" / "workflows" / "docs.yml"
         content = workflow_file.read_text()
         assert "3.11" in content
+
+
+def test_detect_package_manager_uv():
+    """Test package manager detection for uv."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_root = Path(tmp_dir)
+        # Create uv.lock
+        (project_root / "uv.lock").touch()
+
+        assert _detect_package_manager(project_root) == "uv"
+
+
+def test_detect_package_manager_poetry():
+    """Test package manager detection for poetry."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_root = Path(tmp_dir)
+        # Create poetry.lock
+        (project_root / "poetry.lock").touch()
+
+        assert _detect_package_manager(project_root) == "poetry"
+
+
+def test_detect_package_manager_pip_default():
+    """Test package manager defaults to pip when no lock files found."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_root = Path(tmp_dir)
+        # No lock files
+
+        assert _detect_package_manager(project_root) == "pip"
+
+
+def test_detect_package_manager_uv_takes_precedence():
+    """Test that uv takes precedence over poetry when both lock files exist."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_root = Path(tmp_dir)
+        # Create both lock files (unusual but possible)
+        (project_root / "uv.lock").touch()
+        (project_root / "poetry.lock").touch()
+
+        # uv should be detected first since we check for it first
+        assert _detect_package_manager(project_root) == "uv"
+
+
+def test_detect_optional_dependencies():
+    """Test detection of optional dependencies from pyproject.toml."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_root = Path(tmp_dir)
+        pyproject = project_root / "pyproject.toml"
+        pyproject.write_text("""
+[project]
+name = "test-package"
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+docs = ["sphinx"]
+test = ["pytest-cov"]
+analysis = ["pandas"]
+""")
+
+        deps = _detect_optional_dependencies(project_root)
+        # Should include dev, docs, and test but not analysis
+        assert "dev" in deps
+        assert "docs" in deps
+        assert "test" in deps
+        assert "analysis" not in deps
+
+
+def test_detect_optional_dependencies_no_pyproject():
+    """Test detection returns empty list when no pyproject.toml exists."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_root = Path(tmp_dir)
+
+        assert _detect_optional_dependencies(project_root) == []
+
+
+def test_detect_optional_dependencies_no_optional_deps():
+    """Test detection returns empty list when no optional-dependencies section."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_root = Path(tmp_dir)
+        pyproject = project_root / "pyproject.toml"
+        pyproject.write_text("""
+[project]
+name = "test-package"
+dependencies = ["requests"]
+""")
+
+        assert _detect_optional_dependencies(project_root) == []
+
+
+def test_setup_github_pages_detects_uv():
+    """Test that setup-github-pages generates uv commands when uv.lock exists."""
+    runner = CliRunner()
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_root = Path(tmp_dir)
+        # Create uv.lock to trigger uv detection
+        (project_root / "uv.lock").touch()
+
+        result = runner.invoke(setup_github_pages, ["--project-path", tmp_dir, "--force"])
+
+        assert result.exit_code == 0
+        assert "Detected uv" in result.output
+
+        # Check the workflow file has uv commands
+        workflow_file = project_root / ".github" / "workflows" / "docs.yml"
+        content = workflow_file.read_text()
+        assert "uv sync" in content
+        assert "pip install uv" in content
+
+
+def test_setup_github_pages_detects_poetry():
+    """Test that setup-github-pages generates poetry commands when poetry.lock exists."""
+    runner = CliRunner()
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_root = Path(tmp_dir)
+        # Create poetry.lock to trigger poetry detection
+        (project_root / "poetry.lock").touch()
+
+        result = runner.invoke(setup_github_pages, ["--project-path", tmp_dir, "--force"])
+
+        assert result.exit_code == 0
+        assert "Detected poetry" in result.output
+
+        # Check the workflow file has poetry commands
+        workflow_file = project_root / ".github" / "workflows" / "docs.yml"
+        content = workflow_file.read_text()
+        assert "poetry install" in content
+        assert "pip install poetry" in content
+
+
+def test_setup_github_pages_detects_optional_deps():
+    """Test that setup-github-pages includes optional deps in pip install command."""
+    runner = CliRunner()
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_root = Path(tmp_dir)
+        # Create pyproject.toml with optional dependencies
+        pyproject = project_root / "pyproject.toml"
+        pyproject.write_text("""
+[project]
+name = "test-package"
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+docs = ["sphinx"]
+""")
+
+        result = runner.invoke(setup_github_pages, ["--project-path", tmp_dir, "--force"])
+
+        assert result.exit_code == 0
+        assert "Found optional dependencies" in result.output
+
+        # Check the workflow file has extras in pip install
+        workflow_file = project_root / ".github" / "workflows" / "docs.yml"
+        content = workflow_file.read_text()
+        # Should have pip install -e ".[dev,docs]" or similar
+        assert ".[" in content
+        assert "dev" in content
+        assert "docs" in content
+
+
+def test_setup_github_pages_explicit_package_manager():
+    """Test that explicit --package-manager overrides auto-detection."""
+    runner = CliRunner()
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_root = Path(tmp_dir)
+        # Create uv.lock (would normally trigger uv detection)
+        (project_root / "uv.lock").touch()
+
+        # Force pip instead
+        result = runner.invoke(
+            setup_github_pages,
+            ["--project-path", tmp_dir, "--package-manager", "pip", "--force"],
+        )
+
+        assert result.exit_code == 0
+        # Should NOT mention uv detection
+        assert "Detected uv" not in result.output
+
+        # Check the workflow file has pip commands, not uv
+        workflow_file = project_root / ".github" / "workflows" / "docs.yml"
+        content = workflow_file.read_text()
+        assert "uv sync" not in content
+        assert "pip install -e ." in content
 
 
 def test_generate_llms_txt():

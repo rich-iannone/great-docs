@@ -4637,6 +4637,18 @@ html[data-bs-theme="dark"] {
 
 /* ── Video embedding enhancements ────────────────────────────── */
 
+/* Subtle border around video containers so the frame edge is visible */
+.quarto-video {
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+body.quarto-dark .quarto-video,
+html[data-bs-theme="dark"] .quarto-video {
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
 /* Placeholder that replaces a YouTube iframe until the user clicks */
 .gd-video-placeholder {
     position: absolute;

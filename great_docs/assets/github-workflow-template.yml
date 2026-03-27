@@ -21,9 +21,7 @@ jobs:
 
       - name: Install package and dependencies
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e .
-          python -m pip install git+https://github.com/posit-dev/great-docs.git
+{install_commands}
 
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2

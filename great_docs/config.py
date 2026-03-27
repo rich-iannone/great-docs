@@ -57,6 +57,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "show_dates": False,  # Display creation/modification dates in footer
         "date_format": "%B %d, %Y",  # Python strftime format (e.g., "March 24, 2026")
         "show_author": True,  # Show author attribution when show_dates is enabled
+        "show_security": True,  # Show security policy page when SECURITY.md exists
     },
     # Team author (catch-all for auto-generated pages when authorship is shown)
     # Example: {"name": "Great Tables Team", "image": "assets/team-avatar.png", "url": "https://..."}
@@ -598,6 +599,11 @@ class Config:
     def show_author(self) -> bool:
         """Whether to show author attribution when dates are enabled."""
         return bool(self.site.get("show_author", True))
+
+    @property
+    def show_security(self) -> bool:
+        """Whether to show the security policy page when SECURITY.md exists."""
+        return bool(self.site.get("show_security", True))
 
     @property
     def team_author(self) -> dict[str, Any] | None:
@@ -1181,6 +1187,7 @@ def create_default_config() -> str:
 #   show_dates: false          # Show page timestamps in footer
 #   date_format: "%B %d, %Y"   # Date format (Python strftime)
 #   show_author: true          # Show author attribution with dates
+#   show_security: true        # Show security policy page (from SECURITY.md)
 
 # Jupyter Kernel
 # --------------

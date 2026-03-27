@@ -1646,6 +1646,121 @@ def seo(project_path: str | None, fix: bool, json_output: bool) -> None:
 cli.add_command(seo)
 
 
+@click.command()
+@click.option(
+    "--project-path",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    help="Path to your project root directory (default: current directory)",
+)
+@click.option(
+    "--check",
+    "checks",
+    multiple=True,
+    type=click.Choice(["docstrings", "cross-refs", "style", "directives"]),
+    help="Run only specific checks (can be repeated). Default: all checks.",
+)
+@click.option(
+    "--json",
+    "json_output",
+    is_flag=True,
+    help="Output results as JSON for CI integration",
+)
+def lint(project_path: str | None, checks: tuple[str, ...], json_output: bool) -> None:
+    """Lint documentation quality for your package.
+
+    Analyzes your package's public API for documentation issues including
+    missing docstrings, broken cross-references, inconsistent formatting,
+    and malformed directives.
+
+    \b
+    Checks performed:
+      • missing-docstring    Public exports or methods without docstrings
+      • broken-xref          %seealso references to unknown symbols
+      • style-mismatch       Docstrings not matching configured style (numpy/google/sphinx)
+      • unknown-directive    Unrecognized %directive names
+      • empty-seealso        %seealso entries with empty references
+
+    \b
+    Examples:
+      great-docs lint                                # Run all checks
+      great-docs lint --check docstrings             # Only check for missing docstrings
+      great-docs lint --check cross-refs --check style
+      great-docs lint --json                         # JSON output for CI
+      great-docs lint --json | jq '.issues[] | select(.severity == "error")'
+    """
+    import json
+
+    from ._lint import run_lint
+
+    try:
+        project_root = Path(project_path) if project_path else Path.cwd()
+        check_set = set(checks) if checks else None
+
+        result = run_lint(project_root, checks=check_set, quiet=json_output)
+
+        if json_output:
+            click.echo(json.dumps(result.to_dict(), indent=2))
+        else:
+            click.echo("\n" + "═" * 60)
+            click.echo("📋 Documentation Lint Results")
+            click.echo("═" * 60)
+
+            if result.package_name:
+                click.echo(f"\nPackage: {result.package_name}")
+                click.echo(f"Exports checked: {result.exports_count}")
+
+            if not result.issues:
+                click.echo("\n✅ All documentation checks passed!")
+            else:
+                # Group issues by check type
+                by_check: dict[str, list] = {}
+                for issue in result.issues:
+                    by_check.setdefault(issue.check, []).append(issue)
+
+                for check_name, issues in sorted(by_check.items()):
+                    click.echo(f"\n{'─' * 60}")
+
+                    # Count severities
+                    errs = sum(1 for i in issues if i.severity == "error")
+                    warns = sum(1 for i in issues if i.severity == "warning")
+                    label_parts = []
+                    if errs:
+                        label_parts.append(f"{errs} error(s)")
+                    if warns:
+                        label_parts.append(f"{warns} warning(s)")
+                    label = ", ".join(label_parts)
+
+                    click.echo(f"  {check_name}  [{label}]")
+                    click.echo(f"{'─' * 60}")
+
+                    for issue in issues:
+                        icon = "❌" if issue.severity == "error" else "⚠️ "
+                        symbol_str = f"  {issue.symbol}" if issue.symbol else ""
+                        click.echo(f"  {icon}{symbol_str}: {issue.message}")
+
+                click.echo(f"\n{'─' * 60}")
+                n_errors = len(result.errors)
+                n_warnings = len(result.warnings)
+                if n_errors:
+                    click.echo(f"❌ {n_errors} error(s), {n_warnings} warning(s)")
+                else:
+                    click.echo(f"⚠️  {n_warnings} warning(s)")
+
+        # Exit with non-zero status on errors (for CI)
+        if result.errors:
+            sys.exit(1)
+
+    except Exception as e:
+        if json_output:
+            click.echo(json.dumps({"status": "error", "error": str(e)}))
+        else:
+            click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+cli.add_command(lint)
+
+
 def main() -> None:
     """Main CLI entry point for great-docs."""
     cli()

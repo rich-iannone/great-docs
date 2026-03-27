@@ -61,6 +61,64 @@ def _detect_python_version_from_pyproject(project_root: Path) -> str | None:
         return None
 
 
+def _detect_package_manager(project_root: Path) -> str:
+    """Detect the package manager used by the project.
+
+    Checks for lock files to determine which package manager is in use:
+    - uv.lock -> uv
+    - poetry.lock -> poetry
+    - Otherwise -> pip (default)
+
+    Returns:
+        One of: 'uv', 'poetry', or 'pip'
+    """
+    if (project_root / "uv.lock").exists():
+        return "uv"
+    if (project_root / "poetry.lock").exists():
+        return "poetry"
+    return "pip"
+
+
+def _detect_optional_dependencies(project_root: Path) -> list[str]:
+    """Detect optional dependency groups from pyproject.toml.
+
+    Returns a list of optional dependency group names that are likely
+    related to documentation or development (e.g., 'dev', 'docs', 'test').
+
+    This helps generate appropriate pip install commands like:
+    pip install -e ".[dev,docs]"
+    """
+    pyproject_path = project_root / "pyproject.toml"
+    if not pyproject_path.exists():
+        return []
+
+    try:
+        try:
+            import tomllib
+        except ImportError:
+            import tomli as tomllib
+
+        with open(pyproject_path, "rb") as f:
+            data = tomllib.load(f)
+
+        optional_deps = data.get("project", {}).get("optional-dependencies", {})
+        if not optional_deps:
+            return []
+
+        # Look for common dev/docs dependency group names
+        doc_related_extras = []
+        for key in optional_deps.keys():
+            key_lower = key.lower()
+            # Include extras that are likely needed for documentation builds
+            if any(term in key_lower for term in ["dev", "doc", "notebook", "test", "all", "full"]):
+                doc_related_extras.append(key)
+
+        return sorted(doc_related_extras)
+
+    except Exception:
+        return []
+
+
 class OrderedGroup(click.Group):
     """Click group that lists commands in the order they were added."""
 
@@ -490,12 +548,22 @@ cli.add_command(scan)
     help="Python version for CI (default: auto-detect from pyproject.toml, or 3.11)",
 )
 @click.option(
+    "--package-manager",
+    type=click.Choice(["auto", "pip", "uv", "poetry"]),
+    default="auto",
+    help="Package manager for installing dependencies (default: auto-detect)",
+)
+@click.option(
     "--force",
     is_flag=True,
     help="Overwrite existing workflow file without prompting",
 )
 def setup_github_pages(
-    project_path: str | None, main_branch: str, python_version: str | None, force: bool
+    project_path: str | None,
+    main_branch: str,
+    python_version: str | None,
+    package_manager: str,
+    force: bool,
 ) -> None:
     """Set up automatic deployment to GitHub Pages.
 
@@ -507,18 +575,25 @@ def setup_github_pages(
     • Build docs on every push and pull request
     • Deploy to GitHub Pages on main branch pushes
     • Use Quarto's official GitHub Action for reliable builds
+    • Install dev dependencies (auto-detected from your package manager)
 
     The Python version is automatically detected from your pyproject.toml's
     `requires-python` field. Use --python-version to override.
+
+    The package manager is auto-detected by checking for lock files:
+    • uv.lock → uses uv (installs dev dependencies automatically)
+    • poetry.lock → uses poetry (installs with dev dependencies)
+    • Otherwise → uses pip with optional extras like [dev,docs]
 
     After running this command, commit the workflow file and enable GitHub
     Pages in your repository settings (Settings → Pages → Source: GitHub Actions).
 
     \b
     Examples:
-      great-docs setup-github-pages                     # Auto-detect Python version
+      great-docs setup-github-pages                     # Auto-detect everything
       great-docs setup-github-pages --main-branch dev   # Deploy from 'dev' branch
       great-docs setup-github-pages --python-version 3.12
+      great-docs setup-github-pages --package-manager uv
       great-docs setup-github-pages --force             # Overwrite existing workflow
     """
 
@@ -535,6 +610,43 @@ def setup_github_pages(
             else:
                 python_version = "3.12"
                 click.echo("📦 Using default Python 3.12 (no requires-python found)")
+
+        # Auto-detect package manager if not specified
+        if package_manager == "auto":
+            package_manager = _detect_package_manager(project_root)
+            if package_manager == "uv":
+                click.echo("🔧 Detected uv (found uv.lock)")
+            elif package_manager == "poetry":
+                click.echo("🔧 Detected poetry (found poetry.lock)")
+            else:
+                click.echo("🔧 Using pip (no uv.lock or poetry.lock found)")
+
+        # Generate install commands based on package manager
+        if package_manager == "uv":
+            install_commands = """\
+          python -m pip install uv
+          uv sync
+          uv pip install git+https://github.com/posit-dev/great-docs.git"""
+        elif package_manager == "poetry":
+            install_commands = """\
+          python -m pip install poetry
+          poetry install
+          poetry run pip install git+https://github.com/posit-dev/great-docs.git"""
+        else:
+            # pip: try to detect optional dependencies
+            optional_deps = _detect_optional_dependencies(project_root)
+            if optional_deps:
+                extras = ",".join(optional_deps)
+                click.echo(f"📋 Found optional dependencies: {extras}")
+                install_commands = f"""\
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[{extras}]"
+          python -m pip install git+https://github.com/posit-dev/great-docs.git"""
+            else:
+                install_commands = """\
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install git+https://github.com/posit-dev/great-docs.git"""
 
         # Create .github/workflows directory
         workflow_dir = project_root / ".github" / "workflows"
@@ -572,6 +684,7 @@ def setup_github_pages(
         workflow_content = workflow_content.replace("{main_branch}", main_branch)
         workflow_content = workflow_content.replace("{ python_version }", python_version)
         workflow_content = workflow_content.replace("{python_version}", python_version)
+        workflow_content = workflow_content.replace("{install_commands}", install_commands)
 
         # Write workflow file
         workflow_file.write_text(workflow_content)

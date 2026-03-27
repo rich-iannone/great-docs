@@ -150,7 +150,7 @@ A persistent dark mode toggle with flash-free loading. Your users' preference is
 **Quality & Reliability**
 
 - Built-in link checker
-- Spell checking
+- Proofreading (spelling & grammar)
 - Tested against 250+ synthetic packages
 - 6,500+ unit tests
 

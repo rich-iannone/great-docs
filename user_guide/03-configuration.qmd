@@ -800,6 +800,7 @@ This indicates when the page content was last regenerated during a build, not wh
 site:
   show_dates: true       # Enable/disable page metadata (default: false)
   show_author: true      # Show author attribution when enabled (default: true)
+  show_security: true    # Show security policy page from SECURITY.md (default: true)
 ```
 
 ### Author Attribution

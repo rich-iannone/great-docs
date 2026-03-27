@@ -323,13 +323,13 @@ homepage: user_guide
 
 When `homepage: user_guide` is set:
 
-1. **Landing page**: The first User Guide page (determined by filename sort order or explicit config) becomes `index.qmd` at the site root. Its content is preserved verbatim, with the project metadata sidebar (links, license, authors, etc.) appended in the right margin.
+1. **Landing page**: the first User Guide page (determined by filename sort order or explicit config) becomes `index.qmd` at the site root. Its content is preserved verbatim, with the project metadata sidebar (links, license, authors, etc.) appended in the right margin.
 
-2. **Left sidebar**: The User Guide table of contents appears in the left sidebar on every UG page, including the homepage. The first entry links to the site root.
+2. **Left sidebar**: the User Guide table of contents appears in the left sidebar on every UG page, including the homepage. The first entry links to the site root.
 
-3. **Navbar**: The "User Guide" link is omitted from the top navbar since clicking the site title already takes you to the User Guide landing page. All other navbar items (Reference, custom sections, etc.) are unchanged.
+3. **Navbar**: the "User Guide" link is omitted from the top navbar since clicking the site title already takes you to the User Guide landing page. All other navbar items (Reference, custom sections, etc.) are unchanged.
 
-4. **README**: Your `README.md` is not used for the homepage. It still serves its purpose on PyPI and GitHub.
+4. **README**: your `README.md` is not used for the homepage. It still serves its purpose on PyPI and GitHub.
 
 ### Example
 
@@ -353,9 +353,9 @@ homepage: user_guide
 
 Will produce a site where:
 
-- The homepage shows the "Getting Started" content with a project metadata sidebar
-- The left sidebar lists all three User Guide pages
-- The navbar has no "User Guide" link (the site title links home)
+- the homepage shows the "Getting Started" content with a project metadata sidebar
+- the left sidebar lists all three User Guide pages
+- the navbar has no "User Guide" link (the site title links home)
 
 ### Fallback Behavior
 
@@ -383,7 +383,7 @@ See [CLI Documentation](cli-documentation.qmd) for details.
 
 ## Changelog
 
-Great Docs auto-generates a Changelog page from your GitHub Releases. It's enabled by default — if your `pyproject.toml` has a GitHub repository URL, a changelog page will appear automatically.
+Great Docs auto-generates a Changelog page from your GitHub Releases. It's enabled by default so if your `pyproject.toml` has a GitHub repository URL, a changelog page will appear automatically.
 
 To customize:
 
@@ -418,7 +418,7 @@ sections:
     type: blog               # "blog" for listing page; omit for card grid
 ```
 
-Default sections get a card-grid index and sidebar navigation. Blog-type sections use Quarto's native `listing:` directive — posts are sorted by date and displayed with author, categories, and descriptions.
+Default sections get a card-grid index and sidebar navigation. Blog-type sections use Quarto's native `listing:` directive. Posts are sorted by date and displayed with author, categories, and descriptions.
 
 See [Custom Sections](custom-sections.qmd) and [Blog](blog.qmd) for full details.
 
@@ -581,7 +581,7 @@ The `name` field must be lowercase with hyphens only (max 64 chars) and match th
 **Example gotchas:**
 
 ```markdown
-1. Always call `init()` before `process()` — order matters.
+1. Always call `init()` before `process()` (order matters).
 2. The module name is `my_pkg`, not `my-package`.
 3. Use `dynamic: false` for packages with circular imports.
 ```

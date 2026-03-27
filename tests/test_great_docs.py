@@ -14253,6 +14253,110 @@ def test_build_metadata_margin_github_contributing():
         assert "Contributing guide" in result
 
 
+def test_build_metadata_margin_with_security():
+    """_build_metadata_margin includes security policy and creates security.qmd."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pyproject = Path(tmp_dir) / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "pkg"\n', encoding="utf-8")
+        (Path(tmp_dir) / "SECURITY.md").write_text(
+            "# Security Policy\n\nReport vulnerabilities responsibly.", encoding="utf-8"
+        )
+        gd_dir = Path(tmp_dir) / "great-docs"
+        gd_dir.mkdir()
+        docs = GreatDocs(project_path=tmp_dir)
+        result = docs._build_metadata_margin()
+
+        assert "#### Community" in result
+        assert "Security policy" in result
+
+        security_qmd = gd_dir / "security.qmd"
+
+        assert security_qmd.exists()
+
+        content = security_qmd.read_text(encoding="utf-8")
+
+        assert "Report vulnerabilities responsibly." in content
+        assert 'title: "Security Policy"' in content
+        # First heading should be stripped
+        assert content.count("# Security Policy") == 0
+
+
+def test_build_metadata_margin_github_security():
+    """_build_metadata_margin finds SECURITY.md in .github directory."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pyproject = Path(tmp_dir) / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "pkg"\n', encoding="utf-8")
+        gh_dir = Path(tmp_dir) / ".github"
+        gh_dir.mkdir()
+        (gh_dir / "SECURITY.md").write_text(
+            "# Security Policy\n\nContact security@example.com.", encoding="utf-8"
+        )
+        gd_dir = Path(tmp_dir) / "great-docs"
+        gd_dir.mkdir()
+        docs = GreatDocs(project_path=tmp_dir)
+        result = docs._build_metadata_margin()
+
+        assert "Security policy" in result
+
+        security_qmd = gd_dir / "security.qmd"
+
+        assert security_qmd.exists()
+
+        content = security_qmd.read_text(encoding="utf-8")
+
+        assert "Contact security@example.com." in content
+
+
+def test_build_metadata_margin_security_disabled():
+    """_build_metadata_margin respects show_security: false config."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pyproject = Path(tmp_dir) / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "pkg"\n', encoding="utf-8")
+        (Path(tmp_dir) / "SECURITY.md").write_text(
+            "# Security Policy\n\nReport vulnerabilities.", encoding="utf-8"
+        )
+        gd_dir = Path(tmp_dir) / "great-docs"
+        gd_dir.mkdir()
+        # Create great-docs.yml with show_security disabled
+        config_file = Path(tmp_dir) / "great-docs.yml"
+        config_file.write_text("site:\n  show_security: false\n", encoding="utf-8")
+        docs = GreatDocs(project_path=tmp_dir)
+        result = docs._build_metadata_margin()
+
+        assert "Security policy" not in result
+
+        security_qmd = gd_dir / "security.qmd"
+
+        assert not security_qmd.exists()
+
+
+def test_build_metadata_margin_security_root_over_github():
+    """SECURITY.md in project root takes precedence over .github directory."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pyproject = Path(tmp_dir) / "pyproject.toml"
+        pyproject.write_text('[project]\nname = "pkg"\n', encoding="utf-8")
+        # Create both root and .github versions
+        (Path(tmp_dir) / "SECURITY.md").write_text(
+            "# Security Policy\n\nRoot version.", encoding="utf-8"
+        )
+        gh_dir = Path(tmp_dir) / ".github"
+        gh_dir.mkdir()
+        (gh_dir / "SECURITY.md").write_text(
+            "# Security Policy\n\nGitHub version.", encoding="utf-8"
+        )
+        gd_dir = Path(tmp_dir) / "great-docs"
+        gd_dir.mkdir()
+        docs = GreatDocs(project_path=tmp_dir)
+        docs._build_metadata_margin()
+
+        security_qmd = gd_dir / "security.qmd"
+        content = security_qmd.read_text(encoding="utf-8")
+
+        # Root version should win
+        assert "Root version." in content
+        assert "GitHub version." not in content
+
+
 def test_build_metadata_margin_with_urls():
     """_build_metadata_margin includes project URLs from metadata."""
     with tempfile.TemporaryDirectory() as tmp_dir:

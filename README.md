@@ -1,6 +1,6 @@
 <p align="center">
 <a href="https://posit-dev.github.io/great-docs/">
-<img src="assets/logo.svg" alt="Great Docs" width="350">
+<img src="https://posit-dev.github.io/great-docs/assets/logo.svg" alt="Great Docs" width="350">
 </a>
 </p>
 <p align="center">An easy-to-use documentation site generator for Python packages</p>

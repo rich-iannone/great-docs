@@ -304,7 +304,7 @@ See [User Guides](user-guides.qmd) for details on writing and organizing User Gu
 
 ## Homepage Mode
 
-By default, Great Docs generates a separate homepage from your project's README (or `index.qmd`/`index.md`), with a "User Guide" link in the top navbar. Many Python documentation sites use a different layout where the first User Guide page _is_ the landing page — for example, [chatlas](https://posit-dev.github.io/chatlas/).
+By default, Great Docs generates a separate homepage from your project's README (or `index.qmd`/`index.md`), with a "User Guide" link in the top navbar. Many Python documentation sites use a different layout where the first User Guide page _is_ the landing page.
 
 The `homepage` setting controls which layout to use:
 

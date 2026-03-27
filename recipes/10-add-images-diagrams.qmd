@@ -89,6 +89,39 @@ before committing.
 
 The available callout types are `note`, `tip`, `warning`, `caution`, and `important`. Each has a distinct color and icon.
 
+## Images in README.md
+
+When your README.md contains images, Great Docs automatically copies those files to the build directory so they display correctly on your site's homepage.
+
+For example, if your project root looks like this:
+
+```
+my-package/
+├── README.md
+├── images/
+│   └── screenshot.png
+└── assets/
+    └── logo.svg
+```
+
+And your README.md includes:
+
+```markdown
+![Screenshot](images/screenshot.png)
+<img src="assets/logo.svg" alt="Logo" />
+```
+
+Both images will be available in the built site:
+
+- Images in `assets/` are copied via the standard asset mechanism
+- Images anywhere else (like `images/`) are detected from the README and copied automatically
+
+This works for both Markdown image syntax (`![alt](path)`) and HTML `<img>` tags. External URLs (starting with `http://`, `https://`, or `//`) are left unchanged.
+
+::: {.callout-note}
+For the most portable setup, place all images in the `assets/` directory at your project root. This ensures they work in both your GitHub README and your Great Docs site without any special handling.
+:::
+
 ## Tips
 
 Keep image file sizes reasonable. PNG works well for screenshots, and SVG is ideal for diagrams and logos. For large screenshots, consider compressing them or reducing the resolution.

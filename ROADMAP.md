@@ -36,15 +36,6 @@ Display author information with circular GitHub-style avatars on authored pages.
 - Optional `team_author:` config for a catch-all team attribution (e.g., "Great Tables Team")
 - `site.show_author: true/false` to enable/disable author display
 
-### Back-to-Top Button
-
-Floating button to quickly return to page top.
-
-- Appears after scrolling down
-- Smooth scroll animation
-- Respects reduced-motion preferences
-- Customizable icon and position
-
 ### Navigation Icons
 
 Add icon support for sidebar and navbar entries.

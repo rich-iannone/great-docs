@@ -26,6 +26,20 @@ dark_mode_toggle: false  # Disable the toggle
 
 When enabled, the toggle provides instant switching without a page reload. Visitors who prefer reduced motion in their operating system settings will still see the theme change, but without the transition animation.
 
+## Back-to-Top Button
+
+A floating button appears in the bottom-right corner of the page after the visitor scrolls down, providing a one-click way to return to the top. The button uses smooth scrolling and automatically shifts upward when it would overlap with the prev/next page navigation links. It is enabled by default.
+
+```{.yaml filename="great-docs.yml"}
+back_to_top: true    # Enabled by default
+```
+
+```{.yaml filename="great-docs.yml"}
+back_to_top: false   # Disable the button
+```
+
+The button respects the visitor's `prefers-reduced-motion` setting: when reduced motion is preferred, scrolling is instant rather than animated.
+
 ## Announcement Banner
 
 A site-wide banner can be displayed above the navbar to highlight important news, releases, or alerts. The banner appears on every page and can optionally be dismissed by the visitor.

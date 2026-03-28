@@ -41271,3 +41271,199 @@ seo:
         assert options["structured_data_enabled"] is True
         assert options["site_name"] == "Test Package"
         assert options["package_description"] == "A test package"
+
+
+# ---------------------------------------------------------------------------
+# Back-to-top button tests
+# ---------------------------------------------------------------------------
+
+
+def test_back_to_top_enabled_by_default():
+    """back-to-top.js is in resources and include-after-body by default."""
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs, quarto_yml = _make_uqc_docs(tmp_dir)
+
+        docs._update_quarto_config()
+
+        with open(quarto_yml) as f:
+            result = read_yaml(f)
+
+        resources = result["project"].get("resources", [])
+        assert "back-to-top.js" in resources
+
+        after_body = result["format"]["html"].get("include-after-body", [])
+        has_back_to_top = any("back-to-top.js" in str(item) for item in after_body)
+        assert has_back_to_top
+
+
+def test_back_to_top_disabled_via_config():
+    """back-to-top.js is excluded when back_to_top is false."""
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs, quarto_yml = _make_uqc_docs(
+            tmp_dir,
+            gd_yml_content="back_to_top: false\n",
+        )
+
+        docs._update_quarto_config()
+
+        with open(quarto_yml) as f:
+            result = read_yaml(f)
+
+        resources = result["project"].get("resources", [])
+        assert "back-to-top.js" not in resources
+
+        after_body = result["format"]["html"].get("include-after-body", [])
+        has_back_to_top = any("back-to-top.js" in str(item) for item in after_body)
+        assert not has_back_to_top
+
+
+def test_back_to_top_script_tag_content():
+    """The back-to-top include-after-body entry has the expected script tag."""
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs, quarto_yml = _make_uqc_docs(tmp_dir)
+
+        docs._update_quarto_config()
+
+        with open(quarto_yml) as f:
+            result = read_yaml(f)
+
+        after_body = result["format"]["html"]["include-after-body"]
+        back_to_top_entries = [item for item in after_body if "back-to-top.js" in str(item)]
+        assert len(back_to_top_entries) == 1
+        assert back_to_top_entries[0] == {"text": '<script src="back-to-top.js"></script>'}
+
+
+def test_back_to_top_not_duplicated():
+    """Running _update_quarto_config twice does not duplicate the script tag."""
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs, quarto_yml = _make_uqc_docs(tmp_dir)
+
+        docs._update_quarto_config()
+        docs._update_quarto_config()
+
+        with open(quarto_yml) as f:
+            result = read_yaml(f)
+
+        after_body = result["format"]["html"]["include-after-body"]
+        back_to_top_count = sum(1 for item in after_body if "back-to-top.js" in str(item))
+        assert back_to_top_count == 1
+
+
+def test_back_to_top_with_string_include_after_body():
+    """back-to-top works when include-after-body starts as a string."""
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs, quarto_yml = _make_uqc_docs(
+            tmp_dir,
+            quarto_content={
+                "project": {"type": "website"},
+                "website": {},
+                "format": {"html": {"include-after-body": "existing.html"}},
+            },
+        )
+
+        docs._update_quarto_config()
+
+        with open(quarto_yml) as f:
+            result = read_yaml(f)
+
+        after_body = result["format"]["html"]["include-after-body"]
+        assert isinstance(after_body, list)
+        has_back_to_top = any("back-to-top.js" in str(item) for item in after_body)
+        assert has_back_to_top
+
+
+def test_back_to_top_metadata_flag():
+    """_get_package_metadata sets back_to_top_enabled in metadata."""
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs, quarto_yml = _make_uqc_docs(tmp_dir)
+        metadata = docs._get_package_metadata()
+        assert metadata["back_to_top_enabled"] is True
+
+
+def test_back_to_top_metadata_flag_disabled():
+    """_get_package_metadata reflects back_to_top: false."""
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs, quarto_yml = _make_uqc_docs(
+            tmp_dir,
+            gd_yml_content="back_to_top: false\n",
+        )
+        metadata = docs._get_package_metadata()
+        assert metadata["back_to_top_enabled"] is False
+
+
+def test_back_to_top_js_copied_to_project():
+    """back-to-top.js is copied from assets to the project directory."""
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs, _ = _make_uqc_docs(tmp_dir)
+        docs._prepare_build_directory()
+
+        js_file = docs.project_path / "back-to-top.js"
+        assert js_file.exists()
+
+
+def test_back_to_top_js_not_copied_when_disabled():
+    """back-to-top.js is not copied when feature is disabled."""
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs, _ = _make_uqc_docs(
+            tmp_dir,
+            gd_yml_content="back_to_top: false\n",
+        )
+        docs._prepare_build_directory()
+
+        js_file = docs.project_path / "back-to-top.js"
+        assert not js_file.exists()
+
+
+def test_back_to_top_js_file_has_expected_content():
+    """The back-to-top.js asset exists and contains the IIFE pattern."""
+
+    js_path = Path(__file__).parent.parent / "great_docs" / "assets" / "back-to-top.js"
+    assert js_path.exists()
+    content = js_path.read_text()
+
+    # Verify IIFE wrapping
+    assert content.startswith("/**")
+    assert "(function()" in content
+    assert "})();" in content
+
+    # Verify key DOM creation
+    assert "gd-back-to-top" in content
+    assert "aria-label" in content
+    assert "Back to top" in content
+
+    # Verify scroll behavior
+    assert "SCROLL_THRESHOLD" in content
+    assert "scrollTo" in content
+
+    # Verify reduced motion support
+    assert "prefers-reduced-motion" in content
+
+    # Verify page nav collision avoidance
+    assert ".page-navigation" in content
+    assert "adjustForPageNav" in content
+
+
+def test_back_to_top_scss_styles_exist():
+    """The SCSS file contains back-to-top button styles."""
+
+    scss_path = Path(__file__).parent.parent / "great_docs" / "assets" / "great-docs.scss"
+    content = scss_path.read_text()
+
+    assert ".gd-back-to-top {" in content
+    assert ".gd-back-to-top-visible {" in content
+    assert "position: fixed" in content
+
+    # Dark mode
+    assert '[data-bs-theme="dark"] .gd-back-to-top' in content
+
+    # Reduced motion
+    assert "prefers-reduced-motion" in content

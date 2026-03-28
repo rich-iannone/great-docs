@@ -153,6 +153,13 @@ class TestScalarProperties:
     def test_dark_mode_toggle_default(self, tmp_project: Path):
         assert Config(tmp_project).dark_mode_toggle is True
 
+    def test_back_to_top_default(self, tmp_project: Path):
+        assert Config(tmp_project).back_to_top is True
+
+    def test_back_to_top_false(self, tmp_project: Path):
+        cfg = _make_config(tmp_project, "back_to_top: false\n")
+        assert cfg.back_to_top is False
+
     def test_parser_default(self, tmp_project: Path):
         assert Config(tmp_project).parser == "numpy"
 

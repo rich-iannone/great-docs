@@ -183,7 +183,7 @@ class TestScalarProperties:
             "theme": "flatly",
             "toc": True,
             "toc-depth": 2,
-            "toc-title": "On this page",
+            "language": "en",
             "show_dates": False,
             "date_format": "%B %d, %Y",
             "show_author": True,
@@ -192,6 +192,13 @@ class TestScalarProperties:
 
     def test_jupyter_default(self, tmp_project: Path):
         assert Config(tmp_project).jupyter == "python3"
+
+    def test_language_default(self, tmp_project: Path):
+        assert Config(tmp_project).language == "en"
+
+    def test_language_custom(self, tmp_project: Path):
+        cfg = _make_config(tmp_project, "site:\n  language: fr\n")
+        assert cfg.language == "fr"
 
     def test_attribution_default(self, tmp_project: Path):
         assert Config(tmp_project).attribution is True

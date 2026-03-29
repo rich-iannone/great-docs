@@ -109,7 +109,7 @@ def _load_dedicated_packages() -> set[str]:
         return _DEDICATED_PACKAGES
     test_file = _PROJECT_ROOT / "tests" / "test_gdg_rendered.py"
     if test_file.exists():
-        _DEDICATED_PACKAGES = set(re.findall(r"gdtest_[a-z_]+", test_file.read_text()))
+        _DEDICATED_PACKAGES = set(re.findall(r"gdtest_[a-z0-9_]+", test_file.read_text()))
     return _DEDICATED_PACKAGES
 
 

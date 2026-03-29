@@ -30,6 +30,10 @@ def _get_functions():
     from pygments.formatters import HtmlFormatter as _HtmlFormatter
     from pygments.lexers import PythonLexer as _PythonLexer
 
+    # Stub _t so translated labels fall back to English
+    def _t(key: str, fallback: str | None = None) -> str:
+        return fallback if fallback is not None else key
+
     # Build a minimal namespace with the imports the functions need
     ns = {
         "re": _re,
@@ -37,6 +41,7 @@ def _get_functions():
         "highlight": _highlight,
         "HtmlFormatter": _HtmlFormatter,
         "PythonLexer": _PythonLexer,
+        "_t": _t,
     }
 
     # Extract PYGMENTS_TO_QUARTO_CLASS dict (needed by fix_plain_doctest_code_blocks)
@@ -99,11 +104,16 @@ def _get_seealso_functions():
 
     source = _SCRIPT.read_text()
 
+    # Stub _t so translated labels fall back to English
+    def _t(key: str, fallback: str | None = None) -> str:
+        return fallback if fallback is not None else key
+
     ns = {
         "re": _re,
         "__builtins__": __builtins__,
         # Provide empty inventory for resolve_interlinks
         "_interlinks_inventory": {},
+        "_t": _t,
     }
 
     funcs_to_extract = [

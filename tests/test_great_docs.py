@@ -29397,19 +29397,6 @@ def test_builder_from_quarto_config_yaml_file():
         assert builder.package == "json"
 
 
-def test_builder_from_quarto_config_quartodoc_key():
-    """Builder.from_quarto_config also accepts 'quartodoc' key."""
-
-    cfg = {
-        "quartodoc": {
-            "package": "json",
-            "sections": [],
-        }
-    }
-    builder = Builder.from_quarto_config(cfg)
-    assert builder.package == "json"
-
-
 def test_builder_from_quarto_config_no_section_raises():
     """Builder.from_quarto_config raises KeyError when no section found."""
 

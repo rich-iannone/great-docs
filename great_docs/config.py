@@ -52,7 +52,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "theme": "flatly",
         "toc": True,
         "toc-depth": 2,
-        "toc-title": "On this page",
+        # Language for UI text (BCP 47 code, e.g., "en", "fr", "de", "ja", "zh-Hans")
+        # Translates navbar labels, widget text, tooltips, and accessibility labels
+        "language": "en",
         # Page metadata timestamps
         "show_dates": False,  # Display creation/modification dates in footer
         "date_format": "%B %d, %Y",  # Python strftime format (e.g., "March 24, 2026")
@@ -613,6 +615,11 @@ class Config:
     def show_security(self) -> bool:
         """Whether to show the security policy page when SECURITY.md exists."""
         return bool(self.site.get("show_security", True))
+
+    @property
+    def language(self) -> str:
+        """Get the site UI language (BCP 47 code, default: 'en')."""
+        return self.site.get("language", "en")
 
     @property
     def team_author(self) -> dict[str, Any] | None:

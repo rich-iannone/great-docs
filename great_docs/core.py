@@ -203,7 +203,13 @@ class GreatDocs:
             "team_author": self._config.team_author,
             "authors": self._config.authors,  # Rich author metadata with images
             "build_timestamp": datetime.now().isoformat(),
+            "language": self._config.language,
         }
+        # Add i18n translations bundle
+        from ._translations import get_translations_bundle, is_rtl
+
+        gd_options["i18n"] = get_translations_bundle(self._config.language)
+        gd_options["rtl"] = is_rtl(self._config.language)
         # Add SEO options
         gd_options.update(self._get_seo_options())
         gd_options_path = self.project_path / "_gd_options.json"
@@ -5475,6 +5481,14 @@ class GreatDocs:
 
         sections = []
 
+        # i18n helper for section titles/descriptions
+        from ._translations import get_translation
+
+        lang = self._config.language
+
+        def _t(key: str, fallback: str) -> str:
+            return get_translation(key, lang) if lang != "en" else fallback
+
         # Use static threshold of 5 methods for large class separation
         method_threshold = 5
 
@@ -5513,49 +5527,65 @@ class GreatDocs:
             return result
 
         # ── Class-like sections ──────────────────────────────────────────
-        sections.extend(_make_class_section("Classes", "Core classes", categories["classes"]))
-        sections.extend(
-            _make_class_section("Dataclasses", "Data-holding classes", categories["dataclasses"])
-        )
         sections.extend(
             _make_class_section(
-                "Abstract Classes", "Abstract base classes", categories["abstract_classes"]
+                _t("classes", "Classes"),
+                _t("core_classes_desc", "Core classes"),
+                categories["classes"],
             )
         )
         sections.extend(
-            _make_class_section("Protocols", "Structural typing protocols", categories["protocols"])
+            _make_class_section(
+                _t("dataclasses", "Dataclasses"),
+                _t("data_classes_desc", "Data-holding classes"),
+                categories["dataclasses"],
+            )
+        )
+        sections.extend(
+            _make_class_section(
+                _t("abstract_classes", "Abstract Classes"),
+                _t("abstract_classes_desc", "Abstract base classes"),
+                categories["abstract_classes"],
+            )
+        )
+        sections.extend(
+            _make_class_section(
+                _t("protocols", "Protocols"),
+                _t("protocols_desc", "Structural typing protocols"),
+                categories["protocols"],
+            )
         )
 
         # Enums, Exceptions, NamedTuples, TypedDicts — no big-class splitting
         if categories["enums"]:
             sections.append(
                 {
-                    "title": "Enumerations",
-                    "desc": "Enum types",
+                    "title": _t("enumerations", "Enumerations"),
+                    "desc": _t("enum_types_desc", "Enum types"),
                     "contents": categories["enums"],
                 }
             )
         if categories["exceptions"]:
             sections.append(
                 {
-                    "title": "Exceptions",
-                    "desc": "Exception classes",
+                    "title": _t("exceptions", "Exceptions"),
+                    "desc": _t("exception_classes_desc", "Exception classes"),
                     "contents": categories["exceptions"],
                 }
             )
         if categories["namedtuples"]:
             sections.append(
                 {
-                    "title": "Named Tuples",
-                    "desc": "NamedTuple types",
+                    "title": _t("named_tuples", "Named Tuples"),
+                    "desc": _t("namedtuple_types_desc", "NamedTuple types"),
                     "contents": categories["namedtuples"],
                 }
             )
         if categories["typeddicts"]:
             sections.append(
                 {
-                    "title": "Typed Dicts",
-                    "desc": "TypedDict types",
+                    "title": _t("typed_dicts", "Typed Dicts"),
+                    "desc": _t("typeddict_types_desc", "TypedDict types"),
                     "contents": categories["typeddicts"],
                 }
             )
@@ -5564,8 +5594,8 @@ class GreatDocs:
         if categories["functions"]:
             sections.append(
                 {
-                    "title": "Functions",
-                    "desc": "Public functions",
+                    "title": _t("functions", "Functions"),
+                    "desc": _t("public_functions_desc", "Public functions"),
                     "contents": categories["functions"],
                 }
             )
@@ -5573,8 +5603,8 @@ class GreatDocs:
         if categories["async_functions"]:
             sections.append(
                 {
-                    "title": "Async Functions",
-                    "desc": "Asynchronous functions",
+                    "title": _t("async_functions", "Async Functions"),
+                    "desc": _t("async_functions_desc", "Asynchronous functions"),
                     "contents": categories["async_functions"],
                 }
             )
@@ -5583,8 +5613,8 @@ class GreatDocs:
         if categories["constants"]:
             sections.append(
                 {
-                    "title": "Constants",
-                    "desc": "Module-level constants and data",
+                    "title": _t("constants", "Constants"),
+                    "desc": _t("constants_desc", "Module-level constants and data"),
                     "contents": categories["constants"],
                 }
             )
@@ -5592,8 +5622,8 @@ class GreatDocs:
         if categories["type_aliases"]:
             sections.append(
                 {
-                    "title": "Type Aliases",
-                    "desc": "Type alias definitions",
+                    "title": _t("type_aliases", "Type Aliases"),
+                    "desc": _t("type_alias_desc", "Type alias definitions"),
                     "contents": categories["type_aliases"],
                 }
             )
@@ -5601,7 +5631,11 @@ class GreatDocs:
         # ── Catch-all ────────────────────────────────────────────────────
         if categories["other"]:
             sections.append(
-                {"title": "Other", "desc": "Additional exports", "contents": categories["other"]}
+                {
+                    "title": _t("other", "Other"),
+                    "desc": _t("additional_exports_desc", "Additional exports"),
+                    "contents": categories["other"],
+                }
             )
 
         # Write object type metadata for post-render classification
@@ -7134,20 +7168,24 @@ jupyter: python3
 
         margin_sections: list[str] = []
 
+        from ._translations import get_translation
+
+        lang = self._config.language
+
         # ── 1. Links ─────────────────────────────────────────────────────
         links_items: list[str] = []
 
         package_name = self._detect_package_name()
         if package_name:
             pypi_url = f"https://pypi.org/project/{package_name}/"
-            links_items.append(f"[View on PyPI]({pypi_url})<br>")
+            links_items.append(f"[{get_translation('view_on_pypi', lang)}]({pypi_url})<br>")
 
         if metadata.get("urls"):
             urls = metadata["urls"]
             url_map = {
                 "homepage": None,
-                "repository": "Browse source code",
-                "bug_tracker": "Report a bug",
+                "repository": get_translation("browse_source_code", lang),
+                "bug_tracker": get_translation("report_a_bug", lang),
                 "documentation": None,
             }
             for name, url in urls.items():
@@ -7157,7 +7195,7 @@ jupyter: python3
                     links_items.append(f"[{display_name}]({url})<br>")
 
         if links_items:
-            margin_sections.append("#### Links\n")
+            margin_sections.append(f"#### {get_translation('links', lang)}\n")
             margin_sections.extend(links_items)
 
         # ── 2. AI / Agents ───────────────────────────────────────────────
@@ -7167,7 +7205,7 @@ jupyter: python3
         ai_items.append("[llms.txt](llms.txt)<br>")
         ai_items.append("[llms-full.txt](llms-full.txt)<br>")
 
-        margin_sections.append("\n#### AI / Agents\n")
+        margin_sections.append(f"\n#### {get_translation('ai_agents', lang)}\n")
         margin_sections.extend(ai_items)
 
         # ── 3. Developers (Authors + Funding) ────────────────────────────
@@ -7176,7 +7214,7 @@ jupyter: python3
         has_funding = funding and isinstance(funding, dict) and funding.get("name")
 
         if authors_to_display or has_funding:
-            margin_sections.append("\n#### Developers\n")
+            margin_sections.append(f"\n#### {get_translation('developers', lang)}\n")
 
             # Authors
             fallback_github = None
@@ -7335,7 +7373,9 @@ jupyter: python3
             coc_path = package_root / ".github" / "CODE_OF_CONDUCT.md"
 
         if contributing_path.exists():
-            community_items.append("[Contributing guide](contributing.qmd)<br>")
+            community_items.append(
+                f"[{get_translation('contributing_guide', lang)}](contributing.qmd)<br>"
+            )
             with open(contributing_path, "r", encoding="utf-8") as f:
                 contributing_content = f.read()
 
@@ -7354,7 +7394,9 @@ title: "Contributing"
                 f.write(contributing_qmd_content)
 
         if coc_path.exists():
-            community_items.append("[Code of conduct](code-of-conduct.qmd)<br>")
+            community_items.append(
+                f"[{get_translation('code_of_conduct', lang)}](code-of-conduct.qmd)<br>"
+            )
             with open(coc_path, "r", encoding="utf-8") as f:
                 coc_content = f.read()
 
@@ -7381,7 +7423,7 @@ title: "Code of Conduct"
         roadmap_path = package_root / "ROADMAP.md"
 
         if roadmap_path.exists():
-            community_items.append("[Project roadmap](roadmap.qmd)<br>")
+            community_items.append(f"[{get_translation('project_roadmap', lang)}](roadmap.qmd)<br>")
             with open(roadmap_path, "r", encoding="utf-8") as f:
                 roadmap_content = f.read()
 
@@ -7400,7 +7442,9 @@ title: "Roadmap"
                 f.write(roadmap_qmd_content)
 
         if security_path.exists() and self._config.show_security:
-            community_items.append("[Security policy](security.qmd)<br>")
+            community_items.append(
+                f"[{get_translation('security_policy', lang)}](security.qmd)<br>"
+            )
             with open(security_path, "r", encoding="utf-8") as f:
                 security_content = f.read()
 
@@ -7420,32 +7464,35 @@ title: "Security Policy"
 
         # License (folded into Community)
         if license_link:
-            community_items.append(f"[Full license]({license_link})<br>")
+            community_items.append(f"[{get_translation('full_license', lang)}]({license_link})<br>")
         elif metadata.get("license"):
             community_items.append(f"{metadata['license']}<br>")
 
         # Citation (folded into Community)
         if citation_link:
             pkg_display = package_name or self._detect_package_name() or "this package"
-            community_items.append(f"[Citing {pkg_display}]({citation_link})<br>")
+            _citing = get_translation("citing", lang)
+            community_items.append(f"[{_citing} {pkg_display}]({citation_link})<br>")
 
         if community_items:
-            margin_sections.append("\n#### Community\n")
+            margin_sections.append(f"\n#### {get_translation('community', lang)}\n")
             margin_sections.extend(community_items)
 
         # ── 5. Meta ──────────────────────────────────────────────────────
         meta_items: list[str] = []
         if metadata.get("requires_python"):
-            meta_items.append(f"**Requires:** Python `{metadata['requires_python']}`")
+            _requires = get_translation("requires_python", lang)
+            meta_items.append(f"**{_requires}:** Python `{metadata['requires_python']}`")
 
         if metadata.get("optional_dependencies"):
             extras = list(metadata["optional_dependencies"].keys())
             if extras:
                 extras_formatted = ", ".join(f"`{extra}`" for extra in extras)
-                meta_items.append(f"**Provides-Extra:** {extras_formatted}")
+                _provides = get_translation("provides_extra", lang)
+                meta_items.append(f"**{_provides}:** {extras_formatted}")
 
         if meta_items:
-            margin_sections.append("\n#### Meta\n")
+            margin_sections.append(f"\n#### {get_translation('meta', lang)}\n")
             margin_sections.append("<br>\n".join(meta_items))
 
         return "\n".join(margin_sections) if margin_sections else ""
@@ -7903,6 +7950,12 @@ toc: false
         ref_title = self._config.reference_title or "Reference"
         ref_desc = self._config.reference_desc
 
+        # Translate default reference title for i18n
+        if not self._config.reference_title and self._config.language != "en":
+            from ._translations import get_translation
+
+            ref_title = get_translation("reference", self._config.language)
+
         # Configure the qrenderer
         renderer_config = {"style": "_renderer.py"}
 
@@ -8079,6 +8132,9 @@ toc: false
         config
             The configuration dictionary to write.
         """
+        # Translate navbar labels for i18n
+        self._translate_navbar_labels(config)
+
         header_comment = (
             "# Generated by Great Docs - Do not modify this file by hand.\n"
             "# Configure settings in great-docs.yml instead.\n\n"
@@ -8086,6 +8142,35 @@ toc: false
         with open(quarto_yml, "w") as f:
             f.write(header_comment)
             write_yaml(config, f)
+
+    def _translate_navbar_labels(self, config: dict) -> None:
+        """
+        Translate known navbar text labels using the configured language.
+
+        Modifies the config dict in place. Only translates labels that were
+        auto-generated (matching the English defaults).
+        """
+        from ._translations import get_translation
+
+        lang = self._config.language
+        if lang == "en":
+            return  # No translation needed
+
+        # Map of English label -> translation key
+        label_map = {
+            "User Guide": "user_guide",
+            "Recipes": "recipes",
+            "Reference": "reference",
+            "Changelog": "changelog",
+        }
+
+        navbar = config.get("website", {}).get("navbar", {})
+        for side in ("left", "right"):
+            items = navbar.get(side, [])
+            for item in items:
+                if isinstance(item, dict) and item.get("text") in label_map:
+                    key = label_map[item["text"]]
+                    item["text"] = get_translation(key, lang)
 
     def _update_quarto_config(self) -> None:
         """
@@ -8180,10 +8265,23 @@ toc: false
         config["format"]["html"]["theme"] = site_settings.get("theme", "flatly")
         config["format"]["html"]["toc"] = site_settings.get("toc", True)
         config["format"]["html"]["toc-depth"] = site_settings.get("toc-depth", 2)
-        config["format"]["html"]["toc-title"] = site_settings.get("toc-title", "On this page")
+
+        # Use translated toc-title unless the user explicitly overrode it
+        if "toc-title" in site_settings:
+            config["format"]["html"]["toc-title"] = site_settings["toc-title"]
+        else:
+            from ._translations import get_translation
+
+            config["format"]["html"]["toc-title"] = get_translation(
+                "on_this_page", self._config.language
+            )
 
         # Disable Quarto's native code-copy — we supply our own via copy-code.js
         config["format"]["html"]["code-copy"] = False
+
+        # Set document language for Quarto built-in i18n (search widget, etc.)
+        if self._config.language and self._config.language != "en":
+            config["lang"] = self._config.language
 
         # Configure Mermaid diagrams - use 'default' (light) theme always
         # We provide a light background container in dark mode via CSS
@@ -8688,16 +8786,21 @@ toc: false
                     else:
                         formatted_names.append(f"<strong>{display_name}</strong>")
 
-                # Format as "Developed by Name1 and Name2." or "Developed by Name1, Name2, and Name3."
+                from ._translations import get_translation
+
+                lang = self._config.language
+                _dev_by = get_translation("developed_by", lang)
+                _and = get_translation("and", lang)
+
                 if len(formatted_names) == 1:
-                    developed_by = f"Developed by {formatted_names[0]}."
+                    developed_by = f"{_dev_by} {formatted_names[0]}."
                 elif len(formatted_names) == 2:
-                    developed_by = f"Developed by {formatted_names[0]} and {formatted_names[1]}."
+                    developed_by = f"{_dev_by} {formatted_names[0]} {_and} {formatted_names[1]}."
                 else:
                     developed_by = (
-                        "Developed by "
+                        f"{_dev_by} "
                         + ", ".join(formatted_names[:-1])
-                        + ", and "
+                        + f", {_and} "
                         + formatted_names[-1]
                         + "."
                     )
@@ -8718,7 +8821,8 @@ toc: false
                         )
                     else:
                         funder_label = f"<strong>{funder_display}</strong>"
-                    footer_html += f" Supported by {funder_label}."
+                    _sup_by = get_translation("supported_by", lang)
+                    footer_html += f" {_sup_by} {funder_label}."
 
                 config["website"]["page-footer"] = {"center": footer_html}
 
@@ -8736,7 +8840,11 @@ toc: false
                         )
                     else:
                         funder_label = f"<strong>{funder_display}</strong>"
-                    config["website"]["page-footer"] = {"center": f"Supported by {funder_label}."}
+                    from ._translations import get_translation
+
+                    lang = self._config.language
+                    _sup_by = get_translation("supported_by", lang)
+                    config["website"]["page-footer"] = {"center": f"{_sup_by} {funder_label}."}
 
         # Append Great Docs attribution to footer if enabled
         if self._config.attribution:
@@ -8773,7 +8881,10 @@ toc: false
             except Exception:  # pragma: no cover
                 pass  # pragma: no cover
 
-            attribution = f"Site created with <strong>Great&nbsp;Docs</strong>{gd_version_label}."
+            from ._translations import get_translation
+
+            _site_created = get_translation("site_created_with", self._config.language)
+            attribution = f"{_site_created} <strong>Great&nbsp;Docs</strong>{gd_version_label}."
 
             if "page-footer" in config["website"]:
                 existing = config["website"]["page-footer"].get("center", "")
@@ -9752,6 +9863,13 @@ toc: false
         """
         import re
 
+        from ._translations import get_translation
+
+        lang = self._config.language
+
+        def _t(key: str, fallback: str) -> str:
+            return get_translation(key, lang) if lang != "en" else fallback
+
         if not skill_path.exists():
             return
 
@@ -9769,7 +9887,7 @@ toc: false
         # Build the skills.qmd page
         lines = []
         lines.append("---")
-        lines.append("title: Skills")
+        lines.append(f"title: {_t('skills_title', 'Skills')}")
         lines.append("toc: false")
         lines.append("sidebar: false")
         lines.append("page-layout: full")
@@ -9780,20 +9898,26 @@ toc: false
         # ── Intro: what is a skill? ──
         if not skill_dir:
             lines.append(
-                "A skill is a package of structured files that teaches an AI "
-                "coding agent how to work with a specific tool or framework. "
-                "The skill below was generated by Great Docs from this "
-                "project's documentation. Install it in your agent and it will "
-                "be able to run commands, edit configuration, write content, "
-                "and troubleshoot problems without step-by-step guidance from you."
+                _t(
+                    "skills_intro",
+                    "A skill is a package of structured files that teaches an AI "
+                    "coding agent how to work with a specific tool or framework. "
+                    "The skill below was generated by Great Docs from this "
+                    "project's documentation. Install it in your agent and it will "
+                    "be able to run commands, edit configuration, write content, "
+                    "and troubleshoot problems without step-by-step guidance from you.",
+                )
             )
         else:
             lines.append(
-                "A skill is a package of structured files that teaches an AI "
-                "coding agent how to work with a specific tool or framework. "
-                "Install it in your agent and it will be able to run commands, "
-                "edit configuration, write content, and troubleshoot problems "
-                "without step-by-step guidance from you."
+                _t(
+                    "skills_intro_curated",
+                    "A skill is a package of structured files that teaches an AI "
+                    "coding agent how to work with a specific tool or framework. "
+                    "Install it in your agent and it will be able to run commands, "
+                    "edit configuration, write content, and troubleshoot problems "
+                    "without step-by-step guidance from you.",
+                )
             )
         lines.append("")
 
@@ -9827,7 +9951,8 @@ toc: false
             'aria-expanded="false" aria-controls="gd-skills-install-body">'
         )
         lines.append(
-            '    <span class="gd-skills-install-icon">&#9654;</span>    Install this skill'
+            '    <span class="gd-skills-install-icon">&#9654;</span>    '
+            + _t("install_this_skill", "Install this skill")
         )
         lines.append("  </button>")
         lines.append('  <div class="gd-skills-install-body" id="gd-skills-install-body">')
@@ -9837,7 +9962,10 @@ toc: false
         lines.append("")
 
         # ── npx (universal installer) ──
-        lines.append("**Any agent** --- install with [npx](https://github.com/vercel-labs/skills):")
+        lines.append(
+            f"**{_t('any_agent', 'Any agent')}** --- "
+            f"{_t('install_with_npx', 'install with')} [npx](https://github.com/vercel-labs/skills):"
+        )
         lines.append("")
         if site_url:
             _npx_cmd = f"npx skills add {site_url}"
@@ -9853,27 +9981,30 @@ toc: false
         lines.append("```")
         lines.append("")
         lines.append(
-            "Works with Claude Code, GitHub Copilot, Cursor, Gemini CLI, Codex, "
-            "and [30+ other agents](https://github.com/vercel-labs/skills)."
+            _t(
+                "works_with_agents",
+                "Works with Claude Code, GitHub Copilot, Cursor, Gemini CLI, Codex, "
+                "and [30+ other agents](https://github.com/vercel-labs/skills).",
+            )
         )
         lines.append("")
 
         # ── Codex / OpenCode (prompt-based fetch) ──
         skill_file_url = f"{site_url}skill.md" if site_url else ""
-        lines.append("**Codex / OpenCode** --- tell the agent:")
+        lines.append(f"**Codex / OpenCode** --- {_t('tell_the_agent', 'tell the agent')}:")
         lines.append("")
         if skill_file_url:
-            _prompt_text = f"Fetch the skill file at {skill_file_url} and follow the instructions."
+            _fetch_at = _t("fetch_skill_file_at", "Fetch the skill file at")
+            _follow = _t("and_follow_instructions", "and follow the instructions.")
+            _prompt_text = f"{_fetch_at} {skill_file_url} {_follow}"
         elif github_owner_repo:
-            _prompt_text = (
-                f"Fetch the skill file from "
-                f"https://github.com/{github_owner_repo} "
-                "and follow the instructions."
-            )
+            _fetch_from = _t("fetch_skill_file_from", "Fetch the skill file from")
+            _follow = _t("and_follow_instructions", "and follow the instructions.")
+            _prompt_text = f"{_fetch_from} https://github.com/{github_owner_repo} {_follow}"
         else:
-            _prompt_text = (
-                "Fetch the skill file at &lt;site-url&gt;/skill.md and follow the instructions."
-            )
+            _fetch_at = _t("fetch_skill_file_at", "Fetch the skill file at")
+            _follow = _t("and_follow_instructions", "and follow the instructions.")
+            _prompt_text = f"{_fetch_at} &lt;site-url&gt;/skill.md {_follow}"
         lines.append("```{=html}")
         lines.append(
             f'<div class="sourceCode"><pre class="sourceCode text code-with-copy" style="padding-bottom: 0;">'
@@ -9883,7 +10014,9 @@ toc: false
         lines.append("")
 
         # ── Manual (curl + raw links) ──
-        lines.append("**Manual** --- download the skill file:")
+        lines.append(
+            f"**{_t('manual_download', 'Manual')}** --- {_t('download_skill_file', 'download the skill file')}:"
+        )
         lines.append("")
         if skill_file_url:
             _curl_cmd = f"curl -O {skill_file_url}"
@@ -9900,7 +10033,9 @@ toc: false
         # The post-render script also fixes this link back to skill.md.
         lines.append("```{=html}")
         lines.append(
-            '<p>Or browse the <a href="skill.md" class="gd-raw-link"><code>SKILL.md</code></a> file.</p>'
+            f"<p>{_t('browse_skill_file', 'Or browse the')} "
+            '<a href="skill.md" class="gd-raw-link"><code>SKILL.md</code></a> '
+            f"{_t('file_word', 'file')}.</p>"
         )
         lines.append("```")
         lines.append("")
@@ -9966,7 +10101,9 @@ toc: false
                     tree_lines.append(f'{prefix}{connector} <a href="#{anchor}">{fname}</a>')
 
             lines.append("```{=html}")
-            lines.append('<h3 class="gd-skills-section-heading">SKILL LAYOUT</h3>')
+            lines.append(
+                f'<h3 class="gd-skills-section-heading">{_t("skill_layout", "SKILL LAYOUT")}</h3>'
+            )
             lines.append('<pre class="gd-skills-tree">')
             lines.append("\n".join(tree_lines))
             lines.append("</pre>")

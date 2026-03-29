@@ -310,6 +310,10 @@ ALL_PACKAGES: list[str] = [
     "gdtest_skill_rich",  # 154
     "gdtest_skill_combo",  # 155
     "gdtest_skill_complex",  # 156
+    # 157–159: Internationalization (i18n)
+    "gdtest_i18n_french",  # 157
+    "gdtest_i18n_japanese",  # 158
+    "gdtest_i18n_arabic",  # 159
 ]
 
 
@@ -519,6 +523,10 @@ DIMENSIONS: dict[str, dict[str, str]] = {
     "S5": {"axis": "skill", "label": "Rich curated skill"},
     "S6": {"axis": "skill", "label": "Skill + UG + hero combo"},
     "S7": {"axis": "skill", "label": "Skill with subdirs (refs/scripts/assets)"},
+    # Internationalization axes
+    "K50": {"axis": "config", "label": "i18n: French (Latin)"},
+    "K51": {"axis": "config", "label": "i18n: Japanese (CJK)"},
+    "K52": {"axis": "config", "label": "i18n: Arabic (RTL)"},
 }
 
 
@@ -1756,6 +1764,23 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "(config template). The SKILL.md body cross-references companion files "
         "with directory tree diagrams, tables, and embedded code samples. Tests "
         "that the raw rendering handles complex multi-file skill structures."
+    ),
+    "gdtest_i18n_french": (
+        "i18n test with French (Latin script). Sets site.language: fr and enables "
+        "announcement banner, GitHub widget, user guide, dark mode, back-to-top, "
+        "copy code, page metadata, sidebar filter, and reference switcher. "
+        "Verifies all UI strings render in French."
+    ),
+    "gdtest_i18n_japanese": (
+        "i18n test with Japanese (CJK script). Sets site.language: ja and enables "
+        "every translatable widget. Verifies CJK characters render correctly "
+        "across navbar labels, tooltips, timestamps, and accessibility attributes."
+    ),
+    "gdtest_i18n_arabic": (
+        "i18n test with Arabic (RTL script). Sets site.language: ar and enables "
+        "every translatable widget. Verifies dir=rtl on the HTML element, "
+        "right-to-left layout mirroring, flipped sidebar, repositioned buttons, "
+        "and all UI strings in Arabic."
     ),
 }
 

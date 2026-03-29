@@ -1,0 +1,102 @@
+---
+title: "Internationalization (i18n)"
+guide-section: "Config & Theming"
+bread-crumbs: false
+---
+
+# Internationalization (i18n)
+
+Great Docs can display all of its UI text in multiple languages. When you set a language, every button label, tooltip, relative timestamp, navbar link, and accessibility attribute across the site is automatically translated.
+
+## Setting the Language
+
+Add the `language` key under `site` in your configuration file. The value is a [BCP 47](https://en.wikipedia.org/wiki/IETF_language_tag) language code:
+
+```{.yaml filename="great-docs.yml"}
+site:
+  language: fr
+```
+
+If you don't set a language, Great Docs defaults to English (`en`).
+
+## Supported Languages
+
+Great Docs ships with translations for 14 languages:
+
+| Code | Language |
+|------|----------|
+| `en` | English (default) |
+| `fr` | French |
+| `de` | German |
+| `es` | Spanish |
+| `pt` | Portuguese |
+| `it` | Italian |
+| `nl` | Dutch |
+| `ja` | Japanese |
+| `ko` | Korean |
+| `zh-Hans` | Chinese (Simplified) |
+| `zh-Hant` | Chinese (Traditional) |
+| `ru` | Russian |
+| `pl` | Polish |
+| `tr` | Turkish |
+
+## What Gets Translated
+
+Setting the language affects every piece of UI text that Great Docs generates. Here's a summary of what changes:
+
+### Navbar Labels
+
+The top-level navigation links are translated automatically. For example, with `language: de`:
+
+- **User Guide** becomes **Benutzerhandbuch**
+- **Recipes** becomes **Rezepte**
+- **Reference** becomes **Referenz**
+- **Changelog** becomes **Änderungsprotokoll**
+
+### Widget Text
+
+All interactive widgets use the configured language:
+
+- **Back-to-top button** — tooltip text
+- **Copy code button** — "Copy to clipboard" / "Copied!" labels
+- **Copy page menu** — all menu items and status messages
+- **Dark mode toggle** — "Switch to dark mode" / "Switch to light mode" tooltips
+- **Sidebar filter** — placeholder text and result counts
+- **Reference switcher** — "API Reference" / "CLI Reference" labels
+- **GitHub widget** — "Stars", "Forks", "Issues", "Pull Requests" labels
+- **Announcement banner** — dismiss button accessibility label
+- **Responsive tables** — scrollable table indicator
+- **Video embed** — play button and video labels
+
+### Page Metadata
+
+The page metadata widget displays relative timestamps like "3 days ago" or "2 months ago". These time expressions are fully translated and support correct singular/plural forms for each language. The tooltip date format also adapts to match the configured locale.
+
+### Table of Contents
+
+The "On this page" heading above the right-hand table of contents is translated to match your configured language.
+
+## Right-to-Left (RTL) Support
+
+::: {.callout-note}
+RTL layout support for languages like Arabic and Hebrew is under active development and not yet available. The underlying translations exist, but the visual layout needs further work before these languages can be officially supported.
+:::
+
+## Placeholders and Plurals
+
+Some translation strings include placeholders and plural forms. These are handled automatically by the widgets at runtime:
+
+- **Placeholders** use `{name}` syntax — for example, `"Refreshed {time}"` becomes `"Actualisé {time}"` in French, where `{time}` is filled in with the relative timestamp.
+- **Plurals** use a `singular|plural` pipe format — for example, `"{n} day ago|{n} days ago"` becomes `"il y a {n} jour|il y a {n} jours"` in French, with the correct form selected based on the count.
+
+## How It Works
+
+Understanding the translation pipeline can be helpful if you're contributing translations or debugging language issues:
+
+1. You set `language` in `great-docs.yml`
+2. During the build, Great Docs looks up all translation strings for that language from its internal dictionary
+3. The full translation bundle is written into `_gd_options.json`
+4. After Quarto renders each page, the post-render script injects a `<meta name="gd-i18n">` tag into the HTML `<head>` containing the JSON-encoded translations
+5. Each JavaScript widget reads from this meta tag using a shared `_gdT(key, fallback)` helper function
+
+If a translation is missing for a particular key, the English fallback is used automatically.

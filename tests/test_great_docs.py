@@ -26371,6 +26371,7 @@ def test_preview_port_in_use():
 
 def test_preview_serves_and_stops():
     """Test preview() starts server and handles KeyboardInterrupt."""
+    import http.server  # noqa: F401  # ensure module is loaded before patching socketserver
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         docs = GreatDocs(project_path=tmp_dir)

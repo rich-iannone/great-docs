@@ -32204,13 +32204,13 @@ def test_rstconv_inline_math():
     assert "$x^2 + y^2$" in result
 
 
-def test_rstconv_quarto_cell_to_fenced():
-    """_convert_rst_text converts ```{python} to ```python."""
+def test_rstconv_quarto_cell_preserved():
+    """_convert_rst_text preserves ```{python} as executable Quarto cells."""
     text = "```{python}\nprint('hi')\n```"
     result = _convert_rst_text(text)
 
-    assert "```python" in result
-    assert "```{python}" not in result
+    assert "```{python}" in result
+    assert "print('hi')" in result
 
 
 def test_rstconv_smart_dedent_no_indent():
@@ -41454,3 +41454,40 @@ def test_back_to_top_scss_styles_exist():
 
     # Reduced motion
     assert "prefers-reduced-motion" in content
+
+
+# Quarto executable cell preservation tests ------------------------------------
+
+
+def test_convert_rst_text_preserves_executable_cell_syntax():
+    """_convert_rst_text keeps ```{python} as executable Quarto cells."""
+    text = "```{python}\nprint('hi')\n```"
+    result = _convert_rst_text(text)
+    assert "```{python}" in result
+    assert "print('hi')" in result
+
+
+def test_convert_rst_text_preserves_hashpipe_directives():
+    """_convert_rst_text preserves #| cell options inside code blocks."""
+    text = "```{python}\n#| eval: false\nprint('hi')\n```"
+    result = _convert_rst_text(text)
+    assert "```{python}" in result
+    assert "#| eval: false" in result
+    assert "print('hi')" in result
+
+
+def test_convert_rst_text_preserves_static_code_blocks():
+    """_convert_rst_text keeps ```python (no braces) as static blocks."""
+    text = "```python\nx = 1\n```"
+    result = _convert_rst_text(text)
+    assert "```python" in result
+    assert "```{python}" not in result
+    assert "x = 1" in result
+
+
+def test_convert_rst_text_preserves_multiple_hashpipe_options():
+    """_convert_rst_text preserves multiple #| directives in executable cells."""
+    text = "```{python}\n#| eval: false\n#| echo: true\nprint('hi')\n```"
+    result = _convert_rst_text(text)
+    assert "#| eval: false" in result
+    assert "#| echo: true" in result

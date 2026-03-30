@@ -7462,11 +7462,32 @@ title: "Security Policy"
             with open(security_qmd, "w", encoding="utf-8") as f:
                 f.write(security_qmd_content)
 
-        # License (folded into Community)
+        # License (folded into Community) — "Full license" link + small SPDX badge
+        from ._license import get_license_info
+
+        license_id = metadata.get("license", "")
+        license_info = get_license_info(license_id) if license_id else None
+
         if license_link:
-            community_items.append(f"[{get_translation('full_license', lang)}]({license_link})<br>")
-        elif metadata.get("license"):
-            community_items.append(f"{metadata['license']}<br>")
+            _full_license = get_translation("full_license", lang)
+            if license_info is not None:
+                # Underlined link + small SPDX badge with tooltip
+                spdx_html = (
+                    f'<a href="{license_link}">{_full_license}</a> '
+                    f'<span title="{license_info.full_name}" '
+                    f'class="gd-spdx-badge">{license_info.spdx_id}</span>'
+                )
+                community_items.append(f"{spdx_html}<br>")
+            else:
+                community_items.append(f"[{_full_license}]({license_link})<br>")
+        elif license_id:
+            if license_info is not None:
+                community_items.append(
+                    f'<span title="{license_info.full_name}" '
+                    f'class="gd-spdx-badge">{license_info.spdx_id}</span><br>'
+                )
+            else:
+                community_items.append(f"{license_id}<br>")
 
         # Citation (folded into Community)
         if citation_link:
@@ -7527,12 +7548,39 @@ title: "Security Policy"
             with open(license_path, "r", encoding="utf-8") as f:
                 license_content = f.read()
 
+            # Build optional license-features section from SPDX data
+            from ._license import build_license_features_html, get_license_info
+            from ._translations import get_translation
+
+            metadata_for_license = self._get_package_metadata()
+            license_id = metadata_for_license.get("license", "")
+            license_features_html = ""
+            if license_id:
+                license_info = get_license_info(license_id)
+                if license_info is not None:
+                    _lang = self._config.language
+                    features_label = get_translation("license_features", _lang)
+                    license_features_html = build_license_features_html(
+                        license_info,
+                        features_label=features_label,
+                        permissions_label=get_translation("license_permissions", _lang),
+                        conditions_label=get_translation("license_conditions", _lang),
+                        limitations_label=get_translation("license_limitations", _lang),
+                    )
+
+            # Wrap all HTML in raw blocks so Quarto passes them through verbatim
+            features_block = ""
+            if license_features_html:
+                features_block = "```{=html}\n" + license_features_html + "\n```\n\n"
+
             license_qmd_content = f"""---
 title: "License"
 ---
 
 ::: {{.license-container}}
+{features_block}```{{=html}}
 <pre><code style="padding: 1rem;">{license_content}</code></pre>
+```
 :::
 """
             with open(license_qmd, "w", encoding="utf-8") as f:

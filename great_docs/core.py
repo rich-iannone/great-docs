@@ -7575,13 +7575,23 @@ title: "Security Policy"
 
             license_qmd_content = f"""---
 title: "License"
+toc: false
+sidebar: false
+page-layout: full
+body-classes: "gd-license-page"
 ---
 
-::: {{.license-container}}
 {features_block}```{{=html}}
-<pre><code style="padding: 1rem;">{license_content}</code></pre>
+<pre class="gd-skills-raw">
 ```
-:::
+
+````markdown
+{license_content}
+````
+
+```{{=html}}
+</pre>
+```
 """
             with open(license_qmd, "w", encoding="utf-8") as f:
                 f.write(license_qmd_content)

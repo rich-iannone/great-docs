@@ -55,7 +55,7 @@
         if (document.querySelector('.gd-skills-install')) return;
 
         // Skip the License page (has its own layout)
-        if (document.querySelector('.license-container')) return;
+        if (document.body.classList.contains('gd-license-page')) return;
 
         // Create the widget container
         var widget = document.createElement('div');

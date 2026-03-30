@@ -14149,7 +14149,7 @@ def test_build_metadata_margin_with_package_name():
 
 
 def test_build_metadata_margin_with_license():
-    """_build_metadata_margin includes license section from metadata."""
+    """_build_metadata_margin omits license when no LICENSE file exists."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         pyproject = Path(tmp_dir) / "pyproject.toml"
         pyproject.write_text(
@@ -14161,9 +14161,9 @@ def test_build_metadata_margin_with_license():
         docs = GreatDocs(project_path=tmp_dir)
         result = docs._build_metadata_margin()
 
-        # License now appears under the Community section
-        assert "#### Community" in result
-        assert "MIT" in result
+        # Without a LICENSE file, no license entry should appear
+        assert "Full license" not in result
+        assert "gd-spdx-badge" not in result
 
 
 def test_build_metadata_margin_with_license_qmd():

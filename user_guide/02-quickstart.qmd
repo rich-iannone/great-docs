@@ -199,8 +199,6 @@ docs = GreatDocs(project_path="/path/to/project")
 docs.install()
 docs.build()
 ```
-docs.build()
-```
 
 ## What's Next?
 

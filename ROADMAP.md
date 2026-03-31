@@ -4,15 +4,6 @@
 
 High-value features that build on existing infrastructure.
 
-### Social Cards & Open Graph
-
-Auto-generate `<meta>` tags for social media previews.
-
-- Open Graph (`og:title`, `og:description`, `og:image`) — works on LinkedIn, Discord, Slack, Bluesky, Mastodon, and most other platforms
-- Twitter/X Card markup (`twitter:card`, `twitter:title`, etc.) for X-specific previews
-- Per-page and site-level defaults
-- Optional custom image template
-
 ### Author Attribution & Avatars
 
 Display author information with circular GitHub-style avatars on authored pages.

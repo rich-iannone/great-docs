@@ -1,9 +1,9 @@
 ---
-title: "Documentation Linting"
+title: "Docs Linting"
 guide-section: "Quality & Maintenance"
 ---
 
-# Documentation Linting
+# Docs Linting
 
 Great Docs includes a built-in linter that analyzes your package's public API for documentation quality issues. It catches missing docstrings, broken cross-references, inconsistent formatting, and malformed directives (before your users ever see them).
 

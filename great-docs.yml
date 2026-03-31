@@ -101,6 +101,39 @@ cli:
 # Enable/disable the dark mode toggle in navbar (default: true)
 dark_mode_toggle: true
 
+# Navigation Icons
+# ----------------
+# Add Lucide icons next to navbar and sidebar labels.
+nav_icons:
+  navbar:
+    User Guide: book-open
+    Recipes: chef-hat
+    Reference: code
+    Changelog: clock
+  sidebar:
+    Welcome to Great Docs: compass
+    Installation: download
+    Quick Start: rocket
+    Configuration: settings
+    Theming & Appearance: palette
+    Cross-Referencing: link
+    Internationalization: globe
+    API Documentation: file-code
+    CLI Documentation: terminal
+    User Guides: book-text
+    Custom Sections: layout-list
+    Blog: pen-line
+    Diagrams: shapes
+    Videos: video
+    Building & Previewing: hammer
+    Deployment: cloud-upload
+    SEO Optimization: search
+    Link Checker: scan-search
+    Proofreading: spell-check
+    Changelog: history
+    Community Files: file-heart
+    Docs Linting: list-checks
+
 # Author Information
 # ------------------
 # Rich author metadata for display in the landing page sidebar

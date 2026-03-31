@@ -1,10 +1,10 @@
 ---
-title: "Internationalization (i18n)"
+title: "Internationalization"
 guide-section: "Config & Theming"
 bread-crumbs: false
 ---
 
-# Internationalization (i18n)
+# Internationalization
 
 Great Docs can display all of its UI text in multiple languages. When you set a language, every button label, tooltip, relative timestamp, navbar link, and accessibility attribute across the site is automatically translated.
 

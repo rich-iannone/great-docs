@@ -147,7 +147,7 @@ This is useful for:
 - **Template URLs** showing a pattern users should customize
 - **Placeholder URLs** in code examples
 
-The `{.gd-no-link}` directive uses Quarto's attribute syntax but doesn't render any visible styling—it simply tells the link checker to skip that URL.
+The `{.gd-no-link}` directive uses Quarto's attribute syntax but doesn't render any visible styling (it simply tells the link checker to skip that URL).
 
 ::: {.callout-note}
 The `{.gd-no-link}` directive only works in `.qmd` files. For `.md` files or source code, use the `--ignore` command-line option instead.

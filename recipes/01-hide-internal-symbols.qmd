@@ -18,7 +18,7 @@ exclude:
   - _SENTINEL
 ```
 
-Any symbol whose name matches an entry in `exclude` is dropped during API discovery — it won't appear in the reference pages or the sidebar.
+Any symbol whose name matches an entry in `exclude` is dropped during API discovery (it won't appear in the reference pages or the sidebar).
 
 ## Using the `@nodoc` Directive
 
@@ -42,4 +42,4 @@ Great Docs strips the directive line before rendering, so it never shows up in o
 | `exclude` in YAML  | Batch exclusions, symbols without docstrings      |
 | `@nodoc` directive | Keeping the decision next to the code             |
 
-Both can be combined — `exclude` is checked first, then `@nodoc`.
+Both can be combined (`exclude` is checked first, then `@nodoc`).

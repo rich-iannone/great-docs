@@ -65,7 +65,20 @@ The 1200 × 630 size is the universal sweet spot: it works well as a `summary_la
 
 ### Configuring the Default Image
 
-Place your image in the `assets/` directory and reference it in `great-docs.yml`:
+Place your image in the project's `assets/` directory. This is the same directory Great Docs already copies into the build for logos, favicons, and other static files:
+
+```
+my-package/
+├── assets/
+│   ├── social-card.png   ← your social card image
+│   ├── logo.svg
+│   └── favicon.svg
+├── my_package/
+├── great-docs.yml
+└── pyproject.toml
+```
+
+Then reference it in `great-docs.yml`:
 
 ```{.yaml filename="great-docs.yml"}
 social_cards:

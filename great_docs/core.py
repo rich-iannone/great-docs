@@ -10532,6 +10532,45 @@ toc: false
         robots_path.write_text("\n".join(lines), encoding="utf-8")
         print("   Generated robots.txt")
 
+    def _resolve_social_card_image_url(self) -> str | None:
+        """
+        Resolve the social card image to an absolute URL.
+
+        If the configured image is a local file path, copies it to the build
+        directory and returns the site-relative path. If it's already a URL,
+        returns it as-is. If no image is configured, returns None.
+
+        Returns
+        -------
+        str | None
+            Absolute URL or site-relative path for the social card image.
+        """
+        image_path = self._config.social_cards_image
+        if not image_path:
+            return None
+
+        # If already a URL, return as-is
+        if image_path.startswith(("http://", "https://")):
+            return image_path
+
+        # Resolve relative to project root
+        source = self.project_root / image_path
+        if not source.is_file():
+            print(f"   ⚠️  Social card image not found: {image_path}")
+            return None
+
+        # Copy to build directory root (so it's served at site root)
+        dest = self.project_path / source.name
+        shutil.copy2(source, dest)
+
+        # Build absolute URL if canonical base is available
+        base_url = self._get_canonical_base_url()
+        if base_url:
+            return base_url + source.name
+
+        # Fallback to site-relative path (works for most crawlers)
+        return source.name
+
     def _get_seo_options(self) -> dict:
         """
         Get SEO options for the post-render script.
@@ -10542,6 +10581,11 @@ toc: false
             SEO configuration to be written to _gd_options.json.
         """
         metadata = self._get_package_metadata()
+
+        # Handle social card image (copy to build dir if needed)
+        social_image_url = None
+        if self._config.social_cards_enabled:
+            social_image_url = self._resolve_social_card_image_url()
 
         return {
             "seo_enabled": self._config.seo_enabled,
@@ -10559,6 +10603,11 @@ toc: false
             "package_version": metadata.get("version", ""),
             "repo_url": metadata.get("urls", {}).get("Repository", ""),
             "site_name": self._config.display_name or self._detect_package_name() or "",
+            # Social cards
+            "social_cards_enabled": self._config.social_cards_enabled,
+            "social_cards_image": social_image_url,
+            "social_cards_twitter_card": self._config.social_cards_twitter_card,
+            "social_cards_twitter_site": self._config.social_cards_twitter_site,
         }
 
     def _generate_seo_files(self) -> None:

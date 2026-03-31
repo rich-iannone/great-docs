@@ -17,7 +17,7 @@ When changelog generation is enabled (the default), `great-docs build` will:
 3. **Generate the page** – writes a `changelog.qmd` file in the build directory with one section per release
 4. **Add a navbar link** – adds a "Changelog" item to the site's top navigation bar
 
-The result is a fully rendered Changelog page that stays in sync with your GitHub Releases — no manual maintenance needed.
+The result is a fully rendered Changelog page that stays in sync with your GitHub Releases (no manual maintenance needed).
 
 ## Prerequisites
 
@@ -62,7 +62,7 @@ Releases are shown in reverse chronological order (newest first), so older relea
 
 ## Authentication
 
-The GitHub API allows unauthenticated requests but with a low rate limit (60 requests/hour). For most projects this is fine, but if you hit rate limits — particularly in CI — set a GitHub token:
+The GitHub API allows unauthenticated requests but with a low rate limit (60 requests/hour). For most projects this is fine, but if you hit rate limits, particularly in CI, set a GitHub token:
 
 ```{.bash filename="Terminal"}
 export GITHUB_TOKEN=ghp_your_token_here
@@ -136,7 +136,7 @@ Here's an example of what a section looks like:
 | GitHub API returns 404 | Warning printed; changelog skipped |
 | Network error | Warning printed; changelog skipped |
 
-In all cases, the build completes successfully — the changelog is never a hard failure.
+In all cases, the build completes successfully (the changelog is never a hard failure).
 
 ## Next Steps
 

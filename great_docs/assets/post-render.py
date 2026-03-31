@@ -450,6 +450,129 @@ def inject_noindex_meta(html_content: str, page_path: str) -> str:
     return html_content
 
 
+def inject_social_cards(html_content: str, page_path: str) -> str:
+    """
+    Inject Open Graph and Twitter/X Card meta tags for social media previews.
+
+    Generates per-page `og:title`, `og:description`, `og:url`, and `og:image` tags (plus Twitter
+    Card equivalents) so that links shared on LinkedIn, Discord, Slack, Bluesky, Mastodon, X, and
+    other platforms show rich previews.
+
+    Parameters
+    ----------
+    html_content
+        The HTML content to modify.
+    page_path
+        The page path relative to the site root (e.g., "reference/MyClass.html").
+
+    Returns
+    -------
+    str
+        The modified HTML with social card meta tags.
+    """
+    if not _gd_options.get("social_cards_enabled", False):
+        return html_content
+
+    # Skip if OG tags already exist (e.g., user added manually)
+    if 'property="og:title"' in html_content:
+        return html_content
+
+    site_name = _gd_options.get("site_name", "")
+    base_url = _gd_options.get("canonical_base_url", "")
+    default_description = _gd_options.get("default_description", "")
+    image_url = _gd_options.get("social_cards_image")
+    twitter_site = _gd_options.get("social_cards_twitter_site")
+    twitter_card_override = _gd_options.get("social_cards_twitter_card")
+
+    # ── Extract page title ────────────────────────────────────────────────
+    page_title = site_name
+    title_match = re.search(r"<title>([^<]*)</title>", html_content)
+    if title_match:
+        page_title = title_match.group(1).strip()
+
+    # ── Extract page description ──────────────────────────────────────────
+    description = ""
+
+    # First try existing meta description
+    desc_match = re.search(r'<meta\s+name="description"\s+content="([^"]*)"', html_content)
+    if desc_match:
+        description = desc_match.group(1)
+
+    # Fall back to first meaningful paragraph
+    if not description:
+        main_match = re.search(r"<main[^>]*>(.*?)</main>", html_content, re.DOTALL)
+        if main_match:
+            p_match = re.search(
+                r"<p[^>]*>([^<]+(?:<(?!/?p)[^>]*>[^<]*)*)</p>",
+                main_match.group(1),
+            )
+            if p_match:
+                desc_text = re.sub(r"<[^>]+>", "", p_match.group(1)).strip()
+                if len(desc_text) > 30:
+                    if len(desc_text) > 200:
+                        desc_text = desc_text[:197].rsplit(" ", 1)[0] + "..."
+                    description = desc_text
+
+    # Fall back to site-level default
+    if not description:
+        description = default_description
+
+    # HTML-escape attribute values
+    def _esc(val: str) -> str:
+        return (
+            val.replace("&", "&amp;")
+            .replace('"', "&quot;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+        )
+
+    # ── Build page URL ────────────────────────────────────────────────────
+    page_url = ""
+    if base_url:
+        if page_path == "index.html":
+            page_url = base_url.rstrip("/")
+        elif page_path.endswith("/index.html"):
+            page_url = base_url + page_path[:-10]  # Remove /index.html
+        else:
+            page_url = base_url + page_path
+
+    # ── Assemble meta tags ────────────────────────────────────────────────
+    tags: list[str] = []
+
+    # Open Graph (works on LinkedIn, Discord, Slack, Bluesky, Mastodon, etc.)
+    tags.append('<meta property="og:type" content="website">')
+    tags.append(f'<meta property="og:title" content="{_esc(page_title)}">')
+    if description:
+        tags.append(f'<meta property="og:description" content="{_esc(description)}">')
+    if page_url:
+        tags.append(f'<meta property="og:url" content="{_esc(page_url)}">')
+    if site_name:
+        tags.append(f'<meta property="og:site_name" content="{_esc(site_name)}">')
+    if image_url:
+        tags.append(f'<meta property="og:image" content="{_esc(image_url)}">')
+
+    # Twitter/X Card
+    if twitter_card_override:
+        card_type = twitter_card_override
+    else:
+        card_type = "summary_large_image" if image_url else "summary"
+    tags.append(f'<meta name="twitter:card" content="{card_type}">')
+    tags.append(f'<meta name="twitter:title" content="{_esc(page_title)}">')
+    if description:
+        tags.append(f'<meta name="twitter:description" content="{_esc(description)}">')
+    if image_url:
+        tags.append(f'<meta name="twitter:image" content="{_esc(image_url)}">')
+    if twitter_site:
+        handle = twitter_site if twitter_site.startswith("@") else f"@{twitter_site}"
+        tags.append(f'<meta name="twitter:site" content="{_esc(handle)}">')
+
+    # Inject all tags before </head>
+    tag_block = "\n  ".join(tags)
+    html_content = html_content.replace("</head>", f"  {tag_block}\n</head>", 1)
+
+    return html_content
+
+
 def apply_seo_processing(html_content: str, page_path: str) -> str:
     """
     Apply all SEO processing to an HTML page.
@@ -471,6 +594,7 @@ def apply_seo_processing(html_content: str, page_path: str) -> str:
     html_content = inject_json_ld(html_content, page_path)
     html_content = apply_title_template(html_content, page_path)
     html_content = inject_noindex_meta(html_content, page_path)
+    html_content = inject_social_cards(html_content, page_path)
     return html_content
 
 
@@ -489,10 +613,10 @@ _CALLABLE_ROLES = {"function", "method"}
 def _resolve_interlink_name(name):
     """Resolve a qualified name to its inventory entry.
 
-    Tries exact match first, then looks for suffix matches (e.g.,
-    ``DuckDBStore`` matches ``raghilda.store.DuckDBStore``).
+    Tries exact match first, then looks for suffix matches (e.g., `DuckDBStore` matches
+    `raghilda.store.DuckDBStore`).
 
-    Returns (uri, short_name, role) or None if not found.
+    Returns (uri, short_name, role) or `None` if not found.
     """
     # Exact match
     if name in _interlinks_inventory:
@@ -519,12 +643,12 @@ def _resolve_interlink_name(name):
 def resolve_interlinks(html_content):
     """Resolve interlink references in rendered HTML.
 
-    Quarto renders interlink syntax as ``<a>`` tags with backtick-wrapped hrefs:
+    Quarto renders interlink syntax as `<a>` tags with backtick-wrapped hrefs:
 
-    - ``[](`~pkg.Name`)``  → shortened display (``Name``)
-    - ``[](`pkg.Name`)``   → full qualified display (``pkg.Name``)
-    - ``[custom text](`pkg.Name`)`` → custom display text preserved
-    - ``[custom text](`~pkg.Name`)`` → custom display text preserved
+    - ``[](`~pkg.Name`)``  -> shortened display (`Name`)
+    - ``[](`pkg.Name`)``   -> full qualified display (`pkg.Name`)
+    - ``[custom text](`pkg.Name`)`` -> custom display text preserved
+    - ``[custom text](`~pkg.Name`)`` -> custom display text preserved
 
     This function resolves those links against the objects.json inventory.
     """
@@ -576,20 +700,18 @@ def resolve_interlinks(html_content):
 def autolink_code_references(html_content):
     """Auto-convert inline code matching API names into clickable links.
 
-    Scans ``<code>`` tags (outside ``<pre>`` blocks) for text that matches
-    an entry in the objects.json inventory. Matching code is wrapped in an
-    ``<a>`` link to the corresponding reference page.
+    Scans `<code>` tags (outside `<pre>` blocks) for text that matches an entry in the objects.json
+    inventory. Matching code is wrapped in an `<a>` link to the corresponding reference page.
 
     Supported patterns inside inline code:
 
-    - ``Name`` or ``Name()`` — exact/suffix match, display as-is
-    - ``pkg.Name`` or ``pkg.Name()`` — qualified match, display as-is
-    - ``~~pkg.Name`` or ``~~pkg.Name()`` — shortened display (``Name``)
-    - ``~~.pkg.Name`` or ``~~.pkg.Name()`` — dot-prefixed short (``·Name``)
+    - `Name` or `Name()` — exact/suffix match, display as-is
+    - `pkg.Name` or `pkg.Name()` — qualified match, display as-is
+    - `~~pkg.Name` or `~~pkg.Name()` — shortened display (`Name`)
+    - `~~.pkg.Name` or `~~.pkg.Name()` — dot-prefixed short (`·Name`)
 
-    Code with the ``gd-no-link`` class is never autolinked.
-    Code inside ``<pre>`` blocks (fenced code) is never autolinked.
-    Code containing spaces, operators, or arguments is never autolinked.
+    Code with the `gd-no-link` class is never autolinked. Code inside `<pre>` blocks (fenced code)
+    is never autolinked. Code containing spaces, operators, or arguments is never autolinked.
     """
     if not _interlinks_inventory:
         return html_content
@@ -952,8 +1074,8 @@ def strip_directives_from_html(html_content):
     """
     Remove Great Docs %directive lines from rendered HTML.
 
-    Directives like %seealso and %nodoc are used for organizing documentation but
-    they should not appear in the final rendered output. This function removes them after rendering.
+    Directives like %seealso and %nodoc are used for organizing documentation but they should not
+    appear in the final rendered output. This function removes them after rendering.
     """
     # Match directives wrapped in <p> tags
     # e.g., <p>%seealso func_a, func_b</p>
@@ -988,10 +1110,10 @@ def strip_directives_from_html(html_content):
 
 def strip_colgroup_tags(html_content):
     """
-    Remove <colgroup> tags from tables.
+    Remove `<colgroup>` tags from tables.
 
-    Quarto/Pandoc adds <colgroup> with fixed column widths, but we want
-    the browser to determine column widths based on content.
+    Quarto/Pandoc adds `<colgroup>` with fixed column widths, but we want the browser to determine
+    column widths based on content.
     """
     # Match the entire colgroup element including its contents
     colgroup_pattern = re.compile(
@@ -1005,17 +1127,15 @@ def translate_sphinx_fields(html_content):
     """
     Convert Sphinx field-list directives into structured doc sections.
 
-    After rendering, Sphinx-style docstrings with `:param:`,
-    `:type:`, `:returns:`, `:rtype:`, and `:raises:` fields end up
-    mashed into a single `<p>` tag:
+    After rendering, Sphinx-style docstrings with `:param:`, `:type:`, `:returns:`, `:rtype:`, and
+    `:raises:` fields end up mashed into a single `<p>` tag:
 
     ```html
     <p>:param x: Desc. :type x: int :returns: Desc. :rtype: str :raises ValueError: Desc.</p>
     ```
 
-    This function parses those fields and emits the same `<section>` /
-    `<dl>` / `<dt>` / `<dd>` structure that the renderer produces for
-    NumPy-style Parameters / Returns / Raises sections.
+    This function parses those fields and emits the same `<section>` / `<dl>` / `<dt>` / `<dd>`
+    structure that the renderer produces for NumPy-style Parameters / Returns / Raises sections.
     """
 
     # Regex for a <p> tag whose text contains Sphinx field markers.
@@ -1149,20 +1269,17 @@ def translate_google_fields(html_content):
     """
     Convert Google-style docstring sections into structured doc sections.
 
-    After rendering, Google-style docstrings with sections like
-    ``Args:``, ``Returns:``, ``Raises:``, ``Note:``, ``Example:``,
-    ``Warning:``, ``References:``, and ``See Also:`` end up as flat
-    ``<p>`` tags::
+    After rendering, Google-style docstrings with sections like `Args:`, `Returns:`, `Raises:`,
+    `Note:`, `Example:`, `Warning:`, `References:`, and `See Also:` end up as flat `<p>` tags:
 
         <p>Args: items: desc. strict: desc.</p>
         <p>Returns: A dict...</p><pre><code>details</code></pre>
         <p>Raises: ValueError: desc. TypeError: desc.</p>
         <p>Note: text</p>
 
-    Indented continuation text renders as ``<pre><code>`` blocks adjacent
-    to the section ``<p>``.  This function detects both patterns and emits
-    the same ``<section>``/``<h1>``/``<dl>``/``<dt>``/``<dd>`` markup that
-    the renderer produces for NumPy-style sections.
+    Indented continuation text renders as `<pre><code>` blocks adjacent to the section `<p>`.  This
+    function detects both patterns and emits the same `<section>`/`<h1>`/`<dl>`/`<dt>`/`<dd>` markup
+    that the renderer produces for NumPy-style sections.
     """
 
     _PARAM_SECTIONS = {"Args", "Arguments", "Parameters", "Params"}
@@ -1355,13 +1472,13 @@ def translate_sphinx_roles(html_content):
     The renderer sometimes passes through Sphinx-style roles verbatim.  The most
     common rendered patterns are:
 
-    * ``:py:exc:<code>ValueError</code>``  →  ``<code>ValueError</code>``
-    * ``:class:<code>Foo</code>``          →  ``<code>Foo</code>``
-    * ``:func:<code>bar</code>``           →  ``<code>bar()</code>``
-    * ``:func:`bar```  (inside ``<pre>``)  →  ``bar()``
+    * `:py:exc:<code>ValueError</code>` ->  `<code>ValueError</code>`
+    * `:class:<code>Foo</code>`         ->  `<code>Foo</code>`
+    * `:func:<code>bar</code>`          ->  `<code>bar()</code>`
+    * `:func:`bar```  (inside `<pre>`)  ->  `<code>bar()</code>`
 
-    For *function* and *method* roles the name gets trailing ``()`` so the reader
-    can tell it is callable.
+    For *function* and *method* roles the name gets trailing `()` so the reader can tell it is
+    callable.
     """
 
     _CALLABLE_ROLES = {"func", "meth"}
@@ -1407,13 +1524,12 @@ def translate_rst_directives(html_content):
     """
     Convert RST admonition / version directives into styled HTML callouts.
 
-    Handles directives that appear as literal text in ``<p>`` tags after
-    rendering, for example:
+    Handles directives that appear as literal text in `<p>` tags after rendering, for example:
 
-    * ``<p>.. versionadded:: 2.8.1</p>``
-    * ``<p>.. deprecated:: 2.6 Use X instead.</p>``
-    * ``<p>.. note:: Some important note.</p>``
-    * ``<p>.. warning:: Be careful.</p>``
+    * `<p>.. versionadded:: 2.8.1</p>`
+    * `<p>.. deprecated:: 2.6 Use X instead.</p>`
+    * `<p>.. note:: Some important note.</p>`
+    * `<p>.. warning:: Be careful.</p>`
 
     Each directive type gets a distinct icon, colour and label.
     """
@@ -1591,14 +1707,13 @@ def translate_bold_section_headers(html_content):
     """
     Convert bold-text section headings into proper doc-section markup.
 
-    Sphinx-format docstrings sometimes use ``**Examples**::`` to introduce
-    a section.  After rendering this becomes::
+    Sphinx-format docstrings sometimes use `**Examples**::` to introduce
+    a section.  After rendering this becomes:
 
-        <p><strong>Examples</strong>::</p>
+        <p><strong>Examples</strong>:</p>
 
-    This function converts those into the same ``<section>``/``<h1>``
-    structure that the renderer uses for NumPy-style sections so the page
-    has a consistent look.
+    This function converts those into the same `<section>`/`<h1>` structure that the renderer uses
+    for NumPy-style sections so the page has a consistent look.
     """
 
     # Map of recognized section names → CSS id / class suffix
@@ -1848,10 +1963,9 @@ def fix_doctest_blockquotes(html_content):
     """
     Convert nested blockquotes from doctest `>>>` lines into code blocks.
 
-    When the renderer produces an Example section with raw `>>>` lines in the
-    `.qmd` file, Quarto/Pandoc interprets the leading `>` characters as
-    Markdown blockquote markers.  A `>>>` line becomes triple-nested
-    `<blockquote>` elements:
+    When the renderer produces an Example section with raw `>>>` lines in the `.qmd` file,
+    Quarto/Pandoc interprets the leading `>` characters as Markdown blockquote markers.  A `>>>`
+    line becomes triple-nested `<blockquote>` elements:
 
     ```html
     <blockquote class="blockquote">
@@ -1863,9 +1977,8 @@ def fix_doctest_blockquotes(html_content):
     </blockquote>
     ```
 
-    This function detects that pattern inside Example/Examples doc-sections
-    and replaces it with a proper `<pre><code>` block so the content
-    renders in monospace as code.
+    This function detects that pattern inside Example/Examples doc-sections and replaces it with a
+    proper `<pre><code>` block so the content renders in monospace as code.
     """
     # Match one or more triple-nested blockquote clusters inside an
     # Example or Examples doc-section.
@@ -1997,17 +2110,15 @@ def translate_rst_math(html_content):
     """
     Convert RST `.. math::` directives into display-math blocks.
 
-    After rendering, a `.. math::` block in a docstring becomes
-    literal HTML of the form:
+    After rendering, a `.. math::` block in a docstring becomes literal HTML of the form:
 
     ```html
     <p>.. math::</p>
     <pre><code>LATEX EXPRESSION</code></pre>
     ```
 
-    This function converts that pattern into a proper KaTeX display math
-    block and injects the KaTeX CSS/JS from a CDN so the browser can
-    render the equations.
+    This function converts that pattern into a proper KaTeX display math block and injects the KaTeX
+    CSS/JS from a CDN so the browser can render the equations.
     """
     _KATEX_VERSION = "0.16.11"
     _KATEX_CDN = f"https://cdn.jsdelivr.net/npm/katex@{_KATEX_VERSION}/dist"
@@ -2172,7 +2283,7 @@ def extract_seealso_from_doc_section(html_content):
     """
     Extract See Also items from rendered doc-section `<section>` blocks.
 
-    NumPy-style and Google-style docstrings produce sections like::
+    NumPy-style and Google-style docstrings produce sections like:
 
         <section id="see-also" class="level1 doc-section doc-section-see-also">
         <h1 ...>See Also</h1>
@@ -2316,9 +2427,9 @@ def generate_seealso_html(seealso_items):
 def fix_dataclass_attributes(content_str):
     """Rebuild the Attributes table for dataclass pages using *_dataclass_attrs.json* metadata.
 
-    The renderer may only discover a subset of dataclass fields.  This function
-    replaces the ``<tbody>`` of the Attributes ``<table>`` with the complete
-    set of fields recorded in the metadata file.
+    The renderer may only discover a subset of dataclass fields. This function replaces the
+    `<tbody>` of the Attributes `<table>` with the complete set of fields recorded in the metadata
+    file.
     """
     if not dataclass_attrs_metadata:
         return content_str
@@ -2923,12 +3034,10 @@ def inject_version_badge():
     """
     Inject a version badge next to the package name in the navbar.
 
-    Reads package version (and optional release date) from
-    `_package_meta.json` (written by the build) and inserts a small badge
-    span inside each `<span class="navbar-title">` element across all
-    rendered HTML files.  When a `published_at` date is present the badge
-    receives a `title` attribute so the release date appears as a native
-    browser tooltip on hover.
+    Reads package version (and optional release date) from `_package_meta.json` (written by the
+    build) and inserts a small badge span inside each `<span class="navbar-title">` element across
+    all rendered HTML files.  When a `published_at` date is present the badge receives a `title`
+    attribute so the release date appears as a native browser tooltip on hover.
     """
     meta_path = "_package_meta.json"
     if not os.path.exists(meta_path):
@@ -3027,8 +3136,8 @@ def process_cli_reference_pages():
     """
     Process CLI reference pages to add consistent styling.
 
-    This adds the 'cli-title' class to h1 elements in CLI reference pages
-    so they match the monospaced font style of API reference pages.
+    This adds the 'cli-title' class to h1 elements in CLI reference pages so they match the
+    monospaced font style of API reference pages.
     """
     cli_html_files = glob.glob("_site/reference/cli/*.html")
 
@@ -3056,12 +3165,12 @@ process_cli_reference_pages()
 
 def disable_sidebar_collapse():
     """
-    Strip Bootstrap collapse attributes from sidebar section toggles and ensure
-    all sidebar sections remain permanently expanded.
+    Strip Bootstrap collapse attributes from sidebar section toggles and ensure all sidebar sections
+    remain permanently expanded.
 
-    Removes data-bs-toggle, data-bs-target, aria-expanded, and role attributes
-    from sidebar collapse triggers. Also removes the collapse class from sidebar
-    section <ul> elements and removes the chevron toggle <a> elements entirely.
+    Removes data-bs-toggle, data-bs-target, aria-expanded, and role attributes from sidebar collapse
+    triggers. Also removes the collapse class from sidebar section `<ul>` elements and removes the
+    chevron toggle `<a>` elements entirely.
     """
     html_files = glob.glob("_site/**/*.html", recursive=True)
     modified_count = 0
@@ -3115,9 +3224,9 @@ def remove_empty_footer_divs():
     """
     Remove empty nav-footer divs that contain only whitespace or &nbsp;.
 
-    Quarto always renders all three footer sections (left, center, right) even
-    when only one has content. The empty divs cause excess vertical spacing on
-    mobile viewports due to flex-wrap margins.
+    Quarto always renders all three footer sections (left, center, right) even when only one has
+    content. The empty divs cause excess vertical spacing on mobile viewports due to flex-wrap
+    margins.
     """
     html_files = glob.glob("_site/**/*.html", recursive=True)
     modified_count = 0
@@ -3341,10 +3450,10 @@ for _idx_label, _idx_path in [
 
 def inject_sidebar_body_classes():
     """
-    Inject a `gd-ref-sidebar` class on the <body> tag for API/CLI reference pages.
+    Inject a `gd-ref-sidebar` class on the `<body>` tag for API/CLI reference pages.
 
-    This allows CSS to scope monospace sidebar fonts to reference pages while
-    keeping the default sans-serif font for user-guide, recipe, and other pages.
+    This allows CSS to scope monospace sidebar fonts to reference pages while keeping the default
+    sans-serif font for user-guide, recipe, and other pages.
     """
     print("Injecting sidebar body classes...")
     count = 0
@@ -3372,11 +3481,11 @@ inject_sidebar_body_classes()
 
 def style_api_index_sidebar_item():
     """
-    Apply inline styles to the 'API Index' sidebar link so it visually
-    separates from the monospace reference entries.
+    Apply inline styles to the 'API Index' sidebar link so it visually separates from the monospace
+    reference entries.
 
-    Targets the <a> whose href ends with 'reference/index.html' and its
-    parent <div class="sidebar-item-container">.
+    Targets the `<a>` whose href ends with 'reference/index.html' and its parent
+    `<div class="sidebar-item-container">`.
     """
     import re
 
@@ -3441,12 +3550,11 @@ style_api_index_sidebar_item()
 
 def inject_page_metadata():
     """
-    Inject page metadata <meta> tags into HTML files.
+    Inject page metadata `<meta>` tags into HTML files.
 
-    Adds timestamps and author information for the page-metadata.js script
-    to render in the page footer. Auto-generated pages (API reference,
-    changelog) get "Refreshed on" with the build timestamp. Authored pages
-    get dates from the original source file's git history.
+    Adds timestamps and author information for the page-metadata.js script to render in the page
+    footer. Auto-generated pages (API reference, changelog) get "Refreshed on" with the build
+    timestamp. Authored pages get dates from the original source file's git history.
     """
     if not _gd_options.get("show_dates", False):
         return

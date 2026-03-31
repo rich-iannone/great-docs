@@ -153,6 +153,23 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "decision_table": [],  # Manual rows: [{"need": "...", "use": "..."}]
         "extra_body": None,  # Path to extra Markdown to append to the generated body
     },
+    # Social Cards & Open Graph
+    # Auto-generate <meta> tags for social media previews (LinkedIn, Discord, Slack,
+    # Bluesky, Mastodon, X/Twitter, etc.)
+    # True: enable with defaults
+    # False/None: disable
+    # dict: fine-grained control
+    "social_cards": {
+        "enabled": True,  # Master switch for social card meta tags
+        # Default image for og:image / twitter:image (path relative to project root)
+        # None: no default image (individual pages can still set via frontmatter)
+        "image": None,
+        # Twitter/X card type: "summary", "summary_large_image"
+        # "summary_large_image" is used when an image is provided, "summary" otherwise
+        "twitter_card": None,  # None = auto-detect based on image
+        # Twitter/X @handle for the site (e.g., "@posaboron")
+        "twitter_site": None,
+    },
     # SEO configuration for search engine optimization
     # Generates sitemap.xml, robots.txt, and adds metadata for better discoverability
     "seo": {
@@ -944,6 +961,44 @@ class Config:
             return {"preset": preset, "pages": pages}
         return None
 
+    # ── Social Cards Properties ────────────────────────────────────────────
+
+    @property
+    def social_cards_enabled(self) -> bool:
+        """Check if social card meta tags are enabled."""
+        raw = self.get("social_cards")
+        if raw is None or raw is False:
+            return False
+        if raw is True:
+            return True
+        if isinstance(raw, dict):
+            return raw.get("enabled", True)
+        return True
+
+    @property
+    def social_cards_image(self) -> str | None:
+        """Get the default social card image path."""
+        raw = self.get("social_cards")
+        if isinstance(raw, dict):
+            return raw.get("image")
+        return None
+
+    @property
+    def social_cards_twitter_card(self) -> str | None:
+        """Get the Twitter card type override."""
+        raw = self.get("social_cards")
+        if isinstance(raw, dict):
+            return raw.get("twitter_card")
+        return None
+
+    @property
+    def social_cards_twitter_site(self) -> str | None:
+        """Get the Twitter site @handle."""
+        raw = self.get("social_cards")
+        if isinstance(raw, dict):
+            return raw.get("twitter_site")
+        return None
+
     # ── SEO Configuration Properties ─────────────────────────────────────────
 
     @property
@@ -1241,6 +1296,20 @@ def create_default_config() -> str:
 #   date_format: "%B %d, %Y"   # Date format (Python strftime)
 #   show_author: true          # Show author attribution with dates
 #   show_security: true        # Show security policy page (from SECURITY.md)
+
+# Social Cards & Open Graph
+# -------------------------
+# Auto-generate <meta> tags for social media previews (LinkedIn, Discord, Slack,
+# Bluesky, Mastodon, X/Twitter, and other platforms). Enabled by default.
+# social_cards: true           # Enable with defaults (same as omitting the key)
+# social_cards: false          # Disable social card meta tags
+#
+# Fine-grained control:
+# social_cards:
+#   enabled: true
+#   image: assets/social-card.png   # Default og:image for all pages
+#   twitter_site: "@myhandle"       # Twitter/X site @handle
+#   twitter_card: summary_large_image  # "summary" or "summary_large_image"
 
 # Jupyter Kernel
 # --------------

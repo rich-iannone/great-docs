@@ -86,7 +86,7 @@ The changelog feature needs API access to fetch releases. In GitHub Actions, `GI
   run: great-docs build
 ```
 
-The generated workflow already includes this — no extra setup needed.
+The generated workflow already includes this (no extra setup needed).
 
 ## Package Manager Detection
 

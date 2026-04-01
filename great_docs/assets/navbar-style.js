@@ -127,7 +127,15 @@
     var wrapper = document.createElement("div");
     wrapper.id = "gd-navbar-widgets";
 
-    // 1. Dark-mode toggle (unwrap from its <li>)
+    // 1. Keyboard shortcuts button (unwrap from its <li>)
+    var kbContainer = document.getElementById('gd-keyboard-btn-container');
+    if (kbContainer) {
+      var kbLi = kbContainer.closest('li.nav-item');
+      wrapper.appendChild(kbContainer);
+      if (kbLi && !kbLi.hasChildNodes()) kbLi.remove();
+    }
+
+    // 2. Dark-mode toggle (unwrap from its <li>)
     var toggleContainer = document.getElementById("dark-mode-toggle-container");
     if (toggleContainer) {
       var li = toggleContainer.closest("li.nav-item");
@@ -135,7 +143,7 @@
       if (li && !li.hasChildNodes()) li.remove();
     }
 
-    // 2. GitHub icon – compact nav-item (unwrap the <a> from its <li>)
+    // 3. GitHub icon – compact nav-item (unwrap the <a> from its <li>)
     var compactItem = containerFluid.querySelector(
       "#navbarCollapse .nav-item.compact"
     );
@@ -149,7 +157,7 @@
       }
     }
 
-    // 3. GitHub widget – #github-widget (unwrap from its <li>)
+    // 4. GitHub widget – #github-widget (unwrap from its <li>)
     var ghWidget = document.getElementById("github-widget");
     if (ghWidget) {
       var ghLi = ghWidget.closest("li.nav-item");
@@ -157,7 +165,7 @@
       if (ghLi && !ghLi.hasChildNodes()) ghLi.remove();
     }
 
-    // 4. Search button
+    // 5. Search button
     var search = document.getElementById("quarto-search");
     if (search) wrapper.appendChild(search);
 

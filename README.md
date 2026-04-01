@@ -107,6 +107,7 @@ A persistent dark mode toggle with flash-free loading. Your users' preference is
 - Click CLI documentation
 - User Guide pages from `user_guide/` directory
 - Custom sections (recipes, blog, tutorials, etc.)
+- Custom HTML pages from `custom/` with passthrough or raw layouts
 
 </td>
 <td width="50%" valign="top">
@@ -206,6 +207,20 @@ sections:
     dir: recipes
     navbar_after: User Guide
 ```
+
+Custom HTML pages can live in a `custom/` directory and are discovered automatically during build.
+
+```html
+---
+title: Landing Page
+layout: passthrough
+navbar: true
+---
+<section class="hero">...</section>
+```
+
+Use `layout: passthrough` to wrap the HTML body with the normal Great Docs shell, or `layout: raw` to copy the HTML file through unchanged.
+Set `navbar: true` to add the page to the site navbar using its title, or use `navbar: {text: Showcase, after: Guide}` for explicit navbar label and placement.
 
 See the [Configuration Guide](https://posit-dev.github.io/great-docs/user-guide/configuration.html) for the full reference.
 

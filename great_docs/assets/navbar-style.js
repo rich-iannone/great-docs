@@ -117,21 +117,41 @@
 (function () {
   "use strict";
 
+  function ensureWrapper(containerFluid) {
+    var wrapper = document.getElementById("gd-navbar-widgets");
+    if (wrapper) return wrapper;
+
+    wrapper = document.createElement("div");
+    wrapper.id = "gd-navbar-widgets";
+
+    // Place inside .quarto-navbar-tools (the rightmost navbar slot)
+    var tools = containerFluid.querySelector(".quarto-navbar-tools");
+    if (tools) {
+      tools.appendChild(wrapper);
+    } else {
+      // Fallback: append to container-fluid
+      containerFluid.appendChild(wrapper);
+    }
+
+    return wrapper;
+  }
+
+  function moveToWrapper(wrapper, el) {
+    if (!el || wrapper.contains(el)) return;
+    wrapper.appendChild(el);
+  }
+
   function collect() {
     var containerFluid = document.querySelector(".navbar .container-fluid");
     if (!containerFluid) return;
 
-    // Don't run twice
-    if (document.getElementById("gd-navbar-widgets")) return;
-
-    var wrapper = document.createElement("div");
-    wrapper.id = "gd-navbar-widgets";
+    var wrapper = ensureWrapper(containerFluid);
 
     // 1. Keyboard shortcuts button (unwrap from its <li>)
     var kbContainer = document.getElementById('gd-keyboard-btn-container');
     if (kbContainer) {
       var kbLi = kbContainer.closest('li.nav-item');
-      wrapper.appendChild(kbContainer);
+      moveToWrapper(wrapper, kbContainer);
       if (kbLi && !kbLi.hasChildNodes()) kbLi.remove();
     }
 
@@ -139,7 +159,7 @@
     var toggleContainer = document.getElementById("dark-mode-toggle-container");
     if (toggleContainer) {
       var li = toggleContainer.closest("li.nav-item");
-      wrapper.appendChild(toggleContainer);
+      moveToWrapper(wrapper, toggleContainer);
       if (li && !li.hasChildNodes()) li.remove();
     }
 
@@ -152,7 +172,7 @@
       if (link) {
         // Mark the extracted link so CSS can target it without the .nav-item.compact parent
         link.classList.add("gd-navbar-icon");
-        wrapper.appendChild(link);
+        moveToWrapper(wrapper, link);
         compactItem.remove();
       }
     }
@@ -161,13 +181,13 @@
     var ghWidget = document.getElementById("github-widget");
     if (ghWidget) {
       var ghLi = ghWidget.closest("li.nav-item");
-      wrapper.appendChild(ghWidget);
+      moveToWrapper(wrapper, ghWidget);
       if (ghLi && !ghLi.hasChildNodes()) ghLi.remove();
     }
 
     // 5. Search button
     var search = document.getElementById("quarto-search");
-    if (search) wrapper.appendChild(search);
+    if (search) moveToWrapper(wrapper, search);
 
     // Remove the now-empty ul.ms-auto (or one left with only empty items)
     var msAuto = containerFluid.querySelector(
@@ -183,19 +203,33 @@
       if (msAuto.children.length === 0) msAuto.remove();
     }
 
-    // Place inside .quarto-navbar-tools (the rightmost navbar slot)
-    var tools = containerFluid.querySelector(".quarto-navbar-tools");
-    if (tools) {
-      tools.appendChild(wrapper);
-    } else {
-      // Fallback: append to container-fluid
-      containerFluid.appendChild(wrapper);
+  }
+
+  function initCollector() {
+    collect();
+
+    var scheduled = false;
+    function scheduleCollect() {
+      if (scheduled) return;
+      scheduled = true;
+      requestAnimationFrame(function () {
+        scheduled = false;
+        collect();
+      });
     }
+
+    // Catch controls injected after DOMContentLoaded (e.g., keyboard/toggle buttons)
+    var header = document.getElementById("quarto-header") || document.body;
+    var observer = new MutationObserver(scheduleCollect);
+    observer.observe(header, { childList: true, subtree: true });
+
+    // One extra pass after full page load to catch delayed script work.
+    window.addEventListener("load", scheduleCollect, { once: true });
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", collect);
+    document.addEventListener("DOMContentLoaded", initCollector);
   } else {
-    collect();
+    initCollector();
   }
 })();

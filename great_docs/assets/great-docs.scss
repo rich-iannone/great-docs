@@ -2095,11 +2095,17 @@ h1.title.cli-title {
    Keyboard Shortcuts Navbar Button
    ========================================================================== */
 
+/* Nav item containing the keyboard button - keep vertical alignment consistent */
+.nav-item:has(#gd-keyboard-btn-container) {
+    display: flex;
+    align-items: center;
+}
+
 #gd-keyboard-btn-container {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 0;
+    margin-right: 2px;
 }
 
 .gd-keyboard-btn {

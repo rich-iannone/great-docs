@@ -1112,8 +1112,8 @@ a.sidebar-item-text.sidebar-link.text-start > span {
 }
 
 #quarto-header > nav > div {
-    margin-left: 5%;
-    margin-right: 5%;
+    margin-left: 2%;
+    margin-right: 2%;
 }
 
 .navbar {
@@ -2063,6 +2063,68 @@ h1.title.cli-title {
 
     h1.title.cli-title {
         font-size: 0.95rem;
+    }
+}
+
+/* ==========================================================================
+   Keyboard Shortcuts Navbar Button
+   ========================================================================== */
+
+#gd-keyboard-btn-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0;
+}
+
+.gd-keyboard-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+    color: var(--gd-navbar-text);
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: rgba(0, 0, 0, 0.10);
+        border-color: rgba(0, 0, 0, 0.25);
+    }
+
+    &:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.15);
+    }
+
+    svg {
+        display: block;
+    }
+}
+
+/* Hide on mobile — keyboard shortcuts are desktop-only */
+@media (max-width: 991.98px) {
+    #gd-keyboard-btn-container {
+        display: none;
+    }
+}
+
+body.quarto-dark .gd-keyboard-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: #f8f9fa;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.14);
+        border-color: rgba(255, 255, 255, 0.28);
+    }
+
+    &:focus {
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
     }
 }
 
@@ -4703,6 +4765,396 @@ html[data-bs-theme="dark"] .quarto-video {
         fill-opacity: 1;
     }
 }
+
+
+/* ---- Keyboard Shortcuts Help Overlay ---- */
+
+.gd-keyboard-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1090;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.gd-keyboard-overlay-visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.gd-keyboard-overlay-inner {
+    width: 90%;
+    max-width: 520px;
+    max-height: 80vh;
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 0.75rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+    padding: 1.5rem 2rem 2rem;
+    transform: translateY(12px);
+    transition: transform 0.2s ease;
+}
+
+.gd-keyboard-overlay-visible .gd-keyboard-overlay-inner {
+    transform: translateY(0);
+}
+
+.gd-keyboard-overlay-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+
+    h2 {
+        margin: 0;
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: #212529;
+    }
+}
+
+.gd-keyboard-overlay-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: #6c757d;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+
+    &:hover {
+        background: rgba(0, 0, 0, 0.06);
+        color: #212529;
+    }
+
+    &:focus-visible {
+        outline: 2px solid $primary;
+        outline-offset: 2px;
+    }
+}
+
+.gd-keyboard-overlay-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.gd-keyboard-group {
+    h3 {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #868e96;
+        margin: 0 0 0.5rem;
+    }
+
+    dl {
+        margin: 0;
+    }
+}
+
+.gd-keyboard-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    dt {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-weight: normal;
+        margin: 0;
+    }
+
+    dd {
+        margin: 0;
+        color: #495057;
+        font-size: 0.9rem;
+    }
+}
+
+.gd-keyboard-or {
+    font-size: 0.75rem;
+    color: #adb5bd;
+}
+
+kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.6em;
+    padding: 0.15em 0.45em;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 500;
+    line-height: 1;
+    color: #495057;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.3rem;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+}
+
+/* Dark mode */
+[data-bs-theme="dark"] {
+    .gd-keyboard-overlay {
+        background: rgba(0, 0, 0, 0.6);
+    }
+
+    .gd-keyboard-overlay-inner {
+        background: #2b3035;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .gd-keyboard-overlay-header h2 {
+        color: #f8f9fa;
+    }
+
+    .gd-keyboard-overlay-close {
+        color: #adb5bd;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #f8f9fa;
+        }
+    }
+
+    .gd-keyboard-group h3 {
+        color: #868e96;
+    }
+
+    .gd-keyboard-row {
+        border-bottom-color: rgba(255, 255, 255, 0.06);
+
+        dd {
+            color: #ced4da;
+        }
+    }
+
+    kbd {
+        color: #ced4da;
+        background: #343a40;
+        border-color: #495057;
+        box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .gd-keyboard-overlay,
+    .gd-keyboard-overlay-inner {
+        transition: none;
+    }
+}
+
+
+/* ---- Menu Overlay (keyboard shortcut 'm') ---- */
+
+.gd-menu-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1090;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.gd-menu-overlay-visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.gd-menu-overlay-inner {
+    width: 90%;
+    max-width: 420px;
+    max-height: 80vh;
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 0.75rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+    padding: 1.25rem 1.5rem 1.5rem;
+    transform: translateY(12px);
+    transition: transform 0.2s ease;
+}
+
+.gd-menu-overlay-visible .gd-menu-overlay-inner {
+    transform: translateY(0);
+}
+
+.gd-menu-overlay-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+
+    h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: #212529;
+    }
+}
+
+.gd-menu-overlay-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: #6c757d;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+
+    &:hover {
+        background: rgba(0, 0, 0, 0.06);
+        color: #212529;
+    }
+
+    &:focus-visible {
+        outline: 2px solid $primary;
+        outline-offset: 2px;
+    }
+}
+
+/* Menu list */
+.gd-menu-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.gd-menu-section {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #868e96;
+    padding: 0.65rem 0.75rem 0.25rem;
+    cursor: default;
+
+    &:first-child {
+        padding-top: 0;
+    }
+}
+
+.gd-menu-item {
+    display: block;
+    padding: 0.45rem 0.75rem;
+    border-radius: 0.4rem;
+    color: #495057;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: background-color 0.12s ease, color 0.12s ease;
+
+    &:hover {
+        background: rgba(0, 0, 0, 0.04);
+        color: #212529;
+        text-decoration: none;
+    }
+
+    &:focus-visible {
+        outline: 2px solid $primary;
+        outline-offset: -2px;
+        background: rgba(0, 0, 0, 0.03);
+    }
+}
+
+.gd-menu-item-active {
+    font-weight: 600;
+    color: $primary;
+    background: rgba($primary, 0.06);
+}
+
+.gd-menu-item-focused {
+    background: rgba(0, 0, 0, 0.06);
+    color: #212529;
+    outline: 2px solid $primary;
+    outline-offset: -2px;
+}
+
+/* Dark mode */
+[data-bs-theme="dark"] {
+    .gd-menu-overlay {
+        background: rgba(0, 0, 0, 0.6);
+    }
+
+    .gd-menu-overlay-inner {
+        background: #2b3035;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .gd-menu-overlay-header h2 {
+        color: #f8f9fa;
+    }
+
+    .gd-menu-overlay-close {
+        color: #adb5bd;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #f8f9fa;
+        }
+    }
+
+    .gd-menu-section {
+        color: #868e96;
+    }
+
+    .gd-menu-item {
+        color: #ced4da;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: #f8f9fa;
+        }
+    }
+
+    .gd-menu-item-active {
+        color: lighten($primary, 15%);
+        background: rgba($primary, 0.12);
+    }
+
+    .gd-menu-item-focused {
+        background: rgba(255, 255, 255, 0.08);
+        color: #f8f9fa;
+        outline: 2px solid lighten($primary, 15%);
+        outline-offset: -2px;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .gd-menu-overlay,
+    .gd-menu-overlay-inner {
+        transition: none;
+    }
+}
+
 
 /* ---- Back-to-Top Button ---- */
 

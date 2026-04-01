@@ -1160,7 +1160,10 @@ body.quarto-light .navbar .navbar-toggler-icon {
 #gd-navbar-widgets {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 6px;
+    min-width: fit-content;
+    flex-wrap: nowrap;
 }
 
 /* Reset Quarto's auto-margins and ordering on search when inside widget tray */

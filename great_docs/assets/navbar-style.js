@@ -189,6 +189,23 @@
     var search = document.getElementById("quarto-search");
     if (search) moveToWrapper(wrapper, search);
 
+    // Fallback: if wrapper is still empty, look for any navbar buttons with expected classes
+    if (wrapper.children.length === 0) {
+      var msAuto = containerFluid.querySelector("#navbarCollapse .navbar-nav.ms-auto");
+      if (msAuto) {
+        var btns = msAuto.querySelectorAll("button, [role='button']");
+        Array.prototype.forEach.call(btns, function (btn) {
+          if (btn.closest("." + wrapper.id)) return; // Already in wrapper
+          var li = btn.closest("li.nav-item");
+          if (li) {
+            moveToWrapper(wrapper, li);
+          } else {
+            moveToWrapper(wrapper, btn);
+          }
+        });
+      }
+    }
+
     // Remove the now-empty ul.ms-auto (or one left with only empty items)
     var msAuto = containerFluid.querySelector(
       "#navbarCollapse .navbar-nav.ms-auto"
@@ -202,7 +219,6 @@
       });
       if (msAuto.children.length === 0) msAuto.remove();
     }
-
   }
 
   function initCollector() {
@@ -219,12 +235,25 @@
     }
 
     // Catch controls injected after DOMContentLoaded (e.g., keyboard/toggle buttons)
-    var header = document.getElementById("quarto-header") || document.body;
-    var observer = new MutationObserver(scheduleCollect);
-    observer.observe(header, { childList: true, subtree: true });
+    var navbarCollapse = document.getElementById("navbarCollapse");
+    if (navbarCollapse) {
+      var observer = new MutationObserver(scheduleCollect);
+      observer.observe(navbarCollapse, { childList: true, subtree: true });
+    }
 
     // One extra pass after full page load to catch delayed script work.
     window.addEventListener("load", scheduleCollect, { once: true });
+
+    // Polling fallback: every 250ms for 10 seconds, collect if new controls found
+    // This ensures even late-injected elements get consolidated
+    var pollCount = 0;
+    var pollTimer = setInterval(function () {
+      if (++pollCount > 40) {
+        clearInterval(pollTimer);
+        return;
+      }
+      collect();
+    }, 250);
   }
 
   if (document.readyState === "loading") {

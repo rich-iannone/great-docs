@@ -365,17 +365,6 @@ Tools for data privacy regulation compliance.
 - One-line config for privacy mode
 - Audit report of external requests
 
-### Keyboard Shortcuts
-
-Global keyboard navigation for power users.
-
-- `/` or `s` to focus search
-- `p` / `n` for previous/next page
-- `t` to toggle table of contents
-- `d` to toggle dark mode
-- Custom shortcut definitions in config
-- Shortcut help overlay (`?`)
-
 ---
 
 ## Feedback & Contributions

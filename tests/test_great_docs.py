@@ -19313,6 +19313,25 @@ def test_linkify_github_references_no_match():
         assert result == text
 
 
+def test_linkify_github_references_compare_url():
+    """Bare GitHub compare URLs should be converted to Markdown links."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs = GreatDocs(project_path=tmp_dir)
+        text = "**Full Changelog**: https://github.com/owner/repo/compare/v0.1...v0.2"
+        result = docs._linkify_github_references(text, "owner", "repo")
+        expected = "[https://github.com/owner/repo/compare/v0.1...v0.2](https://github.com/owner/repo/compare/v0.1...v0.2)"
+        assert expected in result
+
+
+def test_linkify_github_references_compare_url_already_linked():
+    """Already linked GitHub compare URLs should remain unchanged."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs = GreatDocs(project_path=tmp_dir)
+        text = "[https://github.com/owner/repo/compare/v0.1...v0.2](https://github.com/owner/repo/compare/v0.1...v0.2)"
+        result = docs._linkify_github_references(text, "owner", "repo")
+        assert result == text
+
+
 def test_strip_frontmatter_with_frontmatter():
     """Test _strip_frontmatter removes YAML frontmatter."""
     with tempfile.TemporaryDirectory() as tmp_dir:

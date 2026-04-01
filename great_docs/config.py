@@ -129,6 +129,10 @@ DEFAULT_CONFIG: dict[str, Any] = {
     # None/False: disabled (default)
     # dict: {"navbar": {"Label": "icon-name"}, "sidebar": {"Label": "icon-name"}}
     "nav_icons": None,
+    # Keyboard navigation & shortcuts
+    # True (default): enable keyboard shortcuts and help overlay
+    # False: disable keyboard navigation
+    "keyboard_nav": True,
     # Back-to-top floating button
     # True (default): show back-to-top button on all pages
     # False: disable back-to-top button
@@ -436,6 +440,11 @@ class Config:
     def dark_mode_toggle(self) -> bool:
         """Check if dark mode toggle is enabled."""
         return self.get("dark_mode_toggle", True)
+
+    @property
+    def keyboard_nav(self) -> bool:
+        """Check if keyboard navigation shortcuts are enabled."""
+        return self.get("keyboard_nav", True)
 
     @property
     def back_to_top(self) -> bool:

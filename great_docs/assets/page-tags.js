@@ -98,12 +98,12 @@
       }
       pill.href = prefix + "tags/index.html#" + slug;
 
-      // Icon (if configured)
-      var iconName = icons[tag];
+      // Icon (if configured) – expects pre-resolved Lucide SVG markup
+      var iconSvg = icons[tag];
       var iconHtml = '';
-      if (iconName) {
+      if (iconSvg) {
         iconHtml =
-          '<i class="fa-solid fa-' + iconName + '" style="margin-right:0.3em"></i>';
+          '<span style="margin-right:0.3em;display:inline-flex;vertical-align:middle">' + iconSvg + '</span>';
       } else {
         iconHtml = '<span class="gd-tag-icon">' + TAG_ICON + "</span>";
       }
@@ -130,7 +130,7 @@
         var parent = parts.slice(0, -1).join("/");
         // Icon goes on the parent (LHS), never on the child (RHS)
         var parentIcon = icons[parent]
-          ? '<i class="fa-solid fa-' + icons[parent] + '" style="margin-right:0.3em"></i>'
+          ? '<span style="margin-right:0.3em;display:inline-flex;vertical-align:middle">' + icons[parent] + '</span>'
           : '';
         pill.classList.add("gd-tag-pill-segmented");
         pill.innerHTML =

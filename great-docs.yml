@@ -103,7 +103,7 @@ tags:
   enabled: true
   icons:
     Getting Started: rocket
-    Configuration: gear
+    Configuration: cog
     Theming: palette
     API: file-code
     CLI: terminal
@@ -113,13 +113,13 @@ tags:
     Quality: list-checks
     SEO: search
     Multimedia: image
-    AI/LLM: wand-magic-sparkles
-    GitHub: code-branch
+    AI/LLM: wand-sparkles
+    GitHub: git-branch
     Customization: sliders
     Troubleshooting: wrench
     Branding: paintbrush
     Internationalization: globe
-    CI/CD: rotate
+    CI/CD: repeat
     Setup: download
 
 # Dark Mode Toggle

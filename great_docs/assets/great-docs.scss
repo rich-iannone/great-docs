@@ -5574,21 +5574,32 @@ html[data-bs-theme="dark"] {
 
 // Tags index page — headings styled as pills
 .gd-tag-heading {
-    border-bottom: none;
     margin-top: 1.5rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.35rem;
 
     .gd-tag-pill {
-        font-size: 1rem;
-        padding: 0.3rem 0.85rem;
         cursor: default;
         pointer-events: none;
     }
 }
 
-h3.gd-tag-heading .gd-tag-pill {
-    font-size: 0.85rem;
-    padding: 0.2rem 0.7rem;
+// Indentation for subtags (depth 1 = child, depth 2 = grandchild)
+.gd-tag-indent-1 {
+    margin-left: 2rem;
+}
+
+.gd-tag-indent-2 {
+    margin-left: 4rem;
+}
+
+// Page links under each tag (no bullets, indented)
+.gd-tag-pages {
+    margin-bottom: 0.75rem;
+}
+
+.gd-tag-page-link {
+    padding: 0.15rem 0;
+    padding-left: 1.25rem;
 }
 
 // Segmented pills for hierarchical tags (e.g. Python | Advanced)
@@ -5616,19 +5627,6 @@ h3.gd-tag-heading .gd-tag-pill {
         width: 1px;
         align-self: stretch;
         background-color: tint-color($primary, 60%);
-    }
-}
-
-// Heading-sized segmented pills
-.gd-tag-heading .gd-tag-pill-segmented {
-    .gd-tag-pill-segment {
-        padding: 0.3rem 0.85rem;
-    }
-}
-
-h3.gd-tag-heading .gd-tag-pill-segmented {
-    .gd-tag-pill-segment {
-        padding: 0.2rem 0.7rem;
     }
 }
 

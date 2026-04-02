@@ -1730,18 +1730,21 @@ class GreatDocs:
             for tag_name in sorted(tag_index.keys(), key=str.lower):
                 pages = tag_index[tag_name]
                 icon_html = self._get_tag_icon_html(tag_name, tag_icons)
-                slug = self._tag_slug(tag_name)
                 tooltip = self._tag_tooltip(pages, lang=lang)
                 pill_html = self._tag_heading_pill(tag_name, icon_html, tooltip=tooltip)
-                lines.append(f'<h2 id="{slug}" class="gd-tag-heading">{pill_html}</h2>')
+                lines.append(f'<div class="gd-tag-heading">{pill_html}</div>')
                 lines.append("")
+                lines.append('<div class="gd-tag-pages">')
                 for page in pages:
                     section_badge = (
                         f' <span class="gd-tag-section">{page["section"]}</span>'
                         if page.get("section")
                         else ""
                     )
-                    lines.append(f"- [{page['title']}](../{page['href']}){section_badge}")
+                    lines.append(
+                        f'<div class="gd-tag-page-link">[{page["title"]}](../{page["href"]}){section_badge}</div>'
+                    )
+                lines.append("</div>")
                 lines.append("")
 
         index_path = tags_dir / "index.qmd"
@@ -1770,8 +1773,8 @@ class GreatDocs:
             icon_html = self._get_tag_icon_html(full_tag, tag_icons)
             if not icon_html:
                 icon_html = self._get_tag_icon_html(node_name, tag_icons)
-            slug = self._tag_slug(full_tag)
             parent_label = prefix if prefix else ""
+            indent_class = f" gd-tag-indent-{min(depth, 2)}" if depth > 0 else ""
             # For segmented pills, icon goes on the parent (LHS)
             if parent_label:
                 parent_icon = self._get_tag_icon_html(parent_label, tag_icons)
@@ -1792,21 +1795,23 @@ class GreatDocs:
                     lang=self._config.language,
                 )
                 pill_html = self._tag_heading_pill(node_name, icon_html, tooltip=tooltip)
-            lines.append(
-                f'<h{heading_level} id="{slug}" class="gd-tag-heading">{pill_html}</h{heading_level}>'
-            )
+            lines.append(f'<div class="gd-tag-heading{indent_class}">{pill_html}</div>')
             lines.append("")
 
             # Pages directly under this tag
             pages = subtree.get("__pages__", [])
             if pages:
+                lines.append(f'<div class="gd-tag-pages{indent_class}">')
                 for page in pages:
                     section_badge = (
                         f' <span class="gd-tag-section">{page["section"]}</span>'
                         if page.get("section")
                         else ""
                     )
-                    lines.append(f"- [{page['title']}](../{page['href']}){section_badge}")
+                    lines.append(
+                        f'<div class="gd-tag-page-link">[{page["title"]}](../{page["href"]}){section_badge}</div>'
+                    )
+                lines.append("</div>")
                 lines.append("")
 
             # Recurse into children

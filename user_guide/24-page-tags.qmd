@@ -89,7 +89,22 @@ This produces an index page structure like:
 
 On the page itself, hierarchical tag pills display the leaf name (e.g., "Testing") with the full path shown as a tooltip on hover.
 
-To disable hierarchical tag support and treat `/` as a literal character:
+### Literal Slashes in Tag Names
+
+If a tag name contains a literal `/` that should **not** be treated as a hierarchy separator, escape it with a backslash: `\/`. For example, `AI\/LLM` displays as "AI/LLM" without creating a hierarchy.
+
+```yaml
+---
+title: "Working with LLMs"
+tags: [AI\/LLM, Getting Started]
+---
+```
+
+::: {.callout-note}
+In YAML, leave the tag unquoted (e.g., `AI\/LLM`) so the backslash is preserved. Double-quoted YAML strings will consume the backslash as an escape character.
+:::
+
+To disable hierarchical tag support entirely and treat all `/` characters as literal:
 
 ```{.yaml filename="great-docs.yml"}
 tags:

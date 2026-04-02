@@ -338,8 +338,8 @@ class TestGetTagIconHtml:
 
     def test_with_icon(self):
         result = GreatDocs._get_tag_icon_html("Python", {"Python": "code"})
-        assert "fa-code" in result
-        assert "<i " in result
+        assert "<svg " in result
+        assert "gd-tag-icon-svg" in result
 
 
 # ── Process Tags Integration Test ────────────────────────────────────────────

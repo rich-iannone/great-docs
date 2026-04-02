@@ -11381,6 +11381,453 @@ def test_copy_section_files_no_frontmatter_explicit_list():
         assert (dest / "raw.qmd").exists()
 
 
+def test_process_custom_pages_passthrough_and_raw():
+    """Custom HTML pages support passthrough wrapping and raw copy-through."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+
+        with open(docs.project_path / "_quarto.yml", "w") as f:
+            write_yaml({"website": {"sidebar": [], "navbar": {"left": []}}}, f)
+
+        custom_dir = tmp / "custom"
+        custom_dir.mkdir()
+        (custom_dir / "landing.html").write_text(
+            "---\n"
+            'title: "Landing"\n'
+            "layout: passthrough\n"
+            "---\n"
+            '<section class="hero">\n'
+            "  <h1>Custom Hero</h1>\n"
+            "</section>\n",
+            encoding="utf-8",
+        )
+        (custom_dir / "widget.html").write_text(
+            "---\nlayout: raw\n---\n<html><body>Widget</body></html>\n",
+            encoding="utf-8",
+        )
+        (custom_dir / "app.js").write_text("console.log('custom');\n", encoding="utf-8")
+
+        result = docs._process_custom_pages()
+
+        assert result == 2
+
+        passthrough = docs.project_path / "custom" / "landing.qmd"
+        raw = docs.project_path / "custom" / "widget.html"
+        asset = docs.project_path / "custom" / "app.js"
+
+        assert passthrough.exists()
+        assert raw.exists()
+        assert asset.exists()
+
+        passthrough_text = passthrough.read_text(encoding="utf-8")
+        assert "title: Landing" in passthrough_text
+        assert "layout:" not in passthrough_text
+        assert "bread-crumbs: false" in passthrough_text
+        assert "bread-crumbs: false\n---\n\n<section" in passthrough_text
+        assert '<section class="hero">' in passthrough_text
+
+        raw_text = raw.read_text(encoding="utf-8")
+        assert raw_text == "<html><body>Widget</body></html>\n"
+
+        with open(docs.project_path / "_quarto.yml") as f:
+            config = read_yaml(f)
+
+        resources = config["project"]["resources"]
+        render = config["project"]["render"]
+
+        assert "custom/app.js" in resources
+        assert "custom/widget.html" in resources
+        assert "!custom/widget.html" in render
+
+
+def test_process_custom_pages_missing_dir():
+    """Custom page processing is a no-op when no custom/ directory exists."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+
+        with open(docs.project_path / "_quarto.yml", "w") as f:
+            write_yaml({"website": {"sidebar": [], "navbar": {"left": []}}}, f)
+
+        assert docs._process_custom_pages() == 0
+
+
+def test_process_custom_pages_respects_configured_output_prefix():
+    """Configured custom page directories can choose their output URL prefix."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        (tmp / "great-docs.yml").write_text(
+            "custom_pages:\n  dir: marketing\n  output: py\n",
+            encoding="utf-8",
+        )
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+
+        with open(docs.project_path / "_quarto.yml", "w") as f:
+            write_yaml({"website": {"sidebar": [], "navbar": {"left": []}}}, f)
+
+        marketing_dir = tmp / "marketing"
+        marketing_dir.mkdir()
+        (marketing_dir / "landing.html").write_text(
+            "---\n"
+            'title: "Shiny for Python"\n'
+            "layout: passthrough\n"
+            "navbar: true\n"
+            "---\n"
+            "<section>Landing</section>\n",
+            encoding="utf-8",
+        )
+        (marketing_dir / "app.js").write_text("console.log('marketing');\n", encoding="utf-8")
+
+        result = docs._process_custom_pages()
+
+        assert result == 1
+        assert (docs.project_path / "py" / "landing.qmd").exists()
+        assert (docs.project_path / "py" / "app.js").exists()
+
+        with open(docs.project_path / "_quarto.yml") as f:
+            config = read_yaml(f)
+
+        resources = config["project"]["resources"]
+        navbar_items = config["website"]["navbar"]["left"]
+        landing = next(
+            item
+            for item in navbar_items
+            if isinstance(item, dict) and item.get("text") == "Shiny for Python"
+        )
+
+        assert "py/app.js" in resources
+        assert landing["href"] == "py/landing.qmd"
+
+
+def test_process_custom_pages_supports_multiple_directories():
+    """Multiple custom page source directories can be processed in one build."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        (tmp / "great-docs.yml").write_text(
+            "custom_pages:\n"
+            "  - dir: marketing\n"
+            "    output: py\n"
+            "  - dir: playgrounds\n"
+            "    output: demos\n",
+            encoding="utf-8",
+        )
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+
+        with open(docs.project_path / "_quarto.yml", "w") as f:
+            write_yaml(
+                {
+                    "website": {
+                        "sidebar": [],
+                        "navbar": {"left": [{"text": "Guide", "href": "guide/index.qmd"}]},
+                    }
+                },
+                f,
+            )
+
+        marketing_dir = tmp / "marketing"
+        marketing_dir.mkdir()
+        (marketing_dir / "landing.html").write_text(
+            "---\nlayout: passthrough\nnavbar: true\n---\n<section>Landing</section>\n",
+            encoding="utf-8",
+        )
+
+        playgrounds_dir = tmp / "playgrounds"
+        playgrounds_dir.mkdir()
+        (playgrounds_dir / "showcase.html").write_text(
+            "---\nlayout: raw\nnavbar:\n  text: Showcase\n  after: Guide\n---\n"
+            "<html><body>Showcase</body></html>\n",
+            encoding="utf-8",
+        )
+
+        result = docs._process_custom_pages()
+
+        assert result == 2
+        assert (docs.project_path / "py" / "landing.qmd").exists()
+        assert (docs.project_path / "demos" / "showcase.html").exists()
+
+        with open(docs.project_path / "_quarto.yml") as f:
+            config = read_yaml(f)
+
+        items = config["website"]["navbar"]["left"]
+        texts = [item.get("text") for item in items if isinstance(item, dict)]
+        showcase = next(
+            item for item in items if isinstance(item, dict) and item.get("text") == "Showcase"
+        )
+
+        assert showcase["href"] == "demos/showcase.html"
+        assert texts == ["Guide", "Showcase", "Landing"]
+
+
+def test_process_custom_pages_supports_nested_output_prefixes():
+    """Configured custom pages can publish under nested output prefixes."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        (tmp / "great-docs.yml").write_text(
+            "custom_pages:\n  dir: apps\n  output: products/python\n",
+            encoding="utf-8",
+        )
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+
+        with open(docs.project_path / "_quarto.yml", "w") as f:
+            write_yaml({"website": {"sidebar": [], "navbar": {"left": []}}}, f)
+
+        apps_dir = tmp / "apps"
+        apps_dir.mkdir()
+        (apps_dir / "start.html").write_text(
+            "---\n"
+            'title: "Python Apps"\n'
+            "layout: passthrough\n"
+            "navbar: true\n"
+            "---\n"
+            "<section>Apps</section>\n",
+            encoding="utf-8",
+        )
+        (apps_dir / "assets").mkdir()
+        (apps_dir / "assets" / "widget.js").write_text("window.APPS = true;\n", encoding="utf-8")
+
+        result = docs._process_custom_pages()
+
+        assert result == 1
+        assert (docs.project_path / "products" / "python" / "start.qmd").exists()
+        assert (docs.project_path / "products" / "python" / "assets" / "widget.js").exists()
+
+        with open(docs.project_path / "_quarto.yml") as f:
+            config = read_yaml(f)
+
+        resources = config["project"]["resources"]
+        navbar_items = config["website"]["navbar"]["left"]
+        page = next(
+            item
+            for item in navbar_items
+            if isinstance(item, dict) and item.get("text") == "Python Apps"
+        )
+
+        assert "products/python/assets/widget.js" in resources
+        assert page["href"] == "products/python/start.qmd"
+
+
+def test_process_custom_pages_skips_missing_configured_directories():
+    """Missing configured directories are skipped while valid ones still render."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        (tmp / "great-docs.yml").write_text(
+            "custom_pages:\n"
+            "  - dir: ghost-pages\n"
+            "    output: ghost\n"
+            "  - dir: playgrounds\n"
+            "    output: demos\n",
+            encoding="utf-8",
+        )
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+
+        with open(docs.project_path / "_quarto.yml", "w") as f:
+            write_yaml({"website": {"sidebar": [], "navbar": {"left": []}}}, f)
+
+        playgrounds_dir = tmp / "playgrounds"
+        playgrounds_dir.mkdir()
+        (playgrounds_dir / "widget.html").write_text(
+            "---\nlayout: raw\nnavbar: Widget Lab\n---\n<html><body>Widget</body></html>\n",
+            encoding="utf-8",
+        )
+
+        result = docs._process_custom_pages()
+
+        assert result == 1
+        assert not (docs.project_path / "ghost").exists()
+        assert (docs.project_path / "demos" / "widget.html").exists()
+
+        with open(docs.project_path / "_quarto.yml") as f:
+            config = read_yaml(f)
+
+        resources = config["project"]["resources"]
+        assert "demos/widget.html" in resources
+        assert all(not resource.startswith("ghost/") for resource in resources)
+
+
+def test_process_custom_pages_can_be_disabled_explicitly():
+    """custom_pages: false disables even the conventional custom/ fallback."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        (tmp / "great-docs.yml").write_text("custom_pages: false\n", encoding="utf-8")
+
+        custom_dir = tmp / "custom"
+        custom_dir.mkdir()
+        (custom_dir / "landing.html").write_text(
+            "---\nlayout: passthrough\n---\n<section>Landing</section>\n",
+            encoding="utf-8",
+        )
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+
+        with open(docs.project_path / "_quarto.yml", "w") as f:
+            write_yaml({"website": {"sidebar": [], "navbar": {"left": []}}}, f)
+
+        assert docs._process_custom_pages() == 0
+        assert not (docs.project_path / "custom" / "landing.qmd").exists()
+
+
+def test_process_custom_pages_frontmatter_allows_leading_blank_lines():
+    """Custom HTML frontmatter is parsed even with leading blank lines."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+
+        with open(docs.project_path / "_quarto.yml", "w") as f:
+            write_yaml(
+                {
+                    "website": {
+                        "sidebar": [],
+                        "navbar": {
+                            "left": [
+                                {"text": "Home", "href": "index.qmd"},
+                                {"text": "Reference", "href": "reference/index.qmd"},
+                            ]
+                        },
+                    }
+                },
+                f,
+            )
+
+        custom_dir = tmp / "custom"
+        custom_dir.mkdir()
+        (custom_dir / "landing.html").write_text(
+            "\n\n---\n"
+            'title: "Landing"\n'
+            "layout: passthrough\n"
+            "navbar: true\n"
+            "---\n"
+            "<section>Landing</section>\n",
+            encoding="utf-8",
+        )
+
+        docs._process_custom_pages()
+
+        with open(docs.project_path / "_quarto.yml") as f:
+            config = read_yaml(f)
+
+        items = config["website"]["navbar"]["left"]
+        landing = next(
+            item for item in items if isinstance(item, dict) and item.get("text") == "Landing"
+        )
+
+        assert landing["href"] == "custom/landing.qmd"
+
+
+def test_process_custom_pages_adds_passthrough_navbar_link():
+    """Passthrough custom pages can opt into the navbar with their page title."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+
+        with open(docs.project_path / "_quarto.yml", "w") as f:
+            write_yaml(
+                {
+                    "website": {
+                        "sidebar": [],
+                        "navbar": {
+                            "left": [
+                                {"text": "Home", "href": "index.qmd"},
+                                {"text": "Reference", "href": "reference/index.qmd"},
+                            ]
+                        },
+                    }
+                },
+                f,
+            )
+
+        custom_dir = tmp / "custom"
+        custom_dir.mkdir()
+        (custom_dir / "landing.html").write_text(
+            "---\n"
+            'title: "Shiny for Python"\n'
+            "layout: passthrough\n"
+            "navbar: true\n"
+            "---\n"
+            "<section>Landing</section>\n",
+            encoding="utf-8",
+        )
+
+        docs._process_custom_pages()
+
+        with open(docs.project_path / "_quarto.yml") as f:
+            config = read_yaml(f)
+
+        items = config["website"]["navbar"]["left"]
+        texts = [item.get("text") for item in items if isinstance(item, dict)]
+        landing = next(
+            item
+            for item in items
+            if isinstance(item, dict) and item.get("text") == "Shiny for Python"
+        )
+
+        assert landing["href"] == "custom/landing.qmd"
+        assert texts.index("Shiny for Python") < texts.index("Reference")
+
+
+def test_process_custom_pages_adds_raw_navbar_link_with_custom_text():
+    """Raw custom pages can supply navbar text and placement via frontmatter."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp = Path(tmp_dir)
+        docs = GreatDocs(project_path=tmp_dir)
+        docs.project_path.mkdir(parents=True, exist_ok=True)
+
+        with open(docs.project_path / "_quarto.yml", "w") as f:
+            write_yaml(
+                {
+                    "website": {
+                        "sidebar": [],
+                        "navbar": {
+                            "left": [
+                                {"text": "Guide", "href": "guide/index.qmd"},
+                                {"text": "Reference", "href": "reference/index.qmd"},
+                            ]
+                        },
+                    }
+                },
+                f,
+            )
+
+        custom_dir = tmp / "custom"
+        custom_dir.mkdir()
+        (custom_dir / "showcase.html").write_text(
+            "---\n"
+            "layout: raw\n"
+            "navbar:\n"
+            "  text: Showcase\n"
+            "  after: Guide\n"
+            "---\n"
+            "<html><body>Showcase</body></html>\n",
+            encoding="utf-8",
+        )
+
+        docs._process_custom_pages()
+
+        with open(docs.project_path / "_quarto.yml") as f:
+            config = read_yaml(f)
+
+        items = config["website"]["navbar"]["left"]
+        texts = [item.get("text") for item in items if isinstance(item, dict)]
+        showcase = next(
+            item for item in items if isinstance(item, dict) and item.get("text") == "Showcase"
+        )
+
+        assert showcase["href"] == "custom/showcase.html"
+        assert texts == ["Guide", "Showcase", "Reference"]
+
+
 def test_add_section_sidebar_creates_sidebar():
     """_add_section_sidebar creates a sidebar entry in _quarto.yml."""
     with tempfile.TemporaryDirectory() as tmp_dir:

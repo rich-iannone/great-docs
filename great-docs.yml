@@ -132,6 +132,8 @@ nav_icons:
     Link Checker: scan-search
     Proofreading: spell-check
     Changelog: history
+    Custom Static Pages: app-window
+    Page Tags: tags
     Community Files: file-heart
     Docs Linting: list-checks
 

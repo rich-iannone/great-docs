@@ -181,6 +181,31 @@ DEFAULT_CONFIG: dict[str, Any] = {
         # Twitter/X @handle for the site (e.g., "@posaboron")
         "twitter_site": None,
     },
+    # Page Tags
+    # Categorize pages with tags for improved discoverability.
+    # Tags are added via frontmatter (`tags: [Python, Testing, API]`).
+    # True: enable with defaults
+    # False: disable
+    # dict: fine-grained control
+    "tags": {
+        "enabled": False,  # Master switch for page tags
+        # Auto-generate a tags index page listing all tags and linked pages
+        "index_page": True,
+        # Render tag pills above page titles with links to the tag index
+        "show_on_pages": True,
+        # Support hierarchical tags with "/" separator (e.g., "Python/Testing")
+        "hierarchical": True,
+        # Optional tag icons: dict mapping tag names to Lucide icon names
+        # e.g., {"Python": "code", "Tutorial": "book-open"}
+        "icons": {},
+        # Shadow tags: list of tag names hidden from public view (for internal
+        # organization only). Shadow-tagged pages are indexed but tags are not
+        # rendered on the page or shown in the tag index.
+        "shadow": [],
+        # Scoped listings: when True, section pages (user guide, recipes, etc.)
+        # show a tag cloud scoped to that section
+        "scoped": False,
+    },
     # SEO configuration for search engine optimization
     # Generates sitemap.xml, robots.txt, and adds metadata for better discoverability
     "seo": {
@@ -1063,6 +1088,50 @@ class Config:
         if isinstance(raw, dict):
             return raw.get("twitter_site")
         return None
+
+    # ── Page Tags Properties ─────────────────────────────────────────────
+
+    @property
+    def tags_enabled(self) -> bool:
+        """Check if page tags are enabled."""
+        raw = self.get("tags")
+        if raw is None or raw is False:
+            return False
+        if raw is True:
+            return True
+        if isinstance(raw, dict):
+            return raw.get("enabled", False)
+        return False
+
+    @property
+    def tags_index_page(self) -> bool:
+        """Check if a tags index page should be generated."""
+        return self.tags_enabled and self.get("tags.index_page", True)
+
+    @property
+    def tags_show_on_pages(self) -> bool:
+        """Check if tags should be rendered above page titles."""
+        return self.tags_enabled and self.get("tags.show_on_pages", True)
+
+    @property
+    def tags_hierarchical(self) -> bool:
+        """Check if hierarchical tags (using '/') are supported."""
+        return self.get("tags.hierarchical", True)
+
+    @property
+    def tags_icons(self) -> dict[str, str]:
+        """Get the tag-to-icon mapping."""
+        return self.get("tags.icons", {})
+
+    @property
+    def tags_shadow(self) -> list[str]:
+        """Get the list of shadow tags (hidden from public view)."""
+        return self.get("tags.shadow", [])
+
+    @property
+    def tags_scoped(self) -> bool:
+        """Check if scoped tag listings per section are enabled."""
+        return self.get("tags.scoped", False)
 
     # ── SEO Configuration Properties ─────────────────────────────────────────
 

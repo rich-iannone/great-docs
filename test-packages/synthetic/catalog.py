@@ -325,6 +325,8 @@ ALL_PACKAGES: list[str] = [
     "gdtest_code_cells",  # 160
     # 161: Navigation icons
     "gdtest_nav_icons",  # 161
+    # 162: Page tags
+    "gdtest_page_tags",  # 162
 ]
 
 
@@ -539,6 +541,8 @@ DIMENSIONS: dict[str, dict[str, str]] = {
     "K51": {"axis": "config", "label": "i18n: Japanese (CJK)"},
     "K52": {"axis": "config", "label": "i18n: Arabic (RTL)"},
     "K53": {"axis": "config", "label": "nav_icons config"},
+    # Page tags axes
+    "T1": {"axis": "tags", "label": "Page tags with hierarchy + shadow"},
 }
 
 
@@ -1841,6 +1845,15 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "Each entry should have a small inline SVG icon prepended to its label "
         "for quick visual scanning. The site also uses the 'sky' gradient and "
         "an announcement banner."
+    ),
+    "gdtest_page_tags": (
+        "Four user-guide pages tagged with flat, hierarchical, and shadow tags. "
+        "Tests that tags/index.qmd is generated with all visible tags, that "
+        "page-tags.js is included for client-side pill rendering, that shadow "
+        "tags (needs-review, internal) are excluded from the public tag index, "
+        "and that hierarchical tags like Python/Configuration create nested "
+        "headings on the tags page. Tag icons are configured for Python, "
+        "Tutorial, and API."
     ),
 }
 

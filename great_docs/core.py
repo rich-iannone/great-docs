@@ -171,6 +171,8 @@ class GreatDocs:
             js_files.append("back-to-top.js")
         if self._config.keyboard_nav:
             js_files.append("keyboard-nav.js")
+        if self._config.tags_show_on_pages:
+            js_files.append("page-tags.js")
         for js_file in js_files:
             js_src = self.assets_path / js_file
             if js_src.exists():
@@ -1595,6 +1597,469 @@ class GreatDocs:
         navbar["left"].append({"text": "Changelog", "href": "changelog.qmd"})
 
         self._write_quarto_yml(quarto_yml, config)
+
+    # =========================================================================
+    # Page Tags Methods
+    # =========================================================================
+
+    def _collect_page_tags(self) -> dict[str, list[dict[str, str]]]:
+        """
+        Scan all built .qmd files for tags in frontmatter.
+
+        Collects tags from user-guide, recipe, and custom-section pages.
+        Returns a dict mapping normalized tag names to lists of page info dicts.
+
+        Returns
+        -------
+        dict[str, list[dict[str, str]]]
+            Mapping of tag name → list of ``{"title": ..., "href": ..., "section": ...}``.
+        """
+        tag_index: dict[str, list[dict[str, str]]] = {}
+        shadow_tags = set(self._config.tags_shadow)
+
+        # Directories to scan for tagged pages
+        scan_dirs: list[tuple[Path, str]] = []
+        ug_dir = self.project_path / "user-guide"
+        if ug_dir.is_dir():
+            scan_dirs.append((ug_dir, "User Guide"))
+        recipes_dir = self.project_path / "recipes"
+        if recipes_dir.is_dir():
+            scan_dirs.append((recipes_dir, "Recipes"))
+        # Also scan custom sections
+        for section_cfg in self._config.sections:
+            title = section_cfg.get("title", "")
+            slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-") if title else ""
+            section_dir = self.project_path / slug
+            if section_dir.is_dir():
+                scan_dirs.append((section_dir, title))
+
+        for scan_dir, section_name in scan_dirs:
+            for qmd_file in sorted(scan_dir.rglob("*.qmd")):
+                if qmd_file.name == "index.qmd":
+                    continue
+                try:
+                    content = qmd_file.read_text(encoding="utf-8")
+                except (OSError, UnicodeDecodeError):
+                    continue
+
+                fm, _ = self._split_frontmatter(content)
+                raw_tags = fm.get("tags", [])
+                if not raw_tags or not isinstance(raw_tags, list):
+                    continue
+
+                page_title = fm.get("title", self._derive_page_title(qmd_file))
+                page_href = str(qmd_file.relative_to(self.project_path))
+
+                for tag in raw_tags:
+                    tag_str = str(tag).strip()
+                    if not tag_str:
+                        continue
+                    # Skip shadow tags from the public index
+                    if tag_str in shadow_tags:
+                        continue
+                    tag_index.setdefault(tag_str, []).append(
+                        {"title": page_title, "href": page_href, "section": section_name}
+                    )
+
+        return tag_index
+
+    def _build_tag_hierarchy(self, tag_index: dict[str, list[dict[str, str]]]) -> dict:
+        """
+        Build a hierarchical tree from slash-separated tags.
+
+        Parameters
+        ----------
+        tag_index
+            Flat tag-to-pages mapping from ``_collect_page_tags()``.
+
+        Returns
+        -------
+        dict
+            Nested dict with ``"__pages__"`` lists at each node.
+        """
+        tree: dict = {}
+        for tag, pages in sorted(tag_index.items()):
+            parts = tag.split("/") if self._config.tags_hierarchical else [tag]
+            node = tree
+            for part in parts:
+                part = part.strip()
+                if part:
+                    node = node.setdefault(part, {})
+            node.setdefault("__pages__", []).extend(pages)
+        return tree
+
+    def _generate_tags_index_page(self, tag_index: dict[str, list[dict[str, str]]]) -> str:
+        """
+        Generate a ``tags/index.qmd`` page listing all tags and their linked pages.
+
+        Parameters
+        ----------
+        tag_index
+            Tag-to-pages mapping from ``_collect_page_tags()``.
+
+        Returns
+        -------
+        str
+            The relative path of the generated file (``"tags/index.qmd"``).
+        """
+        from ._translations import get_translation
+
+        lang = self._config.language
+        tags_title = get_translation("tags_title", lang)
+        tag_icons = self._config.tags_icons
+
+        tags_dir = self.project_path / "tags"
+        tags_dir.mkdir(parents=True, exist_ok=True)
+
+        lines: list[str] = [
+            "---",
+            f'title: "{tags_title}"',
+            "bread-crumbs: false",
+            "toc: false",
+            "body-classes: gd-tags-index",
+            "---",
+            "",
+        ]
+
+        # Build the tag hierarchy for nested display
+        if self._config.tags_hierarchical:
+            hierarchy = self._build_tag_hierarchy(tag_index)
+            self._render_tag_tree(lines, hierarchy, tag_icons, depth=0, tag_index=tag_index)
+        else:
+            # Flat listing
+            for tag_name in sorted(tag_index.keys(), key=str.lower):
+                pages = tag_index[tag_name]
+                icon_html = self._get_tag_icon_html(tag_name, tag_icons)
+                slug = self._tag_slug(tag_name)
+                tooltip = self._tag_tooltip(pages, lang=lang)
+                pill_html = self._tag_heading_pill(tag_name, icon_html, tooltip=tooltip)
+                lines.append(f'<h2 id="{slug}" class="gd-tag-heading">{pill_html}</h2>')
+                lines.append("")
+                for page in pages:
+                    section_badge = (
+                        f' <span class="gd-tag-section">{page["section"]}</span>'
+                        if page.get("section")
+                        else ""
+                    )
+                    lines.append(f"- [{page['title']}](../{page['href']}){section_badge}")
+                lines.append("")
+
+        index_path = tags_dir / "index.qmd"
+        index_path.write_text("\n".join(lines), encoding="utf-8")
+        print(f"Created {index_path.relative_to(self.project_path)}")
+        return "tags/index.qmd"
+
+    def _render_tag_tree(
+        self,
+        lines: list[str],
+        tree: dict,
+        tag_icons: dict[str, str],
+        depth: int,
+        prefix: str = "",
+        tag_index: dict[str, list[dict[str, str]]] | None = None,
+    ) -> None:
+        """Recursively render the tag hierarchy into Markdown lines."""
+        heading_level = min(depth + 2, 6)  # h2, h3, h4 ...
+        heading = "#" * heading_level
+
+        for node_name, subtree in sorted(tree.items(), key=lambda x: x[0].lower()):
+            if node_name == "__pages__":
+                continue
+
+            full_tag = f"{prefix}/{node_name}" if prefix else node_name
+            icon_html = self._get_tag_icon_html(full_tag, tag_icons)
+            if not icon_html:
+                icon_html = self._get_tag_icon_html(node_name, tag_icons)
+            slug = self._tag_slug(full_tag)
+            parent_label = prefix if prefix else ""
+            # For segmented pills, icon goes on the parent (LHS)
+            if parent_label:
+                parent_icon = self._get_tag_icon_html(parent_label, tag_icons)
+                tooltip = self._tag_tooltip(
+                    tag_index.get(full_tag, []) if tag_index else [],
+                    lang=self._config.language,
+                )
+                pill_html = self._tag_heading_pill(
+                    node_name,
+                    "",
+                    parent=parent_label,
+                    parent_icon=parent_icon,
+                    tooltip=tooltip,
+                )
+            else:
+                tooltip = self._tag_tooltip(
+                    tag_index.get(full_tag, []) if tag_index else [],
+                    lang=self._config.language,
+                )
+                pill_html = self._tag_heading_pill(node_name, icon_html, tooltip=tooltip)
+            lines.append(
+                f'<h{heading_level} id="{slug}" class="gd-tag-heading">{pill_html}</h{heading_level}>'
+            )
+            lines.append("")
+
+            # Pages directly under this tag
+            pages = subtree.get("__pages__", [])
+            if pages:
+                for page in pages:
+                    section_badge = (
+                        f' <span class="gd-tag-section">{page["section"]}</span>'
+                        if page.get("section")
+                        else ""
+                    )
+                    lines.append(f"- [{page['title']}](../{page['href']}){section_badge}")
+                lines.append("")
+
+            # Recurse into children
+            child_keys = [k for k in subtree if k != "__pages__"]
+            if child_keys:
+                self._render_tag_tree(
+                    lines,
+                    subtree,
+                    tag_icons,
+                    depth + 1,
+                    full_tag,
+                    tag_index=tag_index,
+                )
+
+    def _generate_tags_json(self, tag_index: dict[str, list[dict[str, str]]]) -> None:
+        """
+        Write ``_tags.json`` for the client-side JS to render tag pills.
+
+        Parameters
+        ----------
+        tag_index
+            Tag-to-pages mapping from ``_collect_page_tags()``.
+        """
+        # Build a page-centric index: href → [tag1, tag2, ...]
+        page_tags: dict[str, list[str]] = {}
+        shadow_tags = set(self._config.tags_shadow)
+
+        for tag_name, pages in tag_index.items():
+            for page in pages:
+                page_tags.setdefault(page["href"], []).append(tag_name)
+
+        # Also collect shadow tags per page (so they get meta tags but no pills)
+        # Re-scan for shadow-tagged pages separately
+        for scan_dir_name in ("user-guide", "recipes"):
+            scan_dir = self.project_path / scan_dir_name
+            if not scan_dir.is_dir():
+                continue
+            for qmd_file in sorted(scan_dir.rglob("*.qmd")):
+                if qmd_file.name == "index.qmd":
+                    continue
+                try:
+                    content = qmd_file.read_text(encoding="utf-8")
+                except (OSError, UnicodeDecodeError):
+                    continue
+                fm, _ = self._split_frontmatter(content)
+                raw_tags = fm.get("tags", [])
+                if not raw_tags or not isinstance(raw_tags, list):
+                    continue
+                href = str(qmd_file.relative_to(self.project_path))
+                for tag in raw_tags:
+                    tag_str = str(tag).strip()
+                    if tag_str and tag_str in shadow_tags:
+                        page_tags.setdefault(href, [])
+                        # Shadow tags are NOT added to the visible list
+
+        # Build per-tag metadata (page count + sections) for tooltips
+        tag_meta: dict[str, dict] = {}
+        for tag_name, pages in tag_index.items():
+            sections = sorted({p["section"] for p in pages if p.get("section")})
+            tag_meta[tag_name] = {"count": len(pages), "sections": sections}
+
+        # Resolve tooltip templates for client-side JS
+        from ._translations import get_translation
+
+        lang = self._config.language
+        tooltip_templates = {
+            "one": get_translation("tags_page_count_one", lang),
+            "other": get_translation("tags_page_count_other", lang),
+            "one_no_section": get_translation("tags_page_count_one_no_section", lang),
+            "other_no_section": get_translation("tags_page_count_other_no_section", lang),
+        }
+
+        # Write the JSON
+        tags_json = {
+            "page_tags": page_tags,
+            "tag_meta": tag_meta,
+            "tooltip_templates": tooltip_templates,
+            "icons": self._config.tags_icons,
+            "shadow": list(shadow_tags),
+            "hierarchical": self._config.tags_hierarchical,
+        }
+        tags_path = self.project_path / "_tags.json"
+        with open(tags_path, "w", encoding="utf-8") as f:
+            json.dump(tags_json, f)
+
+    def _add_tags_to_navbar(self) -> None:
+        """Add a *Tags* link to the navbar (idempotent)."""
+        from ._translations import get_translation
+
+        lang = self._config.language
+        tags_label = get_translation("tags_nav", lang)
+
+        quarto_yml = self.project_path / "_quarto.yml"
+        if not quarto_yml.exists():
+            return
+
+        with open(quarto_yml, "r") as f:
+            config = read_yaml(f) or {}
+
+        navbar = config.get("website", {}).get("navbar")
+        if not navbar or "left" not in navbar:
+            return
+
+        # Already present?
+        if any(
+            isinstance(item, dict) and item.get("text") == tags_label for item in navbar["left"]
+        ):
+            return
+
+        link = {"text": tags_label, "href": "tags/index.qmd"}
+        # Insert before Reference
+        self._insert_before_reference(navbar["left"], link)
+
+        self._write_quarto_yml(quarto_yml, config)
+
+    def _process_tags(self) -> bool:
+        """
+        Main entry point for the page tags feature.
+
+        Collects tags from frontmatter, generates the tags index page,
+        writes ``_tags.json`` for client-side rendering, and wires the
+        navbar link.
+
+        Returns
+        -------
+        bool
+            ``True`` if any tags were found and processed.
+        """
+        tag_index = self._collect_page_tags()
+        if not tag_index:
+            return False
+
+        # Generate the tags index page
+        if self._config.tags_index_page:
+            self._generate_tags_index_page(tag_index)
+
+        # Write JSON for client-side tag pill rendering
+        if self._config.tags_show_on_pages:
+            self._generate_tags_json(tag_index)
+            self._inject_tags_data_inline()
+
+        return True
+
+    def _inject_tags_data_inline(self) -> None:
+        """Inject ``_tags.json`` data as an inline ``<script>`` in ``_quarto.yml``.
+
+        This ensures ``page-tags.js`` can read the data directly from
+        ``window.__GD_TAGS_DATA__`` without an XHR request, which would fail
+        under ``file://`` protocol or when the relative path depth is wrong.
+        """
+        tags_json_path = self.project_path / "_tags.json"
+        if not tags_json_path.is_file():
+            return
+
+        quarto_yml = self.project_path / "_quarto.yml"
+        if not quarto_yml.is_file():
+            return
+
+        import yaml
+
+        with open(quarto_yml, encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+
+        if "format" not in config or "html" not in config.get("format", {}):
+            return
+
+        if "include-after-body" not in config["format"]["html"]:
+            config["format"]["html"]["include-after-body"] = []
+        elif isinstance(config["format"]["html"]["include-after-body"], str):
+            config["format"]["html"]["include-after-body"] = [
+                config["format"]["html"]["include-after-body"]
+            ]
+
+        # Check if already injected
+        entries = config["format"]["html"]["include-after-body"]
+        if any("__GD_TAGS_DATA__" in str(item) for item in entries):
+            return
+
+        tags_json_content = tags_json_path.read_text(encoding="utf-8")
+        inline_entry = {
+            "text": ("<script>window.__GD_TAGS_DATA__=" + tags_json_content + ";</script>")
+        }
+
+        # Insert before the page-tags.js script entry (if present) so data is
+        # available when the script runs
+        insert_idx = None
+        for idx, item in enumerate(entries):
+            if "page-tags.js" in str(item):
+                insert_idx = idx
+                break
+        if insert_idx is not None:
+            entries.insert(insert_idx, inline_entry)
+        else:
+            entries.append(inline_entry)
+
+        with open(quarto_yml, "w", encoding="utf-8") as f:
+            yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+
+    @staticmethod
+    def _tag_slug(tag_name: str) -> str:
+        """Convert a tag name to a URL-friendly slug."""
+        return re.sub(r"[^a-z0-9]+", "-", tag_name.lower()).strip("-")
+
+    @staticmethod
+    def _get_tag_icon_html(tag_name: str, tag_icons: dict[str, str]) -> str:
+        """Return an inline Lucide icon ``<i>`` element for a tag, or empty string."""
+        icon_name = tag_icons.get(tag_name)
+        if not icon_name:
+            return ""
+        return f'<i class="fa-solid fa-{icon_name}" style="margin-right:0.4em"></i>'
+
+    @staticmethod
+    def _tag_tooltip(pages: list[dict[str, str]], lang: str = "en") -> str:
+        """Build a translated tooltip string like ``'2 pages in User Guide'``."""
+        from ._translations import get_translation
+
+        n = len(pages)
+        if n == 0:
+            return ""
+        sections = sorted({p["section"] for p in pages if p.get("section")})
+        if sections:
+            key = "tags_page_count_one" if n == 1 else "tags_page_count_other"
+            template = get_translation(key, lang)
+            return template.replace("{count}", str(n)).replace("{sections}", ", ".join(sections))
+        else:
+            key = "tags_page_count_one_no_section" if n == 1 else "tags_page_count_other_no_section"
+            template = get_translation(key, lang)
+            return template.replace("{count}", str(n))
+
+    @staticmethod
+    def _tag_heading_pill(
+        tag_name: str,
+        icon_html: str,
+        parent: str = "",
+        parent_icon: str = "",
+        tooltip: str = "",
+    ) -> str:
+        """Return a pill-styled ``<span>`` for use as a tag heading.
+
+        For hierarchical child tags, renders a segmented pill with the parent
+        as a muted left segment separated by a vertical line.  The icon always
+        appears on the parent (LHS); the child (RHS) never has one.
+        """
+        tip_attr = f' data-tippy-content="{tooltip}"' if tooltip else ""
+        if parent:
+            return (
+                f'<span class="gd-tag-pill gd-tag-pill-segmented"{tip_attr}>'
+                f'<span class="gd-tag-pill-segment gd-tag-pill-parent">{parent_icon}{parent}</span>'
+                '<span class="gd-tag-pill-sep"></span>'
+                f'<span class="gd-tag-pill-segment">{tag_name}</span>'
+                "</span>"
+            )
+        return f'<span class="gd-tag-pill"{tip_attr}>{icon_html}{tag_name}</span>'
 
     # =========================================================================
     # Custom Sections Methods
@@ -7729,6 +8194,10 @@ title: "Security Policy"
                 _provides = get_translation("provides_extra", lang)
                 meta_items.append(f"**{_provides}:** {extras_formatted}")
 
+        if self._config.tags_enabled and self._config.tags_index_page:
+            tags_label = get_translation("tags_nav", lang)
+            meta_items.append(f"[{tags_label}](tags/index.html)")
+
         if meta_items:
             margin_sections.append(f"\n#### {get_translation('meta', lang)}\n")
             margin_sections.append("<br>\n".join(meta_items))
@@ -8577,6 +9046,8 @@ toc: false
             js_resource_files.append("back-to-top.js")
         if self._config.keyboard_nav:
             js_resource_files.append("keyboard-nav.js")
+        if self._config.tags_show_on_pages:
+            js_resource_files.append("page-tags.js")
         for js_file in js_resource_files:
             if js_file not in config["project"]["resources"]:
                 config["project"]["resources"].append(js_file)
@@ -9045,6 +9516,23 @@ toc: false
             )
             if not has_page_metadata:
                 config["format"]["html"]["include-after-body"].append(page_metadata_entry)
+
+        # Add page tags script (if tags are enabled with show_on_pages)
+        if self._config.tags_show_on_pages:
+            if "include-after-body" not in config["format"]["html"]:
+                config["format"]["html"]["include-after-body"] = []
+            elif isinstance(config["format"]["html"]["include-after-body"], str):
+                config["format"]["html"]["include-after-body"] = [
+                    config["format"]["html"]["include-after-body"]
+                ]
+
+            page_tags_entry = {"text": '<script src="page-tags.js"></script>'}
+            has_page_tags = any(
+                "page-tags.js" in str(item)
+                for item in config["format"]["html"]["include-after-body"]
+            )
+            if not has_page_tags:
+                config["format"]["html"]["include-after-body"].append(page_tags_entry)
 
         # Add reference switcher script (if CLI is enabled)
         cli_enabled = metadata.get("cli_enabled", False)
@@ -11218,6 +11706,21 @@ toc: false
                 import traceback
 
                 traceback.print_exc()
+
+            # Step 0.92: Process page tags (if enabled)
+            if self._config.tags_enabled:
+                print("\n🏷️  Processing page tags...")
+                try:
+                    has_tags = self._process_tags()
+                    if has_tags:
+                        print("✅ Tags processed")
+                    else:
+                        print("   No tagged pages found")
+                except Exception as e:
+                    print(f"   ⚠️  Error processing tags: {e}")
+                    import traceback
+
+                    traceback.print_exc()
 
             # Step 0.95: Copy assets directory if present
             try:

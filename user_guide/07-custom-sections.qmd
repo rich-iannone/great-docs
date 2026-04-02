@@ -8,6 +8,8 @@ bread-crumbs: false
 
 Great Docs lets you add any number of custom page groups to your documentation site — examples, tutorials, demos, or anything else. Each section gets its own navbar link and sidebar navigation. By default, the navbar links directly to the first page in the section. Set `index: true` to generate a card-based index page instead. For blog-style content, there's a dedicated `type: blog` mode that uses Quarto's native listing directive.
 
+If you need a single hand-written HTML page rather than a section of `.qmd` files, see [Custom Static Pages](custom-pages.qmd). Custom sections and custom static pages are complementary features.
+
 ## Quick Start
 
 1. Create a directory in your project root with `.qmd` files:

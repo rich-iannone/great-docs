@@ -72,6 +72,13 @@ DEFAULT_CONFIG: dict[str, Any] = {
     # Custom sections (generic page groups: examples, tutorials, blog, etc.)
     # Each entry: {"title": str, "dir": str, "index": bool, "navbar_after": str | None}
     "sections": [],
+    # Custom static HTML pages.
+    # None: auto-discover from project_root/custom/
+    # False: disable custom page discovery entirely
+    # str: one source directory, output defaults to its basename
+    # dict: {"dir": str, "output": str | None}
+    # list[str | dict]: multiple source directories
+    "custom_pages": None,
     # Homepage mode
     # "index" (default): separate homepage from README / index source
     # "user_guide": first user-guide page becomes the landing page
@@ -435,6 +442,55 @@ class Config:
     def sections(self) -> list[dict]:
         """Get the custom sections configuration."""
         return self.get("sections", [])
+
+    @property
+    def custom_pages(self) -> list[dict[str, str]]:
+        """Get normalized custom static page source directories.
+
+        Returns a list of dicts with ``dir`` and ``output`` keys.
+
+        - When ``custom_pages`` is omitted, falls back to ``custom/``.
+        - When ``custom_pages`` is ``false``, returns an empty list.
+        - When ``custom_pages`` is a string, that path is used and the output
+          prefix defaults to the basename of the path.
+        - When ``custom_pages`` is a dict, it may specify ``dir`` and optional
+          ``output``.
+        - When ``custom_pages`` is a list, each entry may be a string or dict.
+        """
+        raw = self.get("custom_pages")
+
+        if raw is None:
+            return [{"dir": "custom", "output": "custom"}]
+
+        if raw is False:
+            return []
+
+        entries: list[Any]
+        if isinstance(raw, list):
+            entries = raw
+        else:
+            entries = [raw]
+
+        normalized: list[dict[str, str]] = []
+
+        for entry in entries:
+            if isinstance(entry, str):
+                output = Path(entry).name or entry
+                normalized.append({"dir": entry, "output": output})
+                continue
+
+            if isinstance(entry, dict):
+                source_dir = entry.get("dir")
+                if not isinstance(source_dir, str) or not source_dir:
+                    continue
+
+                output = entry.get("output")
+                if not isinstance(output, str) or not output:
+                    output = Path(source_dir).name or source_dir
+
+                normalized.append({"dir": source_dir, "output": output})
+
+        return normalized
 
     @property
     def dark_mode_toggle(self) -> bool:
@@ -1234,6 +1290,23 @@ def create_default_config() -> str:
 #   - title: Blog                # Blog section using Quarto's listing directive
 #     dir: blog
 #     type: blog                 # "blog" for Quarto listing, omit for card grid
+
+# Custom Static Pages
+# -------------------
+# Add hand-written HTML pages that Great Docs should either wrap with the site
+# shell (layout: passthrough) or copy through unchanged (layout: raw).
+#
+# Omit `custom_pages` to use the conventional `custom/` directory.
+# Set `custom_pages: false` to disable discovery.
+#
+# custom_pages:
+#   - dir: marketing             # Source directory (relative to project root)
+#     output: py                 # URL/output prefix (optional; defaults to dir basename)
+#   - dir: playgrounds
+#     output: demos
+#
+# Short form for a single directory:
+# custom_pages: marketing
 
 # Dark Mode Toggle
 # ----------------

@@ -1355,8 +1355,21 @@ body.quarto-light .navbar .gd-navbar-icon:hover {
 }
 
 /* Page navigation (prev/next) at bottom of pages */
+.nav-page.nav-page-previous a,
+.nav-page.nav-page-next a {
+    border-style: solid;
+    padding-left: 0.5rem;
+    border-radius: 8px;
+    padding-right: 0.5rem;
+    border-width: 1px;
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+}
+
 .nav-page-text {
     font-size: 0.875em;
+    position: relative;
+    top: -1px;
 }
 
 /* Source link styling */

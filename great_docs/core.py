@@ -1889,11 +1889,22 @@ class GreatDocs:
         }
 
         # Write the JSON
+        # Resolve icon names to inline Lucide SVGs for client-side rendering
+        from ._icons import get_icon_svg
+
+        resolved_icons: dict[str, str] = {}
+        for tag_label, icon_name in self._config.tags_icons.items():
+            svg = get_icon_svg(icon_name, size=14, css_class="gd-tag-icon-svg")
+            if svg:
+                resolved_icons[tag_label] = svg
+            else:
+                print(f"Warning: Unknown tag icon '{icon_name}' for tag '{tag_label}'")
+
         tags_json = {
             "page_tags": page_tags,
             "tag_meta": tag_meta,
             "tooltip_templates": tooltip_templates,
-            "icons": self._config.tags_icons,
+            "icons": resolved_icons,
             "shadow": list(shadow_tags),
             "hierarchical": self._config.tags_hierarchical,
         }
@@ -1995,6 +2006,9 @@ class GreatDocs:
             return
 
         tags_json_content = tags_json_path.read_text(encoding="utf-8")
+        # Escape "</" sequences so the HTML parser doesn't treat them as
+        # closing tags inside the <script> block (e.g. "</svg>" in icon SVGs).
+        tags_json_content = tags_json_content.replace("</", r"<\/")
         inline_entry = {
             "text": ("<script>window.__GD_TAGS_DATA__=" + tags_json_content + ";</script>")
         }
@@ -2021,11 +2035,16 @@ class GreatDocs:
 
     @staticmethod
     def _get_tag_icon_html(tag_name: str, tag_icons: dict[str, str]) -> str:
-        """Return an inline Lucide icon ``<i>`` element for a tag, or empty string."""
+        """Return an inline Lucide SVG icon for a tag, or empty string."""
+        from ._icons import get_icon_svg
+
         icon_name = tag_icons.get(tag_name)
         if not icon_name:
             return ""
-        return f'<i class="fa-solid fa-{icon_name}" style="margin-right:0.4em"></i>'
+        svg = get_icon_svg(icon_name, size=14, css_class="gd-tag-icon-svg")
+        if not svg:
+            return ""
+        return f'<span style="margin-right:0.4em;display:inline-flex;vertical-align:middle">{svg}</span>'
 
     @staticmethod
     def _tag_tooltip(pages: list[dict[str, str]], lang: str = "en") -> str:

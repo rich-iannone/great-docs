@@ -146,8 +146,6 @@ from great_docs._renderer.blueprint import (
 )
 from great_docs._renderer.introspection import (
     Builder,
-    BuilderPkgdown,
-    BuilderSinglePage,
     dynamic_alias,
     get_object,
     get_parser_defaults,
@@ -27154,7 +27152,7 @@ def test_builder_from_quarto_config_no_section_raises():
 
 
 def test_builder_from_quarto_config_with_style():
-    """Builder.from_quarto_config uses style to pick builder class."""
+    """Builder.from_quarto_config ignores style key in config."""
 
     cfg = {
         "api-reference": {
@@ -27181,52 +27179,6 @@ def test_builder_from_quarto_config_interlinks_fast():
     }
     builder = Builder.from_quarto_config(cfg)
     assert builder._fast_inventory is True
-
-
-def test_builder_pkgdown_style():
-    """BuilderPkgdown has style='pkgdown'."""
-
-    assert BuilderPkgdown.style == "pkgdown"
-
-
-def test_builder_single_page_style():
-    """BuilderSinglePage has style='single-page'."""
-
-    assert BuilderSinglePage.style == "single-page"
-
-
-def test_builder_single_page_wraps_sections():
-    """BuilderSinglePage wraps sections in a single Page."""
-
-    builder = BuilderSinglePage(
-        package="json",
-        sections=[{"title": "Funcs", "desc": "", "contents": [{"name": "dumps"}]}],
-    )
-    # layout.sections should be a single Page
-    assert len(builder.layout.sections) == 1
-
-
-def test_builder_single_page_from_config():
-    """BuilderSinglePage is selected via style='single-page'."""
-
-    cfg = {
-        "api-reference": {
-            "package": "json",
-            "sections": [],
-            "style": "single-page",
-        }
-    }
-    builder = Builder.from_quarto_config(cfg)
-    assert isinstance(builder, BuilderSinglePage)
-
-
-def test_builder_single_page_write_index_noop():
-    """BuilderSinglePage.write_index does nothing."""
-
-    builder = BuilderSinglePage(package="json")
-    # write_index should return None and not create files
-    result = builder.write_index(builder.layout)
-    assert result is None
 
 
 def test_cli_ordered_group_list_commands():

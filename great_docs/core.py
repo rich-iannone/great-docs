@@ -8231,15 +8231,10 @@ toc: false
 
             ref_title = get_translation("reference", self._config.language)
 
-        # Configure the qrenderer
-        renderer_config = {"style": "_renderer.py"}
-
         api_ref_config = {
             "package": importable_name,
             "dir": "reference",
             "title": ref_title,
-            "style": "pkgdown",
-            "renderer": renderer_config,
         }
         if ref_desc:
             api_ref_config["desc"] = ref_desc

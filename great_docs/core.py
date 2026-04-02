@@ -2211,12 +2211,25 @@ class GreatDocs:
     # Custom Static Pages Methods
     # =========================================================================
 
-    def _find_custom_pages_dir(self) -> Path | None:
-        """Return the conventional custom pages directory if it exists."""
-        custom_dir = self.project_root / "custom"
-        if custom_dir.exists() and custom_dir.is_dir():
-            return custom_dir
-        return None
+    def _get_custom_page_sources(self) -> list[dict[str, Path | str]]:
+        """Return configured custom page source directories that exist."""
+        sources: list[dict[str, Path | str]] = []
+
+        for entry in self._config.custom_pages:
+            source_dir = self.project_root / entry["dir"]
+            if not source_dir.exists() or not source_dir.is_dir():
+                if entry["dir"] != "custom" or self._config.exists():
+                    print(f"   ⚠️  Custom pages directory '{entry['dir']}' not found, skipping")
+                continue
+
+            sources.append(
+                {
+                    "source_dir": source_dir,
+                    "output": entry["output"],
+                }
+            )
+
+        return sources
 
     def _split_frontmatter(self, content: str) -> tuple[dict, str]:
         """Split YAML frontmatter from file content when present."""
@@ -2306,66 +2319,70 @@ class GreatDocs:
         self._write_quarto_yml(quarto_yml, config)
 
     def _process_custom_pages(self) -> int:
-        """Process auto-discovered custom HTML pages under custom/."""
-        source_dir = self._find_custom_pages_dir()
-        if source_dir is None:
+        """Process configured custom HTML pages."""
+        sources = self._get_custom_page_sources()
+        if not sources:
             return 0
-
-        dest_dir = self.project_path / "custom"
-        dest_dir.mkdir(parents=True, exist_ok=True)
 
         resources_to_add: list[str] = []
         raw_render_excludes: list[str] = []
         processed = 0
 
-        for src_path in sorted(source_dir.rglob("*")):
-            if not src_path.is_file():
-                continue
+        for source in sources:
+            source_dir = source["source_dir"]
+            output_prefix = str(source["output"])
+            dest_dir = self.project_path / output_prefix
+            dest_dir.mkdir(parents=True, exist_ok=True)
 
-            rel_path = src_path.relative_to(source_dir)
-            dest_path = dest_dir / rel_path
-            dest_path.parent.mkdir(parents=True, exist_ok=True)
+            for src_path in sorted(source_dir.rglob("*")):
+                if not src_path.is_file():
+                    continue
 
-            if src_path.suffix.lower() not in (".html", ".htm"):
-                shutil.copy2(src_path, dest_path)
-                resources_to_add.append((Path("custom") / rel_path).as_posix())
-                continue
+                rel_path = src_path.relative_to(source_dir)
+                dest_path = dest_dir / rel_path
+                output_rel_path = Path(output_prefix) / rel_path
+                dest_path.parent.mkdir(parents=True, exist_ok=True)
 
-            content = src_path.read_text(encoding="utf-8")
-            frontmatter, body = self._split_frontmatter(content)
-            layout = str(frontmatter.get("layout", "passthrough")).lower()
-            page_title = str(frontmatter.get("title") or self._derive_page_title(src_path))
+                if src_path.suffix.lower() not in (".html", ".htm"):
+                    shutil.copy2(src_path, dest_path)
+                    resources_to_add.append(output_rel_path.as_posix())
+                    continue
 
-            if layout not in {"passthrough", "raw"}:
-                print(
-                    f"   ⚠️  Unsupported custom page layout '{layout}' in {rel_path}; "
-                    "defaulting to passthrough"
-                )
-                layout = "passthrough"
+                content = src_path.read_text(encoding="utf-8")
+                frontmatter, body = self._split_frontmatter(content)
+                layout = str(frontmatter.get("layout", "passthrough")).lower()
+                page_title = str(frontmatter.get("title") or self._derive_page_title(src_path))
 
-            if layout == "raw":
-                dest_path.write_text(body, encoding="utf-8")
-                raw_resource = (Path("custom") / rel_path).as_posix()
-                resources_to_add.append(raw_resource)
-                raw_render_excludes.append(raw_resource)
-                nav_href = raw_resource
-            else:
-                qmd_path = dest_path.with_suffix(".qmd")
-                qmd_frontmatter = dict(frontmatter)
-                qmd_frontmatter.pop("layout", None)
-                qmd_frontmatter.setdefault("title", page_title)
-                qmd_frontmatter.setdefault("bread-crumbs", False)
-                qmd_body = body if body.endswith("\n") else f"{body}\n"
-                qmd_content = f"---\n{format_yaml(qmd_frontmatter)}\n---\n\n{qmd_body}"
-                qmd_path.write_text(qmd_content, encoding="utf-8")
-                nav_href = (Path("custom") / rel_path.with_suffix(".qmd")).as_posix()
+                if layout not in {"passthrough", "raw"}:
+                    print(
+                        f"   ⚠️  Unsupported custom page layout '{layout}' in {output_rel_path}; "
+                        "defaulting to passthrough"
+                    )
+                    layout = "passthrough"
 
-            navbar_cfg = self._get_custom_page_navbar_config(frontmatter, page_title)
-            if navbar_cfg is not None:
-                nav_text, navbar_after = navbar_cfg
-                self._add_section_to_navbar(nav_text, nav_href, navbar_after)
+                if layout == "raw":
+                    dest_path.write_text(body, encoding="utf-8")
+                    raw_resource = output_rel_path.as_posix()
+                    resources_to_add.append(raw_resource)
+                    raw_render_excludes.append(raw_resource)
+                    nav_href = raw_resource
+                else:
+                    qmd_path = dest_path.with_suffix(".qmd")
+                    qmd_frontmatter = dict(frontmatter)
+                    qmd_frontmatter.pop("layout", None)
+                    qmd_frontmatter.setdefault("title", page_title)
+                    qmd_frontmatter.setdefault("bread-crumbs", False)
+                    qmd_body = body if body.endswith("\n") else f"{body}\n"
+                    qmd_content = f"---\n{format_yaml(qmd_frontmatter)}\n---\n\n{qmd_body}"
+                    qmd_path.write_text(qmd_content, encoding="utf-8")
+                    nav_href = output_rel_path.with_suffix(".qmd").as_posix()
 
-            processed += 1
+                navbar_cfg = self._get_custom_page_navbar_config(frontmatter, page_title)
+                if navbar_cfg is not None:
+                    nav_text, navbar_after = navbar_cfg
+                    self._add_section_to_navbar(nav_text, nav_href, navbar_after)
+
+                processed += 1
 
         self._add_project_resources(resources_to_add, raw_render_excludes)
         return processed

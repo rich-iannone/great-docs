@@ -125,7 +125,7 @@ In this example, "Configuration" and "API" appear as pills and on the index page
 
 ## Tag Icons
 
-You can associate tags with icons from the [Font Awesome](https://fontawesome.com/icons) set. Icons appear inside the tag pill and next to the tag heading on the index page.
+You can associate tags with icons from the [Lucide](https://lucide.dev/icons/) icon set (the same icon set used by `nav_icons`). Icons appear inside the tag pill and next to the tag heading on the index page.
 
 ```{.yaml filename="great-docs.yml"}
 tags:
@@ -133,11 +133,11 @@ tags:
   icons:
     Python: code
     Tutorial: book-open
-    API: plug
-    Testing: flask-vial
+    API: file-code
+    Testing: flask-conical
 ```
 
-The icon names correspond to Font Awesome solid icon names (without the `fa-` prefix).
+The icon names are Lucide icon names (lowercase, hyphenated). Browse the full catalogue at [lucide.dev/icons](https://lucide.dev/icons/).
 
 ## Full Configuration Reference
 

@@ -160,6 +160,7 @@ nav_icons:
     Changelog: history
     Custom Static Pages: app-window
     Page Tags: tags
+    Page Status Badges: shield-check
     Community Files: file-heart
     Docs Linting: list-checks
 

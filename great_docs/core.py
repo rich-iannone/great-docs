@@ -2179,6 +2179,10 @@ class GreatDocs:
             Page href → status string mapping from ``_collect_page_statuses()``.
         """
         from ._icons import get_icon_svg
+        from ._translations import get_translation
+
+        lang = self._config.language
+        builtin_statuses = {"new", "updated", "beta", "deprecated", "experimental"}
 
         definitions = self._config.page_status_definitions
         resolved_statuses: dict[str, dict[str, str]] = {}
@@ -2187,11 +2191,19 @@ class GreatDocs:
             svg = ""
             if icon_name:
                 svg = get_icon_svg(icon_name, size=12, css_class="gd-status-icon-svg") or ""
+
+            if status_key in builtin_statuses:
+                label = get_translation(f"status_label_{status_key}", lang)
+                description = get_translation(f"status_desc_{status_key}", lang)
+            else:
+                label = status_def.get("label", status_key.title())
+                description = status_def.get("description", "")
+
             resolved_statuses[status_key] = {
-                "label": status_def.get("label", status_key.title()),
+                "label": label,
                 "icon": svg,
                 "color": status_def.get("color", "#6b7280"),
-                "description": status_def.get("description", ""),
+                "description": description,
             }
 
         status_json = {

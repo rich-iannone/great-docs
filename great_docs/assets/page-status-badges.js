@@ -136,7 +136,7 @@
       var badge = document.createElement("span");
       badge.className = "gd-sidebar-status-badge gd-sidebar-status-" + status;
       badge.style.setProperty("--gd-status-color", def.color);
-      badge.setAttribute("title", def.description || def.label);
+      badge.setAttribute("title", def.label + (def.description ? " \u2014 " + def.description : ""));
 
       if (def.icon) {
         badge.innerHTML = def.icon;

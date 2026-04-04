@@ -100,6 +100,16 @@ class TestPageStatusConfig:
         assert defs["new"]["label"] == "New"
         assert defs["deprecated"]["icon"] == "triangle-alert"
 
+    def test_shorthand_true_preserves_default_definitions(self, tmp_path: Path):
+        """Regression: `page_status: true` must not replace definitions with bool."""
+        cfg = _make_config(tmp_path, "page_status: true\n")
+        defs = cfg.page_status_definitions
+        assert isinstance(defs, dict)
+        assert len(defs) >= 5
+        assert "new" in defs
+        assert "experimental" in defs
+        assert defs["new"]["label"] == "New"
+
     def test_custom_definitions_merge(self, tmp_path: Path):
         cfg = _make_config(
             tmp_path,
@@ -237,3 +247,40 @@ class TestProcessPageStatuses:
         # Verify JSON file was created
         json_path = gd.project_path / "_page_status.json"
         assert json_path.exists()
+
+
+# ── Asset Correctness Tests ─────────────────────────────────────────────────
+
+
+class TestStatusBadgeAssets:
+    """Verify the SCSS and JS assets contain correct selectors and logic."""
+
+    def test_scss_sidebar_flex_uses_compound_selector(self):
+        """Regression: .sidebar-navigation is ON #quarto-sidebar, not inside it.
+
+        #quarto-sidebar.sidebar-navigation (compound) must be used, NOT
+        #quarto-sidebar .sidebar-navigation (descendant).
+        """
+        scss_path = Path(__file__).parent.parent / "great_docs" / "assets" / "great-docs.scss"
+        content = scss_path.read_text(encoding="utf-8")
+        assert "#quarto-sidebar.sidebar-navigation .sidebar-item .sidebar-link" in content
+        assert "#quarto-sidebar .sidebar-navigation .sidebar-item .sidebar-link" not in content
+
+    def test_js_uses_url_api_for_href_parsing(self):
+        """Regression: browsers resolve getAttribute('href') to absolute URLs.
+
+        The JS must use new URL() to extract the pathname for matching.
+        """
+        js_path = Path(__file__).parent.parent / "great_docs" / "assets" / "page-status-badges.js"
+        content = js_path.read_text(encoding="utf-8")
+        assert "new URL(href, window.location.href)" in content
+
+    def test_js_progressive_subpath_matching(self):
+        """Regression: subdirectory deployments add a prefix to the pathname.
+
+        e.g. /great-docs/user-guide/foo.qmd must match key user-guide/foo.qmd.
+        The JS must try progressively shorter subpaths.
+        """
+        js_path = Path(__file__).parent.parent / "great_docs" / "assets" / "page-status-badges.js"
+        content = js_path.read_text(encoding="utf-8")
+        assert "segments.slice(i).join" in content

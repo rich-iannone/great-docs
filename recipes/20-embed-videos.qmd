@@ -12,8 +12,8 @@ Great Docs supports embedding YouTube, Vimeo, Loom, and local video files with r
 
 To embed a YouTube video, use the following syntax in any `.qmd` page:
 
-```markdown
-{{{{< video https://www.youtube.com/watch?v=wo9vZccmqwc >}}}}
+```{shortcodes="false"}
+{{< video https://www.youtube.com/watch?v=wo9vZccmqwc >}}
 ```
 
 Here's a live example:
@@ -26,8 +26,8 @@ The video is responsive by default, and YouTube embeds use a lightweight thumbna
 
 For short screen recordings, reference a local `.mp4` file:
 
-```markdown
-{{{{< video assets/demo.mp4 >}}}}
+```{shortcodes="false"}
+{{< video assets/demo.mp4 >}}
 ```
 
 ::: {.callout-note}

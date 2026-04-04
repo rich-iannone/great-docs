@@ -1163,7 +1163,12 @@ class Config:
     @property
     def page_status_definitions(self) -> dict[str, dict[str, str]]:
         """Get the status definitions (built-in + custom overrides)."""
-        return self.get("page_status.statuses", {})
+        defs = self.get("page_status.statuses")
+        if defs and isinstance(defs, dict):
+            return defs
+        # Shorthand `page_status: true` replaces the entire dict with a bool,
+        # so fall back to the built-in defaults.
+        return DEFAULT_CONFIG.get("page_status", {}).get("statuses", {})
 
     # ── Page Tags Properties ─────────────────────────────────────────────
 

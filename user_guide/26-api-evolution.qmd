@@ -107,7 +107,7 @@ To insert an evolution table directly into a User Guide page or any `.qmd` file,
 {{< evolution build >}}
 ```
 
-This produces a self-contained HTML table (with embedded CSS) showing how `build()` evolved across all tagged releases. The table is generated at build time — no Python code blocks or manual HTML required.
+This produces a self-contained HTML table (with embedded CSS) showing how `build()` evolved across all tagged releases. The table is generated at build time so no Python code blocks or manual HTML is required.
 
 #### Options
 
@@ -176,7 +176,7 @@ The schema of the evolution table JSON (obtained via `evolution_table_to_dict()`
 | `versions` | Ordered list of version labels (column headers) |
 | `slots` | Array of positional parameter slots |
 | `slots[].position` | Zero-based parameter position |
-| `slots[].cells` | Array parallel to `versions` — one entry per column |
+| `slots[].cells` | Array parallel to `versions` (one entry per column) |
 | `slots[].cells[]` | `{"name", "type", "default"}` or `null` if the slot didn't exist |
 | `returns` | Array parallel to `versions` with return types (`null` if none); omitted if no version has a return annotation |
 
@@ -186,16 +186,31 @@ A `null` entry in `cells` means the parameter slot did not exist in that version
 
 ### Dependency Graph
 
-Generate a Mermaid diagram of class inheritance:
+The `--graph` flag generates a [Mermaid](https://mermaid.js.org/) diagram showing class inheritance relationships within your package at the newer version. Classes are drawn as rectangles, functions as rounded boxes, and arrows point from parent to child.
 
 ```{.bash filename="Terminal"}
 great-docs api-diff v0.1.0 v1.0.0 --graph
 ```
 
+The output is a Mermaid `graph TD` block that you can paste into a `.qmd` file, a GitHub comment, or any Mermaid-compatible renderer. Add `--json` for a machine-readable representation with `nodes` (name → kind) and `inheritance` edge lists.
+
 ### API Surface Timeline
 
-Visualize how the total symbol count grows across all tagged releases:
+The `--timeline` flag produces a Mermaid bar chart that tracks how the total number of public symbols (classes and functions combined) grows across every tagged release between the two versions.
 
 ```{.bash filename="Terminal"}
 great-docs api-diff v0.1.0 v1.0.0 --timeline
 ```
+
+This is useful for spotting rapid API expansion or for confirming that a stabilization release didn't inadvertently expose new symbols. The default output is a `xychart-beta` Mermaid block; use `--json` for an array of `{version, symbols, classes, functions}` objects suitable for custom charting.
+
+## What's Next
+
+API Evolution is still experimental. As such the commands, shortcode options, and JSON schema may change as we gather feedback. Here are some directions we're exploring:
+
+- breaking-change reports (embedded directly in changelog pages)
+- per-version diffing in CI with automatic comments on pull requests that alter the public API surface
+- richer dependency graphs that include call edges and module-level relationships, not just class inheritance
+- interactive evolution tables with tooltips, filtering, and collapsible version ranges
+
+If you run into rough edges or have ideas for what would be most useful, please [open an issue](https://github.com/posit-dev/great-docs/issues).

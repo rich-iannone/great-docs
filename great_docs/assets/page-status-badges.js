@@ -107,8 +107,15 @@
       var href = link.getAttribute("href");
       if (!href) return;
 
-      // Normalize href to match page_statuses keys
-      var normalized = href
+      // Strip absolute URL origin if present (e.g. from resolved hrefs)
+      var path = href;
+      try {
+        var url = new URL(href, window.location.href);
+        path = url.pathname;
+      } catch (_) {}
+
+      // Normalize path to match page_statuses keys
+      var normalized = path
         .replace(/^\.\//, "")
         .replace(/^\//, "")
         .replace(/\.html$/, ".qmd")

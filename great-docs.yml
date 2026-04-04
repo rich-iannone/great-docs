@@ -127,6 +127,12 @@ tags:
 # Enable/disable the dark mode toggle in navbar (default: true)
 dark_mode_toggle: true
 
+# Page Status Badges
+# ------------------
+# Show status badges (e.g., Experimental, New) on pages that set a `status` key
+# in their YAML frontmatter.
+page_status: true
+
 # Navigation Icons
 # ----------------
 # Add Lucide icons next to navbar and sidebar labels.
@@ -163,6 +169,7 @@ nav_icons:
     Page Status Badges: shield-check
     Community Files: file-heart
     Docs Linting: list-checks
+    API Evolution: git-compare-arrows
 
 # Author Information
 # ------------------

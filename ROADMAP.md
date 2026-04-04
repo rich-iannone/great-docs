@@ -81,17 +81,6 @@ Surface "Added in version X" and "Deprecated in version Y" badges automatically.
 - Diff consecutive versions to detect additions, removals, signature changes
 - Deprecation warning callouts in rendered docs
 
-### API Evolution Insights
-
-Tools for understanding how the API surface changes over time.
-
-- Interactive dependency graph showing class inheritance and function relationships
-- Version-to-version diff reports: added/removed/changed symbols
-- Parameter change tracking (renamed, retyped, new defaults, removed)
-- Breaking change detection and migration hints
-- `great-docs api-diff v1.0 v2.0` CLI command
-- Visual timeline of API surface growth
-
 ### Analytics Integration
 
 One-line config for privacy-friendly analytics.

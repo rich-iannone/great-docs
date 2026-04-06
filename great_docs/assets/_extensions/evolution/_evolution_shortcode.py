@@ -1,17 +1,3 @@
-"""Bridge script for the {{< evolution >}} Quarto shortcode.
-
-Called by evolution.lua during ``quarto render``.  Imports
-:func:`great_docs._api_diff.render_evolution_table` and prints the
-resulting HTML to stdout.
-
-Usage::
-
-    python _evolution_shortcode.py SYMBOL [--package PKG] [--old_version V]
-        [--new_version V] [--changes_only true|false]
-        [--disclosure true|false] [--summary TEXT] [--css true|false]
-        [--json_file PATH]
-"""
-
 from __future__ import annotations
 
 import argparse

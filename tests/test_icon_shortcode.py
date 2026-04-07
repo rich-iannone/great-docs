@@ -66,6 +66,14 @@ class TestIconBridgeScript:
         assert "</svg>" in result.stdout
         assert 'class="gd-icon"' in result.stdout
         assert 'aria-hidden="true"' in result.stdout
+        # fa-style inline sizing
+        assert "height:1em" in result.stdout
+        assert "width:1em" in result.stdout
+        assert "vertical-align:-0.125em" in result.stdout
+        assert "font-size:inherit" in result.stdout
+        # No pixel width/height attributes
+        assert 'width="' not in result.stdout
+        assert 'height="' not in result.stdout
 
     def test_custom_size(self):
         bridge = _ext_dir() / "_icon_shortcode.py"
@@ -76,8 +84,12 @@ class TestIconBridgeScript:
             timeout=10,
         )
         assert result.returncode == 0
-        assert 'width="32"' in result.stdout
-        assert 'height="32"' in result.stdout
+        # 32px / 16 = 2em
+        assert "height:2em" in result.stdout or "height:2.0em" in result.stdout
+        assert "width:2em" in result.stdout or "width:2.0em" in result.stdout
+        # No pixel attributes
+        assert 'width="' not in result.stdout
+        assert 'height="' not in result.stdout
 
     def test_custom_class(self):
         bridge = _ext_dir() / "_icon_shortcode.py"

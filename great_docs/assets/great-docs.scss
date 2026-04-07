@@ -4777,6 +4777,16 @@ html[data-bs-theme="dark"] {
     }
 }
 
+/* ── Inline icon shortcode ───────────────────────────────────── */
+
+/* Strip the paragraph margin Pandoc adds when wrapping inline icons
+   inside table cells.  Without this, <td><p><svg>…</svg></p></td>
+   gets ~1rem of bottom margin and rows appear double-height.         */
+td > p:has(> svg.gd-icon) {
+    margin: 0;
+    line-height: inherit;
+}
+
 
 /* ── Video embedding enhancements ────────────────────────────── */
 

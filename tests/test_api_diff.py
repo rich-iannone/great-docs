@@ -1,5 +1,3 @@
-"""Tests for the API Evolution Insights module (_api_diff)."""
-
 from __future__ import annotations
 
 import json

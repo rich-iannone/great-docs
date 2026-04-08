@@ -4828,6 +4828,156 @@ def test_process_sections_idempotent():
         assert len(example_sidebars) == 1
 
 
+def test_process_sections_copies_asset_directories():
+    """Test that non-.qmd subdirectories (data/, img/) are copied to the build directory."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+        (project_path / "great-docs.yml").write_text(
+            "sections:\n  - title: Examples\n    dir: examples\n"
+        )
+        build_dir = project_path / "great-docs"
+        build_dir.mkdir()
+        quarto_yml = build_dir / "_quarto.yml"
+        quarto_yml.write_text(
+            "website:\n"
+            "  navbar:\n"
+            "    left:\n"
+            "      - text: Home\n"
+            "        href: index.qmd\n"
+            "  sidebar: []\n"
+        )
+
+        # Create section with .qmd files and asset subdirectories
+        ex_dir = project_path / "examples"
+        ex_dir.mkdir()
+        (ex_dir / "page.qmd").write_text('---\ntitle: "Page"\n---\n\nContent\n')
+
+        # Create asset subdirectories (no .qmd files inside)
+        data_dir = ex_dir / "data"
+        data_dir.mkdir()
+        (data_dir / "game_revenue.parquet").write_bytes(b"fake-parquet-data")
+        (data_dir / "scores.csv").write_text("a,b\n1,2\n")
+
+        img_dir = ex_dir / "img"
+        img_dir.mkdir()
+        (img_dir / "diagram.png").write_bytes(b"fake-png")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        result = docs._process_sections()
+
+        assert result == 1
+
+        dest = build_dir / "examples"
+        assert dest.exists()
+
+        # Asset directories should be copied
+        assert (dest / "data").is_dir()
+        assert (dest / "data" / "game_revenue.parquet").exists()
+        assert (dest / "data" / "scores.csv").exists()
+        assert (dest / "img").is_dir()
+        assert (dest / "img" / "diagram.png").exists()
+
+        # Verify file contents survived the copy
+        assert (dest / "data" / "game_revenue.parquet").read_bytes() == b"fake-parquet-data"
+        assert (dest / "data" / "scores.csv").read_text() == "a,b\n1,2\n"
+
+
+def test_process_sections_skips_dirs_with_qmd_files():
+    """Test that subdirectories containing .qmd files are NOT copied as asset dirs."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+        (project_path / "great-docs.yml").write_text(
+            "sections:\n  - title: Examples\n    dir: examples\n"
+        )
+        build_dir = project_path / "great-docs"
+        build_dir.mkdir()
+        quarto_yml = build_dir / "_quarto.yml"
+        quarto_yml.write_text(
+            "website:\n"
+            "  navbar:\n"
+            "    left:\n"
+            "      - text: Home\n"
+            "        href: index.qmd\n"
+            "  sidebar: []\n"
+        )
+
+        ex_dir = project_path / "examples"
+        ex_dir.mkdir()
+        (ex_dir / "page.qmd").write_text('---\ntitle: "Page"\n---\n\nContent\n')
+
+        # Subdirectory WITH a .qmd file — should NOT be copied as an asset dir
+        # (but its .qmd files may still be copied by _copy_section_files)
+        sub_dir = ex_dir / "subpages"
+        sub_dir.mkdir()
+        (sub_dir / "nested.qmd").write_text('---\ntitle: "Nested"\n---\n\nNested\n')
+        # Add a non-.qmd file that only exists in this subdir
+        (sub_dir / "notes.txt").write_text("should not be asset-copied")
+
+        # Subdirectory WITHOUT .qmd files — should be copied as asset dir
+        assets_dir = ex_dir / "assets"
+        assets_dir.mkdir()
+        (assets_dir / "style.css").write_text("body { color: red; }\n")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs._process_sections()
+
+        dest = build_dir / "examples"
+
+        # Asset dir (no .qmd) => copied wholesale
+        assert (dest / "assets").is_dir()
+        assert (dest / "assets" / "style.css").exists()
+
+        # Dir with .qmd => NOT copied as an asset dir (non-.qmd files in it
+        # are not copied, only the .qmd files are handled by _copy_section_files)
+        assert not (dest / "subpages" / "notes.txt").exists()
+
+
+def test_process_sections_asset_dirs_refreshed_on_rebuild():
+    """Test that stale asset directories are replaced on rebuild."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        project_path = Path(tmp_dir)
+        (project_path / "great-docs.yml").write_text(
+            "sections:\n  - title: Examples\n    dir: examples\n"
+        )
+        build_dir = project_path / "great-docs"
+        build_dir.mkdir()
+        quarto_yml = build_dir / "_quarto.yml"
+        quarto_yml.write_text(
+            "website:\n"
+            "  navbar:\n"
+            "    left:\n"
+            "      - text: Home\n"
+            "        href: index.qmd\n"
+            "  sidebar: []\n"
+        )
+
+        ex_dir = project_path / "examples"
+        ex_dir.mkdir()
+        (ex_dir / "page.qmd").write_text('---\ntitle: "Page"\n---\n\nContent\n')
+
+        data_dir = ex_dir / "data"
+        data_dir.mkdir()
+        (data_dir / "old_file.txt").write_text("old")
+
+        docs = GreatDocs(project_path=tmp_dir)
+        docs._process_sections()
+
+        dest = build_dir / "examples"
+        assert (dest / "data" / "old_file.txt").exists()
+
+        # Now update source: remove old file, add new one
+        (data_dir / "old_file.txt").unlink()
+        (data_dir / "new_file.txt").write_text("new")
+
+        # Rebuild
+        docs._process_sections()
+
+        # Old file should be gone, new file should be present
+        assert not (dest / "data" / "old_file.txt").exists()
+        assert (dest / "data" / "new_file.txt").exists()
+        assert (dest / "data" / "new_file.txt").read_text() == "new"
+
+
 def test_sections_config_default():
     """Test that sections config defaults to an empty list."""
     with tempfile.TemporaryDirectory() as tmp_dir:

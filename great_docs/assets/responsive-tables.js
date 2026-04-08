@@ -30,6 +30,11 @@
       return;
     }
 
+    // Skip Great Tables output — these have their own styling and layout
+    if (table.classList.contains("gt_table")) {
+      return;
+    }
+
     // Create outer wrapper (for indicator positioning)
     var outerWrapper = document.createElement("div");
     outerWrapper.className = "gd-table-responsive";

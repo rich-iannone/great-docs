@@ -2398,6 +2398,16 @@ class GreatDocs:
             dest_dir = self.project_path / slug
             dest_dir.mkdir(parents=True, exist_ok=True)
 
+            # Copy asset directories (directories without .qmd files)
+            for item in source_path.iterdir():
+                if item.is_dir():
+                    has_qmd = any(f.suffix == ".qmd" for f in item.rglob("*"))
+                    if not has_qmd:
+                        dst_dir = dest_dir / item.name
+                        if dst_dir.exists():
+                            shutil.rmtree(dst_dir)
+                        shutil.copytree(item, dst_dir)
+
             if section_type == "blog":
                 # Blog sections use Quarto's native listing directive
                 copied = self._copy_blog_files(files, source_path, dest_dir)

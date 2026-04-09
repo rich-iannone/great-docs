@@ -1303,6 +1303,24 @@ body.quarto-light .navbar .gd-navbar-icon:hover {
     zoom: 60%;
 }
 
+// Scale-to-fit: shrinks wide content (tables, GT output) to fill the
+// container width.  Apply in .qmd via  :::{.scale-to-fit} ... :::
+.scale-to-fit {
+    width: 100%;
+    position: relative;
+
+    .gd-scale-wrapper {
+        transform-origin: top left;
+    }
+
+    // Fallback when content is too wide for the min-scale threshold:
+    // show at full size with horizontal scrolling.
+    &.gd-scale-scrollable {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
 .nav-footer {
     position: relative;
     z-index: 1;

@@ -7645,3 +7645,537 @@ def test_GT_TABLES_page_level_no_processing_md_table():
             f"Markdown table has Bootstrap add-on classes {overlap} "
             "despite html-table-processing: none"
         )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Dedicated: gdtest_scale_to_fit — Scale-to-fit config system
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_STF_PKG = "gdtest_scale_to_fit"
+
+
+def _stf_site():
+    return _site_dir(_STF_PKG)
+
+
+def _stf_skip():
+    if not _has_rendered_site(_STF_PKG):
+        pytest.skip(f"{_STF_PKG} not rendered")
+
+
+# ── Meta tag presence ────────────────────────────────────────────────────────
+
+
+@requires_bs4
+def test_SCALE_TO_FIT_global_meta_on_all_pages():
+    """All user-guide pages should have the global gd-scale-to-fit meta tag."""
+    _stf_skip()
+    for page_name in ("global-targeting", "page-override", "manual-div", "width-comparison"):
+        page = _stf_site() / "user-guide" / f"{page_name}.html"
+        assert page.exists(), f"Missing page: {page_name}"
+        soup = _load_html(page)
+        meta = soup.find("meta", attrs={"name": "gd-scale-to-fit"})
+        assert meta is not None, f"Missing gd-scale-to-fit meta on {page_name}"
+        selectors = meta.get("data-selectors", "")
+        assert "#wide_gt" in selectors, f"#wide_gt not in global selectors on {page_name}"
+        assert "#custom_html" in selectors, f"#custom_html not in global selectors on {page_name}"
+
+
+@requires_bs4
+def test_SCALE_TO_FIT_page_override_meta_present():
+    """The page-override page should have a gd-scale-to-fit-page meta tag."""
+    _stf_skip()
+    page = _stf_site() / "user-guide" / "page-override.html"
+    soup = _load_html(page)
+    meta = soup.find("meta", attrs={"name": "gd-scale-to-fit-page"})
+    assert meta is not None, "Missing gd-scale-to-fit-page meta on page-override"
+    selectors = meta.get("data-selectors", "")
+    assert "#page_gt" in selectors, "#page_gt not in page-level selectors"
+
+
+@requires_bs4
+def test_SCALE_TO_FIT_page_meta_absent_elsewhere():
+    """Pages without scale-to-fit frontmatter should NOT have gd-scale-to-fit-page."""
+    _stf_skip()
+    for page_name in ("global-targeting", "manual-div", "width-comparison"):
+        page = _stf_site() / "user-guide" / f"{page_name}.html"
+        soup = _load_html(page)
+        meta = soup.find("meta", attrs={"name": "gd-scale-to-fit-page"})
+        assert meta is None, f"Unexpected gd-scale-to-fit-page meta on {page_name}"
+
+
+# ── GT table IDs rendered ───────────────────────────────────────────────────
+
+
+@requires_bs4
+def test_SCALE_TO_FIT_global_page_has_expected_ids():
+    """The global-targeting page should have #wide_gt, #custom_html, #narrow_gt."""
+    _stf_skip()
+    page = _stf_site() / "user-guide" / "global-targeting.html"
+    soup = _load_html(page)
+    for eid in ("wide_gt", "custom_html", "narrow_gt"):
+        el = soup.find(id=eid)
+        assert el is not None, f"Missing element with id={eid}"
+
+
+@requires_bs4
+def test_SCALE_TO_FIT_override_page_has_expected_ids():
+    """The page-override page should have #page_gt and #wide_gt_2."""
+    _stf_skip()
+    page = _stf_site() / "user-guide" / "page-override.html"
+    soup = _load_html(page)
+    for eid in ("page_gt", "wide_gt_2"):
+        el = soup.find(id=eid)
+        assert el is not None, f"Missing element with id={eid}"
+
+
+@requires_bs4
+def test_SCALE_TO_FIT_manual_page_has_expected_ids():
+    """The manual-div page should have #manual_gt and #unwrapped_gt."""
+    _stf_skip()
+    page = _stf_site() / "user-guide" / "manual-div.html"
+    soup = _load_html(page)
+    for eid in ("manual_gt", "unwrapped_gt"):
+        el = soup.find(id=eid)
+        assert el is not None, f"Missing element with id={eid}"
+
+
+# ── Manual div wrapping ─────────────────────────────────────────────────────
+
+
+@requires_bs4
+def test_SCALE_TO_FIT_manual_div_has_class():
+    """The manual-div page should have a .scale-to-fit container around #manual_gt."""
+    _stf_skip()
+    page = _stf_site() / "user-guide" / "manual-div.html"
+    soup = _load_html(page)
+    gt = soup.find(id="manual_gt")
+    assert gt is not None, "Missing #manual_gt"
+    # Walk up to find a parent with scale-to-fit class
+    parent = gt.parent
+    found = False
+    while parent:
+        classes = parent.get("class", [])
+        if "scale-to-fit" in classes:
+            found = True
+            break
+        parent = parent.parent
+    assert found, "#manual_gt is not inside a .scale-to-fit container"
+
+
+@requires_bs4
+def test_SCALE_TO_FIT_unwrapped_not_in_scale_div():
+    """#unwrapped_gt on manual-div page should NOT be inside a .scale-to-fit container."""
+    _stf_skip()
+    page = _stf_site() / "user-guide" / "manual-div.html"
+    soup = _load_html(page)
+    gt = soup.find(id="unwrapped_gt")
+    assert gt is not None, "Missing #unwrapped_gt"
+    parent = gt.parent
+    while parent:
+        classes = parent.get("class", [])
+        if "scale-to-fit" in classes:
+            pytest.fail("#unwrapped_gt is unexpectedly inside a .scale-to-fit container")
+        parent = parent.parent
+
+
+# ── Width comparison page ────────────────────────────────────────────────────
+
+
+@requires_bs4
+def test_SCALE_TO_FIT_width_comparison_tables():
+    """Width comparison page should have 4 GT tables with incremental column counts."""
+    _stf_skip()
+    page = _stf_site() / "user-guide" / "width-comparison.html"
+    soup = _load_html(page)
+    for eid in ("cmp_4", "cmp_8", "cmp_12", "cmp_16"):
+        el = soup.find(id=eid)
+        assert el is not None, f"Missing element with id={eid}"
+
+
+# ── GT table structural integrity ────────────────────────────────────────────
+
+
+@requires_bs4
+def test_SCALE_TO_FIT_gt_tables_have_gt_class():
+    """All GT tables should have the gt_table class."""
+    _stf_skip()
+    for page_name in ("global-targeting", "page-override", "manual-div", "width-comparison"):
+        page = _stf_site() / "user-guide" / f"{page_name}.html"
+        soup = _load_html(page)
+        gt_tables = soup.select("table.gt_table")
+        assert len(gt_tables) > 0, f"No gt_table class found on {page_name}"
+
+
+@requires_bs4
+def test_SCALE_TO_FIT_gt_tables_no_bootstrap():
+    """GT tables should NOT have Bootstrap table-bordered/table-sm classes."""
+    _stf_skip()
+    bootstrap_classes = {"table-bordered", "table-sm", "table-striped"}
+    for page_name in ("global-targeting", "page-override", "manual-div", "width-comparison"):
+        page = _stf_site() / "user-guide" / f"{page_name}.html"
+        soup = _load_html(page)
+        for gt in soup.select("table.gt_table"):
+            classes = set(gt.get("class", []))
+            overlap = classes & bootstrap_classes
+            assert not overlap, f"GT table on {page_name} has Bootstrap classes {overlap}"
+
+
+@requires_bs4
+def test_SCALE_TO_FIT_gt_tables_not_responsive_wrapped():
+    """GT tables should NOT be inside gd-table-responsive wrappers."""
+    _stf_skip()
+    for page_name in ("global-targeting", "page-override", "manual-div", "width-comparison"):
+        page = _stf_site() / "user-guide" / f"{page_name}.html"
+        soup = _load_html(page)
+        for gt in soup.select("table.gt_table"):
+            parent = gt.parent
+            while parent:
+                classes = parent.get("class", [])
+                if "gd-table-responsive" in classes:
+                    pytest.fail(f"GT table on {page_name} is wrapped in gd-table-responsive")
+                parent = parent.parent
+
+
+# ── Custom HTML widget ────────────────────────────────────────────────────────
+
+
+@requires_bs4
+def test_SCALE_TO_FIT_custom_html_widget_rendered():
+    """The custom _repr_html_ widget with id=custom_html should render."""
+    _stf_skip()
+    page = _stf_site() / "user-guide" / "global-targeting.html"
+    soup = _load_html(page)
+    widget = soup.find(id="custom_html")
+    assert widget is not None, "Missing #custom_html widget"
+    assert widget.name == "div", f"Expected div, got {widget.name}"
+    text = widget.get_text()
+    assert "CustomWidget" in text, "Widget content not rendered"
+
+
+# ── Reference pages ──────────────────────────────────────────────────────────
+
+
+@requires_bs4
+def test_SCALE_TO_FIT_reference_pages_exist():
+    """All expected reference pages should exist."""
+    _stf_skip()
+    ref = _site_dir(_STF_PKG) / "reference"
+    for name in ("make_wide_table", "make_narrow_table", "make_medium_table", "CustomWidget"):
+        page = ref / f"{name}.html"
+        assert page.exists(), f"Missing reference page: {name}.html"
+
+
+# ── Config verification ──────────────────────────────────────────────────────
+
+
+def test_SCALE_TO_FIT_config_has_scale_to_fit():
+    """The generated great-docs.yml should have scale_to_fit selectors."""
+    _stf_skip()
+    cfg = _load_quarto_yml(_STF_PKG)
+    # The scale_to_fit config is injected as a meta tag, not in _quarto.yml
+    # Check that the header includes contain the meta tag
+    header_includes = cfg.get("format", {}).get("html", {}).get("include-in-header", [])
+    found = False
+    for item in header_includes:
+        item_text = str(item)
+        if "gd-scale-to-fit" in item_text:
+            found = True
+            assert "#wide_gt" in item_text, "Missing #wide_gt in scale-to-fit header"
+            assert "#custom_html" in item_text, "Missing #custom_html in scale-to-fit header"
+            break
+    assert found, "No gd-scale-to-fit meta tag in include-in-header"
+
+
+# ── Minimum scale threshold ──────────────────────────────────────────────────
+
+
+@requires_bs4
+def test_SCALE_TO_FIT_global_min_scale_attribute():
+    """All pages should have data-min-scale on the global gd-scale-to-fit meta."""
+    _stf_skip()
+    for page_name in ("global-targeting", "page-override", "manual-div", "width-comparison"):
+        page = _stf_site() / "user-guide" / f"{page_name}.html"
+        soup = _load_html(page)
+        meta = soup.find("meta", attrs={"name": "gd-scale-to-fit"})
+        assert meta is not None, f"Missing gd-scale-to-fit meta on {page_name}"
+        ms = meta.get("data-min-scale")
+        assert ms == "tablet", f"Expected data-min-scale='tablet', got '{ms}' on {page_name}"
+
+
+@requires_bs4
+def test_SCALE_TO_FIT_page_override_min_scale():
+    """The page-override page should have a different data-min-scale on the page-level meta."""
+    _stf_skip()
+    page = _stf_site() / "user-guide" / "page-override.html"
+    soup = _load_html(page)
+    meta = soup.find("meta", attrs={"name": "gd-scale-to-fit-page"})
+    assert meta is not None, "Missing gd-scale-to-fit-page meta"
+    ms = meta.get("data-min-scale")
+    assert ms == "mobile", f"Expected page-level data-min-scale='mobile', got '{ms}'"
+
+
+@requires_bs4
+def test_SCALE_TO_FIT_non_override_pages_no_page_min_scale():
+    """Pages without page-level frontmatter should NOT have data-min-scale on a page meta."""
+    _stf_skip()
+    for page_name in ("global-targeting", "manual-div", "width-comparison"):
+        page = _stf_site() / "user-guide" / f"{page_name}.html"
+        soup = _load_html(page)
+        meta = soup.find("meta", attrs={"name": "gd-scale-to-fit-page"})
+        assert meta is None, f"Unexpected gd-scale-to-fit-page meta on {page_name}"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Dedicated: gdtest_scale_min_scale — Min-scale keyword & float thresholds
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_SMS_PKG = "gdtest_scale_min_scale"
+
+
+def _sms_site():
+    return _site_dir(_SMS_PKG)
+
+
+def _sms_skip():
+    if not _has_rendered_site(_SMS_PKG):
+        pytest.skip(f"{_SMS_PKG} not rendered")
+
+
+# ── Global meta tag ──────────────────────────────────────────────────────────
+
+
+@requires_bs4
+def test_SCALE_MIN_SCALE_global_meta_on_all_pages():
+    """All pages should carry the global gd-scale-to-fit meta with data-min-scale='desktop'."""
+    _sms_skip()
+    for page in ("no-override", "mobile", "tablet", "desktop", "float-override"):
+        html = _sms_site() / "user-guide" / f"{page}.html"
+        assert html.exists(), f"Missing page: {page}"
+        soup = _load_html(html)
+        meta = soup.find("meta", attrs={"name": "gd-scale-to-fit"})
+        assert meta is not None, f"Missing gd-scale-to-fit meta on {page}"
+        assert meta.get("data-min-scale") == "desktop", (
+            f"Expected global data-min-scale='desktop' on {page}, "
+            f"got '{meta.get('data-min-scale')}'"
+        )
+
+
+@requires_bs4
+def test_SCALE_MIN_SCALE_global_selectors_correct():
+    """The global meta should target #stf_wide, #stf_styled, #summary_card."""
+    _sms_skip()
+    html = _sms_site() / "user-guide" / "no-override.html"
+    soup = _load_html(html)
+    meta = soup.find("meta", attrs={"name": "gd-scale-to-fit"})
+    assert meta is not None
+    selectors = meta.get("data-selectors", "")
+    for sel in ("#stf_wide", "#stf_styled", "#summary_card"):
+        assert sel in selectors, f"Missing {sel} in global selectors: {selectors}"
+
+
+# ── Page-level keyword overrides ─────────────────────────────────────────────
+
+
+@requires_bs4
+def test_SCALE_MIN_SCALE_mobile_keyword():
+    """mobile.html should have page-level data-min-scale='mobile'."""
+    _sms_skip()
+    soup = _load_html(_sms_site() / "user-guide" / "mobile.html")
+    meta = soup.find("meta", attrs={"name": "gd-scale-to-fit-page"})
+    assert meta is not None, "Missing gd-scale-to-fit-page meta on mobile page"
+    assert meta.get("data-min-scale") == "mobile"
+
+
+@requires_bs4
+def test_SCALE_MIN_SCALE_tablet_keyword():
+    """tablet.html should have page-level data-min-scale='tablet'."""
+    _sms_skip()
+    soup = _load_html(_sms_site() / "user-guide" / "tablet.html")
+    meta = soup.find("meta", attrs={"name": "gd-scale-to-fit-page"})
+    assert meta is not None, "Missing gd-scale-to-fit-page meta on tablet page"
+    assert meta.get("data-min-scale") == "tablet"
+
+
+@requires_bs4
+def test_SCALE_MIN_SCALE_desktop_keyword():
+    """desktop.html should have page-level data-min-scale='desktop'."""
+    _sms_skip()
+    soup = _load_html(_sms_site() / "user-guide" / "desktop.html")
+    meta = soup.find("meta", attrs={"name": "gd-scale-to-fit-page"})
+    assert meta is not None, "Missing gd-scale-to-fit-page meta on desktop page"
+    assert meta.get("data-min-scale") == "desktop"
+
+
+# ── Float override ───────────────────────────────────────────────────────────
+
+
+@requires_bs4
+def test_SCALE_MIN_SCALE_float_override():
+    """float-override.html should have page-level data-min-scale='0.35'."""
+    _sms_skip()
+    soup = _load_html(_sms_site() / "user-guide" / "float-override.html")
+    meta = soup.find("meta", attrs={"name": "gd-scale-to-fit-page"})
+    assert meta is not None, "Missing gd-scale-to-fit-page meta on float-override page"
+    assert meta.get("data-min-scale") == "0.35", (
+        f"Expected data-min-scale='0.35', got '{meta.get('data-min-scale')}'"
+    )
+
+
+# ── No-override page inherits global ────────────────────────────────────────
+
+
+@requires_bs4
+def test_SCALE_MIN_SCALE_no_override_has_no_page_meta():
+    """no-override.html should NOT have a gd-scale-to-fit-page meta tag."""
+    _sms_skip()
+    soup = _load_html(_sms_site() / "user-guide" / "no-override.html")
+    meta = soup.find("meta", attrs={"name": "gd-scale-to-fit-page"})
+    assert meta is None, "Unexpected gd-scale-to-fit-page meta on no-override page"
+
+
+# ── GT table IDs ─────────────────────────────────────────────────────────────
+
+
+@requires_bs4
+def test_SCALE_MIN_SCALE_stf_wide_ids_present():
+    """Every page should have a #stf_wide GT table."""
+    _sms_skip()
+    for page in ("no-override", "mobile", "tablet", "desktop", "float-override"):
+        html = _sms_site() / "user-guide" / f"{page}.html"
+        soup = _load_html(html)
+        el = soup.find(id="stf_wide")
+        assert el is not None, f"Missing #stf_wide on {page}"
+
+
+# ── Reference pages ──────────────────────────────────────────────────────────
+
+
+@requires_bs4
+def test_SCALE_MIN_SCALE_reference_pages_exist():
+    """Reference pages for all exported symbols should exist."""
+    _sms_skip()
+    ref = _sms_site() / "reference"
+    for name in ("make_wide_table", "make_narrow_table", "make_styled_table", "SummaryCard"):
+        page = ref / f"{name}.html"
+        assert page.exists(), f"Missing reference page: {name}.html"
+
+
+# ── Keyword values are distinct across pages ─────────────────────────────────
+
+
+@requires_bs4
+def test_SCALE_MIN_SCALE_all_keywords_distinct():
+    """Each keyword page should carry a different data-min-scale value."""
+    _sms_skip()
+    seen = {}
+    for page, expected in [("mobile", "mobile"), ("tablet", "tablet"), ("desktop", "desktop")]:
+        html = _sms_site() / "user-guide" / f"{page}.html"
+        soup = _load_html(html)
+        meta = soup.find("meta", attrs={"name": "gd-scale-to-fit-page"})
+        val = meta.get("data-min-scale") if meta else None
+        assert val == expected, f"{page}: expected '{expected}', got '{val}'"
+        seen[page] = val
+    # All three should be different values
+    assert len(set(seen.values())) == 3, f"Expected 3 distinct keywords, got {seen}"
+
+
+# ── Styled table presence ────────────────────────────────────────────────────
+
+
+@requires_bs4
+def test_SCALE_MIN_SCALE_styled_table_present():
+    """Pages that display make_styled_table() should have an #stf_styled element."""
+    _sms_skip()
+    for page in ("no-override", "tablet", "float-override"):
+        html = _sms_site() / "user-guide" / f"{page}.html"
+        soup = _load_html(html)
+        el = soup.find(id="stf_styled")
+        assert el is not None, f"Missing #stf_styled on {page}"
+
+
+@requires_bs4
+def test_SCALE_MIN_SCALE_styled_table_absent_where_not_used():
+    """Pages that do NOT use make_styled_table() should lack #stf_styled."""
+    _sms_skip()
+    for page in ("mobile", "desktop"):
+        html = _sms_site() / "user-guide" / f"{page}.html"
+        soup = _load_html(html)
+        el = soup.find(id="stf_styled")
+        assert el is None, f"Unexpected #stf_styled on {page}"
+
+
+# ── SummaryCard presence ─────────────────────────────────────────────────────
+
+
+@requires_bs4
+def test_SCALE_MIN_SCALE_summary_card_present():
+    """Pages that display SummaryCard should have a #summary_card element."""
+    _sms_skip()
+    for page in ("mobile", "float-override"):
+        html = _sms_site() / "user-guide" / f"{page}.html"
+        soup = _load_html(html)
+        el = soup.find(id="summary_card")
+        assert el is not None, f"Missing #summary_card on {page}"
+
+
+@requires_bs4
+def test_SCALE_MIN_SCALE_summary_card_absent_where_not_used():
+    """Pages that do NOT use SummaryCard should lack #summary_card."""
+    _sms_skip()
+    for page in ("no-override", "tablet", "desktop"):
+        html = _sms_site() / "user-guide" / f"{page}.html"
+        soup = _load_html(html)
+        el = soup.find(id="summary_card")
+        assert el is None, f"Unexpected #summary_card on {page}"
+
+
+# ── Narrow table (not targeted by scale-to-fit) ─────────────────────────────
+
+
+@requires_bs4
+def test_SCALE_MIN_SCALE_narrow_table_on_no_override():
+    """no-override.html should include the narrow table (not targeted)."""
+    _sms_skip()
+    soup = _load_html(_sms_site() / "user-guide" / "no-override.html")
+    el = soup.find(id="stf_narrow")
+    assert el is not None, "Missing #stf_narrow on no-override page"
+
+
+# ── Page-level selectors ─────────────────────────────────────────────────────
+
+
+@requires_bs4
+def test_SCALE_MIN_SCALE_mobile_page_selectors():
+    """mobile.html page meta should target #stf_wide and #summary_card."""
+    _sms_skip()
+    soup = _load_html(_sms_site() / "user-guide" / "mobile.html")
+    meta = soup.find("meta", attrs={"name": "gd-scale-to-fit-page"})
+    assert meta is not None
+    selectors = meta.get("data-selectors", "")
+    assert "#stf_wide" in selectors
+    assert "#summary_card" in selectors
+
+
+@requires_bs4
+def test_SCALE_MIN_SCALE_tablet_page_selectors():
+    """tablet.html page meta should target #stf_wide and #stf_styled."""
+    _sms_skip()
+    soup = _load_html(_sms_site() / "user-guide" / "tablet.html")
+    meta = soup.find("meta", attrs={"name": "gd-scale-to-fit-page"})
+    assert meta is not None
+    selectors = meta.get("data-selectors", "")
+    assert "#stf_wide" in selectors
+    assert "#stf_styled" in selectors
+
+
+@requires_bs4
+def test_SCALE_MIN_SCALE_float_page_selectors():
+    """float-override.html page meta should target all three IDs."""
+    _sms_skip()
+    soup = _load_html(_sms_site() / "user-guide" / "float-override.html")
+    meta = soup.find("meta", attrs={"name": "gd-scale-to-fit-page"})
+    assert meta is not None
+    selectors = meta.get("data-selectors", "")
+    for sel in ("#stf_wide", "#stf_styled", "#summary_card"):
+        assert sel in selectors, f"Missing {sel} in float-override page selectors"

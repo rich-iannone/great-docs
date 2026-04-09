@@ -337,6 +337,10 @@ ALL_PACKAGES: list[str] = [
     "gdtest_homepage_ug_subdirs",  # 166
     # 167: Great Tables vs. Markdown tables rendering
     "gdtest_gt_tables",  # 167
+    # 168: Scale-to-fit auto-scaling for wide HTML output
+    "gdtest_scale_to_fit",  # 168
+    # 169: Min-scale keyword and float thresholds for scale-to-fit
+    "gdtest_scale_min_scale",  # 169
 ]
 
 
@@ -1913,6 +1917,20 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "wrapped in gd-table-responsive, and are excluded from Bootstrap "
         "table-bordered styling, while Markdown tables still receive all "
         "responsive enhancements."
+    ),
+    "gdtest_scale_to_fit": (
+        "Tests the 3-level scale-to-fit configuration system: global config "
+        "targeting by CSS selector, page-level frontmatter overrides, and "
+        "manual div wrapping. Uses GT tables of varying widths (4-16 cols) "
+        "and a custom _repr_html_ widget to verify correct scaling behavior, "
+        "ID-based targeting, and override precedence."
+    ),
+    "gdtest_scale_min_scale": (
+        "Tests scale-to-fit minimum-scale thresholds: viewport keyword "
+        "breakpoints (mobile ≤576px, tablet ≤768px, desktop ≤992px) and "
+        "fractional float values. Verifies global keyword, per-page keyword "
+        "overrides, per-page float override, and inheritance when no "
+        "page-level override is set."
     ),
 }
 

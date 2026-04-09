@@ -1399,6 +1399,21 @@ body.quarto-light .navbar .gd-navbar-icon:hover {
     top: -1px;
 }
 
+/* Stack prev/next nav vertically and center on mobile */
+@media (max-width: 576px) {
+    .page-navigation {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .nav-page.nav-page-previous,
+    .nav-page.nav-page-next {
+        width: auto;
+        text-align: center;
+    }
+}
+
 /* Source link styling */
 .source-link {
     font-size: 12px;

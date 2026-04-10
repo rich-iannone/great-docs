@@ -345,6 +345,8 @@ ALL_PACKAGES: list[str] = [
     "gdtest_homepage_wide",  # 170
     # 171: Interlinks and autolinking in user-guide pages (non-reference GDLS)
     "gdtest_interlinks_userguide",  # 171
+    # 172: Custom docstring headings with backtick code spans
+    "gdtest_code_span_headings",  # 172
 ]
 
 
@@ -1946,6 +1948,12 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "using [](`~pkg.Name`) interlinks and inline-code autolinking. "
         "Tests that the GDLS resolves links on non-reference pages with "
         "correct relative paths back to reference/."
+    ),
+    "gdtest_code_span_headings": (
+        "Two functions with custom docstring section headings containing "
+        "backtick code spans (e.g. 'What Can Be Used in `value=`?'). "
+        "Tests that title-casing preserves code verbatim and that slug "
+        "generation strips backticks and special characters."
     ),
 }
 

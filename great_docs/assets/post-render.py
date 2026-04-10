@@ -641,7 +641,30 @@ def _resolve_interlink_name(name):
     return None
 
 
-def resolve_interlinks(html_content):
+def _make_relative_uri(uri, page_path):
+    """Convert a site-root-relative URI to a path relative to *page_path*.
+
+    *page_path* is relative to ``_site/`` (e.g. ``"reference/Foo.html"``,
+    ``"user-guide/intro.html"``, ``"index.html"``).
+
+    If *page_path* is ``None``, the legacy behaviour is used: strip the
+    ``reference/`` prefix (assumes the page lives inside ``reference/``).
+    """
+    if page_path is None:
+        # Legacy: reference-page context — just strip the shared prefix
+        if uri.startswith("reference/"):
+            return uri[len("reference/") :]
+        return uri
+
+    # Compute a relative path from the directory containing *page_path*
+    # to the URI (both relative to _site/).
+    import posixpath
+
+    page_dir = posixpath.dirname(page_path)  # e.g. "user-guide"
+    return posixpath.relpath(uri, page_dir)
+
+
+def resolve_interlinks(html_content, page_path=None):
     """Resolve interlink references in rendered HTML.
 
     Quarto renders interlink syntax as `<a>` tags with backtick-wrapped hrefs:
@@ -652,6 +675,10 @@ def resolve_interlinks(html_content):
     - ``[custom text](`~pkg.Name`)`` -> custom display text preserved
 
     This function resolves those links against the objects.json inventory.
+
+    *page_path* is the page's path relative to ``_site/`` (e.g.
+    ``"user-guide/intro.html"``).  When ``None``, the legacy
+    reference-page behaviour is used (strip ``reference/`` prefix).
     """
     if not _interlinks_inventory:
         return html_content
@@ -669,11 +696,8 @@ def resolve_interlinks(html_content):
         if result is None:
             return m.group(0)
         uri, short_name, role = result
-        # URIs from objects.json are root-relative (e.g. "reference/Name.html#...")
-        # but reference pages live inside reference/, so strip the prefix
-        # to get a sibling-relative path.
-        if uri.startswith("reference/"):
-            uri = uri[len("reference/") :]
+        # Convert site-root-relative URI to a path relative to this page
+        uri = _make_relative_uri(uri, page_path)
         # Determine display text:
         # 1. Custom text provided by user → keep it
         # 2. ~ prefix (shortened) → use short name
@@ -698,7 +722,7 @@ def resolve_interlinks(html_content):
     return html_content
 
 
-def autolink_code_references(html_content):
+def autolink_code_references(html_content, page_path=None):
     """Auto-convert inline code matching API names into clickable links.
 
     Scans `<code>` tags (outside `<pre>` blocks) for text that matches an entry in the objects.json
@@ -713,6 +737,10 @@ def autolink_code_references(html_content):
 
     Code with the `gd-no-link` class is never autolinked. Code inside `<pre>` blocks (fenced code)
     is never autolinked. Code containing spaces, operators, or arguments is never autolinked.
+
+    *page_path* is the page's path relative to ``_site/`` (e.g.
+    ``"user-guide/intro.html"``).  When ``None``, the legacy
+    reference-page behaviour is used (strip ``reference/`` prefix).
     """
     if not _interlinks_inventory:
         return html_content
@@ -766,8 +794,7 @@ def autolink_code_references(html_content):
             return full_tag
 
         uri, short_name, _role = result
-        if uri.startswith("reference/"):
-            uri = uri[len("reference/") :]
+        uri = _make_relative_uri(uri, page_path)
 
         # Determine display text based on prefix
         if prefix == "~~.":
@@ -2955,6 +2982,43 @@ for html_file in all_html_files:
             file.write(content)
 
 print("Finished processing all files")
+
+
+# ============================================================================
+# GDLS (Great Docs Linking System) — resolve interlinks on non-reference pages
+# ============================================================================
+# resolve_interlinks() and autolink_code_references() were already applied to
+# reference pages inside the reference-page loop above.  Here we apply them to
+# every *other* page (user guide, blog, recipes, homepage, etc.) so that the
+# [](`~pkg.Name`) shortcode syntax and inline-code autolinking work site-wide.
+
+if _interlinks_inventory:
+    # Pages already processed by the reference-page loop
+    _ref_pages = {os.path.normpath(f) for f in glob.glob("_site/reference/*.html")}
+    _gdls_count = 0
+
+    for html_file in all_html_files:
+        if os.path.normpath(html_file) in _ref_pages:
+            continue
+
+        with open(html_file, "r", encoding="utf-8") as file:
+            content = file.read()
+
+        # Compute the page path relative to _site/ for correct relative URIs
+        page_rel = os.path.relpath(html_file, "_site")
+
+        new_content = resolve_interlinks(content, page_path=page_rel)
+        new_content = autolink_code_references(new_content, page_path=page_rel)
+
+        if new_content != content:
+            with open(html_file, "w", encoding="utf-8") as file:
+                file.write(new_content)
+            _gdls_count += 1
+
+    print(f"GDLS: resolved interlinks on {_gdls_count} non-reference pages")
+else:
+    print("GDLS: no interlinks inventory loaded, skipping non-reference pages")
+
 
 # ── Translate autocomplete search-button title ──────────────────────────────
 # The Algolia autocomplete library (autocomplete.umd.js) ships with a

@@ -8179,3 +8179,135 @@ def test_SCALE_MIN_SCALE_float_page_selectors():
     selectors = meta.get("data-selectors", "")
     for sel in ("#stf_wide", "#stf_styled", "#summary_card"):
         assert sel in selectors, f"Missing {sel} in float-override page selectors"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DED: GDLS on non-reference pages (gdtest_interlinks_userguide)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def _ilu_skip():
+    pkg = "gdtest_interlinks_userguide"
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+
+def _ilu_site():
+    return _site_dir("gdtest_interlinks_userguide")
+
+
+@requires_bs4
+def test_DED_interlinks_userguide_ref_pages_exist():
+    """gdtest_interlinks_userguide: all exports have reference pages."""
+    _ilu_skip()
+    ref = _ref_dir("gdtest_interlinks_userguide")
+    for name in ("Engine", "Connection", "execute"):
+        assert (ref / f"{name}.html").exists(), f"Ref page {name}.html missing"
+
+
+@requires_bs4
+def test_DED_interlinks_userguide_ug_pages_exist():
+    """gdtest_interlinks_userguide: user-guide pages exist."""
+    _ilu_skip()
+    ug = _ilu_site() / "user-guide"
+    assert (ug / "getting-started.html").exists(), "Getting Started page missing"
+    assert (ug / "advanced.html").exists(), "Advanced page missing"
+
+
+@requires_bs4
+def test_DED_interlinks_userguide_shortened_links():
+    """gdtest_interlinks_userguide: [](`~pkg.Name`) in user-guide resolves to links."""
+    _ilu_skip()
+    ug = _ilu_site() / "user-guide"
+    page = ug / "getting-started.html"
+    if not page.exists():
+        pytest.skip("getting-started.html not found")
+
+    soup = _load_html(page)
+    gdls_links = soup.find_all("a", class_="gdls-link")
+    link_texts = [a.get_text(strip=True) for a in gdls_links]
+
+    # Shortened references should produce short display names
+    for expected in ("Engine", "Connection", "execute()"):
+        assert expected in link_texts, (
+            f"Getting Started: shortened interlink {expected!r} not found. Found: {link_texts}"
+        )
+
+
+@requires_bs4
+def test_DED_interlinks_userguide_hrefs_relative():
+    """gdtest_interlinks_userguide: user-guide interlink hrefs use ../reference/ paths."""
+    _ilu_skip()
+    ug = _ilu_site() / "user-guide"
+    page = ug / "getting-started.html"
+    if not page.exists():
+        pytest.skip("getting-started.html not found")
+
+    soup = _load_html(page)
+    gdls_links = soup.find_all("a", class_="gdls-link")
+    for link in gdls_links:
+        href = link.get("href", "")
+        # From user-guide/*.html, href should start with ../reference/
+        assert href.startswith("../reference/"), (
+            f"User-guide interlink href {href!r} should be relative to ../reference/"
+        )
+
+
+@requires_bs4
+def test_DED_interlinks_userguide_full_qualified():
+    """gdtest_interlinks_userguide: [](`pkg.Name`) renders full qualified name."""
+    _ilu_skip()
+    ug = _ilu_site() / "user-guide"
+    page = ug / "advanced.html"
+    if not page.exists():
+        pytest.skip("advanced.html not found")
+
+    soup = _load_html(page)
+    gdls_links = soup.find_all("a", class_="gdls-link")
+    link_texts = [a.get_text(strip=True) for a in gdls_links]
+
+    assert "gdtest_interlinks_userguide.Engine" in link_texts, (
+        f"Advanced: full qualified 'gdtest_interlinks_userguide.Engine' not found. "
+        f"Found: {link_texts}"
+    )
+
+
+@requires_bs4
+def test_DED_interlinks_userguide_custom_text():
+    """gdtest_interlinks_userguide: [custom text](`pkg.Name`) preserves display text."""
+    _ilu_skip()
+    ug = _ilu_site() / "user-guide"
+    page = ug / "advanced.html"
+    if not page.exists():
+        pytest.skip("advanced.html not found")
+
+    soup = _load_html(page)
+    gdls_links = soup.find_all("a", class_="gdls-link")
+    link_texts = [a.get_text(strip=True) for a in gdls_links]
+
+    assert "custom link text" in link_texts, (
+        f"Advanced: custom text 'custom link text' not found. Found: {link_texts}"
+    )
+    assert "custom text with tilde" in link_texts, (
+        f"Advanced: custom text 'custom text with tilde' not found. Found: {link_texts}"
+    )
+
+
+@requires_bs4
+def test_DED_interlinks_userguide_autolinked_code():
+    """gdtest_interlinks_userguide: `Engine`, `execute()` autolinked in user-guide."""
+    _ilu_skip()
+    ug = _ilu_site() / "user-guide"
+    page = ug / "advanced.html"
+    if not page.exists():
+        pytest.skip("advanced.html not found")
+
+    soup = _load_html(page)
+    # Look for gdls-link gdls-code links (autolinked code produces this class combo)
+    code_links = soup.find_all("a", class_="gdls-code")
+    link_texts = [a.get_text(strip=True) for a in code_links]
+
+    for expected in ("Engine", "Connection", "execute()"):
+        assert expected in link_texts, (
+            f"Advanced: autolinked code {expected!r} not found. Found: {link_texts}"
+        )

@@ -343,6 +343,8 @@ ALL_PACKAGES: list[str] = [
     "gdtest_scale_min_scale",  # 169
     # 170: Wide homepage content with column-margin sidebar
     "gdtest_homepage_wide",  # 170
+    # 171: Interlinks and autolinking in user-guide pages (non-reference GDLS)
+    "gdtest_interlinks_userguide",  # 171
 ]
 
 
@@ -1938,6 +1940,12 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "Tests that wide content on the homepage (code blocks, wide tables) "
         "renders at full width when the column-margin metadata sidebar is "
         "present. Verifies the gd-homepage body class and CSS grid fix."
+    ),
+    "gdtest_interlinks_userguide": (
+        "Three exports (Engine, Connection, execute) with user-guide pages "
+        "using [](`~pkg.Name`) interlinks and inline-code autolinking. "
+        "Tests that the GDLS resolves links on non-reference pages with "
+        "correct relative paths back to reference/."
     ),
 }
 

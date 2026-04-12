@@ -10049,6 +10049,7 @@ class TestFaviconLinkInjection:
         (tmp / "pyproject.toml").write_text(
             '[project]\nname = "test-pkg"\nversion = "0.1.0"\n'
             '[project.urls]\nRepository = "https://github.com/test/test-pkg"\n'
+            'Documentation = "https://test.github.io/test-pkg"\n'
         )
 
         # great-docs.yml
@@ -10073,21 +10074,22 @@ class TestFaviconLinkInjection:
             return read_yaml(f)
 
     def test_auto_detect_injects_link_tags(self):
-        """Auto-detected logo should inject favicon <link> tags."""
+        """Auto-detected logo should inject favicon <link> tags with absolute URLs."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             config = self._build_with_favicon(tmp_dir, create_logo=True)
 
             header = config.get("format", {}).get("html", {}).get("include-in-header", [])
             header_text = " ".join(str(item) for item in header)
 
-            assert "favicon.ico" in header_text
-            assert "favicon.svg" in header_text
-            assert "favicon-32x32.png" in header_text
-            assert "favicon-16x16.png" in header_text
-            assert "apple-touch-icon.png" in header_text
+            base = "https://test.github.io/test-pkg/"
+            assert f'href="{base}favicon.ico"' in header_text
+            assert f'href="{base}favicon.svg"' in header_text
+            assert f'href="{base}favicon-32x32.png"' in header_text
+            assert f'href="{base}favicon-16x16.png"' in header_text
+            assert f'href="{base}apple-touch-icon.png"' in header_text
 
     def test_explicit_favicon_injects_link_tags(self):
-        """Explicit favicon config should also inject <link> tags."""
+        """Explicit favicon config should also inject <link> tags with absolute URLs."""
         with tempfile.TemporaryDirectory() as tmp_dir:
             # Create the favicon source file and a logo (favicon block requires logo)
             tmp = Path(tmp_dir)
@@ -10103,11 +10105,12 @@ class TestFaviconLinkInjection:
             header = config.get("format", {}).get("html", {}).get("include-in-header", [])
             header_text = " ".join(str(item) for item in header)
 
-            assert "favicon.ico" in header_text
-            assert "favicon.svg" in header_text
-            assert "favicon-32x32.png" in header_text
-            assert "favicon-16x16.png" in header_text
-            assert "apple-touch-icon.png" in header_text
+            base = "https://test.github.io/test-pkg/"
+            assert f'href="{base}favicon.ico"' in header_text
+            assert f'href="{base}favicon.svg"' in header_text
+            assert f'href="{base}favicon-32x32.png"' in header_text
+            assert f'href="{base}favicon-16x16.png"' in header_text
+            assert f'href="{base}apple-touch-icon.png"' in header_text
 
     def test_no_favicon_no_link_tags(self):
         """Without logo or favicon config, no <link> tags should be injected."""
@@ -28920,7 +28923,186 @@ def test_update_quarto_config_favicon_not_found():
             docs._update_quarto_config()
 
 
-def test_update_quarto_config_include_after_body_string():
+def test_update_quarto_config_favicon_resources_added():
+    """Test _update_quarto_config adds generated favicon files to project.resources."""
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        (Path(tmp_dir) / "logo.png").write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * 100)
+
+        docs, quarto_yml = _make_uqc_docs(
+            tmp_dir,
+            gd_yml_content="logo:\n  light: logo.png\n",
+        )
+
+        generated = {
+            "icon": "favicon.ico",
+            "icon-svg": "favicon.svg",
+            "icon-32": "favicon-32x32.png",
+            "icon-16": "favicon-16x16.png",
+            "apple-touch-icon": "apple-touch-icon.png",
+        }
+
+        with (
+            patch.object(docs, "_find_package_root", return_value=Path(tmp_dir)),
+            patch.object(docs, "_generate_favicons", return_value=generated),
+        ):
+            docs._update_quarto_config()
+
+        with open(quarto_yml) as f:
+            result = read_yaml(f)
+
+        resources = result["project"]["resources"]
+        assert "favicon.ico" in resources
+        assert "favicon.svg" in resources
+        assert "favicon-32x32.png" in resources
+        assert "favicon-16x16.png" in resources
+        assert "apple-touch-icon.png" in resources
+
+
+def test_update_quarto_config_favicon_absolute_urls_with_site_url():
+    """Test favicon <link> tags use absolute URLs when site-url is available."""
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        (Path(tmp_dir) / "logo.png").write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * 100)
+
+        docs, quarto_yml = _make_uqc_docs(
+            tmp_dir,
+            gd_yml_content="logo:\n  light: logo.png\n",
+            quarto_content={
+                "project": {"type": "website"},
+                "website": {
+                    "navbar": {"left": []},
+                    "sidebar": [],
+                    "site-url": "https://posit-dev.github.io/pointblank",
+                },
+                "format": {"html": {}},
+            },
+        )
+
+        generated = {
+            "icon": "favicon.ico",
+            "icon-svg": "favicon.svg",
+            "icon-32": "favicon-32x32.png",
+            "icon-16": "favicon-16x16.png",
+            "apple-touch-icon": "apple-touch-icon.png",
+        }
+
+        with (
+            patch.object(docs, "_find_package_root", return_value=Path(tmp_dir)),
+            patch.object(docs, "_generate_favicons", return_value=generated),
+        ):
+            docs._update_quarto_config()
+
+        with open(quarto_yml) as f:
+            result = read_yaml(f)
+
+        header_items = result["format"]["html"]["include-in-header"]
+        header_texts = [
+            item["text"] if isinstance(item, dict) else str(item) for item in header_items
+        ]
+        header_joined = " ".join(header_texts)
+
+        # All favicon hrefs should use absolute URLs
+        assert 'href="https://posit-dev.github.io/pointblank/favicon.ico"' in header_joined
+        assert 'href="https://posit-dev.github.io/pointblank/favicon.svg"' in header_joined
+        assert 'href="https://posit-dev.github.io/pointblank/favicon-32x32.png"' in header_joined
+        assert 'href="https://posit-dev.github.io/pointblank/favicon-16x16.png"' in header_joined
+        assert 'href="https://posit-dev.github.io/pointblank/apple-touch-icon.png"' in header_joined
+
+        # Must NOT contain bare relative paths
+        assert 'href="favicon.ico"' not in header_joined
+        assert 'href="favicon.svg"' not in header_joined
+
+
+def test_update_quarto_config_favicon_no_links_without_site_url():
+    """Test favicon <link> tags are NOT injected when no site-url is available."""
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        (Path(tmp_dir) / "logo.png").write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * 100)
+
+        docs, quarto_yml = _make_uqc_docs(
+            tmp_dir,
+            gd_yml_content="logo:\n  light: logo.png\n",
+            quarto_content={
+                "project": {"type": "website"},
+                "website": {"navbar": {"left": []}, "sidebar": []},
+                "format": {"html": {}},
+            },
+        )
+
+        generated = {
+            "icon": "favicon.ico",
+            "icon-svg": "favicon.svg",
+            "icon-32": "favicon-32x32.png",
+            "icon-16": "favicon-16x16.png",
+            "apple-touch-icon": "apple-touch-icon.png",
+        }
+
+        with (
+            patch.object(docs, "_find_package_root", return_value=Path(tmp_dir)),
+            patch.object(docs, "_generate_favicons", return_value=generated),
+        ):
+            docs._update_quarto_config()
+
+        with open(quarto_yml) as f:
+            result = read_yaml(f)
+
+        # Quarto's native website.favicon should still be set (Quarto handles path adjustment)
+        assert result["website"].get("favicon") is not None
+
+        # But no manual <link> tags for favicons should be injected
+        header_items = result["format"]["html"].get("include-in-header", [])
+        header_texts = [
+            item["text"] if isinstance(item, dict) else str(item) for item in header_items
+        ]
+        header_joined = " ".join(header_texts)
+        assert 'href="favicon.ico"' not in header_joined
+        assert 'href="favicon.svg"' not in header_joined
+
+
+def test_update_quarto_config_favicon_absolute_urls_from_pyproject():
+    """Test favicon <link> tags use Documentation URL from pyproject.toml as fallback."""
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        (Path(tmp_dir) / "logo.png").write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * 100)
+
+        docs, quarto_yml = _make_uqc_docs(
+            tmp_dir,
+            gd_yml_content="logo:\n  light: logo.png\n",
+            pyproject_content=(
+                '[project]\nname = "testpkg"\n'
+                "[project.urls]\n"
+                'Documentation = "https://example.com/docs"\n'
+            ),
+            quarto_content={
+                "project": {"type": "website"},
+                "website": {"navbar": {"left": []}, "sidebar": []},
+                "format": {"html": {}},
+            },
+        )
+
+        generated = {
+            "icon": "favicon.ico",
+            "icon-svg": "favicon.svg",
+        }
+
+        with (
+            patch.object(docs, "_find_package_root", return_value=Path(tmp_dir)),
+            patch.object(docs, "_generate_favicons", return_value=generated),
+        ):
+            docs._update_quarto_config()
+
+        with open(quarto_yml) as f:
+            result = read_yaml(f)
+
+        header_items = result["format"]["html"]["include-in-header"]
+        header_texts = [
+            item["text"] if isinstance(item, dict) else str(item) for item in header_items
+        ]
+        header_joined = " ".join(header_texts)
+
+        assert 'href="https://example.com/docs/favicon.ico"' in header_joined
+        assert 'href="https://example.com/docs/favicon.svg"' in header_joined
     """Test _update_quarto_config converts string include-after-body to list."""
 
     with tempfile.TemporaryDirectory() as tmp_dir:

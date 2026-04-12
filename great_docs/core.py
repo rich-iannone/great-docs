@@ -9627,39 +9627,65 @@ body-classes: "gd-homepage"
                 if generated.get("icon"):
                     config["website"]["favicon"] = generated["icon"]
 
-            # Inject <link> tags for extra favicon assets
+            # Add generated favicon files to project.resources so Quarto copies
+            # them into _site/ (without this they may be missing from the deployed site)
             if generated:
-                favicon_links: list[str] = []
-                if generated.get("icon") and generated["icon"].endswith(".ico"):
-                    favicon_links.append(
-                        '<link rel="icon" type="image/x-icon" href="favicon.ico" sizes="48x48">'
-                    )
-                if generated.get("icon-svg"):
-                    favicon_links.append(
-                        '<link rel="icon" type="image/svg+xml" href="favicon.svg">'
-                    )
-                if generated.get("icon-32"):
-                    favicon_links.append(
-                        '<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">'
-                    )
-                if generated.get("icon-16"):
-                    favicon_links.append(
-                        '<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">'
-                    )
-                if generated.get("apple-touch-icon"):
-                    favicon_links.append(
-                        '<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">'
-                    )
+                favicon_files = list(dict.fromkeys(generated.values()))
+                resources_list = config["project"].setdefault("resources", [])
+                if isinstance(resources_list, str):
+                    resources_list = [resources_list]  # pragma: no cover
+                    config["project"]["resources"] = resources_list  # pragma: no cover
+                for fname in favicon_files:
+                    if fname not in resources_list:
+                        resources_list.append(fname)
 
-                if favicon_links:
-                    header_items = config["format"]["html"].get("include-in-header", [])
-                    if isinstance(header_items, str):
-                        header_items = [header_items]  # pragma: no cover
-                    for link_tag in favicon_links:
-                        entry = {"text": link_tag}
-                        if not any(link_tag in str(item) for item in header_items):
-                            header_items.append(entry)
-                    config["format"]["html"]["include-in-header"] = header_items
+            # Inject <link> tags for extra favicon assets using absolute URLs.
+            # Bare relative paths (e.g., href="favicon.ico") break on subpages because
+            # Quarto does not rewrite paths inside raw HTML injected via include-in-header.
+            # We derive the base URL from site-url or the Documentation URL in pyproject.toml.
+            if generated:
+                site_url = config.get("website", {}).get("site-url", "")
+                if not site_url:
+                    urls = metadata.get("urls", {})
+                    site_url = urls.get("Documentation", "")
+                if site_url:
+                    # Clean up: strip fragment, ensure trailing slash
+                    if "#" in site_url:
+                        site_url = site_url.split("#")[0]
+                    if not site_url.endswith("/"):
+                        site_url += "/"
+
+                    favicon_links: list[str] = []
+                    if generated.get("icon") and generated["icon"].endswith(".ico"):
+                        favicon_links.append(
+                            f'<link rel="icon" type="image/x-icon" href="{site_url}favicon.ico" sizes="48x48">'
+                        )
+                    if generated.get("icon-svg"):
+                        favicon_links.append(
+                            f'<link rel="icon" type="image/svg+xml" href="{site_url}favicon.svg">'
+                        )
+                    if generated.get("icon-32"):
+                        favicon_links.append(
+                            f'<link rel="icon" type="image/png" sizes="32x32" href="{site_url}favicon-32x32.png">'
+                        )
+                    if generated.get("icon-16"):
+                        favicon_links.append(
+                            f'<link rel="icon" type="image/png" sizes="16x16" href="{site_url}favicon-16x16.png">'
+                        )
+                    if generated.get("apple-touch-icon"):
+                        favicon_links.append(
+                            f'<link rel="apple-touch-icon" sizes="180x180" href="{site_url}apple-touch-icon.png">'
+                        )
+
+                    if favicon_links:
+                        header_items = config["format"]["html"].get("include-in-header", [])
+                        if isinstance(header_items, str):
+                            header_items = [header_items]  # pragma: no cover
+                        for link_tag in favicon_links:
+                            entry = {"text": link_tag}
+                            if not any(link_tag in str(item) for item in header_items):
+                                header_items.append(entry)
+                        config["format"]["html"]["include-in-header"] = header_items
 
         # Add GitHub widget script to page if using widget style
         if owner and repo and github_style == "widget":

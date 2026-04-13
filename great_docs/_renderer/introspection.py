@@ -383,9 +383,6 @@ class Builder:
 
     """
 
-    style: str
-    _registry: "dict[str, Builder]" = {}
-
     out_inventory: str = "objects.json"
     out_index: str = "index.qmd"
     out_page_suffix = ".qmd"
@@ -398,15 +395,6 @@ class Builder:
     header_level: int
     typing_module_paths: list[str]
     items: list[layout.Item]
-
-    def __init_subclass__(cls, **kwargs: object) -> None:
-        super().__init_subclass__(**kwargs)
-
-        if hasattr(cls, "style") and cls.style in cls._registry:
-            raise KeyError(f"A builder for style {cls.style} already exists")
-
-        if hasattr(cls, "style"):
-            cls._registry[cls.style] = cls
 
     def __init__(
         self,
@@ -428,9 +416,7 @@ class Builder:
         parser: str = "numpy",
         _fast_inventory: bool = False,
     ) -> None:
-        self.layout = self.load_layout(
-            title, desc=desc, sections=sections, package=package, options=options
-        )
+        self.layout = layout.Layout(title, desc, sections=sections, package=package, options=options)
 
         self.package = package
         self.version = None
@@ -458,14 +444,6 @@ class Builder:
         self.dynamic = dynamic
 
         self._fast_inventory = _fast_inventory
-
-    def load_layout(
-        self, title: str, desc: str, sections: dict, package: str, options: "dict | None" = None
-    ) -> layout.Layout:
-        try:
-            return layout.Layout(title, desc, sections=sections, package=package, options=options)
-        except (ValueError, TypeError) as e:
-            raise ValueError(str(e)) from None
 
     # building ----------------------------------------------------------------
 
@@ -637,35 +615,10 @@ class Builder:
         cfg = quarto_cfg.get("api-reference") or quarto_cfg.get("quartodoc")
         if cfg is None:
             raise KeyError("No `api-reference:` section found in your _quarto.yml.")
-        style = cfg.get("style", "pkgdown")
-        cls_builder = cls._registry[style]
-
         _fast_inventory = quarto_cfg.get("interlinks", {}).get("fast", False)
 
         _removed_keys = {"style", "renderer", "render_interlinks"}
-        return cls_builder(
+        return cls(
             **{k: v for k, v in cfg.items() if k not in _removed_keys},
             _fast_inventory=_fast_inventory,
         )
-
-
-class BuilderPkgdown(Builder):
-    """Build an API in R pkgdown style."""
-
-    style = "pkgdown"
-
-
-class BuilderSinglePage(Builder):
-    """Build an API with all docs embedded on a single page."""
-
-    style = "single-page"
-
-    def load_layout(self, *args, **kwargs):
-        el = super().load_layout(*args, **kwargs)
-
-        el.sections = [layout.Page(path=self.out_index, contents=el.sections)]
-
-        return el
-
-    def write_index(self, *args, **kwargs):
-        pass

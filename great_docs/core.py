@@ -9173,7 +9173,6 @@ body-classes: "gd-homepage"
             "package": importable_name,
             "dir": "reference",
             "title": ref_title,
-            "style": "pkgdown",
         }
         if ref_desc:
             api_ref_config["desc"] = ref_desc  # pragma: no cover

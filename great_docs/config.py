@@ -70,7 +70,8 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "max_releases": 50,
     },
     # Custom sections (generic page groups: examples, tutorials, blog, etc.)
-    # Each entry: {"title": str, "dir": str, "index": bool, "navbar_after": str | None}
+    # Each entry: {"title": str, "dir": str, "index": bool, "index_columns": int,
+    #              "navbar_after": str | None}
     "sections": [],
     # Custom static HTML pages.
     # None: auto-discover from project_root/custom/
@@ -1497,6 +1498,7 @@ def create_default_config() -> str:
 #   - title: Examples            # Navbar link text
 #     dir: examples              # Source directory (relative to project root)
 #     index: true                # Generate card-based index page (default: false)
+#     index_columns: 2           # Columns for image cards: 1 or 2 (default: 2)
 #     navbar_after: User Guide   # Place after this navbar item (optional)
 #   - title: Tutorials
 #     dir: tutorials             # No index — navbar links to first page

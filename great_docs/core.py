@@ -2470,7 +2470,10 @@ class GreatDocs:
                     index_href = f"{slug}/index.qmd"
                 elif generate_index:
                     # Auto-generate a card-based index page (opt-in)
-                    self._generate_section_index(title, copied, slug, dest_dir)
+                    index_columns = section_cfg.get("index_columns", 2)
+                    self._generate_section_index(
+                        title, copied, slug, dest_dir, columns=index_columns
+                    )
                     index_href = f"{slug}/index.qmd"
                 else:
                     # No index page — navbar links to the first content page
@@ -2727,12 +2730,15 @@ class GreatDocs:
         pages: list[dict],
         slug: str,
         dest_dir: Path,
+        columns: int = 2,
     ) -> None:
         """
         Auto-generate an index page for a custom section.
 
         Creates a gallery-style listing from each page's frontmatter title
-        and description.
+        and description.  Entries that have an ``image`` field are rendered
+        as image cards in a grid (1- or 2-column); entries without images
+        are rendered as a simple single-column link list below the cards.
 
         Parameters
         ----------
@@ -2744,6 +2750,8 @@ class GreatDocs:
             URL slug for the section.
         dest_dir
             Build directory for the section.
+        columns
+            Number of columns for image-card grid (1 or 2, default 2).
         """
         lines = [
             "---",
@@ -2759,60 +2767,125 @@ class GreatDocs:
         if not entries:
             lines.append("*No pages found.*")
         else:
+            # Split entries into image cards and plain links
+            image_entries = [e for e in entries if e.get("image")]
+            plain_entries = [e for e in entries if not e.get("image")]
+
             # Use inline styles to ensure card layout renders correctly
             # regardless of Quarto's page-columns grid system.
             # Build as a single contiguous HTML block so Quarto's Markdown
             # parser does not inject extra <p> or duplicate <a> elements.
-            grid_style = (
-                "display: grid; "
-                "grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); "
-                "gap: 1rem; "
-                "margin-top: 0.5rem;"
-            )
-            card_style = (
-                "display: block; "
-                "padding: 1.25rem 1.5rem; "
-                "border: 1px solid #dee2e6; "
-                "border-radius: 0.5rem; "
-                "color: inherit; "
-                "text-decoration: none;"
-            )
-            title_style = (
-                "font-size: 1.1rem; font-weight: 600; margin-bottom: 0.35rem; color: #0d6efd;"
-            )
-            desc_style = "font-size: 0.9rem; color: #6c757d; line-height: 1.45;"
-
             parts: list[str] = []
-            parts.append(f'<div class="section-cards" style="{grid_style}">')
 
-            for entry in entries:
-                href = entry["filename"]
-                entry_title = entry["title"]
-                desc = entry.get("description", "")
-                image = entry.get("image", "")
+            # --- Image card grid ---
+            if image_entries:
+                columns = max(1, min(columns, 2))
+                col_cls = "section-cards-1col" if columns == 1 else "section-cards-2col"
+                if columns == 1:
+                    grid_style = (
+                        "display: grid; "
+                        "grid-template-columns: 1fr; "
+                        "gap: 1rem; "
+                        "margin-top: 0.5rem;"
+                    )
+                else:
+                    grid_style = (
+                        "display: grid; "
+                        "grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); "
+                        "gap: 1rem; "
+                        "margin-top: 0.5rem;"
+                    )
+                card_style = (
+                    "display: block; "
+                    "padding: 1.25rem 1.5rem; "
+                    "border: 1px solid #dee2e6; "
+                    "border-radius: 0.5rem; "
+                    "color: inherit; "
+                    "text-decoration: none;"
+                )
+                title_style = (
+                    "font-size: 1.1rem; font-weight: 600; "
+                    "margin-bottom: 0.35rem; color: #0d6efd;"
+                )
+                desc_style = "font-size: 0.9rem; color: #6c757d; line-height: 1.45;"
 
-                parts.append(f'<a href="{href}" class="section-card" style="{card_style}">')
+                parts.append(
+                    f'<div class="section-cards {col_cls}" style="{grid_style}">'
+                )
+                for entry in image_entries:
+                    href = entry["filename"]
+                    entry_title = entry["title"]
+                    desc = entry.get("description", "")
+                    image = entry["image"]
 
-                if image:
+                    parts.append(
+                        f'<a href="{href}" class="section-card" style="{card_style}">'
+                    )
                     parts.append(
                         f'<img src="{image}" class="section-card-img" '
                         'style="width: 100%; border-radius: 0.375rem; '
                         'margin-bottom: 0.75rem;" />'
                     )
+                    parts.append(
+                        f'<div class="section-card-title" style="{title_style}">'
+                        f"{entry_title}</div>"
+                    )
+                    if desc:
+                        parts.append(
+                            f'<div class="section-card-desc" style="{desc_style}">'
+                            f"{desc}</div>"
+                        )
+                    parts.append("</a>")
+
+                # Close grid container on the same line as the last </a>
+                parts[-1] = parts[-1] + "</div>"
+
+            # --- Separator ---
+            if image_entries and plain_entries:
+                parts.append("<hr>")
+
+            # --- Plain link list ---
+            if plain_entries:
+                card_style = (
+                    "display: block; "
+                    "padding: 1.25rem 1.5rem; "
+                    "border: 1px solid #dee2e6; "
+                    "border-radius: 0.5rem; "
+                    "color: inherit; "
+                    "text-decoration: none;"
+                )
+                title_style = (
+                    "font-size: 1.1rem; font-weight: 600; "
+                    "margin-bottom: 0.35rem; color: #0d6efd;"
+                )
+                desc_style = "font-size: 0.9rem; color: #6c757d; line-height: 1.45;"
 
                 parts.append(
-                    f'<div class="section-card-title" style="{title_style}">{entry_title}</div>'
+                    '<div class="section-cards section-cards-list" '
+                    'style="display: grid; grid-template-columns: 1fr; '
+                    'gap: 1rem; margin-top: 0.5rem;">'
                 )
-                if desc:
+                for entry in plain_entries:
+                    href = entry["filename"]
+                    entry_title = entry["title"]
+                    desc = entry.get("description", "")
+
                     parts.append(
-                        f'<div class="section-card-desc" style="{desc_style}">{desc}</div>'
+                        f'<a href="{href}" class="section-card" style="{card_style}">'
                     )
+                    parts.append(
+                        f'<div class="section-card-title" style="{title_style}">'
+                        f"{entry_title}</div>"
+                    )
+                    if desc:
+                        parts.append(
+                            f'<div class="section-card-desc" style="{desc_style}">'
+                            f"{desc}</div>"
+                        )
+                    parts.append("</a>")
 
-                parts.append("</a>")
-
-            # Close container on the same line as the last </a> to prevent
-            # Quarto's Markdown parser from injecting a phantom <p><a></a></p>.
-            parts[-1] = parts[-1] + "</div>"
+                # Close list container
+                parts[-1] = parts[-1] + "</div>"
 
             # Join without blank lines to keep it as one HTML block
             lines.append("\n".join(parts))

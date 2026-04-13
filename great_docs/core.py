@@ -2462,7 +2462,7 @@ class GreatDocs:
                 # Default: sections with sidebar (index page is opt-in)
                 copied = self._copy_section_files(files, source_path, dest_dir)
 
-                has_user_index = any(f.name == "index.qmd" for f in files)
+                has_user_index = (source_path / "index.qmd").exists()
                 generate_index = section_cfg.get("index", False)
 
                 if has_user_index:
@@ -2673,9 +2673,7 @@ class GreatDocs:
             # (e.g., blog/my-post/datasets/)
             for item in src_dir_path.iterdir():
                 if item.is_dir():
-                    has_content = any(
-                        f.suffix in content_suffixes for f in item.rglob("*")
-                    )
+                    has_content = any(f.suffix in content_suffixes for f in item.rglob("*"))
                     if not has_content:
                         rel = item.relative_to(source_dir)
                         dest_sub = dest_dir / rel
@@ -2783,10 +2781,7 @@ class GreatDocs:
                 col_cls = "section-cards-1col" if columns == 1 else "section-cards-2col"
                 if columns == 1:
                     grid_style = (
-                        "display: grid; "
-                        "grid-template-columns: 1fr; "
-                        "gap: 1rem; "
-                        "margin-top: 0.5rem;"
+                        "display: grid; grid-template-columns: 1fr; gap: 1rem; margin-top: 0.5rem;"
                     )
                 else:
                     grid_style = (
@@ -2804,36 +2799,29 @@ class GreatDocs:
                     "text-decoration: none;"
                 )
                 title_style = (
-                    "font-size: 1.1rem; font-weight: 600; "
-                    "margin-bottom: 0.35rem; color: #0d6efd;"
+                    "font-size: 1.1rem; font-weight: 600; margin-bottom: 0.35rem; color: #0d6efd;"
                 )
                 desc_style = "font-size: 0.9rem; color: #6c757d; line-height: 1.45;"
 
-                parts.append(
-                    f'<div class="section-cards {col_cls}" style="{grid_style}">'
-                )
+                parts.append(f'<div class="section-cards {col_cls}" style="{grid_style}">')
                 for entry in image_entries:
                     href = entry["filename"]
                     entry_title = entry["title"]
                     desc = entry.get("description", "")
                     image = entry["image"]
 
-                    parts.append(
-                        f'<a href="{href}" class="section-card" style="{card_style}">'
-                    )
+                    parts.append(f'<a href="{href}" class="section-card" style="{card_style}">')
                     parts.append(
                         f'<img src="{image}" class="section-card-img" '
                         'style="width: 100%; border-radius: 0.375rem; '
                         'margin-bottom: 0.75rem;" />'
                     )
                     parts.append(
-                        f'<div class="section-card-title" style="{title_style}">'
-                        f"{entry_title}</div>"
+                        f'<div class="section-card-title" style="{title_style}">{entry_title}</div>'
                     )
                     if desc:
                         parts.append(
-                            f'<div class="section-card-desc" style="{desc_style}">'
-                            f"{desc}</div>"
+                            f'<div class="section-card-desc" style="{desc_style}">{desc}</div>'
                         )
                     parts.append("</a>")
 
@@ -2855,8 +2843,7 @@ class GreatDocs:
                     "text-decoration: none;"
                 )
                 title_style = (
-                    "font-size: 1.1rem; font-weight: 600; "
-                    "margin-bottom: 0.35rem; color: #0d6efd;"
+                    "font-size: 1.1rem; font-weight: 600; margin-bottom: 0.35rem; color: #0d6efd;"
                 )
                 desc_style = "font-size: 0.9rem; color: #6c757d; line-height: 1.45;"
 
@@ -2870,17 +2857,13 @@ class GreatDocs:
                     entry_title = entry["title"]
                     desc = entry.get("description", "")
 
+                    parts.append(f'<a href="{href}" class="section-card" style="{card_style}">')
                     parts.append(
-                        f'<a href="{href}" class="section-card" style="{card_style}">'
-                    )
-                    parts.append(
-                        f'<div class="section-card-title" style="{title_style}">'
-                        f"{entry_title}</div>"
+                        f'<div class="section-card-title" style="{title_style}">{entry_title}</div>'
                     )
                     if desc:
                         parts.append(
-                            f'<div class="section-card-desc" style="{desc_style}">'
-                            f"{desc}</div>"
+                            f'<div class="section-card-desc" style="{desc_style}">{desc}</div>'
                         )
                     parts.append("</a>")
 

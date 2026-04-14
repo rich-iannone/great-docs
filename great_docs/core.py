@@ -2484,7 +2484,15 @@ class GreatDocs:
                         index_href = f"{slug}/index.qmd"  # pragma: no cover
 
                 # Add sidebar (skipped for single-page sections)
-                self._add_section_sidebar(title, slug, copied, has_user_index, generate_index)
+                dir_titles = section_cfg.get("dir_titles", {})
+                self._add_section_sidebar(
+                    title,
+                    slug,
+                    copied,
+                    has_user_index,
+                    generate_index,
+                    dir_titles=dir_titles,
+                )
 
                 # For single-page sections (no sidebar), inject a body class so
                 # CSS can expand the content area into the sidebar space.
@@ -2884,6 +2892,7 @@ class GreatDocs:
         pages: list[dict],
         has_user_index: bool,
         has_generated_index: bool = False,
+        dir_titles: dict[str, str] | None = None,
     ) -> None:
         """
         Add a sidebar for the custom section to ``_quarto.yml``.
@@ -2900,6 +2909,9 @@ class GreatDocs:
             Whether the user provided their own index.qmd.
         has_generated_index
             Whether an auto-generated index page was created.
+        dir_titles
+            Optional mapping of subdirectory names (after prefix stripping) to
+            custom sidebar section titles.
         """
         quarto_yml = self.project_path / "_quarto.yml"
         config = self._read_quarto_config(quarto_yml)
@@ -2941,8 +2953,14 @@ class GreatDocs:
             )
 
         # Add subdirectory groups as section headers
+        if dir_titles is None:
+            dir_titles = {}
         for subdir in sorted(subdir_groups.keys()):
-            section_title = subdir.replace("-", " ").replace("_", " ").title()  # pragma: no cover
+            clean_subdir = self._strip_numeric_prefix(subdir)  # pragma: no cover
+            section_title = dir_titles.get(  # pragma: no cover
+                clean_subdir,
+                clean_subdir.replace("-", " ").replace("_", " ").title(),
+            )  # pragma: no cover
             section_contents = []  # pragma: no cover
             for page in subdir_groups[subdir]:  # pragma: no cover
                 section_contents.append(  # pragma: no cover
@@ -4366,7 +4384,8 @@ class GreatDocs:
                     dir_files = subdirs[subdir]
                     # Use the index.qmd title as the section title if present,
                     # otherwise derive from the directory name
-                    section_title = subdir.replace("-", " ").replace("_", " ").title()
+                    clean_subdir = self._strip_numeric_prefix(subdir)
+                    section_title = clean_subdir.replace("-", " ").replace("_", " ").title()
                     section_contents = []
                     for file_info in dir_files:
                         if file_info["path"].name == "index.qmd":

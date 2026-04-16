@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 import tempfile
@@ -22,6 +23,23 @@ class ParameterInfo:
     default: str | None = None
     kind: str = "POSITIONAL_OR_KEYWORD"
 
+    def to_dict(self) -> dict:
+        d: dict = {"name": self.name, "kind": self.kind}
+        if self.annotation is not None:
+            d["annotation"] = self.annotation
+        if self.default is not None:
+            d["default"] = self.default
+        return d
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "ParameterInfo":
+        return cls(
+            name=d["name"],
+            annotation=d.get("annotation"),
+            default=d.get("default"),
+            kind=d.get("kind", "POSITIONAL_OR_KEYWORD"),
+        )
+
 
 @dataclass
 class SymbolInfo:
@@ -34,6 +52,32 @@ class SymbolInfo:
     decorators: list[str] = field(default_factory=list)
     is_async: bool = False
     return_annotation: str | None = None
+
+    def to_dict(self) -> dict:
+        d: dict = {"name": self.name, "kind": self.kind}
+        if self.parameters:
+            d["parameters"] = [p.to_dict() for p in self.parameters]
+        if self.bases:
+            d["bases"] = self.bases
+        if self.decorators:
+            d["decorators"] = self.decorators
+        if self.is_async:
+            d["is_async"] = True
+        if self.return_annotation is not None:
+            d["return_annotation"] = self.return_annotation
+        return d
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "SymbolInfo":
+        return cls(
+            name=d["name"],
+            kind=d["kind"],
+            parameters=[ParameterInfo.from_dict(p) for p in d.get("parameters", [])],
+            bases=d.get("bases", []),
+            decorators=d.get("decorators", []),
+            is_async=d.get("is_async", False),
+            return_annotation=d.get("return_annotation"),
+        )
 
 
 @dataclass
@@ -78,6 +122,31 @@ class ApiSnapshot:
     @property
     def function_count(self) -> int:
         return sum(1 for s in self.symbols.values() if s.kind == "function")
+
+    def to_dict(self) -> dict:
+        return {
+            "version": self.version,
+            "package_name": self.package_name,
+            "symbols": {name: sym.to_dict() for name, sym in self.symbols.items()},
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "ApiSnapshot":
+        return cls(
+            version=d["version"],
+            package_name=d["package_name"],
+            symbols={name: SymbolInfo.from_dict(sym) for name, sym in d.get("symbols", {}).items()},
+        )
+
+    def save(self, path: Path) -> None:
+        """Save this snapshot to a JSON file."""
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(self.to_dict(), indent=2) + "\n")
+
+    @classmethod
+    def load(cls, path: Path) -> "ApiSnapshot":
+        """Load a snapshot from a JSON file."""
+        return cls.from_dict(json.loads(path.read_text()))
 
 
 @dataclass
@@ -2030,3 +2099,180 @@ def process_evolution_markers_in_file(
         path.write_text(result, encoding="utf-8")
 
     return result
+
+
+# ---------------------------------------------------------------------------
+# API diff annotations (version badges)
+# ---------------------------------------------------------------------------
+
+
+def compute_version_badges(
+    current: ApiSnapshot,
+    previous: ApiSnapshot | None,
+) -> dict[str, dict]:
+    """
+    Compute version badges for each symbol in *current* based on a diff
+    against *previous*.
+
+    Parameters
+    ----------
+    current
+        The API snapshot for the version being documented.
+    previous
+        The API snapshot for the preceding version, or None if this is
+        the first version.
+
+    Returns
+    -------
+    dict[str, dict]
+        Mapping of symbol name to badge info. Each value has keys:
+        ``"badge"`` (``"new"``, ``"changed"``, or ``"deprecated"``),
+        ``"version"`` (the current snapshot's version label), and
+        optionally ``"details"`` (list of change descriptions).
+    """
+    badges: dict[str, dict] = {}
+
+    # Check for deprecation decorators in current
+    for name, sym in current.symbols.items():
+        if any("deprecated" in d.lower() for d in sym.decorators):
+            badges[name] = {
+                "badge": "deprecated",
+                "version": current.version,
+            }
+
+    if previous is None:
+        # Everything is new in the first version — don't badge
+        return badges
+
+    diff = diff_snapshots(previous, current)
+
+    for change in diff.added:
+        # Don't override a deprecation badge
+        if change.symbol not in badges:
+            badges[change.symbol] = {
+                "badge": "new",
+                "version": current.version,
+            }
+
+    for change in diff.changed:
+        if change.symbol not in badges:
+            badges[change.symbol] = {
+                "badge": "changed",
+                "version": current.version,
+                "details": change.details,
+            }
+
+    return badges
+
+
+def render_badge_html(badge_info: dict) -> str:
+    """
+    Render a single badge as an HTML ``<span>`` for embedding in QMD pages.
+
+    Parameters
+    ----------
+    badge_info
+        A dict with ``"badge"`` and ``"version"`` keys (as returned by
+        :func:`compute_version_badges`).
+
+    Returns
+    -------
+    str
+        An HTML ``<span>`` element with appropriate CSS class.
+    """
+    badge = badge_info["badge"]
+    version = _escape_html(badge_info["version"])
+
+    if badge == "new":
+        return f'<span class="gd-badge gd-badge-new">New in {version}</span>'
+    elif badge == "changed":
+        return f'<span class="gd-badge gd-badge-changed">Changed in {version}</span>'
+    elif badge == "deprecated":
+        return f'<span class="gd-badge gd-badge-deprecated">Deprecated in {version}</span>'
+    return ""
+
+
+def inject_badges_into_qmd(
+    content: str,
+    badges: dict[str, dict],
+) -> str:
+    """
+    Inject version badges into QMD content for API reference pages.
+
+    Looks for lines that define API symbols (e.g. ``## SymbolName`` or
+    ``### package.SymbolName``) and inserts the badge HTML immediately
+    after the heading.
+
+    Parameters
+    ----------
+    content
+        The ``.qmd`` file content.
+    badges
+        Badge dict as returned by :func:`compute_version_badges`.
+
+    Returns
+    -------
+    str
+        The content with badge HTML injected after matching headings.
+    """
+    if not badges:
+        return content
+
+    lines = content.split("\n")
+    result: list[str] = []
+
+    for line in lines:
+        result.append(line)
+        # Match Markdown headings: ## Name or ### pkg.Name
+        stripped = line.strip()
+        if stripped.startswith("#"):
+            # Extract the heading text (after the # marks)
+            heading_text = stripped.lstrip("#").strip()
+            # Check both the full qualified name and the short name
+            symbol_name = heading_text.split(".")[-1] if "." in heading_text else heading_text
+            # Also strip any { .class } suffixes from Quarto
+            symbol_name = symbol_name.split("{")[0].strip()
+            heading_text_clean = heading_text.split("{")[0].strip()
+
+            badge_info = badges.get(symbol_name) or badges.get(heading_text_clean)
+            if badge_info:
+                result.append(render_badge_html(badge_info))
+
+    return "\n".join(result)
+
+
+def load_snapshots_for_annotations(
+    snapshot_dir: Path,
+    current_version: str,
+    previous_version: str | None,
+) -> tuple[ApiSnapshot | None, ApiSnapshot | None]:
+    """
+    Load current and previous snapshots from a directory.
+
+    Parameters
+    ----------
+    snapshot_dir
+        Directory containing ``<version>.json`` snapshot files.
+    current_version
+        Version tag for the current snapshot.
+    previous_version
+        Version tag for the previous snapshot, or None.
+
+    Returns
+    -------
+    tuple[ApiSnapshot | None, ApiSnapshot | None]
+        ``(current, previous)`` snapshot pair.
+    """
+    current = None
+    previous = None
+
+    current_path = snapshot_dir / f"{current_version}.json"
+    if current_path.exists():
+        current = ApiSnapshot.load(current_path)
+
+    if previous_version:
+        prev_path = snapshot_dir / f"{previous_version}.json"
+        if prev_path.exists():
+            previous = ApiSnapshot.load(prev_path)
+
+    return current, previous

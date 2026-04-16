@@ -1020,6 +1020,23 @@ class GreatDocs:
         # Fallback to project_root if we can't find it
         return self.project_root
 
+    def _griffe_search_paths(self) -> list[str | Path]:
+        """Return search paths for griffe so it can find src/python/lib layouts.
+
+        Prepends the package root and common sub-layouts (`src/`, `python/`, `lib/`) in front of
+        `sys.path` so that griffe can locate packages in non-flat layouts while still falling back
+        to the normal import path.
+        """
+        import sys
+
+        package_root = self._find_package_root()
+        extra: list[str | Path] = [package_root]
+        for subdir in ("src", "python", "lib"):
+            candidate = package_root / subdir
+            if candidate.is_dir():
+                extra.append(candidate)
+        return extra + sys.path
+
     def _get_quarto_env(self) -> dict[str, str]:
         """
         Get environment variables for running Quarto commands.
@@ -1032,6 +1049,7 @@ class GreatDocs:
         griffe can find the package even if it's not installed.
 
         The method looks for Python in the following order:
+
         1. Virtual environment in the project root (.venv/bin/python or .venv/Scripts/python.exe)
         2. The currently running Python interpreter
 
@@ -4718,7 +4736,7 @@ class GreatDocs:
 
             # Load the package with griffe
             try:
-                pkg = griffe.load(normalized_name)
+                pkg = griffe.load(normalized_name, search_paths=self._griffe_search_paths())
             except Exception:
                 return None
 
@@ -5022,6 +5040,20 @@ class GreatDocs:
                 search_paths.append(package_root / pkg)
                 search_paths.append(package_root / "src" / pkg)
 
+        # Handle dotted module names (namespace packages like "firebird.base")
+        # by converting dots to path separators
+        dotted_path = None
+        if "." in package_name:
+            dotted_path = package_name.replace(".", os.sep)
+            search_paths.extend(
+                [
+                    package_root / dotted_path,
+                    package_root / "src" / dotted_path,
+                    package_root / "python" / dotted_path,
+                    package_root / "lib" / dotted_path,
+                ]
+            )
+
         # Then add standard locations based on package name
         search_paths.extend(
             [
@@ -5235,9 +5267,13 @@ class GreatDocs:
             # Normalize package name (replace dashes with underscores)
             normalized_name = package_name.replace("-", "_")
 
+            # Build search_paths for griffe so it can find packages in
+            # src/, python/, lib/ layouts without them being on sys.path
+            griffe_search_paths = self._griffe_search_paths()
+
             # Load the package using griffe
             try:
-                pkg = griffe.load(normalized_name)
+                pkg = griffe.load(normalized_name, search_paths=griffe_search_paths)
             except Exception as e:
                 print(f"Warning: Could not load package with griffe ({type(e).__name__})")
                 if package_name != normalized_name:
@@ -5253,6 +5289,11 @@ class GreatDocs:
             if pkg.exports:
                 public_members = [name for name in all_members if name in set(pkg.exports)]
                 print(f"Using __all__ with {len(public_members)} exports")
+                # If __all__ lists names that griffe couldn't resolve as actual
+                # members (e.g., lazy imports, re-exports), fall back to AST
+                # parsing so the names are still discovered.
+                if not public_members and pkg.exports:
+                    return None
             else:
                 # Filter out private names (starting with underscore)
                 # This also filters out dunder names like __version__, __all__, etc.
@@ -5449,7 +5490,7 @@ class GreatDocs:
 
             # Load the package using griffe
             try:
-                pkg = griffe.load(normalized_name)
+                pkg = griffe.load(normalized_name, search_paths=self._griffe_search_paths())
             except Exception as e:
                 print(
                     f"Warning: Could not load package for docstring detection ({type(e).__name__})"
@@ -5597,7 +5638,7 @@ class GreatDocs:
 
         # Get a sample of exports to test
         try:
-            pkg = griffe.load(normalized_name)
+            pkg = griffe.load(normalized_name, search_paths=self._griffe_search_paths())
             exports = [
                 name
                 for name in list(pkg.members.keys())[:10]  # Test first 10
@@ -6076,7 +6117,7 @@ class GreatDocs:
 
             # Try to load the package with griffe
             try:
-                pkg = griffe.load(normalized_name)
+                pkg = griffe.load(normalized_name, search_paths=self._griffe_search_paths())
             except Exception as e:
                 print(f"Warning: Could not load package with griffe ({type(e).__name__})")
                 # Fallback: use importlib + inspect to categorize exports
@@ -6845,7 +6886,7 @@ class GreatDocs:
             normalized_name = package_name.replace("-", "_")
 
             try:
-                pkg = griffe.load(normalized_name)
+                pkg = griffe.load(normalized_name, search_paths=self._griffe_search_paths())
             except Exception as e:
                 print(f"Warning: Could not load package with griffe ({type(e).__name__})")
                 return {}

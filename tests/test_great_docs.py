@@ -22955,6 +22955,7 @@ def test_build_prepare_and_render_flow():
 
             docs._has_api_reference = True
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = None
             docs._config.dynamic = False
@@ -23000,6 +23001,7 @@ def test_build_no_api_reference():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = None
 
@@ -23054,6 +23056,7 @@ def test_build_dynamic_fallback_to_static():
 
             docs._has_api_reference = True
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = None
             docs._config.dynamic = True
@@ -23192,6 +23195,7 @@ def test_build_with_changelog():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = True
             docs._config.sections = None
 
@@ -23237,6 +23241,7 @@ def test_build_changelog_error_handled():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = True
             docs._config.sections = None
 
@@ -23285,6 +23290,7 @@ def test_build_with_cli_documentation():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = None
 
@@ -23326,6 +23332,7 @@ def test_build_with_sections():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = [{"title": "Recipes"}]
 
@@ -23365,6 +23372,7 @@ def test_build_with_assets_triggers_config_update():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = None
 
@@ -23396,6 +23404,7 @@ def test_build_watch_mode():
         ):
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = None
 
@@ -23435,6 +23444,7 @@ def test_build_quarto_render_failure():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = None
 
@@ -23477,6 +23487,7 @@ def test_build_cli_error_handled():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = None
 
@@ -26110,6 +26121,7 @@ def test_build_section_error_handled():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = [{"title": "Test"}]
 
@@ -26147,6 +26159,7 @@ def test_build_user_guide_error_handled():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = None
 
@@ -26184,6 +26197,7 @@ def test_build_copy_assets_error_handled():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = None
 
@@ -26227,6 +26241,7 @@ def test_build_changelog_no_releases():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = True
             docs._config.sections = None
 
@@ -26264,6 +26279,7 @@ def test_build_changelog_no_repo():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = True
             docs._config.sections = None
 
@@ -28042,7 +28058,9 @@ def test_cli_build_success():
 
             result = runner.invoke(build, ["--project-path", tmp_dir])
             assert result.exit_code == 0
-            mock_instance.build.assert_called_once_with(watch=False, refresh=True)
+            mock_instance.build.assert_called_once_with(
+                watch=False, refresh=True, version_tags=None, latest_only=False
+            )
 
 
 def test_cli_build_with_watch():
@@ -28056,7 +28074,9 @@ def test_cli_build_with_watch():
 
             result = runner.invoke(build, ["--project-path", tmp_dir, "--watch"])
             assert result.exit_code == 0
-            mock_instance.build.assert_called_once_with(watch=True, refresh=True)
+            mock_instance.build.assert_called_once_with(
+                watch=True, refresh=True, version_tags=None, latest_only=False
+            )
 
 
 def test_cli_build_no_refresh():
@@ -28070,7 +28090,9 @@ def test_cli_build_no_refresh():
 
             result = runner.invoke(build, ["--project-path", tmp_dir, "--no-refresh"])
             assert result.exit_code == 0
-            mock_instance.build.assert_called_once_with(watch=False, refresh=False)
+            mock_instance.build.assert_called_once_with(
+                watch=False, refresh=False, version_tags=None, latest_only=False
+            )
 
 
 def test_cli_build_keyboard_interrupt():

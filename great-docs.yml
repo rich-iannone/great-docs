@@ -172,6 +172,7 @@ nav_icons:
     Community Files: file-heart
     Docs Linting: list-checks
     API Evolution: git-compare-arrows
+    Multi-Version Documentation: git-branch
 
 # Author Information
 # ------------------

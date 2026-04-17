@@ -198,7 +198,25 @@ def init(project_path: str | None, force: bool) -> None:
     is_flag=True,
     help="Skip re-discovering package exports (faster rebuild when API unchanged)",
 )
-def build(project_path: str | None, watch: bool, no_refresh: bool) -> None:
+@click.option(
+    "--versions",
+    "version_filter",
+    type=str,
+    default=None,
+    help="Build only specific versions (comma-separated tags, e.g. '0.3,dev')",
+)
+@click.option(
+    "--latest-only",
+    is_flag=True,
+    help="Build only the latest version (skip historical versions)",
+)
+def build(
+    project_path: str | None,
+    watch: bool,
+    no_refresh: bool,
+    version_filter: str | None,
+    latest_only: bool,
+) -> None:
     """Build your documentation site.
 
     Requires great-docs.yml to exist (run 'great-docs init' first).
@@ -222,16 +240,30 @@ def build(project_path: str | None, watch: bool, no_refresh: bool) -> None:
     Use --no-refresh to skip API discovery for faster rebuilds when your
     package's public API hasn't changed.
 
+    When multi-version documentation is configured, use --versions to build
+    only specific versions, or --latest-only to skip historical versions.
+
     \b
     Examples:
       great-docs build                      # Full build with API refresh
       great-docs build --no-refresh         # Fast rebuild (skip API discovery)
       great-docs build --watch              # Rebuild on file changes
+      great-docs build --versions 0.3,dev   # Build specific versions only
+      great-docs build --latest-only        # Build only the latest version
       great-docs build --project-path ../pkg
     """
     try:
         docs = GreatDocs(project_path=project_path)
-        docs.build(watch=watch, refresh=not no_refresh)
+        # Parse version filter if provided
+        version_tags = None
+        if version_filter:
+            version_tags = [v.strip() for v in version_filter.split(",") if v.strip()]
+        docs.build(
+            watch=watch,
+            refresh=not no_refresh,
+            version_tags=version_tags,
+            latest_only=latest_only,
+        )
     except KeyboardInterrupt:
         click.echo("\n👋 Stopped watching")
     except Exception as e:
@@ -2084,6 +2116,222 @@ def api_diff_cmd(
 
 
 cli.add_command(api_diff_cmd)
+
+
+@click.command()
+@click.option(
+    "--project-path",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    help="Path to your project root directory (default: current directory)",
+)
+@click.option(
+    "--check",
+    is_flag=True,
+    help="Validate version configuration and exit with non-zero on errors",
+)
+def versions(project_path: str | None, check: bool) -> None:
+    """List configured documentation versions.
+
+    Shows the multi-version documentation configuration from great-docs.yml,
+    including version tags, labels, and status indicators.
+
+    \b
+    Examples:
+      great-docs versions              # List all configured versions
+      great-docs versions --check      # Validate configuration
+    """
+    from great_docs._versioning import get_latest_version, parse_versions_config
+    from great_docs.config import Config
+
+    try:
+        project_root = Path(project_path or ".").resolve()
+        cfg = Config(project_root)
+
+        if not cfg.has_versions:
+            click.echo("No versions configured in great-docs.yml.")
+            click.echo("Add a 'versions:' list to enable multi-version docs.")
+            return
+
+        try:
+            entries = parse_versions_config(cfg.versions)
+        except ValueError as e:
+            click.echo(f"Error: {e}", err=True)
+            sys.exit(1)
+
+        if check:
+            click.echo(f"✓ {len(entries)} version(s) configured")
+            latest = get_latest_version(entries)
+            if latest:
+                click.echo(f"  Latest: {latest.tag} ({latest.label})")
+            else:
+                click.echo("  Warning: no version marked as latest", err=True)
+                sys.exit(1)
+            return
+
+        # Table header
+        click.echo(f"  {'TAG':<12} {'LABEL':<20} {'STATUS':<16} {'API SOURCE'}")
+        click.echo(f"  {'─' * 12} {'─' * 20} {'─' * 16} {'─' * 24}")
+
+        for v in entries:
+            status = "—"
+            if v.latest:
+                status = "latest ✓"
+            elif v.prerelease:
+                status = "prerelease"
+            elif v.eol:
+                status = "eol"
+
+            api_source = "live introspection"
+            if v.api_snapshot:
+                api_source = v.api_snapshot
+            elif v.git_ref:
+                api_source = f"git tag: {v.git_ref}"
+
+            click.echo(f"  {v.tag:<12} {v.label:<20} {status:<16} {api_source}")
+
+        click.echo()
+
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+cli.add_command(versions)
+
+
+@click.command("api-snapshot")
+@click.argument("version_tag", required=False)
+@click.option(
+    "--project-path",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    help="Path to your project root directory (default: current directory)",
+)
+@click.option(
+    "--package",
+    help="Python package name (auto-detected from pyproject.toml if omitted)",
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(dir_okay=False),
+    help="Output file path (default: .great-docs/snapshots/<version>.json)",
+)
+@click.option(
+    "--all-tags",
+    is_flag=True,
+    help="Snapshot all version tags in the repository",
+)
+@click.option(
+    "--force",
+    is_flag=True,
+    help="Overwrite existing snapshot files",
+)
+def api_snapshot_cmd(
+    version_tag: str | None,
+    project_path: str | None,
+    package: str | None,
+    output: str | None,
+    all_tags: bool,
+    force: bool,
+) -> None:
+    """Capture a JSON snapshot of a package's public API.
+
+    Snapshots record every public symbol, its parameters, type annotations,
+    and other metadata. They are used to build versioned API reference pages
+    and compute diff annotations without needing access to old source code.
+
+    \b
+    With no arguments, snapshot the *current* working-tree API:
+      great-docs api-snapshot
+
+    \b
+    Snapshot a specific git tag:
+      great-docs api-snapshot v1.0.0
+
+    \b
+    Snapshot all version tags at once:
+      great-docs api-snapshot --all-tags
+
+    \b
+    Snapshots are saved to .great-docs/snapshots/<version>.json by default.
+    """
+    from ._api_diff import (
+        _detect_package_name,
+        list_version_tags,
+        snapshot_at_tag,
+        snapshot_from_griffe,
+    )
+
+    project_root = Path(project_path) if project_path else Path.cwd()
+
+    # Resolve package name
+    pkg_name = package or _detect_package_name(project_root)
+    if not pkg_name:
+        click.echo(
+            "Could not detect package name. Pass --package or add [project] "
+            "name to pyproject.toml.",
+            err=True,
+        )
+        sys.exit(1)
+
+    # Default snapshot directory
+    snap_dir = project_root / ".great-docs" / "snapshots"
+
+    # Determine which versions to snapshot
+    if all_tags:
+        tags = list_version_tags(project_root)
+        if not tags:
+            click.echo("No version tags found in repository.", err=True)
+            sys.exit(1)
+    elif version_tag:
+        tags = [version_tag]
+    else:
+        # Current working tree
+        tags = ["HEAD"]
+
+    saved = 0
+    failed = 0
+
+    for tag in tags:
+        # Determine output path
+        if output and len(tags) == 1:
+            out_path = Path(output)
+        else:
+            label = tag if tag != "HEAD" else "dev"
+            out_path = snap_dir / f"{label}.json"
+
+        if out_path.exists() and not force:
+            click.echo(f"  ⏭  {tag}: {out_path} already exists (use --force to overwrite)")
+            continue
+
+        try:
+            if tag == "HEAD":
+                snap = snapshot_from_griffe(pkg_name, version="dev")
+            else:
+                snap = snapshot_at_tag(project_root, tag, pkg_name)
+
+            if snap is None:
+                click.echo(f"  ✗  {tag}: could not build snapshot", err=True)
+                failed += 1
+                continue
+
+            snap.save(out_path)
+            click.echo(f"  ✓  {tag}: {snap.symbol_count} symbols → {out_path}")
+            saved += 1
+
+        except Exception as e:
+            click.echo(f"  ✗  {tag}: {e}", err=True)
+            failed += 1
+
+    click.echo()
+    if saved:
+        click.echo(f"Saved {saved} snapshot(s).")
+    if failed:
+        click.echo(f"Failed: {failed}")
+        sys.exit(1)
+
+
+cli.add_command(api_snapshot_cmd)
 
 
 def main() -> None:

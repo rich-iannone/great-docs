@@ -5947,8 +5947,8 @@ def test_categorize_fallback_discovers_module_by_dir():
     the fallback must discover and import the correct module directory."""
 
     with tempfile.TemporaryDirectory() as tmp_dir:
-        # Project name normalizes to 'my_v2_pkg' but the actual module is 'mypkg'
-        pkg_dir = Path(tmp_dir) / "mypkg"
+        # Project name normalizes to 'my_v2_pkg' but the actual module is 'fallback_discover_pkg'
+        pkg_dir = Path(tmp_dir) / "fallback_discover_pkg"
         pkg_dir.mkdir()
         (pkg_dir / "__init__.py").write_text(
             '"""Package with mismatched name."""\n'
@@ -5968,7 +5968,7 @@ def test_categorize_fallback_discovers_module_by_dir():
         try:
             docs = GreatDocs(project_path=tmp_dir)
             categories = docs._categorize_api_objects_fallback(
-                "my_v2_pkg",  # wrong name — should discover 'mypkg'
+                "my_v2_pkg",  # wrong name — should discover 'fallback_discover_pkg'
                 ["do_stuff"],
             )
 
@@ -5976,6 +5976,7 @@ def test_categorize_fallback_discovers_module_by_dir():
             assert categories["other"] == []
         finally:
             sys.path.remove(tmp_dir)
+            sys.modules.pop("fallback_discover_pkg", None)
 
 
 def test_categorize_fallback_skips_metadata():
@@ -7809,6 +7810,9 @@ def test_update_gitignore_force_creates_new():
         content = gitignore.read_text()
 
         assert "great-docs/" in content
+        assert ".great-docs-build/" in content
+        assert ".great-docs-cache/" in content
+        assert ".great-docs/" in content
 
 
 def test_update_gitignore_force_appends_to_existing():
@@ -7824,21 +7828,28 @@ def test_update_gitignore_force_appends_to_existing():
 
         assert "__pycache__/" in content
         assert "great-docs/" in content
+        assert ".great-docs-build/" in content
+        assert ".great-docs-cache/" in content
+        assert ".great-docs/" in content
 
 
 def test_update_gitignore_skip_when_already_present():
-    """_update_project_gitignore does nothing if entry already exists."""
+    """_update_project_gitignore does not duplicate entries already present."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         gitignore = Path(tmp_dir) / ".gitignore"
-        gitignore.write_text("great-docs/\n")
+        gitignore.write_text("great-docs/\n.great-docs-build/\n.great-docs-cache/\n.great-docs/\n")
 
         docs = GreatDocs(project_path=tmp_dir)
         docs._update_project_gitignore(force=True)
 
-        # Should not duplicate
+        # Should not duplicate any entry
         content = gitignore.read_text()
+        lines = content.splitlines()
 
-        assert content.count("great-docs/") == 1
+        assert lines.count("great-docs/") == 1
+        assert lines.count(".great-docs-build/") == 1
+        assert lines.count(".great-docs-cache/") == 1
+        assert lines.count(".great-docs/") == 1
 
 
 def test_detect_package_name_from_setup_cfg_preexisting():
@@ -22955,6 +22966,7 @@ def test_build_prepare_and_render_flow():
 
             docs._has_api_reference = True
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = None
             docs._config.dynamic = False
@@ -23000,6 +23012,7 @@ def test_build_no_api_reference():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = None
 
@@ -23054,6 +23067,7 @@ def test_build_dynamic_fallback_to_static():
 
             docs._has_api_reference = True
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = None
             docs._config.dynamic = True
@@ -23192,6 +23206,7 @@ def test_build_with_changelog():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = True
             docs._config.sections = None
 
@@ -23237,6 +23252,7 @@ def test_build_changelog_error_handled():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = True
             docs._config.sections = None
 
@@ -23285,6 +23301,7 @@ def test_build_with_cli_documentation():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = None
 
@@ -23326,6 +23343,7 @@ def test_build_with_sections():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = [{"title": "Recipes"}]
 
@@ -23365,6 +23383,7 @@ def test_build_with_assets_triggers_config_update():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = None
 
@@ -23396,6 +23415,7 @@ def test_build_watch_mode():
         ):
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = None
 
@@ -23435,6 +23455,7 @@ def test_build_quarto_render_failure():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = None
 
@@ -23477,6 +23498,7 @@ def test_build_cli_error_handled():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = None
 
@@ -24835,14 +24857,21 @@ def test_update_gitignore_already_present():
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         gitignore = Path(tmp_dir) / ".gitignore"
-        gitignore.write_text("great-docs/\n", encoding="utf-8")
+        gitignore.write_text(
+            "great-docs/\n.great-docs-build/\n.great-docs-cache/\n.great-docs/\n",
+            encoding="utf-8",
+        )
 
         docs = GreatDocs(project_path=tmp_dir)
         docs._update_project_gitignore(force=True)
 
         content = gitignore.read_text()
-        # Should not have doubled the entry
-        assert content.count("great-docs/") == 1
+        lines = content.splitlines()
+        # Should not have doubled any entry
+        assert lines.count("great-docs/") == 1
+        assert lines.count(".great-docs-build/") == 1
+        assert lines.count(".great-docs-cache/") == 1
+        assert lines.count(".great-docs/") == 1
 
 
 def test_update_gitignore_interactive_yes(monkeypatch):
@@ -26110,6 +26139,7 @@ def test_build_section_error_handled():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = [{"title": "Test"}]
 
@@ -26147,6 +26177,7 @@ def test_build_user_guide_error_handled():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = None
 
@@ -26184,6 +26215,7 @@ def test_build_copy_assets_error_handled():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = False
             docs._config.sections = None
 
@@ -26227,6 +26259,7 @@ def test_build_changelog_no_releases():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = True
             docs._config.sections = None
 
@@ -26264,6 +26297,7 @@ def test_build_changelog_no_repo():
 
             docs._has_api_reference = False
             docs._config = MagicMock()
+            docs._config.has_versions = False
             docs._config.changelog_enabled = True
             docs._config.sections = None
 
@@ -28042,7 +28076,9 @@ def test_cli_build_success():
 
             result = runner.invoke(build, ["--project-path", tmp_dir])
             assert result.exit_code == 0
-            mock_instance.build.assert_called_once_with(watch=False, refresh=True)
+            mock_instance.build.assert_called_once_with(
+                watch=False, refresh=True, version_tags=None, latest_only=False
+            )
 
 
 def test_cli_build_with_watch():
@@ -28056,7 +28092,9 @@ def test_cli_build_with_watch():
 
             result = runner.invoke(build, ["--project-path", tmp_dir, "--watch"])
             assert result.exit_code == 0
-            mock_instance.build.assert_called_once_with(watch=True, refresh=True)
+            mock_instance.build.assert_called_once_with(
+                watch=True, refresh=True, version_tags=None, latest_only=False
+            )
 
 
 def test_cli_build_no_refresh():
@@ -28070,7 +28108,9 @@ def test_cli_build_no_refresh():
 
             result = runner.invoke(build, ["--project-path", tmp_dir, "--no-refresh"])
             assert result.exit_code == 0
-            mock_instance.build.assert_called_once_with(watch=False, refresh=False)
+            mock_instance.build.assert_called_once_with(
+                watch=False, refresh=False, version_tags=None, latest_only=False
+            )
 
 
 def test_cli_build_keyboard_interrupt():

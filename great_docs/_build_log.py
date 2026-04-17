@@ -135,8 +135,8 @@ def format_elapsed(seconds: float) -> str:
 
     Rules (from the spec):
     * < 0.1 s  → `<0.1s`
-    * 0.1–59.9 → `{n:.1f}s`
-    * 60–3599  → `{m}m {s:.1f}s`
+    * 0.1-59.9 → `{n:.1f}s`
+    * 60-3599  → `{m}m {s:.1f}s`
     * ≥ 3600   → `{h}h {m}m {s}s`
     """
     if seconds < 0.1:
@@ -311,6 +311,127 @@ class ProgressBar:
                 self.stream.flush()
             except (BrokenPipeError, OSError):
                 pass
+
+
+class MultiProgressBar:
+    """Multi-line progress display for parallel builds.
+
+    Each *slot* is an independent progress bar rendered on its own terminal
+    line.  Updates redraw all lines in-place using ANSI cursor movement.
+    On non-TTY (CI), updates are emitted as discrete log lines.
+
+    Parameters
+    ----------
+    labels
+        Ordered list of slot labels (e.g. ``["v0.1", "v0.2"]``).
+    colors
+        A :class:`Colors` instance for styling.
+    stream
+        The output stream (default ``sys.stdout``).
+    """
+
+    def __init__(
+        self,
+        labels: list[str],
+        *,
+        colors: Colors | None = None,
+        stream=None,
+    ) -> None:
+        self._labels = list(labels)
+        self._n = len(labels)
+        self.colors = colors or Colors(force_color=False)
+        self.stream = stream or sys.stdout
+        self._is_tty = hasattr(self.stream, "isatty") and self.stream.isatty()
+        self._totals = [1] * self._n
+        self._currents = [0] * self._n
+        self._finished_slots: set[int] = set()
+        self._drawn = False
+        self._all_finished = False
+        # CI mode: track last emitted percentage bucket per slot
+        self._ci_buckets = [-1] * self._n
+
+    # -- rendering ----------------------------------------------------------
+
+    def _render_slot(self, idx: int) -> str:
+        cur = self._currents[idx]
+        tot = self._totals[idx]
+        pct = min(cur * 100 // tot, 100) if tot else 0
+        filled = cur * _BAR_WIDTH // tot if tot else 0
+        filled = min(filled, _BAR_WIDTH)
+        empty = _BAR_WIDTH - filled
+
+        c = self.colors
+        label = self._labels[idx]
+        bar = f"{c.CYAN}{'█' * filled}{c.DIM}{'░' * empty}{c.RESET}"
+        counter = f"{cur}/{tot}"
+
+        if idx in self._finished_slots:
+            check = f"{c.GREEN}✓{c.RESET}"
+            return f"   {check} {label:<12s}  {bar}  {counter}  {pct}%"
+        return f"   {c.CYAN}►{c.RESET} {label:<12s}  {bar}  {counter}  {pct}%"
+
+    # -- public API ---------------------------------------------------------
+
+    def set_total(self, idx: int, total: int) -> None:
+        """Set the total for slot *idx*."""
+        self._totals[idx] = max(total, 1)
+
+    def update(self, idx: int, current: int) -> None:
+        """Advance slot *idx* to *current* (1-based)."""
+        self._currents[idx] = current
+
+        if current >= self._totals[idx]:
+            self._finished_slots.add(idx)
+
+        if self._is_tty:
+            self._redraw()
+        else:
+            # CI mode: emit at every 10% boundary
+            bucket = min(current * 100 // self._totals[idx], 100) // 10
+            if bucket > self._ci_buckets[idx]:
+                self._ci_buckets[idx] = bucket
+                pct = bucket * 10
+                self.stream.write(f"   [..] {self._labels[idx]}  {pct:>3d}%\n")
+                self.stream.flush()
+
+    def finish(self) -> None:
+        """Clear all progress lines. Safe to call more than once."""
+        if self._all_finished:
+            return
+        self._all_finished = True
+        if self._is_tty and self._drawn:
+            try:
+                width = shutil.get_terminal_size((80, 24)).columns
+                # Move up N lines and clear each
+                self.stream.write(f"\033[{self._n}A")
+                for _ in range(self._n):
+                    self.stream.write(" " * width + "\n")
+                # Move back up to start
+                self.stream.write(f"\033[{self._n}A\r")
+                self.stream.flush()
+            except (BrokenPipeError, OSError):
+                pass
+
+    def _redraw(self) -> None:
+        """Redraw all slot lines in-place (TTY only)."""
+        try:
+            if self._drawn:
+                # Move cursor up to first slot line
+                self.stream.write(f"\033[{self._n}A")
+
+            lines = []
+            width = shutil.get_terminal_size((80, 24)).columns
+            for i in range(self._n):
+                line = self._render_slot(i)
+                # Pad to terminal width to clear previous content
+                padding = max(0, width - _display_width(line))
+                lines.append(line + " " * padding)
+
+            self.stream.write("\n".join(lines) + "\n")
+            self.stream.flush()
+            self._drawn = True
+        except (BrokenPipeError, OSError):
+            pass
 
 
 # ---------------------------------------------------------------------------
@@ -631,6 +752,14 @@ class BuildLog:
             label=label,
             total=total,
             is_tty=self._is_tty,
+            colors=self.colors,
+            stream=self.stream,
+        )
+
+    def multi_progress(self, labels: list[str]) -> MultiProgressBar:
+        """Create and return a :class:`MultiProgressBar` for parallel steps."""
+        return MultiProgressBar(
+            labels=labels,
             colors=self.colors,
             stream=self.stream,
         )

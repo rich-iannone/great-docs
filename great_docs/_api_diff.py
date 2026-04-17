@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 import tempfile
@@ -22,6 +23,117 @@ class ParameterInfo:
     default: str | None = None
     kind: str = "POSITIONAL_OR_KEYWORD"
 
+    def to_dict(self) -> dict:
+        d: dict = {"name": self.name, "kind": self.kind}
+        if self.annotation is not None:
+            d["annotation"] = self.annotation
+        if self.default is not None:
+            d["default"] = self.default
+        return d
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "ParameterInfo":
+        return cls(
+            name=d["name"],
+            annotation=d.get("annotation"),
+            default=d.get("default"),
+            kind=d.get("kind", "POSITIONAL_OR_KEYWORD"),
+        )
+
+
+# ---------------------------------------------------------------------------
+# CLI data models
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class CliOptionInfo:
+    """Snapshot of a single CLI option or argument."""
+
+    name: str
+    type: str = "option"  # "option" or "argument"
+    is_flag: bool = False
+    required: bool = False
+    default: str | None = None
+    help: str | None = None
+
+    def to_dict(self) -> dict:
+        d: dict = {"name": self.name, "type": self.type}
+        if self.is_flag:
+            d["is_flag"] = True
+        if self.required:
+            d["required"] = True
+        if self.default is not None:
+            d["default"] = self.default
+        if self.help is not None:
+            d["help"] = self.help
+        return d
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "CliOptionInfo":
+        return cls(
+            name=d["name"],
+            type=d.get("type", "option"),
+            is_flag=d.get("is_flag", False),
+            required=d.get("required", False),
+            default=d.get("default"),
+            help=d.get("help"),
+        )
+
+
+@dataclass
+class CliCommandInfo:
+    """Snapshot of a single CLI command or subcommand."""
+
+    name: str
+    help: str = ""
+    options: list[CliOptionInfo] = field(default_factory=list)
+    subcommands: list["CliCommandInfo"] = field(default_factory=list)
+    is_group: bool = False
+    hidden: bool = False
+    deprecated: bool = False
+
+    def to_dict(self) -> dict:
+        d: dict = {"name": self.name}
+        if self.help:
+            d["help"] = self.help
+        if self.options:
+            d["options"] = [o.to_dict() for o in self.options]
+        if self.subcommands:
+            d["subcommands"] = [c.to_dict() for c in self.subcommands]
+        if self.is_group:
+            d["is_group"] = True
+        if self.hidden:
+            d["hidden"] = True
+        if self.deprecated:
+            d["deprecated"] = True
+        return d
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "CliCommandInfo":
+        return cls(
+            name=d["name"],
+            help=d.get("help", ""),
+            options=[CliOptionInfo.from_dict(o) for o in d.get("options", [])],
+            subcommands=[CliCommandInfo.from_dict(c) for c in d.get("subcommands", [])],
+            is_group=d.get("is_group", False),
+            hidden=d.get("hidden", False),
+            deprecated=d.get("deprecated", False),
+        )
+
+    def all_command_paths(self, prefix: str = "") -> list[str]:
+        """Return flat list of all command paths (e.g. `["build", "check-links"]`)."""
+        path = f"{prefix} {self.name}".strip() if prefix else self.name
+        paths = [path]
+        for sub in self.subcommands:
+            paths.extend(sub.all_command_paths(path))
+        return paths
+
+
+# ---------------------------------------------------------------------------
+# Python API data models
+# ---------------------------------------------------------------------------
+
 
 @dataclass
 class SymbolInfo:
@@ -34,6 +146,32 @@ class SymbolInfo:
     decorators: list[str] = field(default_factory=list)
     is_async: bool = False
     return_annotation: str | None = None
+
+    def to_dict(self) -> dict:
+        d: dict = {"name": self.name, "kind": self.kind}
+        if self.parameters:
+            d["parameters"] = [p.to_dict() for p in self.parameters]
+        if self.bases:
+            d["bases"] = self.bases
+        if self.decorators:
+            d["decorators"] = self.decorators
+        if self.is_async:
+            d["is_async"] = True
+        if self.return_annotation is not None:
+            d["return_annotation"] = self.return_annotation
+        return d
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "SymbolInfo":
+        return cls(
+            name=d["name"],
+            kind=d["kind"],
+            parameters=[ParameterInfo.from_dict(p) for p in d.get("parameters", [])],
+            bases=d.get("bases", []),
+            decorators=d.get("decorators", []),
+            is_async=d.get("is_async", False),
+            return_annotation=d.get("return_annotation"),
+        )
 
 
 @dataclass
@@ -66,6 +204,7 @@ class ApiSnapshot:
     version: str
     package_name: str
     symbols: dict[str, SymbolInfo] = field(default_factory=dict)
+    cli_commands: CliCommandInfo | None = None
 
     @property
     def symbol_count(self) -> int:
@@ -79,6 +218,54 @@ class ApiSnapshot:
     def function_count(self) -> int:
         return sum(1 for s in self.symbols.values() if s.kind == "function")
 
+    @property
+    def cli_command_count(self) -> int:
+        if not self.cli_commands:
+            return 0
+        return len(self.cli_commands.all_command_paths())
+
+    def to_dict(self) -> dict:
+        d: dict = {
+            "version": self.version,
+            "package_name": self.package_name,
+            "symbols": {name: sym.to_dict() for name, sym in self.symbols.items()},
+        }
+        if self.cli_commands is not None:
+            d["cli"] = self.cli_commands.to_dict()
+        return d
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "ApiSnapshot":
+        cli = None
+        if "cli" in d:
+            cli = CliCommandInfo.from_dict(d["cli"])
+        return cls(
+            version=d["version"],
+            package_name=d["package_name"],
+            symbols={name: SymbolInfo.from_dict(sym) for name, sym in d.get("symbols", {}).items()},
+            cli_commands=cli,
+        )
+
+    def save(self, path: Path) -> None:
+        """Save this snapshot to a JSON file."""
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(self.to_dict(), indent=2) + "\n")
+
+    @classmethod
+    def load(cls, path: Path) -> "ApiSnapshot":
+        """Load a snapshot from a JSON file."""
+        return cls.from_dict(json.loads(path.read_text()))
+
+
+@dataclass
+class CliChange:
+    """A change to a CLI command between two versions."""
+
+    command: str  # full command path, e.g. "build" or "check-links"
+    change_type: str  # "added", "removed", "changed"
+    details: list[str] = field(default_factory=list)
+    is_breaking: bool = False
+
 
 @dataclass
 class ApiDiff:
@@ -90,6 +277,7 @@ class ApiDiff:
     added: list[SymbolChange] = field(default_factory=list)
     removed: list[SymbolChange] = field(default_factory=list)
     changed: list[SymbolChange] = field(default_factory=list)
+    cli_changes: list[CliChange] = field(default_factory=list)
 
     @property
     def breaking_changes(self) -> list[SymbolChange]:
@@ -97,10 +285,12 @@ class ApiDiff:
 
     @property
     def has_breaking_changes(self) -> bool:
-        return len(self.breaking_changes) > 0
+        if self.breaking_changes:
+            return True
+        return any(c.is_breaking for c in self.cli_changes)
 
     def to_dict(self) -> dict:
-        return {
+        d: dict = {
             "old_version": self.old_version,
             "new_version": self.new_version,
             "package_name": self.package_name,
@@ -109,11 +299,23 @@ class ApiDiff:
                 "removed": len(self.removed),
                 "changed": len(self.changed),
                 "breaking": len(self.breaking_changes),
+                "cli_changes": len(self.cli_changes),
             },
             "added": [_symbol_change_to_dict(c) for c in self.added],
             "removed": [_symbol_change_to_dict(c) for c in self.removed],
             "changed": [_symbol_change_to_dict(c) for c in self.changed],
         }
+        if self.cli_changes:
+            d["cli_changes"] = [
+                {
+                    "command": c.command,
+                    "change_type": c.change_type,
+                    "details": c.details,
+                    "is_breaking": c.is_breaking,
+                }
+                for c in self.cli_changes
+            ]
+        return d
 
 
 @dataclass
@@ -332,12 +534,12 @@ def snapshot_from_griffe(
     Parameters
     ----------
     package_name
-        The Python package name (e.g., ``"great_tables"``).
+        The Python package name (e.g., `"great_tables"`).
     version
         Version label for this snapshot.
     search_paths
-        Additional paths to search for the package source. When loading a
-        historical version extracted to a temp directory, pass its path here.
+        Additional paths to search for the package source. When loading a historical version
+        extracted to a temp directory, pass its path here.
 
     Returns
     -------
@@ -410,8 +612,8 @@ def list_version_tags(project_root: Path) -> list[str]:
     """
     List git tags that look like version numbers, sorted oldest-first.
 
-    Tags matching patterns like ``v1.0.0``, ``1.0.0``, ``v0.12.3`` are
-    included. Non-version tags are excluded.
+    Tags matching patterns like `v1.0.0`, `1.0.0`, `v0.12.3` are included. Non-version tags are
+    excluded.
     """
     import re
 
@@ -464,9 +666,8 @@ def _extract_package_at_tag(
     """
     Extract the package source at a given git tag into a temp directory.
 
-    Uses ``git archive`` to avoid modifying the working tree. Returns the
-    temp directory path (caller is responsible for cleanup), or None on
-    failure.
+    Uses `git archive` to avoid modifying the working tree. Returns the temp directory path (caller
+    is responsible for cleanup), or `None` on failure.
     """
     normalized = package_name.replace("-", "_")
 
@@ -523,6 +724,135 @@ def _extract_package_at_tag(
     return None
 
 
+def _read_cli_module_at_tag(
+    project_root: Path,
+    tag: str,
+    package_name: str,
+) -> str | None:
+    """
+    Read `pyproject.toml` at *tag* and return the `cli.module` setting.
+
+    Falls back to `great-docs.yml` at *tag* if `pyproject.toml` doesn't contain CLI config. Returns
+    `None` if not found.
+    """
+    normalized = package_name.replace("-", "_")
+
+    for cfg_file in ("pyproject.toml", "great-docs.yml"):
+        try:
+            result = subprocess.run(
+                ["git", "show", f"{tag}:{cfg_file}"],
+                cwd=project_root,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            if result.returncode != 0:
+                continue
+            content = result.stdout
+
+            if cfg_file == "pyproject.toml":
+                # Parse [tool.great-docs.cli] section
+                try:
+                    import tomllib
+                except ImportError:
+                    import tomli as tomllib  # type: ignore[no-redef]
+                data = tomllib.loads(content)
+                cli_cfg = data.get("tool", {}).get("great-docs", {}).get("cli", {})
+                if cli_cfg.get("enabled"):
+                    return cli_cfg.get("module")
+            else:
+                # great-docs.yml — simple yaml parse
+                try:
+                    import yaml
+
+                    data = yaml.safe_load(content) or {}
+                    cli_cfg = data.get("cli", {})
+                    if cli_cfg.get("enabled"):
+                        return cli_cfg.get("module")
+                except Exception:
+                    pass
+        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+            continue
+
+    # Fallback: check if common CLI module exists at this tag
+    for suffix in ("cli", "__main__"):
+        mod_path = f"{normalized}/{suffix}.py"
+        try:
+            check = subprocess.run(
+                ["git", "cat-file", "-t", f"{tag}:{mod_path}"],
+                cwd=project_root,
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            if check.returncode == 0:
+                return f"{normalized}.{suffix}"
+        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+            continue
+    return None
+
+
+def _import_cli_from_source(
+    tmp_dir: Path,
+    cli_module: str,
+) -> CliCommandInfo | None:
+    """
+    Import a Click CLI from an extracted source tree and snapshot it.
+
+    Temporarily prepends *tmp_dir* to `sys.path`, imports *cli_module*, locates the Click command
+    object, snapshots it, then restores `sys.path`.
+    """
+    import importlib
+    import sys
+
+    try:
+        import click
+    except ImportError:
+        return None
+
+    str_dir = str(tmp_dir)
+    sys.path.insert(0, str_dir)
+    try:
+        # Invalidate cached modules that might shadow the extracted source
+        parts = cli_module.split(".")
+        for i in range(len(parts)):
+            prefix = ".".join(parts[: i + 1])
+            sys.modules.pop(prefix, None)
+
+        module = importlib.import_module(cli_module)
+
+        # Find Click command/group
+        cli_obj = None
+        for attr_name in ["cli", "main", "app", "command"]:
+            obj = getattr(module, attr_name, None)
+            if isinstance(obj, (click.Command, click.Group)):
+                cli_obj = obj
+                break
+
+        if cli_obj is None:
+            for attr_name in dir(module):
+                if attr_name.startswith("_"):
+                    continue
+                obj = getattr(module, attr_name)
+                if isinstance(obj, (click.Command, click.Group)):
+                    cli_obj = obj
+                    break
+
+        if cli_obj is None:
+            return None
+
+        return snapshot_cli_from_click(cli_obj)
+    except Exception:
+        return None
+    finally:
+        # Restore sys.path and remove imported modules
+        if str_dir in sys.path:
+            sys.path.remove(str_dir)
+        for key in list(sys.modules):
+            if key == cli_module or key.startswith(cli_module + "."):
+                sys.modules.pop(key, None)
+
+
 def snapshot_at_tag(
     project_root: Path,
     tag: str,
@@ -536,7 +866,7 @@ def snapshot_at_tag(
     project_root
         Root of the git repository.
     tag
-        Git tag name (e.g., ``"v1.0.0"``).
+        Git tag name (e.g., `"v1.0.0"`).
     package_name
         Python package name.
 
@@ -550,7 +880,14 @@ def snapshot_at_tag(
         return None
 
     try:
-        return snapshot_from_griffe(package_name, version=tag, search_paths=[str(tmp_dir)])
+        snap = snapshot_from_griffe(package_name, version=tag, search_paths=[str(tmp_dir)])
+
+        # Attempt CLI introspection from the version-specific source
+        cli_module = _read_cli_module_at_tag(project_root, tag, package_name)
+        if cli_module:
+            snap.cli_commands = _import_cli_from_source(tmp_dir, cli_module)
+
+        return snap
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
@@ -615,6 +952,9 @@ def diff_snapshots(old: ApiSnapshot, new: ApiSnapshot) -> ApiDiff:
         change = _diff_symbol(name, old_sym, new_sym)
         if change is not None:
             result.changed.append(change)
+
+    # CLI changes
+    result.cli_changes = _diff_cli(old.cli_commands, new.cli_commands)
 
     return result
 
@@ -818,6 +1158,175 @@ def _describe_param_change(pc: ParameterChange) -> str:
 
 
 # ---------------------------------------------------------------------------
+# CLI diffing
+# ---------------------------------------------------------------------------
+
+
+def _flatten_cli(cmd: CliCommandInfo | None, prefix: str = "") -> dict[str, CliCommandInfo]:
+    """Flatten a CLI tree into `{full_path: CliCommandInfo}`."""
+    if cmd is None:
+        return {}
+    path = f"{prefix} {cmd.name}".strip() if prefix else cmd.name
+    result = {path: cmd}
+    for sub in cmd.subcommands:
+        result.update(_flatten_cli(sub, path))
+    return result
+
+
+def _diff_cli_command(path: str, old: CliCommandInfo, new: CliCommandInfo) -> CliChange | None:
+    """Compare two versions of the same CLI command."""
+    details: list[str] = []
+    is_breaking = False
+
+    # Options diff
+    old_opts = {o.name: o for o in old.options}
+    new_opts = {o.name: o for o in new.options}
+
+    for name in sorted(set(new_opts) - set(old_opts)):
+        details.append(f"New option: {name}")
+    for name in sorted(set(old_opts) - set(new_opts)):
+        details.append(f"Removed option: {name}")
+        is_breaking = True
+    for name in sorted(set(old_opts) & set(new_opts)):
+        o, n = old_opts[name], new_opts[name]
+        if o.is_flag != n.is_flag:
+            details.append(f"Option '{name}' flag changed: {o.is_flag} → {n.is_flag}")
+            is_breaking = True
+        if o.required != n.required and n.required:
+            details.append(f"Option '{name}' is now required")
+            is_breaking = True
+        if o.default != n.default:
+            details.append(f"Option '{name}' default: {o.default!r} → {n.default!r}")
+
+    # Group ↔ non-group change
+    if old.is_group != new.is_group:
+        details.append(f"Group status changed: {old.is_group} → {new.is_group}")
+        is_breaking = True
+
+    if not details:
+        return None
+    return CliChange(
+        command=path,
+        change_type="changed",
+        details=details,
+        is_breaking=is_breaking,
+    )
+
+
+def _diff_cli(old: CliCommandInfo | None, new: CliCommandInfo | None) -> list[CliChange]:
+    """Diff two CLI command trees."""
+    old_cmds = _flatten_cli(old)
+    new_cmds = _flatten_cli(new)
+    changes: list[CliChange] = []
+
+    old_paths = set(old_cmds)
+    new_paths = set(new_cmds)
+
+    for path in sorted(new_paths - old_paths):
+        changes.append(
+            CliChange(command=path, change_type="added", details=[f"New command: {path}"])
+        )
+
+    for path in sorted(old_paths - new_paths):
+        changes.append(
+            CliChange(
+                command=path,
+                change_type="removed",
+                details=[f"Removed command: {path}"],
+                is_breaking=True,
+            )
+        )
+
+    for path in sorted(old_paths & new_paths):
+        change = _diff_cli_command(path, old_cmds[path], new_cmds[path])
+        if change is not None:
+            changes.append(change)
+
+    return changes
+
+
+# ---------------------------------------------------------------------------
+# CLI snapshot from Click
+# ---------------------------------------------------------------------------
+
+
+def snapshot_cli_from_click(cli_obj: object) -> CliCommandInfo | None:
+    """
+    Build a :class:`CliCommandInfo` tree by introspecting a Click command.
+
+    Parameters
+    ----------
+    cli_obj
+        A `click.BaseCommand` instance (Command or Group).
+
+    Returns
+    -------
+    CliCommandInfo or None
+        The CLI snapshot, or `None` if `cli_obj` is not a Click command.
+    """
+    try:
+        import click
+    except ImportError:
+        return None
+
+    if not isinstance(cli_obj, (click.Command, click.Group)):
+        return None
+
+    return _snapshot_click_command(cli_obj)
+
+
+def _snapshot_click_command(cmd: object) -> CliCommandInfo:
+    """Recursively snapshot a Click command tree."""
+    import click
+
+    name = getattr(cmd, "name", "") or ""
+    help_text = getattr(cmd, "help", "") or ""
+    hidden = getattr(cmd, "hidden", False)
+    deprecated = getattr(cmd, "deprecated", False)
+    is_group = isinstance(cmd, click.Group)
+
+    options: list[CliOptionInfo] = []
+    for param in getattr(cmd, "params", []):
+        if isinstance(param, click.Option):
+            # Use the longest option name (e.g. --verbose over -v)
+            opt_name = max(param.opts, key=len) if param.opts else param.name or ""
+            options.append(
+                CliOptionInfo(
+                    name=opt_name,
+                    type="option",
+                    is_flag=param.is_flag,
+                    required=param.required,
+                    default=str(param.default) if param.default is not None else None,
+                    help=param.help,
+                )
+            )
+        elif isinstance(param, click.Argument):
+            options.append(
+                CliOptionInfo(
+                    name=param.name or "",
+                    type="argument",
+                    required=param.required,
+                )
+            )
+
+    subcommands: list[CliCommandInfo] = []
+    if is_group:
+        for subcmd_name, subcmd in getattr(cmd, "commands", {}).items():
+            if not getattr(subcmd, "hidden", False):
+                subcommands.append(_snapshot_click_command(subcmd))
+
+    return CliCommandInfo(
+        name=name,
+        help=help_text,
+        options=options,
+        subcommands=subcommands,
+        is_group=is_group,
+        hidden=hidden,
+        deprecated=deprecated,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Dependency graph
 # ---------------------------------------------------------------------------
 
@@ -873,12 +1382,12 @@ def build_timeline(
     package_name
         Python package name.
     tags
-        Specific tags to include. If None, all version tags are used.
+        Specific tags to include. If `None`, all version tags are used.
 
     Returns
     -------
     list[dict]
-        Each entry has ``version``, ``symbols``, ``classes``, ``functions``.
+        Each entry has `version`, `symbols`, `classes`, `functions`.
     """
     if tags is None:
         tags = list_version_tags(project_root)
@@ -945,16 +1454,16 @@ def symbol_history(
     project_root
         Root of the git repository.
     symbol_name
-        Name of the symbol to track (e.g., ``"GreatDocs"``).
+        Name of the symbol to track (e.g., `"GreatDocs"`).
     package_name
         Python package name. Auto-detected if omitted.
     tags
-        Specific tags to scan. If None, all version tags are used.
+        Specific tags to scan. If `None`, all version tags are used.
 
     Returns
     -------
     SymbolHistory | None
-        The history, or None if the package name cannot be determined.
+        The history, or `None` if the package name cannot be determined.
     """
     if package_name is None:
         package_name = _detect_package_name(project_root)
@@ -1032,11 +1541,10 @@ def symbol_history(
 def _augment_params_with_separators(
     params: list[ParameterInfo],
 ) -> list[ParameterInfo]:
-    """Insert a synthetic ``*`` separator before keyword-only parameters.
+    """Insert a synthetic `*` separator before keyword-only parameters.
 
-    If the parameter list has ``KEYWORD_ONLY`` parameters but no
-    ``VAR_POSITIONAL`` (``*args``) parameter, a ``ParameterInfo(name="*")``
-    entry is inserted at the boundary so that the evolution table can
+    If the parameter list has `KEYWORD_ONLY` parameters but no `VAR_POSITIONAL` (`*args`) parameter,
+    a `ParameterInfo(name="*")` entry is inserted at the boundary so that the evolution table can
     display the separator row.
     """
     has_var_positional = any(p.kind == "VAR_POSITIONAL" for p in params)
@@ -1073,7 +1581,7 @@ def _cell_text(param: ParameterInfo) -> str:
 def _cell_lines(param: ParameterInfo) -> tuple[str, str]:
     """Return (line1, line2) for a parameter cell.
 
-    Line 1 is the parameter name, line 2 is ``type (= default)``.
+    Line 1 is the parameter name, line 2 is `type (= default)`.
     """
     return (param.name, _cell_text(param))
 
@@ -1093,27 +1601,24 @@ def evolution_table(
     """
     Build a positional-slot table of a symbol's parameter evolution.
 
-    Each cell is a ``(line1, line2)`` tuple where *line1* is the parameter
-    name and *line2* is ``type (= default)``.  Parameters are laid out by
-    **position** — row 0 is the first parameter in each version, row 1 is
-    the second, etc. — so insertions, removals, and reorderings are visible.
+    Each cell is a `(line1, line2)` tuple where *line1* is the parameter name and *line2* is
+    `type (= default)`. Parameters are laid out by **position** (row 0 is the first parameter in
+    each version, row 1 is the second, etc.) so insertions, removals, and reorderings are visible.
 
     Parameters
     ----------
     history
-        A ``SymbolHistory`` for the symbol.
+        A `SymbolHistory` for the symbol.
     changes_only
-        If True (default), only include versions where the symbol changed.
+        If `True` (default), only include versions where the symbol changed.
 
     Returns
     -------
     list[list[tuple[str, str]]]
-        Row 0 is the header: ``[("", version1), ("", version2), ...]``.
-        Subsequent rows are positional parameter slots.  A row with
-        ``line1 == "*"`` marks the keyword-only boundary.
-        A trailing row with ``line1 == "Returns:"`` is appended when any
-        version has a return annotation.
-        Empty slots use ``("—", "")``.
+        Row 0 is the header: `[("", version1), ("", version2), ...]`. Subsequent rows are positional
+        parameter slots. A row with `line1 == "*"` marks the keyword-only boundary. A trailing row
+        with `line1 == "Returns:"` is appended when any version has a return annotation. Empty slots
+        use `("—", "")`.
     """
     entries = history.changed_entries if changes_only else history.entries
     present_entries = [e for e in entries if e.present and e.symbol_info is not None]
@@ -1175,9 +1680,9 @@ def evolution_table_text(
     Parameters
     ----------
     history
-        A ``SymbolHistory`` for the symbol.
+        A `SymbolHistory` for the symbol.
     changes_only
-        If True (default), only include versions where the symbol changed.
+        If `True` (default), only include versions where the symbol changed.
 
     Returns
     -------
@@ -1233,23 +1738,21 @@ def evolution_table_html(
     summary_text: str | None = None,
 ) -> str:
     """
-    Render the evolution table as an HTML ``<table>``.
+    Render the evolution table as an HTML `<table>`.
 
-    Each body cell contains the parameter name on one line and the
-    type/default on a second line.  When *disclosure* is True the table is
-    wrapped in a ``<details>`` element so it starts collapsed.
+    Each body cell contains the parameter name on one line and the type/default on a second line.
+    When *disclosure* is True the table is wrapped in a `<details>` element so it starts collapsed.
 
     Parameters
     ----------
     history
-        A ``SymbolHistory`` for the symbol.
+        A `SymbolHistory` for the symbol.
     changes_only
         If True (default), only include versions where the symbol changed.
     disclosure
-        Wrap the table in a ``<details>/<summary>`` element.
+        Wrap the table in a `<details>/<summary>` element.
     summary_text
-        Custom text for the ``<summary>`` label.  Defaults to
-        ``"Signature evolution for <symbol>"``.
+        Custom text for the `<summary>` label. Defaults to `"Signature evolution for <symbol>"`.
 
     Returns
     -------
@@ -1405,46 +1908,41 @@ def render_evolution_table(
     """
     Generate a self-contained HTML block for a symbol's evolution table.
 
-    This is the high-level entry point that combines git history lookup,
-    parameter evolution analysis, and HTML rendering into a single call.
-    The output is ready to be inserted into a documentation page (e.g.,
-    via a ``%`` directive or a Quarto shortcode).
+    This is the high-level entry point that combines git history lookup, parameter evolution
+    analysis, and HTML rendering into a single call. The output is ready to be inserted into a
+    documentation page (e.g., via a `%` directive or a Quarto shortcode).
 
     Parameters
     ----------
     project_path
         Root of the git repository.
     symbol
-        Fully qualified or short name of the symbol to track
-        (e.g., ``"build"`` or ``"GreatDocs.build"``).
+        Fully qualified or short name of the symbol to track (e.g., `"build"` or
+        `"GreatDocs.build"`).
     package
         Python package name. Auto-detected from *project_path* if omitted.
     old_version
-        Earliest version tag to include. If omitted, starts from the
-        first tag where the symbol appears.
+        Earliest version tag to include. If omitted, starts from the first tag where the symbol
+        appears.
     new_version
-        Latest version tag to include. If omitted, goes through the
-        most recent tag.
+        Latest version tag to include. If omitted, goes through the most recent tag.
     changes_only
-        If True (default), only show versions where the signature
-        actually changed.
+        If `True` (default), only show versions where the signature actually changed.
     disclosure
-        If True (default), wrap the table in a collapsible
-        ``<details>/<summary>`` element.
+        If `True` (default), wrap the table in a collapsible `<details>/<summary>` element.
     summary_text
-        Custom label for the ``<summary>`` element. Defaults to
-        ``"Signature evolution for <symbol>()"``.
+        Custom label for the `<summary>` element. Defaults to
+        `"Signature evolution for <symbol>()"`.
     include_css
-        If True (default), prepend the CSS ``<style>`` block so the
-        output is fully self-contained. Set to False when the page
-        already includes the styles (e.g., multiple tables on one page).
+        If `True` (default), prepend the CSS `<style>` block so the output is fully self-contained.
+        Set to `False` when the page already includes the styles (e.g., multiple tables on one
+        page).
 
     Returns
     -------
     str
-        A complete HTML string (optionally with embedded CSS) that can
-        be inserted directly into a page.  Returns an HTML comment
-        ``<!-- no evolution data for <symbol> -->`` when the symbol has
+        A complete HTML string (optionally with embedded CSS) that can be inserted directly into a
+        page. Returns an HTML comment `<!-- no evolution data for <symbol> -->` when the symbol has
         no history.
 
     Examples
@@ -1497,15 +1995,14 @@ def render_evolution_table_from_dict(
     """
     Render an evolution table from a JSON-compatible dict.
 
-    This accepts the same schema produced by :func:`evolution_table_to_dict`
-    (or loaded from a ``.json`` file) and renders it as a self-contained
-    HTML block.  This is useful for demo tables, pre-computed snapshots,
-    or CI-generated data where a live git repository is not available.
+    This accepts the same schema produced by :func:`evolution_table_to_dict` (or loaded from a
+    `.json` file) and renders it as a self-contained HTML block. This is useful for demo tables,
+    pre-computed snapshots, or CI-generated data where a live git repository is not available.
 
     Parameters
     ----------
     data
-        A dict matching the ``evolution_table_to_dict`` schema::
+        A dict matching the `evolution_table_to_dict` schema::
 
             {
               "symbol": "build",
@@ -1515,11 +2012,11 @@ def render_evolution_table_from_dict(
               "dates": ["2024-01-15", null]     // optional
             }
     disclosure
-        Wrap in a ``<details>/<summary>`` element.
+        Wrap in a `<details>/<summary>` element.
     summary_text
-        Custom ``<summary>`` label.
+        Custom `<summary>` label.
     include_css
-        Prepend the ``<style>`` block.
+        Prepend the `<style>` block.
 
     Returns
     -------
@@ -1650,9 +2147,8 @@ def _filter_tag_range(
 ) -> list[str]:
     """Return the sub-list of *tags* between *old_version* and *new_version*.
 
-    Both bounds are inclusive.  If a bound is ``None``, the corresponding
-    end of the list is used.  If a bound is not found in *tags*, the full
-    list is returned.
+    Both bounds are inclusive. If a bound is `None`, the corresponding end of the list is used. If a
+    bound is not found in *tags*, the full list is returned.
     """
     if old_version is None and new_version is None:
         return tags
@@ -1683,15 +2179,15 @@ def evolution_table_to_dict(
     """
     Serialize the positional evolution table to a JSON-compatible dict.
 
-    The returned structure captures everything needed to render the table
-    in a documentation page, CI report, or external tool.
+    The returned structure captures everything needed to render the table in a documentation page,
+    CI report, or external tool.
 
     Parameters
     ----------
     history
-        A ``SymbolHistory`` for the symbol.
+        A `SymbolHistory` for the symbol.
     changes_only
-        If True (default), only include versions where the symbol changed.
+        If `True` (default), only include versions where the symbol changed.
 
     Returns
     -------
@@ -1716,8 +2212,8 @@ def evolution_table_to_dict(
               "returns": ["None", "None", "int"]   // omitted if no return types
             }
 
-        Each ``cells`` list is parallel to ``versions``.  A ``null`` entry
-        in ``cells`` means the parameter slot did not exist in that version.
+        Each `cells` list is parallel to `versions`. A `null` entry in `cells` means the parameter
+        slot did not exist in that version.
     """
     rows = evolution_table(history, changes_only=changes_only)
     if not rows:
@@ -1818,16 +2314,16 @@ def api_diff(
     project_root
         Root of the git repository.
     old_version
-        Old git tag (e.g., ``"v1.0.0"``).
+        Old git tag (e.g., `"v1.0.0"`).
     new_version
-        New git tag (e.g., ``"v2.0.0"``). Use ``"HEAD"`` for the working tree.
+        New git tag (e.g., `"v2.0.0"`). Use `"HEAD"` for the working tree.
     package_name
         Python package name. Auto-detected from pyproject.toml if omitted.
 
     Returns
     -------
     ApiDiff | None
-        The diff, or None if snapshots could not be built.
+        The diff, or `None` if snapshots could not be built.
     """
     if package_name is None:
         package_name = _detect_package_name(project_root)
@@ -1887,7 +2383,7 @@ _MARKER_ATTR_RE = _re.compile(r"""(\w+)\s*=\s*(?:"([^"]*)"|'([^']*)'|(\S+))""")
 
 
 def _parse_marker_attrs(attr_string: str) -> dict[str, str]:
-    """Parse ``key="value"`` attributes from a marker body."""
+    """Parse `key="value"` attributes from a marker body."""
     attrs: dict[str, str] = {}
     for m in _MARKER_ATTR_RE.finditer(attr_string):
         key = m.group(1)
@@ -1903,10 +2399,10 @@ def process_evolution_markers(
     package: str | None = None,
 ) -> str:
     """
-    Replace ``<!-- %evolution ... -->`` markers in text with rendered tables.
+    Replace `<!-- %evolution ... -->` markers in text with rendered tables.
 
-    This function scans *content* (typically a ``.qmd`` file body) for HTML
-    comment markers of the form::
+    This function scans *content* (typically a `.qmd` file body) for HTML comment markers of the
+    form::
 
         <!-- %evolution symbol="build" -->
 
@@ -1921,36 +2417,34 @@ def process_evolution_markers(
     new_version
         Latest version tag (inclusive).
     changes_only
-        ``"true"`` (default) or ``"false"``.
+        `"true"` (default) or `"false"`.
     disclosure
-        ``"true"`` (default) or ``"false"``.
+        `"true"` (default) or `"false"`.
     summary
-        Custom ``<summary>`` text for the disclosure wrapper.
+        Custom `<summary>` text for the disclosure wrapper.
     css
-        ``"true"`` (default) or ``"false"`` — whether to include the
-        ``<style>`` block.  Set to ``"false"`` when multiple tables
-        appear on the same page and only the first needs the CSS.
+        `"true"` (default) or `"false"`: whether to include the `<style>` block. Set to `"false"`
+        when multiple tables appear on the same page and only the first needs the CSS.
 
     Parameters
     ----------
     content
-        The text to scan (e.g., the body of a ``.qmd`` file).
+        The text to scan (e.g., the body of a `.qmd` file).
     project_path
         Root of the git repository.
     package
-        Python package name.  Auto-detected if omitted.
+        Python package name. Auto-detected if omitted.
 
     Returns
     -------
     str
-        *content* with every ``<!-- %evolution ... -->`` marker replaced
-        by the corresponding HTML table.  Markers that fail to render
-        (e.g., missing ``symbol``) are replaced with an HTML comment
-        explaining the error.
+        *content* with every `<!-- %evolution ... -->` marker replaced by the corresponding HTML
+        table. Markers that fail to render (e.g., missing `symbol`) are replaced with an HTML
+        comment explaining the error.
 
     Examples
     --------
-    A ``.qmd`` file might contain::
+    A `.qmd` file might contain::
 
         ## Build function
 
@@ -1958,8 +2452,8 @@ def process_evolution_markers(
 
         <!-- %evolution symbol="build" changes_only="true" -->
 
-    After processing, the marker line is replaced with the full HTML
-    table (and optionally embedded CSS).
+    After processing, the marker line is replaced with the full HTML table (and optionally embedded
+    CSS).
     """
     project_root = Path(project_path).resolve()
 
@@ -2002,20 +2496,19 @@ def process_evolution_markers_in_file(
     in_place: bool = False,
 ) -> str:
     """
-    Process ``<!-- %evolution ... -->`` markers in a ``.qmd`` file.
+    Process `<!-- %evolution ... -->` markers in a `.qmd` file.
 
     Parameters
     ----------
     qmd_path
-        Path to the ``.qmd`` file.
+        Path to the `.qmd` file.
     project_path
         Root of the git repository.
     package
-        Python package name.  Auto-detected if omitted.
+        Python package name. Auto-detected if omitted.
     in_place
-        If True, overwrite *qmd_path* with the processed content.
-        If False (default), return the processed content without
-        modifying the file.
+        If `True`, overwrite *qmd_path* with the processed content. If `False` (default), return the
+        processed content without modifying the file.
 
     Returns
     -------
@@ -2030,3 +2523,175 @@ def process_evolution_markers_in_file(
         path.write_text(result, encoding="utf-8")
 
     return result
+
+
+# ---------------------------------------------------------------------------
+# API diff annotations (version badges)
+# ---------------------------------------------------------------------------
+
+
+def compute_version_badges(
+    current: ApiSnapshot,
+    previous: ApiSnapshot | None,
+) -> dict[str, dict]:
+    """
+    Compute version badges for each symbol in *current* based on a diff against *previous*.
+
+    Parameters
+    ----------
+    current
+        The API snapshot for the version being documented.
+    previous
+        The API snapshot for the preceding version, or None if this is the first version.
+
+    Returns
+    -------
+    dict[str, dict]
+        Mapping of symbol name to badge info. Each value has keys: `"badge"` (`"new"`, `"changed"`,
+        or `"deprecated"`), `"version"` (the current snapshot's version label), and optionally
+        `"details"` (list of change descriptions).
+    """
+    badges: dict[str, dict] = {}
+
+    # Check for deprecation decorators in current
+    for name, sym in current.symbols.items():
+        if any("deprecated" in d.lower() for d in sym.decorators):
+            badges[name] = {
+                "badge": "deprecated",
+                "version": current.version,
+            }
+
+    if previous is None:
+        # Everything is new in the first version — don't badge
+        return badges
+
+    diff = diff_snapshots(previous, current)
+
+    for change in diff.added:
+        # Don't override a deprecation badge
+        if change.symbol not in badges:
+            badges[change.symbol] = {
+                "badge": "new",
+                "version": current.version,
+            }
+
+    for change in diff.changed:
+        if change.symbol not in badges:
+            badges[change.symbol] = {
+                "badge": "changed",
+                "version": current.version,
+                "details": change.details,
+            }
+
+    return badges
+
+
+def render_badge_html(badge_info: dict) -> str:
+    """
+    Render a single badge as an HTML `<span>` for embedding in QMD pages.
+
+    Parameters
+    ----------
+    badge_info
+        A dict with `"badge"` and `"version"` keys (as returned by :func:`compute_version_badges`).
+
+    Returns
+    -------
+    str
+        An HTML `<span>` element with appropriate CSS class.
+    """
+    badge = badge_info["badge"]
+    version = _escape_html(badge_info["version"])
+
+    if badge == "new":
+        return f'<span class="gd-badge gd-badge-new">New in {version}</span>'
+    elif badge == "changed":
+        return f'<span class="gd-badge gd-badge-changed">Changed in {version}</span>'
+    elif badge == "deprecated":
+        return f'<span class="gd-badge gd-badge-deprecated">Deprecated in {version}</span>'
+    return ""
+
+
+def inject_badges_into_qmd(
+    content: str,
+    badges: dict[str, dict],
+) -> str:
+    """
+    Inject version badges into QMD content for API reference pages.
+
+    Looks for lines that define API symbols (e.g. `## SymbolName` or `### package.SymbolName`) and
+    inserts the badge HTML immediately after the heading.
+
+    Parameters
+    ----------
+    content
+        The `.qmd` file content.
+    badges
+        Badge dict as returned by :func:`compute_version_badges`.
+
+    Returns
+    -------
+    str
+        The content with badge HTML injected after matching headings.
+    """
+    if not badges:
+        return content
+
+    lines = content.split("\n")
+    result: list[str] = []
+
+    for line in lines:
+        result.append(line)
+        # Match Markdown headings: ## Name or ### pkg.Name
+        stripped = line.strip()
+        if stripped.startswith("#"):
+            # Extract the heading text (after the # marks)
+            heading_text = stripped.lstrip("#").strip()
+            # Check both the full qualified name and the short name
+            symbol_name = heading_text.split(".")[-1] if "." in heading_text else heading_text
+            # Also strip any { .class } suffixes from Quarto
+            symbol_name = symbol_name.split("{")[0].strip()
+            heading_text_clean = heading_text.split("{")[0].strip()
+
+            badge_info = badges.get(symbol_name) or badges.get(heading_text_clean)
+            if badge_info:
+                result.append(render_badge_html(badge_info))
+
+    return "\n".join(result)
+
+
+def load_snapshots_for_annotations(
+    snapshot_dir: Path,
+    current_version: str,
+    previous_version: str | None,
+) -> tuple[ApiSnapshot | None, ApiSnapshot | None]:
+    """
+    Load current and previous snapshots from a directory.
+
+    Parameters
+    ----------
+    snapshot_dir
+        Directory containing `<version>.json` snapshot files.
+    current_version
+        Version tag for the current snapshot.
+    previous_version
+        Version tag for the previous snapshot, or None.
+
+    Returns
+    -------
+    tuple[ApiSnapshot | None, ApiSnapshot | None]
+        `(current, previous)` snapshot pair.
+    """
+    current = None
+    previous = None
+
+    current_path = snapshot_dir / f"{current_version}.json"
+    if current_path.exists():
+        current = ApiSnapshot.load(current_path)
+
+    if previous_version:
+        prev_path = snapshot_dir / f"{previous_version}.json"
+        if prev_path.exists():
+            previous = ApiSnapshot.load(prev_path)
+
+    return current, previous

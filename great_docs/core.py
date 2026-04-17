@@ -209,6 +209,8 @@ class GreatDocs:
             js_files.append("page-tags.js")  # pragma: no cover
         if self._config.page_status_enabled:
             js_files.append("page-status-badges.js")  # pragma: no cover
+        if self._config.has_versions:
+            js_files.append("version-selector.js")
         for js_file in js_files:
             js_src = self.assets_path / js_file
             if js_src.exists():
@@ -472,13 +474,25 @@ class GreatDocs:
         # Entry to add
         entry = "# Great Docs build directory (ephemeral, do not commit)\ngreat-docs/\n"
 
+        # Versioning build artifacts (added when versions are configured)
+        versioning_entries = [
+            ".great-docs-build/",
+            ".great-docs-cache/",
+            ".great-docs/",
+        ]
+
         # Check if already present
+        has_main = False
+        missing_versioning = list(versioning_entries)
         if gitignore_path.exists():
             with open(gitignore_path, "r", encoding="utf-8") as f:
                 content = f.read()
 
-            if "great-docs/" in content:
-                # Already present, no need to ask
+            has_main = "great-docs/" in content
+            missing_versioning = [e for e in versioning_entries if e not in content]
+
+            if has_main and not missing_versioning:
+                # All entries present, nothing to do
                 return
 
         # If force=True, skip the prompt
@@ -486,12 +500,20 @@ class GreatDocs:
             if gitignore_path.exists():
                 # Append to existing .gitignore
                 with open(gitignore_path, "a", encoding="utf-8") as f:
-                    f.write("\n" + entry)
+                    if not has_main:
+                        f.write("\n" + entry)
+                    if missing_versioning:
+                        f.write("\n# Great Docs versioned-build artifacts\n")
+                        for ve in missing_versioning:
+                            f.write(ve + "\n")
                 print("✅ Updated .gitignore to exclude great-docs/ directory")
             else:
                 # Create new .gitignore
                 with open(gitignore_path, "w", encoding="utf-8") as f:
                     f.write(entry)
+                    f.write("\n# Great Docs versioned-build artifacts\n")
+                    for ve in versioning_entries:
+                        f.write(ve + "\n")
                 print("✅ Created .gitignore to exclude great-docs/ directory")
             return
 
@@ -505,12 +527,20 @@ class GreatDocs:
             if gitignore_path.exists():
                 # Append to existing .gitignore
                 with open(gitignore_path, "a", encoding="utf-8") as f:
-                    f.write("\n" + entry)
+                    if not has_main:
+                        f.write("\n" + entry)
+                    if missing_versioning:
+                        f.write("\n# Great Docs versioned-build artifacts\n")
+                        for ve in missing_versioning:
+                            f.write(ve + "\n")
                 print("✅ Updated .gitignore to exclude great-docs/ directory")
             else:
                 # Create new .gitignore
                 with open(gitignore_path, "w", encoding="utf-8") as f:
                     f.write(entry)
+                    f.write("\n# Great Docs versioned-build artifacts\n")
+                    for ve in versioning_entries:
+                        f.write(ve + "\n")
                 print("✅ Created .gitignore to exclude great-docs/ directory")
         else:
             print(
@@ -1589,7 +1619,7 @@ class GreatDocs:
             text,
         )
 
-        # 3.  "@username" – valid GitHub usernames: alphanumeric + hyphens,
+        # 3.  "@username": valid GitHub usernames: alphanumeric + hyphens,
         #     1-39 chars, not starting/ending with hyphen.
         #     Negative look-behind avoids matching email addresses.
         text = re.sub(
@@ -3462,6 +3492,64 @@ class GreatDocs:
         cli_info = self._extract_click_command(cli_obj, display_name)
         cli_info["entry_point_name"] = display_name
         return cli_info
+
+    def _find_click_cli_obj(self, package_name: str) -> object | None:
+        """Return the raw Click command object for *package_name*, or *None*."""
+        metadata = self._get_package_metadata()
+        if not metadata.get("cli_enabled", False):
+            return None
+        try:
+            import click
+        except ImportError:
+            return None
+
+        importable_name = self._normalize_package_name(package_name)
+        cli_module_path = metadata.get("cli_module")
+        if not cli_module_path:
+            for mod in (
+                f"{importable_name}.cli",
+                f"{importable_name}.__main__",
+                f"{importable_name}.main",
+            ):
+                try:
+                    import importlib
+
+                    m = importlib.import_module(mod)
+                    if any(
+                        isinstance(getattr(m, a, None), (click.Command, click.Group))
+                        for a in dir(m)
+                    ):
+                        cli_module_path = mod
+                        break
+                except ImportError:
+                    continue
+        if not cli_module_path:
+            return None
+        try:
+            import importlib
+
+            module = importlib.import_module(cli_module_path)
+        except ImportError:
+            return None
+
+        cli_name = metadata.get("cli_name")
+        if cli_name:
+            obj = getattr(module, cli_name, None)
+            if isinstance(obj, (click.Command, click.Group)):
+                return obj
+
+        for attr_name in ["cli", "main", "app", "command", importable_name]:
+            obj = getattr(module, attr_name, None)
+            if isinstance(obj, (click.Command, click.Group)):
+                return obj
+
+        for attr_name in dir(module):
+            if attr_name.startswith("_"):
+                continue
+            obj = getattr(module, attr_name)
+            if isinstance(obj, (click.Command, click.Group)):
+                return obj
+        return None
 
     def _get_cli_entry_point_name(self, package_name: str) -> str | None:
         """
@@ -10786,7 +10874,120 @@ body-classes: "gd-homepage"
         # Write back to file
         self._write_quarto_yml(quarto_yml, config)
 
+        # Inject version selector widget if multi-version is enabled
+        if self._config.has_versions:
+            self._inject_version_selector(quarto_yml)
+
         print(f"Updated {quarto_yml} with great-docs configuration")
+
+    def _inject_version_selector(self, quarto_yml: Path) -> None:
+        """
+        Inject the version selector widget into the Quarto config.
+
+        Adds the version-selector.js script and a `<meta name="gd-version-map">`
+        tag containing the serialized `_version_map.json` data so the widget
+        can resolve versions client-side.
+        """
+        import html as html_mod
+
+        from great_docs._versioning import build_version_map, parse_versions_config
+
+        with open(quarto_yml, "r") as f:
+            config = read_yaml(f) or {}
+
+        versions = parse_versions_config(self._config.versions)
+
+        # Build a minimal version map (pages populated later during build)
+        version_map = build_version_map(versions, {v.tag: [] for v in versions})
+
+        # Serialize the version map as a meta tag in the header
+        version_map_json = html_mod.escape(json.dumps(version_map, separators=(",", ":")))
+        version_meta = f'<meta name="gd-version-map" content="{version_map_json}">'
+
+        header_list = config["format"]["html"].setdefault("include-in-header", [])
+        if isinstance(header_list, str):
+            header_list = [header_list]
+            config["format"]["html"]["include-in-header"] = header_list
+        # Remove stale version map meta from previous build
+        header_list[:] = [h for h in header_list if "gd-version-map" not in str(h)]
+        header_list.append({"text": version_meta})
+
+        # Add warning banner meta if disabled
+        if not self._config.version_warning_banner:
+            banner_meta = '<meta name="gd-version-warning-banner" content="false">'
+            header_list[:] = [h for h in header_list if "gd-version-warning-banner" not in str(h)]
+            header_list.append({"text": banner_meta})
+
+        # Add the version selector script to after-body, BEFORE navbar-widgets.js
+        # so the widget element exists when the collector runs.
+        after_body = config["format"]["html"].setdefault("include-after-body", [])
+        if isinstance(after_body, str):
+            after_body = [after_body]
+            config["format"]["html"]["include-after-body"] = after_body
+        vs_script_entry = {"text": '<script src="version-selector.js"></script>'}
+        if not any("version-selector" in str(item) for item in after_body):
+            # Insert before navbar-widgets.js if present, otherwise append
+            nw_idx = next(
+                (i for i, item in enumerate(after_body) if "navbar-widgets" in str(item)),
+                None,
+            )
+            if nw_idx is not None:
+                after_body.insert(nw_idx, vs_script_entry)
+            else:
+                after_body.append(vs_script_entry)
+
+        # Ensure version-selector.js is in resources
+        resources_list = config["project"].setdefault("resources", [])
+        if "version-selector.js" not in resources_list:
+            resources_list.append("version-selector.js")
+
+        self._write_quarto_yml(quarto_yml, config)
+
+    def _auto_save_snapshot(self) -> None:
+        """
+        Auto-save an API snapshot after a successful build (Strategy C).
+
+        Saves to `.great-docs/snapshots/<version>.json` where `<version>` is the current git tag (if
+        exactly on one) or `dev`.
+        """
+        import subprocess as _sp
+
+        from great_docs._api_diff import snapshot_from_griffe
+
+        package_name = self._detect_package_name()
+        if not package_name:
+            return
+
+        # Determine version label
+        version = "dev"
+        try:
+            result = _sp.run(
+                ["git", "describe", "--tags", "--exact-match", "HEAD"],
+                cwd=self.project_root,
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                version = result.stdout.strip()
+        except Exception:
+            pass
+
+        snap = snapshot_from_griffe(package_name, version=version)
+
+        # Include CLI snapshot when CLI documentation is enabled
+        if self._config.cli_enabled:
+            try:
+                from great_docs._api_diff import snapshot_cli_from_click
+
+                cli_obj = self._find_click_cli_obj(package_name)
+                if cli_obj is not None:
+                    snap.cli_commands = snapshot_cli_from_click(cli_obj)
+            except Exception:
+                pass  # CLI snapshot is best-effort
+
+        snap_dir = self.project_root / ".great-docs" / "snapshots"
+        snap.save(snap_dir / f"{version}.json")
 
     def _update_sidebar_from_sections(self) -> None:
         """
@@ -12226,12 +12427,18 @@ body-classes: "gd-homepage"
 
         print("✅ Great-docs uninstalled successfully!")
 
-    def build(self, watch: bool = False, refresh: bool = True) -> None:
+    def build(
+        self,
+        watch: bool = False,
+        refresh: bool = True,
+        version_tags: list[str] | None = None,
+        latest_only: bool = False,
+    ) -> None:
         """
         Build the documentation site.
 
-        Generates API reference pages followed by `quarto render`. By default, re-discovers package exports
-        and updates the API reference configuration before building.
+        Generates API reference pages followed by `quarto render`. By default, re-discovers package
+        exports and updates the API reference configuration before building.
 
         ::: {.callout-note}
         In practice, you would normally use the `great-docs build` CLI command rather
@@ -12246,6 +12453,12 @@ body-classes: "gd-homepage"
         refresh
             If `True` (default), re-discover package exports and update API reference config before
             building. Set to False for faster rebuilds when your package API hasn't changed.
+        version_tags
+            If provided, only build these specific version tags (for multi-version sites). Ignored
+            when no `versions:` config is present.
+        latest_only
+            If `True`, build only the latest version (skip historical versions). Ignored when no
+            `versions:` config is present.
 
         Examples
         --------
@@ -12411,11 +12624,9 @@ body-classes: "gd-homepage"
         ):  # pragma: no cover
             """Run a subprocess, stream output, optionally feeding a progress bar.
 
-            Lines starting with `##GD:PASS:` are collected into
-            `result.passes` (a list of label strings).  If *on_pass* is
-            provided it is called with each label as it arrives.  If
-            *on_bar_done* is provided it is called once when the progress
-            bar reaches 100 %.
+            Lines starting with `##GD:PASS:` are collected into `result.passes` (a list of label
+            strings). If *on_pass* is provided it is called with each label as it arrives. If
+            *on_bar_done* is provided it is called once when the progress bar reaches 100%.
             """
             process = subprocess.Popen(
                 cmd,
@@ -12753,6 +12964,103 @@ body-classes: "gd-homepage"
                 log.footer(watch_mode=True)
                 subprocess.run(["quarto", "preview", "--no-browser"], env=quarto_env)
                 return
+            elif self._config.has_versions:
+                # ── Multi-version build pipeline ───────────────────────
+                from great_docs._versioned_build import run_versioned_build
+                from great_docs._versioning import parse_versions_config
+
+                versions_parsed = parse_versions_config(self._config.versions)
+
+                # Determine which versions will be built
+                if latest_only:
+                    from great_docs._versioning import get_latest_version
+
+                    lt = get_latest_version(versions_parsed)
+                    lt_tag = lt.tag if lt else versions_parsed[0].tag
+                    targets_parsed = [v for v in versions_parsed if v.tag == lt_tag]
+                elif version_tags:
+                    tag_set = set(version_tags)
+                    targets_parsed = [v for v in versions_parsed if v.tag in tag_set]
+                else:
+                    targets_parsed = list(versions_parsed)
+
+                n_versions = len(targets_parsed)
+                label = "1 version" if n_versions == 1 else f"{n_versions} version(s)"
+                log.detail(f"Multi-version build: {label}")
+
+                # Create multi-progress bar for the parallel renders
+                bar_labels = [f"v{v.label}" for v in targets_parsed]
+                mbar = log.multi_progress(bar_labels)
+
+                def _progress_cb(slot: int, current: int, total: int) -> None:
+                    mbar.set_total(slot, total)
+                    mbar.update(slot, current)
+
+                def _on_renders_done() -> None:
+                    mbar.finish()
+
+                vb_result = run_versioned_build(
+                    source_dir=self.project_path,
+                    project_root=self.project_root,
+                    versions_config=self._config.versions,
+                    quarto_env=quarto_env,
+                    version_tags=version_tags,
+                    latest_only=latest_only,
+                    progress_callback=_progress_cb,
+                    on_renders_done=_on_renders_done,
+                )
+
+                if not vb_result["success"]:
+                    for err in vb_result["errors"]:
+                        log.error_detail(err)
+                    if not vb_result["versions_built"]:
+                        log.step_fail("All version builds failed")
+
+                        # Skip steps 16, 17
+                        step += 1
+                        log.step_start(step, "Post-render processing")
+                        log.step_skip(step, "build failed")
+                        step += 1
+                        log.step_start(step, "Generate SEO files")
+                        log.step_skip(step, "build failed")
+
+                        log.footer()
+                        sys.exit(1)
+                    else:
+                        n_ok = len(vb_result["versions_built"])
+                        n_err = len(vb_result["errors"])
+                        log.step_done(f"{n_ok} version(s) rendered ({n_err} failed)")
+                else:
+                    n_ok = len(vb_result["versions_built"])
+                    log.step_done(f"{n_ok} version(s) rendered")
+
+                # ── Step 16: Post-render processing ────────────────
+                step += 1
+                log.step_start(step, "Post-render processing")
+                log.step_done("Version assembly complete")
+
+                # ── Step 17: Generate SEO files ────────────────────
+                step += 1
+                log.step_start(step, "Generate SEO files")
+                try:
+                    with _quiet_prints():
+                        self._generate_seo_files()
+                    log.step_done("sitemap.xml + robots.txt")
+                except Exception as e:
+                    log.warn(f"Error generating SEO files: {e}")
+                    log.step_done("SEO files had issues")
+
+                # ── Auto-save API snapshot (Strategy C) ────────────
+                try:
+                    self._auto_save_snapshot()
+                except Exception as e:
+                    log.warn(f"Snapshot auto-save failed: {e}")
+
+                site_path = self.project_path / "_site" / "index.html"
+                if site_path.exists():
+                    log.footer(site_path=str(site_path))
+                else:
+                    log.footer(site_path=str(self.project_path / "_site"))
             else:
                 bar = log.progress("Rendering pages", 1)
 
@@ -12824,6 +13132,13 @@ body-classes: "gd-homepage"
                         log.warn(f"Error generating SEO files: {e}")  # pragma: no cover
                         log.step_done("SEO files had issues")  # pragma: no cover
 
+                    # ── Auto-save API snapshot (Strategy C) ────────────
+                    if self._config.has_versions:  # pragma: no cover
+                        try:  # pragma: no cover
+                            self._auto_save_snapshot()  # pragma: no cover
+                        except Exception as e:  # pragma: no cover
+                            log.warn(f"Snapshot auto-save failed: {e}")  # pragma: no cover
+
                     site_path = self.project_path / "_site" / "index.html"  # pragma: no cover
                     if site_path.exists():  # pragma: no cover
                         log.footer(site_path=str(site_path))  # pragma: no cover
@@ -12839,14 +13154,13 @@ body-classes: "gd-homepage"
         """
         Preview the documentation site locally.
 
-        Starts a local HTTP server and opens the built site in the default
-        browser.  If the site hasn't been built yet, it will be built first.
-        Use `great-docs build` to rebuild the site if you've made changes.
+        Starts a local HTTP server and opens the built site in the default browser. If the site
+        hasn't been built yet, it will be built first. Use `great-docs build` to rebuild the site if
+        you've made changes.
 
         ::: {.callout-note}
-        In practice, you would normally use the `great-docs preview` CLI command
-        rather than calling this method directly. See the
-        [CLI reference](cli/preview.qmd) for details.
+        In practice, you would normally use the `great-docs preview` CLI command rather than calling
+        this method directly. See the [CLI reference](cli/preview.qmd) for details.
         :::
 
         Parameters
@@ -12925,14 +13239,12 @@ body-classes: "gd-homepage"
         Check all links in source code and documentation for broken links.
 
         ::: {.callout-note}
-        In practice, you would normally use the `great-docs check-links` CLI command
-        rather than calling this method directly. See the
-        [CLI reference](cli/check_links.qmd) for details.
+        In practice, you would normally use the `great-docs check-links` CLI command rather than
+        calling this method directly. See the [CLI reference](cli/check_links.qmd) for details.
         :::
 
-        This method scans Python source files and documentation files (`.qmd`, `.md`)
-        for URLs and checks their HTTP status. It reports broken links (404s) and
-        warns about redirects.
+        This method scans Python source files and documentation files (`.qmd`, `.md`) for URLs and
+        checks their HTTP status. It reports broken links (404s) and warns about redirects.
 
         The following content is automatically excluded from link checking:
 
@@ -12941,11 +13253,11 @@ body-classes: "gd-homepage"
         - **Inline code**: URLs inside backticks (`` `...` ``)
         - **Marked URLs**: URLs followed by `{.gd-no-link}` in `.qmd`/`.md` files
 
-        For documentation, the checker scans the source `user_guide/` directory
-        rather than the generated `docs/` directory to avoid checking transient files.
+        For documentation, the checker scans the source `user_guide/` directory rather than the
+        generated `docs/` directory to avoid checking transient files.
 
-        In `.qmd` files, you can exclude specific URLs from checking by adding
-        `{.gd-no-link}` immediately after the URL:
+        In `.qmd` files, you can exclude specific URLs from checking by adding `{.gd-no-link}`
+        immediately after the URL:
 
             Visit http://example.com{.gd-no-link} for an example.
             Also works with inline code: `http://example.com`{.gd-no-link}
@@ -12953,16 +13265,15 @@ body-classes: "gd-homepage"
         Parameters
         ----------
         include_source
-            If `True`, scan Python source files in the package directory for URLs.
-            Default is `True`.
+            If `True`, scan Python source files in the package directory for URLs. Default is
+            `True`.
         include_docs
-            If `True`, scan documentation files (`.qmd`, `.md`) for URLs.
-            Default is `True`.
+            If `True`, scan documentation files (`.qmd`, `.md`) for URLs. Default is `True`.
         timeout
             Timeout in seconds for each HTTP request. Default is `10.0`.
         ignore_patterns
-            List of URL patterns (strings or regex) to ignore. URLs matching any
-            pattern will be skipped. Default is `None`.
+            List of URL patterns (strings or regex) to ignore. URLs matching any pattern will be
+            skipped. Default is `None`.
         verbose
             If `True`, print detailed progress information. Default is `False`.
 
@@ -13271,15 +13582,13 @@ body-classes: "gd-homepage"
         Check spelling and grammar in documentation files using Harper.
 
         ::: {.callout-note}
-        In practice, you would normally use the `great-docs proofread` CLI command
-        rather than calling this method directly. See the
-        [CLI reference](cli/proofread.qmd) for details.
+        In practice, you would normally use the `great-docs proofread` CLI command rather than
+        calling this method directly. See the [CLI reference](cli/proofread.qmd) for details.
         :::
 
-        This method uses Harper, a fast privacy-first grammar checker, to scan
-        documentation files (`.qmd`, `.md`) for spelling errors, grammatical issues,
-        style problems, and more. Harper runs locally and provides comprehensive
-        English language checking.
+        This method uses Harper, a fast privacy-first grammar checker, to scan documentation files
+        (`.qmd`, `.md`) for spelling errors, grammatical issues, style problems, and more. Harper
+        runs locally and provides comprehensive English language checking.
 
         Parameters
         ----------
@@ -13288,16 +13597,16 @@ body-classes: "gd-homepage"
         include_docstrings
             If `True`, also scan Python docstrings in the package. Default is `False`.
         custom_dictionary
-            List of additional words to consider correct (e.g., project-specific
-            terms, library names). Default is `None`.
+            List of additional words to consider correct (e.g., project-specific terms, library
+            names). Default is `None`.
         dialect
             English dialect: "us", "uk", "au", "in", "ca". Default is `"us"`.
         ignore_rules
-            List of Harper rule names to skip (e.g., `["SentenceCapitalization"]`).
-            Default is `None`.
+            List of Harper rule names to skip (e.g., `["SentenceCapitalization"]`). Default is
+            `None`.
         only_rules
-            List of Harper rule names to run exclusively (e.g., `["SpellCheck"]`).
-            Default is `None`.
+            List of Harper rule names to run exclusively (e.g., `["SpellCheck"]`). Default is
+            `None`.
         verbose
             If `True`, print detailed progress information. Default is `False`.
 

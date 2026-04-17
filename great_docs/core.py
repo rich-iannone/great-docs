@@ -474,13 +474,25 @@ class GreatDocs:
         # Entry to add
         entry = "# Great Docs build directory (ephemeral, do not commit)\ngreat-docs/\n"
 
+        # Versioning build artifacts (added when versions are configured)
+        versioning_entries = [
+            ".great-docs-build/",
+            ".great-docs-cache/",
+            ".great-docs/",
+        ]
+
         # Check if already present
+        has_main = False
+        missing_versioning = list(versioning_entries)
         if gitignore_path.exists():
             with open(gitignore_path, "r", encoding="utf-8") as f:
                 content = f.read()
 
-            if "great-docs/" in content:
-                # Already present, no need to ask
+            has_main = "great-docs/" in content
+            missing_versioning = [e for e in versioning_entries if e not in content]
+
+            if has_main and not missing_versioning:
+                # All entries present, nothing to do
                 return
 
         # If force=True, skip the prompt
@@ -488,12 +500,20 @@ class GreatDocs:
             if gitignore_path.exists():
                 # Append to existing .gitignore
                 with open(gitignore_path, "a", encoding="utf-8") as f:
-                    f.write("\n" + entry)
+                    if not has_main:
+                        f.write("\n" + entry)
+                    if missing_versioning:
+                        f.write("\n# Great Docs versioned-build artifacts\n")
+                        for ve in missing_versioning:
+                            f.write(ve + "\n")
                 print("✅ Updated .gitignore to exclude great-docs/ directory")
             else:
                 # Create new .gitignore
                 with open(gitignore_path, "w", encoding="utf-8") as f:
                     f.write(entry)
+                    f.write("\n# Great Docs versioned-build artifacts\n")
+                    for ve in versioning_entries:
+                        f.write(ve + "\n")
                 print("✅ Created .gitignore to exclude great-docs/ directory")
             return
 
@@ -507,12 +527,20 @@ class GreatDocs:
             if gitignore_path.exists():
                 # Append to existing .gitignore
                 with open(gitignore_path, "a", encoding="utf-8") as f:
-                    f.write("\n" + entry)
+                    if not has_main:
+                        f.write("\n" + entry)
+                    if missing_versioning:
+                        f.write("\n# Great Docs versioned-build artifacts\n")
+                        for ve in missing_versioning:
+                            f.write(ve + "\n")
                 print("✅ Updated .gitignore to exclude great-docs/ directory")
             else:
                 # Create new .gitignore
                 with open(gitignore_path, "w", encoding="utf-8") as f:
                     f.write(entry)
+                    f.write("\n# Great Docs versioned-build artifacts\n")
+                    for ve in versioning_entries:
+                        f.write(ve + "\n")
                 print("✅ Created .gitignore to exclude great-docs/ directory")
         else:
             print(

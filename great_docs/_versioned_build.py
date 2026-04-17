@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import re as _re
 import shutil
 import subprocess
 import threading
@@ -39,6 +40,149 @@ def _collect_qmd_files(source_dir: Path) -> list[Path]:
     for ext in ("*.qmd", "*.md"):
         files.extend(source_dir.rglob(ext))
     return sorted(files)
+
+
+def _prune_cli_pages(dest_dir: Path, snap: object) -> None:
+    """
+    Remove CLI reference QMD files for commands not in the snapshot.
+
+    The main build generates CLI pages from the *current* installed CLI. When building an older
+    version, commands that didn't exist yet must be removed so they don't appear in that version's
+    site. Also rewrites the CLI index page so the embedded help text only lists valid commands.
+    """
+    cli_ref_dir = dest_dir / "reference" / "cli"
+    if not cli_ref_dir.is_dir():
+        return
+
+    cli_commands = getattr(snap, "cli_commands", None)
+    if cli_commands is None:
+        return
+
+    # Build the set of valid command file stems from the snapshot.
+    # CliCommandInfo.subcommands holds the actual commands; the group itself
+    # maps to `index.qmd`.
+    valid_stems: set[str] = {"index"}
+    valid_names: set[str] = set()
+    for sub in getattr(cli_commands, "subcommands", []):
+        # Click command names use hyphens; file stems use underscores
+        valid_stems.add(sub.name.replace("-", "_"))
+        valid_names.add(sub.name)
+
+    # Remove QMD files for commands not present at this version
+    for qmd_file in list(cli_ref_dir.iterdir()):
+        if qmd_file.suffix not in (".qmd", ".md"):
+            continue
+        if qmd_file.stem not in valid_stems:
+            qmd_file.unlink()
+
+    # Rewrite the index.qmd to remove stale commands from the help text
+    index_qmd = cli_ref_dir / "index.qmd"
+    if index_qmd.exists() and valid_names:
+        _rewrite_cli_index(index_qmd, valid_names)
+
+    # Prune the CLI sidebar in _quarto.yml
+    _prune_quarto_cli_sidebar(dest_dir, valid_stems)
+
+
+def _rewrite_cli_index(index_qmd: Path, valid_names: set[str]) -> None:
+    """Remove lines for non-existent commands from the CLI index help block."""
+    content = index_qmd.read_text(encoding="utf-8")
+    lines = content.split("\n")
+    new_lines: list[str] = []
+    in_commands_block = False
+
+    for line in lines:
+        stripped = line.strip()
+
+        # Detect the "Commands:" header in the help text
+        if stripped == "Commands:":
+            in_commands_block = True
+            new_lines.append(line)
+            continue
+
+        if in_commands_block:
+            # End of commands block: blank line or closing fence
+            if not stripped or stripped.startswith("```") or stripped.startswith(":::"):
+                in_commands_block = False
+                new_lines.append(line)
+                continue
+
+            # Each command line looks like "  command-name   Description text..."
+            # Extract the command name (first non-whitespace token)
+            tokens = stripped.split()
+            if tokens and tokens[0] in valid_names:
+                new_lines.append(line)
+            # Skip lines for commands not in valid_names
+            continue
+
+        new_lines.append(line)
+
+    index_qmd.write_text("\n".join(new_lines), encoding="utf-8")
+
+
+def _prune_quarto_cli_sidebar(dest_dir: Path, valid_stems: set[str]) -> None:
+    """Remove CLI sidebar entries from _quarto.yml for pruned commands."""
+    quarto_yml = dest_dir / "_quarto.yml"
+    if not quarto_yml.exists():
+        return
+
+    try:
+        import yaml
+
+        content = yaml.safe_load(quarto_yml.read_text(encoding="utf-8"))
+        if not content:
+            return
+
+        sidebars = content.get("website", {}).get("sidebar", [])
+        modified = False
+
+        for sidebar in sidebars:
+            if sidebar.get("id") != "cli-reference":
+                continue
+            contents = sidebar.get("contents", [])
+            new_contents = []
+            for item in contents:
+                if isinstance(item, str) and item.startswith("reference/cli/"):
+                    stem = Path(item).stem
+                    if stem in valid_stems:
+                        new_contents.append(item)
+                    else:
+                        modified = True
+                else:
+                    new_contents.append(item)
+            if modified:
+                sidebar["contents"] = new_contents
+            break
+
+        if modified:
+            yaml.dump(
+                content,
+                quarto_yml.open("w", encoding="utf-8"),
+                default_flow_style=False,
+                sort_keys=False,
+                allow_unicode=True,
+            )
+    except Exception:
+        pass  # Best-effort
+
+
+def _prune_cli_pages_for_version(dest_dir: Path, project_root: Path, entry: VersionEntry) -> None:
+    """Load the cached snapshot for a version and prune stale CLI pages."""
+    git_ref = entry.git_ref
+    if not git_ref:
+        return
+
+    cache_path = _snapshot_cache_path(project_root, git_ref)
+    if not cache_path.exists():
+        return
+
+    try:
+        from great_docs._api_diff import ApiSnapshot
+
+        snap = ApiSnapshot.load(cache_path)
+        _prune_cli_pages(dest_dir, snap)
+    except Exception:
+        pass  # Best-effort; don't break the build
 
 
 def preprocess_version(
@@ -136,7 +280,11 @@ def preprocess_version(
         api_pages = _rebuild_api_from_git_ref(dest_dir, project_root, entry)
         included_pages.extend(api_pages)
 
-    # 5. Expand inline [version-badge] markers and version callouts
+    # 5. Prune CLI pages that don't exist at this version
+    if entry.git_ref and project_root:
+        _prune_cli_pages_for_version(dest_dir, project_root, entry)
+
+    # 6. Expand inline [version-badge] markers and version callouts
     for qmd_file in _collect_qmd_files(dest_dir):
         content = qmd_file.read_text(encoding="utf-8", errors="replace")
         updated = expand_version_badges(content, entry)
@@ -199,10 +347,11 @@ def _rebuild_api_from_snapshot(
     entry: VersionEntry,
 ) -> list[str]:
     """
-    Regenerate API reference QMD pages from a snapshot JSON file.
+    Rebuild API reference pages from a snapshot, pruning pages not in the snapshot.
 
-    Replaces the API reference pages in *dest_dir* with pages generated from the snapshot. This
-    implements Strategy A from the plan.
+    When the source tree already contains reference pages (e.g. from the main build), pages for
+    symbols in the snapshot are regenerated from the snapshot data and pages for symbols *not* in
+    the snapshot are removed. When no reference directory exists, pages are generated from scratch.
 
     Parameters
     ----------
@@ -216,27 +365,38 @@ def _rebuild_api_from_snapshot(
     Returns
     -------
     list[str]
-        Relative paths of generated API pages (as .html).
+        Relative paths of API pages (as .html).
     """
     from great_docs._api_diff import ApiSnapshot
 
     snap = ApiSnapshot.load(snapshot_path)
     ref_dir = dest_dir / "reference"
 
-    # Clear existing reference pages — the snapshot is the sole source of truth
-    if ref_dir.exists():
-        shutil.rmtree(ref_dir)
-    ref_dir.mkdir(parents=True, exist_ok=True)
+    snapshot_symbols = set(snap.symbols.keys())
+    snapshot_classes = {name for name, sym in snap.symbols.items() if sym.kind == "class"}
 
+    # --- Prune existing pages not in the snapshot ---
+    if ref_dir.exists():
+        for qmd_file in list(ref_dir.iterdir()):
+            if qmd_file.is_dir():
+                continue
+            if qmd_file.suffix not in (".qmd", ".md"):
+                continue
+            stem = qmd_file.stem
+            if stem == "index":
+                continue
+            if not _is_valid_ref_name(stem, snapshot_symbols, snapshot_classes):
+                qmd_file.unlink()
+    else:
+        ref_dir.mkdir(parents=True, exist_ok=True)
+
+    # --- Generate / overwrite pages for each symbol in the snapshot ---
     generated: list[str] = []
 
     for name, sym in snap.symbols.items():
         qmd_path = ref_dir / f"{name}.qmd"
-
-        # Build signature string
         sig = _format_signature(name, sym)
 
-        # Build page content
         lines = [
             "---",
             f'title: "{name}"',
@@ -273,7 +433,7 @@ def _rebuild_api_from_snapshot(
         qmd_path.write_text("\n".join(lines), encoding="utf-8")
         generated.append(f"reference/{name}.html")
 
-    # Generate index page listing all symbols
+    # --- Generate index page ---
     index_path = ref_dir / "index.qmd"
     index_lines = [
         "---",
@@ -282,7 +442,6 @@ def _rebuild_api_from_snapshot(
         "",
     ]
 
-    # Group by kind
     classes = [(n, s) for n, s in snap.symbols.items() if s.kind == "class"]
     functions = [(n, s) for n, s in snap.symbols.items() if s.kind == "function"]
 
@@ -302,6 +461,9 @@ def _rebuild_api_from_snapshot(
 
     index_path.write_text("\n".join(index_lines), encoding="utf-8")
     generated.append("reference/index.html")
+
+    # --- Update _quarto.yml sidebar to remove missing reference entries ---
+    _prune_quarto_sidebar(dest_dir, "reference", snapshot_symbols, snapshot_classes)
 
     return generated
 
@@ -330,6 +492,112 @@ def _format_param(p) -> str:
     if p.default:
         parts.append(f" = {p.default}")
     return "".join(parts)
+
+
+def _is_valid_ref_name(name: str, valid_symbols: set[str], valid_classes: set[str]) -> bool:
+    """Check if a symbol or method name is valid for this version."""
+    if name == "index" or name in valid_symbols:
+        return True
+    # Method page: `ClassName.method` (check the class prefix)
+    if "." in name:
+        class_name = name.split(".")[0]
+        return class_name in valid_classes
+    return False
+
+
+def _prune_reference_index(
+    index_qmd: Path, valid_symbols: set[str], valid_classes: set[str]
+) -> None:
+    """Remove links/rows for symbols not in the snapshot from reference/index.qmd."""
+    content = index_qmd.read_text(encoding="utf-8")
+    lines = content.split("\n")
+    new_lines: list[str] = []
+
+    for line in lines:
+        stripped = line.strip()
+
+        # Check for definition-list or link-style entries referencing a .qmd file
+        # Patterns: "- [SymbolName](SymbolName.qmd)" or link with anchor
+        import re
+
+        qmd_ref = re.search(r"\(([^)]+)\.qmd(?:#[^)]*)?\)", stripped)
+        if qmd_ref:
+            symbol_name = qmd_ref.group(1)
+            if not _is_valid_ref_name(symbol_name, valid_symbols, valid_classes):
+                continue  # Skip this line
+
+        # Also check for bare .qmd references like "  - Name.qmd"
+        bare_ref = re.match(r"^\s*-\s+(\S+)\.qmd\s*$", stripped)
+        if bare_ref:
+            symbol_name = bare_ref.group(1)
+            if not _is_valid_ref_name(symbol_name, valid_symbols, valid_classes):
+                continue
+
+        new_lines.append(line)
+
+    index_qmd.write_text("\n".join(new_lines), encoding="utf-8")
+
+
+def _prune_quarto_sidebar(
+    dest_dir: Path, section: str, valid_symbols: set[str], valid_classes: set[str]
+) -> None:
+    """Remove sidebar entries for missing symbols/commands from _quarto.yml."""
+    quarto_yml = dest_dir / "_quarto.yml"
+    if not quarto_yml.exists():
+        return
+
+    try:
+        import yaml
+
+        content = yaml.safe_load(quarto_yml.read_text(encoding="utf-8"))
+        if not content:
+            return
+
+        sidebars = content.get("website", {}).get("sidebar", [])
+        modified = False
+
+        for sidebar in sidebars:
+            contents = sidebar.get("contents", [])
+            if not contents:
+                continue
+
+            # Check if this sidebar references our section
+            has_section_ref = any(
+                (isinstance(c, str) and c.startswith(f"{section}/")) for c in contents
+            )
+            if not has_section_ref:
+                continue
+
+            new_contents = []
+            for item in contents:
+                if isinstance(item, str) and item.startswith(f"{section}/"):
+                    # e.g. "reference/GreatDocs.qmd" → "GreatDocs"
+                    # e.g. "reference/cli/api_diff.qmd" → keep (handled by CLI pruning)
+                    if "/" in item.replace(f"{section}/", "", 1):
+                        # Sub-path like reference/cli/... — keep, CLI pruning handles it
+                        new_contents.append(item)
+                    else:
+                        stem = Path(item).stem
+                        if _is_valid_ref_name(stem, valid_symbols, valid_classes):
+                            new_contents.append(item)
+                        else:
+                            modified = True
+                else:
+                    new_contents.append(item)
+
+            if modified:
+                sidebar["contents"] = new_contents
+
+        if modified:
+            yaml.dump(
+                content,
+                quarto_yml.open("w", encoding="utf-8"),
+                default_flow_style=False,
+                sort_keys=False,
+                allow_unicode=True,
+            )
+    except Exception:
+        pass  # Best-effort
 
 
 # ---------------------------------------------------------------------------
@@ -658,9 +926,9 @@ def _render_single_version_streaming(
     """
     Render a single version with streaming progress.
 
-    Like :func:`_render_single_version` but streams stderr to parse
-    Quarto ``[cur/total]`` progress lines and calls *on_progress(current, total)*
-    for each update. Returns the same ``(build_dir, returncode, stdout, stderr)`` tuple.
+    Like :func:`_render_single_version` but streams stderr to parse Quarto `[cur/total]` progress
+    lines and calls *on_progress(current, total)* for each update. Returns the same
+    `(build_dir, returncode, stdout, stderr)` tuple.
     """
     env = os.environ.copy()
     if env_vars:
@@ -706,7 +974,7 @@ def render_versions_parallel(
     progress_callback: Callable[[int, int, int], None] | None = None,
 ) -> list[tuple[str, int, str, str]]:
     """
-    Run ``quarto render`` in parallel for each version build directory.
+    Run `quarto render` in parallel for each version build directory.
 
     Parameters
     ----------
@@ -715,17 +983,15 @@ def render_versions_parallel(
     env_vars
         Environment variables to pass to Quarto (e.g., QUARTO_PYTHON).
     max_workers
-        Max parallel renders. Defaults to ``min(cpu_count, 4)``.
+        Max parallel renders. Defaults to `min(cpu_count, 4)`.
     progress_callback
-        Optional ``(slot_index, current_page, total_pages)`` callback.
-        When provided, renders use streaming mode so progress lines can
-        be reported in real time.
+        Optional `(slot_index, current_page, total_pages)` callback. When provided, renders use
+        streaming mode so progress lines can be reported in real time.
 
     Returns
     -------
     list[tuple[str, int, str, str]]
-        List of ``(build_dir, returncode, stdout, stderr)`` tuples
-        **in the same order as *build_dirs***.
+        List of `(build_dir, returncode, stdout, stderr)` tuples in the same order as `build_dirs`.
     """
     if max_workers is None:
         max_workers = min(os.cpu_count() or 4, 4)
@@ -954,11 +1220,11 @@ def run_versioned_build(
     site_url
         The site's base URL (for canonical URL injection).
     progress_callback
-        Optional ``(slot_index, current_page, total_pages)`` callback for
-        real-time progress reporting during parallel renders.
+        Optional `(slot_index, current_page, total_pages)` callback for real-time progress reporting
+        during parallel renders.
     on_renders_done
-        Optional callback fired after all Quarto renders complete but
-        before site assembly begins.  Useful for finishing progress bars.
+        Optional callback fired after all Quarto renders complete but before site assembly begins.
+        Useful for finishing progress bars.
 
     Returns
     -------

@@ -49,8 +49,48 @@
   }
 
   /**
+   * Compute the site base path (e.g. "/great-docs" on GitHub Pages,
+   * "" on a root-hosted site).  Works by finding a known version prefix
+   * in the current pathname, or by detecting `quarto:offset`.
+   */
+  function getSiteBasePath(versionMap) {
+    var path = window.location.pathname;
+
+    // Try to locate a version prefix in the URL
+    for (var i = 0; i < versionMap.versions.length; i++) {
+      var v = versionMap.versions[i];
+      if (!v.path_prefix) continue;
+      var needle = "/" + v.path_prefix + "/";
+      var idx = path.indexOf(needle);
+      if (idx >= 0) {
+        // Everything before the version prefix is the base path
+        return path.substring(0, idx);
+      }
+    }
+
+    // No version prefix in URL — we're on the latest version.
+    // Use Quarto's offset meta to compute the base path.
+    var offsetMeta = document.querySelector('meta[name="quarto:offset"]');
+    if (offsetMeta) {
+      var offset = offsetMeta.getAttribute("content") || "./";
+      // offset is relative like "./" or "../" — resolve it against the current page
+      var dir = path.replace(/\/[^/]*$/, "/");
+      // Count ".." segments
+      var segments = offset.replace(/\/$/, "").split("/");
+      for (var s = 0; s < segments.length; s++) {
+        if (segments[s] === "..") {
+          dir = dir.replace(/\/[^/]+\/$/, "/");
+        }
+      }
+      return dir.replace(/\/$/, "");
+    }
+
+    return "";
+  }
+
+  /**
    * Determine the current version tag by inspecting the URL path.
-   * If the path starts with /v/<tag>/, return that tag.  Otherwise return
+   * If the path contains /v/<tag>/, return that tag.  Otherwise return
    * the tag of whichever version has an empty path_prefix (latest).
    */
   function detectCurrentVersion(versionMap) {
@@ -58,7 +98,7 @@
 
     for (var i = 0; i < versionMap.versions.length; i++) {
       var v = versionMap.versions[i];
-      if (v.path_prefix && path.indexOf("/" + v.path_prefix + "/") === 0) {
+      if (v.path_prefix && path.indexOf("/" + v.path_prefix + "/") !== -1) {
         return v.tag;
       }
     }
@@ -76,7 +116,7 @@
   /**
    * Build the URL for a given page path under a specific version.
    */
-  function buildVersionUrl(versionMap, targetTag, currentRelPath) {
+  function buildVersionUrl(versionMap, targetTag, currentRelPath, basePath) {
     var targetVersion = null;
     for (var i = 0; i < versionMap.versions.length; i++) {
       if (versionMap.versions[i].tag === targetTag) {
@@ -85,8 +125,6 @@
       }
     }
     if (!targetVersion) return null;
-
-    var basePath = window.location.pathname.replace(/\/[^/]*$/, "");
 
     // Strip current version prefix to get the relative page path
     var pagePath = currentRelPath;
@@ -106,16 +144,21 @@
 
     var prefix = targetVersion.path_prefix;
     if (prefix) {
-      return "/" + prefix + "/" + pagePath;
+      return basePath + "/" + prefix + "/" + pagePath;
     }
-    return "/" + pagePath;
+    return basePath + "/" + pagePath;
   }
 
   /**
-   * Get the current page's relative path (without version prefix).
+   * Get the current page's relative path (without version prefix or base path).
    */
-  function getCurrentRelPath(versionMap) {
+  function getCurrentRelPath(versionMap, basePath) {
     var path = window.location.pathname;
+
+    // Strip base path first
+    if (basePath && path.indexOf(basePath) === 0) {
+      path = path.substring(basePath.length);
+    }
 
     // Strip version prefix if present
     for (var i = 0; i < versionMap.versions.length; i++) {
@@ -134,8 +177,9 @@
   // ---------------------------------------------------------------------------
 
   function createVersionSelector(versionMap) {
+    var basePath = getSiteBasePath(versionMap);
     var currentTag = detectCurrentVersion(versionMap);
-    var currentRelPath = getCurrentRelPath(versionMap);
+    var currentRelPath = getCurrentRelPath(versionMap, basePath);
 
     // Find current version entry
     var currentVersion = null;
@@ -188,7 +232,7 @@
       var isCurrent = v.tag === currentTag;
 
       var link = document.createElement("a");
-      link.href = buildVersionUrl(versionMap, v.tag, currentRelPath) || "#";
+      link.href = buildVersionUrl(versionMap, v.tag, currentRelPath, basePath) || "#";
       link.className = "gd-vs-item" + (isCurrent ? " gd-vs-item-active" : "");
       link.setAttribute("role", "menuitem");
       link.setAttribute("data-version", v.tag);
@@ -296,9 +340,10 @@
     var banner = document.createElement("div");
     banner.className = "gd-version-banner";
 
-    var currentRelPath = getCurrentRelPath(versionMap);
+    var basePath = getSiteBasePath(versionMap);
+    var currentRelPath = getCurrentRelPath(versionMap, basePath);
     var latestUrl =
-      buildVersionUrl(versionMap, latestVersion.tag, currentRelPath) || "/";
+      buildVersionUrl(versionMap, latestVersion.tag, currentRelPath, basePath) || "/";
 
     if (currentVersion.eol) {
       banner.classList.add("gd-version-banner-eol");

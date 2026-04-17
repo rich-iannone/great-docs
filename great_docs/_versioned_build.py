@@ -497,33 +497,48 @@ def _rebuild_api_from_snapshot(
         qmd_path.write_text("\n".join(lines), encoding="utf-8")
         generated.append(f"reference/{name}.html")
 
-    # --- Generate index page ---
+    # --- Update or generate index page ---
     index_path = ref_dir / "index.qmd"
-    index_lines = [
-        "---",
-        f'title: "API Reference ({entry.label})"',
-        "---",
-        "",
-    ]
 
-    classes = [(n, s) for n, s in snap.symbols.items() if s.kind == "class"]
-    functions = [(n, s) for n, s in snap.symbols.items() if s.kind == "function"]
+    # Detect whether the existing index is a rich renderer-generated page (has Pandoc
+    # attribute classes like {.doc-label ...}) vs. a plain placeholder.  Rich pages are
+    # preserved and pruned; plain/missing pages are regenerated from the snapshot.
+    _has_rich_index = False
+    if index_path.exists():
+        _idx_content = index_path.read_text(encoding="utf-8")
+        _has_rich_index = "{.doc-" in _idx_content
 
-    if classes:
-        index_lines.append("## Classes")
-        index_lines.append("")
-        for name, _ in sorted(classes):
-            index_lines.append(f"- [{name}]({name}.qmd)")
-        index_lines.append("")
+    if _has_rich_index:
+        # Preserve the styled index — just remove entries for symbols not in this version
+        _prune_reference_index(index_path, snapshot_symbols, snapshot_classes)
+    else:
+        # No existing index or it's a plain placeholder; generate from snapshot
+        index_lines = [
+            "---",
+            f'title: "API Reference ({entry.label})"',
+            "---",
+            "",
+        ]
 
-    if functions:
-        index_lines.append("## Functions")
-        index_lines.append("")
-        for name, _ in sorted(functions):
-            index_lines.append(f"- [{name}]({name}.qmd)")
-        index_lines.append("")
+        classes = [(n, s) for n, s in snap.symbols.items() if s.kind == "class"]
+        functions = [(n, s) for n, s in snap.symbols.items() if s.kind == "function"]
 
-    index_path.write_text("\n".join(index_lines), encoding="utf-8")
+        if classes:
+            index_lines.append("## Classes")
+            index_lines.append("")
+            for name, _ in sorted(classes):
+                index_lines.append(f"- [{name}]({name}.qmd)")
+            index_lines.append("")
+
+        if functions:
+            index_lines.append("## Functions")
+            index_lines.append("")
+            for name, _ in sorted(functions):
+                index_lines.append(f"- [{name}]({name}.qmd)")
+            index_lines.append("")
+
+        index_path.write_text("\n".join(index_lines), encoding="utf-8")
+
     generated.append("reference/index.html")
 
     # --- Update _quarto.yml sidebar to remove missing reference entries ---

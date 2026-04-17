@@ -209,6 +209,8 @@ class GreatDocs:
             js_files.append("page-tags.js")  # pragma: no cover
         if self._config.page_status_enabled:
             js_files.append("page-status-badges.js")  # pragma: no cover
+        if self._config.has_versions:
+            js_files.append("version-selector.js")
         for js_file in js_files:
             js_src = self.assets_path / js_file
             if js_src.exists():

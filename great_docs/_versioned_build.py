@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
-from concurrent.futures import ProcessPoolExecutor, as_completed
+import threading
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from great_docs._versioning import (
     VersionEntry,
@@ -615,6 +617,8 @@ def _rewrite_quarto_yml_for_version(
 # Stage 2: Parallel Quarto renders
 # ---------------------------------------------------------------------------
 
+_PAGE_RE = re.compile(r"\[\s*(\d+)/(\d+)\]")
+
 
 def _render_single_version(
     build_dir: str,
@@ -646,13 +650,63 @@ def _render_single_version(
         return (build_dir, -1, "", str(e))
 
 
+def _render_single_version_streaming(
+    build_dir: str,
+    env_vars: dict[str, str] | None,
+    on_progress: Callable[[int, int], None] | None = None,
+) -> tuple[str, int, str, str]:
+    """
+    Render a single version with streaming progress.
+
+    Like :func:`_render_single_version` but streams stderr to parse
+    Quarto ``[cur/total]`` progress lines and calls *on_progress(current, total)*
+    for each update. Returns the same ``(build_dir, returncode, stdout, stderr)`` tuple.
+    """
+    env = os.environ.copy()
+    if env_vars:
+        env.update(env_vars)
+
+    try:
+        proc = subprocess.Popen(
+            ["quarto", "render"],
+            cwd=build_dir,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            env=env,
+            bufsize=1,
+        )
+    except Exception as e:
+        return (build_dir, -1, "", str(e))
+
+    stderr_lines: list[str] = []
+
+    def _read_stderr():
+        for line in proc.stderr:  # type: ignore[union-attr]
+            stderr_lines.append(line)
+            if on_progress:
+                m = _PAGE_RE.search(line)
+                if m:
+                    on_progress(int(m.group(1)), int(m.group(2)))
+
+    stderr_thread = threading.Thread(target=_read_stderr, daemon=True)
+    stderr_thread.start()
+
+    stdout_data = proc.stdout.read() if proc.stdout else ""  # type: ignore[union-attr]
+    proc.wait()
+    stderr_thread.join(timeout=10)
+
+    return (build_dir, proc.returncode, stdout_data, "".join(stderr_lines))
+
+
 def render_versions_parallel(
     build_dirs: list[Path],
     env_vars: dict[str, str] | None = None,
     max_workers: int | None = None,
+    progress_callback: Callable[[int, int, int], None] | None = None,
 ) -> list[tuple[str, int, str, str]]:
     """
-    Run `quarto render` in parallel for each version build directory.
+    Run ``quarto render`` in parallel for each version build directory.
 
     Parameters
     ----------
@@ -661,30 +715,56 @@ def render_versions_parallel(
     env_vars
         Environment variables to pass to Quarto (e.g., QUARTO_PYTHON).
     max_workers
-        Max parallel renders. Defaults to `min(cpu_count, 4)`.
+        Max parallel renders. Defaults to ``min(cpu_count, 4)``.
+    progress_callback
+        Optional ``(slot_index, current_page, total_pages)`` callback.
+        When provided, renders use streaming mode so progress lines can
+        be reported in real time.
 
     Returns
     -------
     list[tuple[str, int, str, str]]
-        List of `(build_dir, returncode, stdout, stderr)` tuples.
+        List of ``(build_dir, returncode, stdout, stderr)`` tuples
+        **in the same order as *build_dirs***.
     """
     if max_workers is None:
         max_workers = min(os.cpu_count() or 4, 4)
 
-    results: list[tuple[str, int, str, str]] = []
+    if progress_callback is None:
+        # Original fire-and-forget mode (ProcessPoolExecutor)
+        results: list[tuple[str, int, str, str]] = []
 
-    if len(build_dirs) == 1:
-        # No need for pool overhead with a single version
-        r = _render_single_version(str(build_dirs[0]), env_vars)
-        results.append(r)
+        if len(build_dirs) == 1:
+            r = _render_single_version(str(build_dirs[0]), env_vars)
+            results.append(r)
+            return results
+
+        with ProcessPoolExecutor(max_workers=max_workers) as pool:
+            futures = {pool.submit(_render_single_version, str(d), env_vars): d for d in build_dirs}
+            for future in as_completed(futures):
+                results.append(future.result())
         return results
 
-    with ProcessPoolExecutor(max_workers=max_workers) as pool:
-        futures = {pool.submit(_render_single_version, str(d), env_vars): d for d in build_dirs}
-        for future in as_completed(futures):
-            results.append(future.result())
+    # Streaming mode: use threads so callbacks can update the parent process.
+    dir_to_idx = {str(d): i for i, d in enumerate(build_dirs)}
+    ordered_results: list[tuple[str, int, str, str] | None] = [None] * len(build_dirs)
 
-    return results
+    def _run(build_dir: Path) -> tuple[str, int, str, str]:
+        idx = dir_to_idx[str(build_dir)]
+
+        def _on_progress(current: int, total: int) -> None:
+            progress_callback(idx, current, total)
+
+        return _render_single_version_streaming(str(build_dir), env_vars, _on_progress)
+
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futures = {pool.submit(_run, d): d for d in build_dirs}
+        for future in as_completed(futures):
+            r = future.result()
+            idx = dir_to_idx[r[0]]
+            ordered_results[idx] = r
+
+    return [r for r in ordered_results if r is not None]
 
 
 # ---------------------------------------------------------------------------
@@ -847,6 +927,8 @@ def run_versioned_build(
     latest_only: bool = False,
     max_workers: int | None = None,
     site_url: str | None = None,
+    progress_callback: Callable[[int, int, int], None] | None = None,
+    on_renders_done: Callable[[], None] | None = None,
 ) -> dict[str, Any]:
     """
     Orchestrate a full multi-version build.
@@ -871,6 +953,12 @@ def run_versioned_build(
         Max parallel Quarto renders.
     site_url
         The site's base URL (for canonical URL injection).
+    progress_callback
+        Optional ``(slot_index, current_page, total_pages)`` callback for
+        real-time progress reporting during parallel renders.
+    on_renders_done
+        Optional callback fired after all Quarto renders complete but
+        before site assembly begins.  Useful for finishing progress bars.
 
     Returns
     -------
@@ -926,6 +1014,7 @@ def run_versioned_build(
         build_dirs,
         env_vars=quarto_env,
         max_workers=max_workers,
+        progress_callback=progress_callback,
     )
 
     errors: list[str] = []
@@ -940,6 +1029,10 @@ def run_versioned_build(
             versions_built.append(tag)
         else:
             errors.append(f"Version {tag}: Quarto render failed (exit {returncode})\n{stderr}")
+
+    # Notify caller that rendering is complete (e.g. to finish progress bars)
+    if on_renders_done:
+        on_renders_done()
 
     if not versions_built:
         return {

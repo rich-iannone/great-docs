@@ -12869,18 +12869,37 @@ body-classes: "gd-homepage"
             elif self._config.has_versions:
                 # ── Multi-version build pipeline ───────────────────────
                 from great_docs._versioned_build import run_versioned_build
+                from great_docs._versioning import parse_versions_config
 
-                n_versions = len(
-                    version_tags
-                    if version_tags
-                    else (
-                        [v for v in self._config.versions if not latest_only or True]
-                        if not latest_only
-                        else ["latest"]
-                    )
-                )
-                label = "1 version" if latest_only else f"{n_versions} version(s)"
+                versions_parsed = parse_versions_config(self._config.versions)
+
+                # Determine which versions will be built
+                if latest_only:
+                    from great_docs._versioning import get_latest_version
+
+                    lt = get_latest_version(versions_parsed)
+                    lt_tag = lt.tag if lt else versions_parsed[0].tag
+                    targets_parsed = [v for v in versions_parsed if v.tag == lt_tag]
+                elif version_tags:
+                    tag_set = set(version_tags)
+                    targets_parsed = [v for v in versions_parsed if v.tag in tag_set]
+                else:
+                    targets_parsed = list(versions_parsed)
+
+                n_versions = len(targets_parsed)
+                label = "1 version" if n_versions == 1 else f"{n_versions} version(s)"
                 log.detail(f"Multi-version build: {label}")
+
+                # Create multi-progress bar for the parallel renders
+                bar_labels = [f"v{v.label}" for v in targets_parsed]
+                mbar = log.multi_progress(bar_labels)
+
+                def _progress_cb(slot: int, current: int, total: int) -> None:
+                    mbar.set_total(slot, total)
+                    mbar.update(slot, current)
+
+                def _on_renders_done() -> None:
+                    mbar.finish()
 
                 vb_result = run_versioned_build(
                     source_dir=self.project_path,
@@ -12889,6 +12908,8 @@ body-classes: "gd-homepage"
                     quarto_env=quarto_env,
                     version_tags=version_tags,
                     latest_only=latest_only,
+                    progress_callback=_progress_cb,
+                    on_renders_done=_on_renders_done,
                 )
 
                 if not vb_result["success"]:

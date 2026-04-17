@@ -2,6 +2,7 @@
 title: "Enable Multi-Version Documentation"
 description: "Add a version selector to your documentation site so users can switch between releases."
 tags: [Configuration, Versioning, Build]
+versions: ["dev"]
 ---
 
 # Enable Multi-Version Documentation

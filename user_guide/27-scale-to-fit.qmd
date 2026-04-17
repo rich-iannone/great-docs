@@ -3,6 +3,7 @@ title: "Scale-to-Fit"
 guide-section: "Config & Theming"
 bread-crumbs: false
 tags: [Theming, Tables, Customization]
+versions: ["0.7", "dev"]
 ---
 
 # Scale-to-Fit

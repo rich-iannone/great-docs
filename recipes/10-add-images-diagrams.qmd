@@ -53,8 +53,6 @@ The `layout-ncol=2` attribute creates a two-column grid. You can use `layout-nco
 
 ## Mermaid Diagrams [version-badge new 0.2]
 
-::: {.version-only versions=">=0.2"}
-
 Quarto renders Mermaid diagrams directly from fenced code blocks. This is useful for architecture diagrams, flowcharts, and sequence diagrams without needing external image files:
 
 ````markdown
@@ -77,8 +75,6 @@ Some common Mermaid diagram types that work well in documentation:
 - `stateDiagram-v2` for state machines
 
 See the [Mermaid documentation](https://mermaid.js.org/intro/) for the full syntax reference.
-
-:::
 
 ## Callout Blocks for Visual Notes
 

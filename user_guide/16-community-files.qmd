@@ -60,8 +60,6 @@ Clicking any link navigates to the corresponding page.
 
 ## ROADMAP.md [version-badge new 0.2]
 
-::: {.version-only versions=">=0.2"}
-
 A `ROADMAP.md` file is ideal for communicating your project's future direction to users and contributors. Common sections include:
 
 - **In Progress** – features currently being developed
@@ -97,8 +95,6 @@ Brief description...
 Focus on unshipped features. Shipped features are better documented in your Changelog (auto-generated from GitHub Releases) or release notes.
 :::
 
-:::
-
 ## CONTRIBUTING.md
 
 The `CONTRIBUTING.md` file tells potential contributors how to get involved. Common sections:
@@ -130,8 +126,6 @@ We welcome contributions! Here's how to get started.
 ```
 
 ## SECURITY.md [version-badge new 0.3]
-
-::: {.version-only versions=">=0.3"}
 
 A `SECURITY.md` file tells users how to responsibly report security vulnerabilities. GitHub recognizes this file and displays it under the **Security** tab of your repository.
 
@@ -170,8 +164,6 @@ To detect `SECURITY.md` but not generate a page for it, set `show_security: fals
 site:
   show_security: false
 ```
-
-:::
 
 ## CODE_OF_CONDUCT.md
 

@@ -602,11 +602,6 @@ This replaces `aria-hidden` with `aria-label="Warning" role="img"`, so screen re
 
 Icons work in headings, callouts, lists, tables, and blockquotes:
 
-::: {.callout-tip}
-## {{< icon lightbulb >}} Pro Tip
-Use icons sparingly to draw attention to key information without cluttering the page.
-:::
-
 - {{< icon file-text >}} Documentation pages
 - {{< icon code-2 >}} Source code references
 - {{< icon test-tube >}} Testing guides
@@ -616,6 +611,11 @@ Use icons sparingly to draw attention to key information without cluttering the 
 | Complete | {{< icon check-circle >}} | Feature is stable |
 | In progress | {{< icon loader >}} | Under active development |
 | Planned | {{< icon calendar >}} | Scheduled for a future release |
+
+::: {.callout-tip}
+## {{< icon lightbulb >}} Pro Tip
+Use icons sparingly to draw attention to key information without cluttering the page.
+:::
 
 ## Next Steps
 

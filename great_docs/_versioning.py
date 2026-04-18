@@ -206,6 +206,14 @@ _FENCE_OPEN_RE = re.compile(
 # Matches a closing ::: (exactly three or more colons, nothing else)
 _FENCE_CLOSE_RE = re.compile(r"^:{3,}\s*$")
 
+# Matches a heading line (e.g., "## Title")
+_HEADING_RE = re.compile(r"^(#{1,6})\s")
+
+# Matches a heading with a [version-badge new VERSION] marker
+_HEADING_BADGE_NEW_RE = re.compile(
+    r"^(#{1,6})\s+.*\[version-badge\s+new\s+([^\]]+)\]"
+)
+
 
 def process_version_fences(
     content: str,
@@ -218,6 +226,10 @@ def process_version_fences(
     Evaluates `::: {.version-only versions="..."}` and `::: {.version-except versions="..."}` fenced
     divs. Matching blocks have their fence markers removed (content kept); non-matching blocks are
     removed entirely.
+
+    Headings with ``[version-badge new VERSION]`` act as implicit section fences: when the target
+    version is older than VERSION, the heading and all content until the next heading at the same or
+    higher level are removed. This prevents orphan headings that appear with no content below them.
 
     Parameters
     ----------
@@ -244,6 +256,11 @@ def process_version_fences(
     in_code_block = False
     code_fence_pattern = ""
 
+    # Track heading-badge implicit fencing: when a heading has
+    # [version-badge new VERSION] and the target is older, skip everything
+    # until the next heading at the same or higher level.
+    skip_heading_level = 0
+
     i = 0
     while i < len(lines):
         line = lines[i]
@@ -262,7 +279,7 @@ def process_version_fences(
                     break
             code_fence_pattern = fence_char * fence_len
             in_code_block = True
-            if not stack or stack[-1][0]:
+            if skip_heading_level == 0 and (not stack or stack[-1][0]):
                 result.append(line)
             i += 1
             continue
@@ -270,10 +287,31 @@ def process_version_fences(
             if stripped.startswith(code_fence_pattern) and stripped.rstrip(code_fence_pattern[0]) == "":
                 in_code_block = False
                 code_fence_pattern = ""
-            if not stack or stack[-1][0]:
+            if skip_heading_level == 0 and (not stack or stack[-1][0]):
                 result.append(line)
             i += 1
             continue
+
+        # Heading-level skip mode: skip lines until a same-or-higher-level heading
+        if skip_heading_level > 0:
+            hm = _HEADING_RE.match(line)
+            if hm and len(hm.group(1)) <= skip_heading_level:
+                # This heading ends the skip — fall through to normal processing
+                skip_heading_level = 0
+            else:
+                i += 1
+                continue
+
+        # Check for heading with [version-badge new VERSION]
+        hb = _HEADING_BADGE_NEW_RE.match(line)
+        if hb:
+            heading_level = len(hb.group(1))
+            badge_version = hb.group(2).strip()
+            expr = ">=" + badge_version
+            if not evaluate_version_expr(expr, target_tag, versions):
+                skip_heading_level = heading_level
+                i += 1
+                continue
 
         # Check for version fence opening
         m = _FENCE_OPEN_RE.match(line)

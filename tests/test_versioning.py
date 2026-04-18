@@ -394,6 +394,75 @@ class TestProcessVersionFences:
         assert "Example text" in result
         assert "After code block" in result
 
+    def test_heading_badge_skips_over_callout_with_heading(self, versions):
+        """A heading inside a ::: callout must not prematurely end the skip."""
+        content = (
+            "## Feature A [version-badge new 0.3]\n"
+            "\n"
+            "Feature A content.\n"
+            "\n"
+            "::: {.callout-tip}\n"
+            "## Pro Tip\n"
+            "Tip content here.\n"
+            ":::\n"
+            "\n"
+            "More feature A content.\n"
+            "\n"
+            "## Feature B\n"
+            "\n"
+            "Feature B content.\n"
+        )
+        result = process_version_fences(content, "0.1", versions)
+        # Feature A and everything inside it (including the callout) should be gone
+        assert "Feature A" not in result
+        assert "Pro Tip" not in result
+        assert "Tip content" not in result
+        assert ":::" not in result
+        # Feature B should survive
+        assert "## Feature B" in result
+        assert "Feature B content" in result
+
+    def test_heading_badge_keeps_callout_for_matching_version(self, versions):
+        """Callout with heading preserved when version matches."""
+        content = (
+            "## Feature A [version-badge new 0.3]\n"
+            "\n"
+            "::: {.callout-tip}\n"
+            "## Pro Tip\n"
+            "Tip content.\n"
+            ":::\n"
+            "\n"
+            "## Next Section\n"
+        )
+        result = process_version_fences(content, "0.3", versions)
+        assert "Feature A" in result
+        assert "Pro Tip" in result
+        assert "Tip content" in result
+        assert ":::" in result
+
+    def test_heading_badge_nested_divs_in_skip(self, versions):
+        """Nested ::: divs inside a skipped section are fully consumed."""
+        content = (
+            "## New Feature [version-badge new 0.3]\n"
+            "\n"
+            ":::: {.panel}\n"
+            "::: {.callout-note}\n"
+            "## Note Title\n"
+            "Nested content.\n"
+            ":::\n"
+            "::::\n"
+            "\n"
+            "## After\n"
+            "\n"
+            "Kept.\n"
+        )
+        result = process_version_fences(content, "0.1", versions)
+        assert "New Feature" not in result
+        assert "Note Title" not in result
+        assert "Nested content" not in result
+        assert "## After" in result
+        assert "Kept" in result
+
 
 # ---------------------------------------------------------------------------
 # Page-level version scoping

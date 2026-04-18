@@ -1842,6 +1842,13 @@ div.sourceCode:hover > .gd-code-nav .gd-code-copy,
     flex-shrink: 0;
 }
 
+/* Compact version selector on mobile — hide version label, show icon only */
+@media (max-width: 991.98px) {
+    .gd-vs-label {
+        display: none;
+    }
+}
+
 /* Version warning banner */
 .gd-version-banner {
     padding: 10px 20px;
@@ -2532,6 +2539,7 @@ h1.title.cli-title {
 
 /* Hide on mobile — keyboard shortcuts are desktop-only */
 @media (max-width: 991.98px) {
+    #gd-navbar-widgets > #gd-keyboard-btn-container,
     #gd-keyboard-btn-container {
         display: none;
     }

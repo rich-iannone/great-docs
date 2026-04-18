@@ -27,7 +27,9 @@ dark_mode_toggle: false  # Disable the toggle
 
 When enabled, the toggle provides instant switching without a page reload. Visitors who prefer reduced motion in their operating system settings will still see the theme change, but without the transition animation.
 
-## Back-to-Top Button
+## Back-to-Top Button [version-badge new 0.4]
+
+::: {.version-only versions=">=0.4"}
 
 A floating button appears in the bottom-right corner of the page after the visitor scrolls down, providing a one-click way to return to the top. The button uses smooth scrolling and automatically shifts upward when it would overlap with the prev/next page navigation links. It is enabled by default.
 
@@ -40,6 +42,8 @@ back_to_top: false   # Disable the button
 ```
 
 The button respects the visitor's `prefers-reduced-motion` setting: when reduced motion is preferred, scrolling is instant rather than animated.
+
+:::
 
 ## Keyboard Navigation [version-badge new 0.5]
 

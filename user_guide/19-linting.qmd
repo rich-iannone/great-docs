@@ -2,6 +2,7 @@
 title: "Docs Linting"
 guide-section: "Quality & Maintenance"
 tags: [Quality, API]
+versions: ">=0.3"
 ---
 
 # Docs Linting

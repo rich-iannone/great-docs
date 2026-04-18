@@ -3,7 +3,7 @@ title: "Custom Static Pages"
 guide-section: "Site Content"
 bread-crumbs: false
 tags: [Content, Customization]
-versions: ["0.6", "0.7", "dev"]
+versions: ">=0.6"
 ---
 
 # Custom Static Pages

@@ -697,7 +697,9 @@ skill:
   enabled: false
 ```
 
-## Page Metadata
+## Page Metadata [version-badge new 0.2]
+
+::: {.version-only versions=">=0.2"}
 
 Display page creation and modification dates at the bottom of documentation pages, giving readers a sense of content freshness.
 
@@ -838,6 +840,8 @@ author: "Jane Developer"
 ```
 
 If the author is listed in `great-docs.yml` with a `github` field, their GitHub avatar is used automatically.
+
+:::
 
 ## Complete Example
 

@@ -3,6 +3,7 @@ title: "Diagrams"
 guide-section: "Site Content"
 bread-crumbs: false
 tags: [Content, Multimedia]
+versions: ">=0.2"
 ---
 
 # Diagrams

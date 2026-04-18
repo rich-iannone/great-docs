@@ -3,6 +3,7 @@ title: "Internationalization"
 guide-section: "Config & Theming"
 bread-crumbs: false
 tags: [Configuration, Internationalization]
+versions: ">=0.4"
 ---
 
 # Internationalization

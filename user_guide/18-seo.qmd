@@ -3,6 +3,7 @@ title: "SEO Optimization"
 guide-section: "Build & Deploy"
 bread-crumbs: false
 tags: [SEO, Deployment]
+versions: ">=0.2"
 ---
 
 # SEO Optimization

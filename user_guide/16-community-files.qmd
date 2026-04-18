@@ -15,8 +15,8 @@ Great Docs automatically detects standard community files in your project root a
 |------|---------------|--------------|
 | `CONTRIBUTING.md` | `contributing.qmd` | "Contributor guidelines" |
 | `CODE_OF_CONDUCT.md` | `code-of-conduct.qmd` | "Code of conduct" |
-| `ROADMAP.md` | `roadmap.qmd` | "Project roadmap" |
-| `SECURITY.md` | `security.qmd` | "Security policy" |
+| `ROADMAP.md` [version-badge new 0.2] | `roadmap.qmd` | "Project roadmap" |
+| `SECURITY.md` [version-badge new 0.3] | `security.qmd` | "Security policy" |
 
 These files follow the common conventions used by most open-source projects, so if you already have them, they'll work automatically.
 
@@ -58,7 +58,9 @@ Community
 
 Clicking any link navigates to the corresponding page.
 
-## ROADMAP.md
+## ROADMAP.md [version-badge new 0.2]
+
+::: {.version-only versions=">=0.2"}
 
 A `ROADMAP.md` file is ideal for communicating your project's future direction to users and contributors. Common sections include:
 
@@ -95,6 +97,8 @@ Brief description...
 Focus on unshipped features. Shipped features are better documented in your Changelog (auto-generated from GitHub Releases) or release notes.
 :::
 
+:::
+
 ## CONTRIBUTING.md
 
 The `CONTRIBUTING.md` file tells potential contributors how to get involved. Common sections:
@@ -125,7 +129,9 @@ We welcome contributions! Here's how to get started.
 3. Submit a PR describing your changes
 ```
 
-## SECURITY.md
+## SECURITY.md [version-badge new 0.3]
+
+::: {.version-only versions=">=0.3"}
 
 A `SECURITY.md` file tells users how to responsibly report security vulnerabilities. GitHub recognizes this file and displays it under the **Security** tab of your repository.
 
@@ -164,6 +170,8 @@ To detect `SECURITY.md` but not generate a page for it, set `show_security: fals
 site:
   show_security: false
 ```
+
+:::
 
 ## CODE_OF_CONDUCT.md
 

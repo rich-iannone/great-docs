@@ -306,6 +306,25 @@ class TestExtractPageVersions:
         content = "---\nversions: []\n---\nBody\n"
         assert extract_page_versions(content) is None
 
+    def test_scalar_string_expression(self):
+        content = '---\nversions: ">=0.5"\n---\nBody\n'
+        result = extract_page_versions(content)
+        assert result == [">=0.5"]
+
+    def test_scalar_string_single_quotes(self):
+        content = "---\nversions: '>=0.3'\n---\nBody\n"
+        result = extract_page_versions(content)
+        assert result == [">=0.3"]
+
+
+_EXPR_VERSIONS = [
+    VersionEntry(tag="dev", label="dev", prerelease=True, _index=0),
+    VersionEntry(tag="0.8", label="0.8", latest=True, _index=1),
+    VersionEntry(tag="0.7", label="0.7", _index=2),
+    VersionEntry(tag="0.6", label="0.6", _index=3),
+    VersionEntry(tag="0.5", label="0.5", _index=4),
+]
+
 
 class TestPageMatchesVersion:
     def test_no_versions_key_matches_all(self):
@@ -318,6 +337,32 @@ class TestPageMatchesVersion:
         assert page_matches_version(content, "0.3") is True
         assert page_matches_version(content, "dev") is True
         assert page_matches_version(content, "0.1") is False
+
+    def test_expression_gte_with_versions(self):
+        content = '---\nversions: ">=0.7"\n---\nBody\n'
+        assert page_matches_version(content, "dev", _EXPR_VERSIONS) is True
+        assert page_matches_version(content, "0.8", _EXPR_VERSIONS) is True
+        assert page_matches_version(content, "0.7", _EXPR_VERSIONS) is True
+        assert page_matches_version(content, "0.6", _EXPR_VERSIONS) is False
+        assert page_matches_version(content, "0.5", _EXPR_VERSIONS) is False
+
+    def test_expression_in_inline_list(self):
+        content = '---\nversions: [">=0.6"]\n---\nBody\n'
+        assert page_matches_version(content, "0.8", _EXPR_VERSIONS) is True
+        assert page_matches_version(content, "0.6", _EXPR_VERSIONS) is True
+        assert page_matches_version(content, "0.5", _EXPR_VERSIONS) is False
+
+    def test_bare_tags_still_work_with_versions(self):
+        content = '---\nversions: ["0.7", "dev"]\n---\nBody\n'
+        assert page_matches_version(content, "0.7", _EXPR_VERSIONS) is True
+        assert page_matches_version(content, "dev", _EXPR_VERSIONS) is True
+        assert page_matches_version(content, "0.8", _EXPR_VERSIONS) is False
+
+    def test_bare_tags_without_versions_param(self):
+        """Backward compat: without versions param, plain 'in' check is used."""
+        content = '---\nversions: ["0.7", "dev"]\n---\nBody\n'
+        assert page_matches_version(content, "0.7") is True
+        assert page_matches_version(content, "0.5") is False
 
 
 # ---------------------------------------------------------------------------

@@ -85,6 +85,7 @@ versions:
 | `eol` | `bool` | `false` | Show an end-of-life warning banner |
 | `api_snapshot` | `str` | `None` | Path to a pre-generated API snapshot JSON |
 | `git_ref` | `str` | `None` | Git tag for API introspection (tags only) |
+| `released` | `str` | `None` | ISO date (e.g. `"2025-03-15"`) when this version was released. Used by the `days` badge expiry mode |
 
 When strings are used instead of dicts, `tag` and `label` both default to the string value. Most projects only need `tag`, `label`, and occasionally `api_snapshot`. The other fields are useful when you have pre-release or end-of-life versions to distinguish.
 
@@ -141,7 +142,7 @@ This content appears in every version except 0.1.
 
 ### Version Expressions
 
-Both `.version-only` and `.version-except` accept version expressions — flexible patterns that target one or more versions. Here's the full set of supported expressions:
+Both `.version-only` and `.version-except` accept version expressions: flexible patterns that target one or more versions. Here's the full set of supported expressions:
 
 | Expression | Meaning |
 |---|---|
@@ -169,7 +170,7 @@ This extra detail only appears in 0.3 and later.
 :::
 ```
 
-In version 0.2, only the outer content appears. In version 0.3+, both blocks are visible. In version 0.1, neither appears. This is useful for progressive disclosure — adding detail in newer versions without duplicating the surrounding context.
+In version 0.2, only the outer content appears. In version 0.3+, both blocks are visible. In version 0.1, neither appears. This is useful for progressive disclosure, adding detail in newer versions without duplicating the surrounding context.
 
 ## Page-Level Version Scoping
 
@@ -193,7 +194,7 @@ versions: ["0.1", "0.2"]
 
 ### Version Expressions in Frontmatter
 
-Instead of listing every matching version explicitly, you can use the same version expression syntax that fences support. This is especially useful for pages that apply to a version "and everything newer" — you don't need to update the frontmatter each time a new version is released:
+Instead of listing every matching version explicitly, you can use the same version expression syntax that fences support. This is especially useful for pages that apply to a version "and everything newer" so you don't need to update the frontmatter each time a new version is released:
 
 ```{.yaml filename="new-feature.qmd"}
 ---
@@ -218,7 +219,7 @@ All expression types work:
 Use `versions: ">=0.5"` instead of `versions: ["0.5", "0.6", "0.7", "dev"]`. The expression form automatically includes future versions so you never need to update frontmatter when a new version is released.
 :::
 
-Pages with no `versions` key appear in **all** versions. Scoped pages are excluded from the sidebar, search index, and build output for non-matching versions. This keeps the navigation clean — users never see links to pages that don't exist in their version.
+Pages with no `versions` key appear in **all** versions. Scoped pages are excluded from the sidebar, search index, and build output for non-matching versions. This keeps the navigation clean and users never see links to pages that don't exist in their version.
 
 ## Section-Level Version Scoping
 
@@ -266,6 +267,75 @@ These expand into styled `<span>` badges:
 
 Badges are compact enough to use liberally throughout your API reference and user guide pages. They give readers an at-a-glance sense of what's new without interrupting the flow of the documentation.
 
+### Badge Expiry
+
+As your project matures, "new" badges from several releases ago become noise rather than signal. The `new_is_old` option lets you automatically suppress old `new` badges so they stop rendering after a configurable threshold. Only `new` badges are affected while `changed` and `deprecated` badges always render.
+
+Add `new_is_old` to your `great-docs.yml`:
+
+```{.yaml filename="great-docs.yml"}
+new_is_old: 3 releases
+```
+
+With this setting, a `[version-badge new 0.3]` badge will render in versions 0.3 through 0.5 (three releases) and then silently disappear from version 0.6 onward. The badge is simply omitted from the output (no placeholder or residual markup is left behind).
+
+#### Expiry Modes
+
+| Value | Meaning |
+|---|---|
+| `"never"` | Badges never expire (the default) |
+| `"3 releases"` | Expire after 3 releases, counting all versions including prerelease |
+| `"2 minor releases"` | Expire after 2 releases, counting only non-prerelease versions |
+| `"0.6"` | Expire starting at version 0.6 (all `new` badges from before 0.6 are suppressed) |
+| `"2026-06-01"` | Expire after an absolute calendar date |
+| `"180 days"` | Expire 180 days after the badge's version was released (requires `released` dates in the version config) |
+
+The `releases` and `minor releases` modes measure the distance between the badge's version and the version currently being built. For example, `3 releases` means "show this badge as long as the version being built is fewer than 3 releases newer than the badge's version." The `minor releases` variant is identical except that it skips prerelease entries when counting, so a `dev` prerelease doesn't consume a slot in the window.
+
+::: {.callout-tip}
+## Choosing a mode
+Most projects should start with `"3 releases"` or `"2 minor releases"`. The release-counting modes are simple, predictable, and don't require any extra configuration. Use `days` only if your releases are irregular and you want time-based expiry.
+:::
+
+#### Days Mode and Release Dates
+
+The `days` mode requires `released` dates in your version configuration so that Great Docs can compute elapsed time:
+
+```{.yaml filename="great-docs.yml"}
+new_is_old: 180 days
+
+versions:
+  - label: "0.7.0"
+    tag: "0.7"
+    latest: true
+    released: "2026-01-15"
+  - label: "0.6.0"
+    tag: "0.6"
+    released: "2025-09-01"
+  - label: "0.5.0"
+    tag: "0.5"
+    released: "2025-03-15"
+```
+
+A badge for a version without a `released` date is never expired (fail-open), so you can add dates incrementally.
+
+#### Per-Page Override
+
+You can override the global `new_is_old` setting on individual pages by adding `new-is-old` to the page's YAML frontmatter:
+
+```{.yaml filename="important-feature.qmd"}
+---
+title: "Core Feature"
+new-is-old: never
+---
+```
+
+This keeps all `new` badges visible on that page regardless of the global setting. The per-page value uses the same syntax as the global option (any expiry mode works).
+
+#### Interaction with Fences
+
+Badge expiry only affects **rendering** (whether the badge `<span>` appears in the HTML output). It does not change version fence behavior. A heading like `## Widget [version-badge new 0.3]` inside a `::: {.version-only versions=">=0.3"}` fence will still be included in matching versions even if the badge itself is suppressed. The fence controls structural inclusion; the badge is purely visual.
+
 ## Version Callouts
 
 When a version change needs more explanation than a badge can provide, use a version callout. These render as styled admonition boxes that draw the reader's attention to important changes.
@@ -291,7 +361,7 @@ Use callouts for migration notes, deprecation notices, or any change that benefi
 
 ## API Reference Versioning
 
-The API reference is the most complex part of versioned documentation because the public API surface — classes, functions, parameters, and signatures — changes between releases. Great Docs supports three strategies for keeping each version's reference accurate, from the most hands-on to the most automated.
+The API reference is the most complex part of versioned documentation because the public API surface (classes, functions, parameters, and signatures) changes between releases. Great Docs supports three strategies for keeping each version's reference accurate, from the most hands-on to the most automated.
 
 ### Strategy A: Pre-Written Snapshots
 

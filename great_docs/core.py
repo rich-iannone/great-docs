@@ -13008,6 +13008,7 @@ body-classes: "gd-homepage"
                     latest_only=latest_only,
                     progress_callback=_progress_cb,
                     on_renders_done=_on_renders_done,
+                    badge_expiry_raw=self._config.get("new_is_old"),
                 )
 
                 if not vb_result["success"]:

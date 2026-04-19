@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from datetime import date
 from typing import Any
 
 
@@ -16,10 +17,68 @@ class VersionEntry:
     eol: bool = False
     api_snapshot: str | None = None
     git_ref: str | None = None
+    released: str | None = None
 
     # Positional index in the versions list (0 = newest).
     # Set by parse_versions_config after construction.
     _index: int = field(default=0, repr=False)
+
+
+@dataclass
+class BadgeExpiry:
+    """Controls when 'new' badges stop rendering."""
+
+    mode: str  # "releases" | "minor_releases" | "version" | "date" | "days" | "never"
+    value: int | str = 0  # count, version tag, ISO date string, or day count
+
+
+# Sentinel for "never expire"
+BADGE_EXPIRY_NEVER = BadgeExpiry(mode="never")
+
+
+_BADGE_EXPIRY_RE = re.compile(r"^(\d+)\s+(releases?|minor\s+releases?)$", re.IGNORECASE)
+_BADGE_EXPIRY_DAYS_RE = re.compile(r"^(\d+)\s+days?$", re.IGNORECASE)
+_BADGE_EXPIRY_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def parse_badge_expiry(raw: str | None) -> BadgeExpiry:
+    """
+    Parse a `new_is_old` value into a `BadgeExpiry`.
+
+    Accepted forms::
+
+        "never"            → BadgeExpiry("never")
+        "3 releases"       → BadgeExpiry("releases", 3)
+        "2 minor releases" → BadgeExpiry("minor_releases", 2)
+        "0.8"              → BadgeExpiry("version", "0.8")
+        "2026-06-01"       → BadgeExpiry("date", "2026-06-01")
+        "180 days"         → BadgeExpiry("days", 180)
+    """
+    if raw is None or str(raw).strip().lower() == "never":
+        return BADGE_EXPIRY_NEVER
+
+    raw = str(raw).strip()
+
+    # "3 releases" or "2 minor releases"
+    m = _BADGE_EXPIRY_RE.match(raw)
+    if m:
+        count = int(m.group(1))
+        kind = m.group(2).lower()
+        if "minor" in kind:
+            return BadgeExpiry(mode="minor_releases", value=count)
+        return BadgeExpiry(mode="releases", value=count)
+
+    # "180 days"
+    m = _BADGE_EXPIRY_DAYS_RE.match(raw)
+    if m:
+        return BadgeExpiry(mode="days", value=int(m.group(1)))
+
+    # "2026-06-01" (ISO date)
+    if _BADGE_EXPIRY_DATE_RE.match(raw):
+        return BadgeExpiry(mode="date", value=raw)
+
+    # Bare version tag: "0.8", "v1.2", etc.
+    return BadgeExpiry(mode="version", value=raw)
 
 
 def parse_versions_config(raw: list[Any]) -> list[VersionEntry]:
@@ -66,6 +125,7 @@ def parse_versions_config(raw: list[Any]) -> list[VersionEntry]:
                 eol=bool(item.get("eol", False)),
                 api_snapshot=item.get("api_snapshot"),
                 git_ref=item.get("git_ref"),
+                released=item.get("released"),
             )
         else:
             raise ValueError(f"versions[{i}]: expected a string or dict, got {type(item).__name__}")
@@ -200,6 +260,100 @@ def evaluate_version_expr(
 
 
 # ---------------------------------------------------------------------------
+# Badge expiry evaluation
+# ---------------------------------------------------------------------------
+
+
+def is_badge_expired(
+    badge_version: str,
+    target_entry: VersionEntry,
+    versions: list[VersionEntry],
+    expiry: BadgeExpiry,
+) -> bool:
+    """
+    Determine whether a `[version-badge new VERSION]` should be suppressed.
+
+    Parameters
+    ----------
+    badge_version
+        The version tag written in the badge (e.g. `"0.5"`).
+    target_entry
+        The version currently being built.
+    versions
+        The full ordered list of version entries.
+    expiry
+        The badge expiry policy.
+
+    Returns
+    -------
+    bool
+        `True` if the badge should **not** be rendered (expired).
+    """
+    if expiry.mode == "never":
+        return False
+
+    if expiry.mode == "releases":
+        badge_idx = _resolve_index(badge_version, versions)
+        if badge_idx is None:
+            return False
+        distance = badge_idx - target_entry._index  # positive = target is newer
+        return distance >= int(expiry.value)
+
+    if expiry.mode == "minor_releases":
+        # Filter out prerelease entries for counting
+        non_pre = [v for v in versions if not v.prerelease]
+        badge_idx = _resolve_index(badge_version, non_pre)
+        target_idx = _resolve_index(target_entry.tag, non_pre)
+        # Prerelease target (e.g. dev) isn't in non_pre — fall back to
+        # the latest non-prerelease so dev expires at least as much as latest.
+        if target_idx is None and non_pre:
+            target_idx = non_pre[0]._index
+        if badge_idx is None or target_idx is None:
+            return False
+        distance = badge_idx - target_idx
+        return distance >= int(expiry.value)
+
+    if expiry.mode == "version":
+        # Expire when building the threshold version or later
+        threshold_idx = _resolve_index(str(expiry.value), versions)
+        if threshold_idx is None:
+            return False
+        return target_entry._index <= threshold_idx
+
+    if expiry.mode == "date":
+        try:
+            cutoff = date.fromisoformat(str(expiry.value))
+        except ValueError:
+            return False
+        return date.today() >= cutoff
+
+    if expiry.mode == "days":
+        badge_entry = _find_entry(badge_version, versions)
+        if badge_entry is None or not badge_entry.released:
+            return False  # fail open
+        try:
+            released = date.fromisoformat(str(badge_entry.released)[:10])
+        except ValueError:
+            return False
+        elapsed = (date.today() - released).days
+        return elapsed >= int(expiry.value)
+
+    return False
+
+
+def _find_entry(tag: str, versions: list[VersionEntry]) -> VersionEntry | None:
+    """Find a VersionEntry by tag, with v-prefix fallback."""
+    for v in versions:
+        if v.tag == tag:
+            return v
+    alt = tag[1:] if tag.startswith("v") else f"v{tag}"
+    for v in versions:
+        if v.tag == alt:
+            return v
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Version fence preprocessing
 # ---------------------------------------------------------------------------
 
@@ -215,9 +369,7 @@ _FENCE_CLOSE_RE = re.compile(r"^:{3,}\s*$")
 _HEADING_RE = re.compile(r"^(#{1,6})\s")
 
 # Matches a heading with a [version-badge new VERSION] marker
-_HEADING_BADGE_NEW_RE = re.compile(
-    r"^(#{1,6})\s+.*\[version-badge\s+new\s+([^\]]+)\]"
-)
+_HEADING_BADGE_NEW_RE = re.compile(r"^(#{1,6})\s+.*\[version-badge\s+new\s+([^\]]+)\]")
 
 
 def process_version_fences(
@@ -232,7 +384,7 @@ def process_version_fences(
     divs. Matching blocks have their fence markers removed (content kept); non-matching blocks are
     removed entirely.
 
-    Headings with ``[version-badge new VERSION]`` act as implicit section fences: when the target
+    Headings with `[version-badge new VERSION]` act as implicit section fences: when the target
     version is older than VERSION, the heading and all content until the next heading at the same or
     higher level are removed. This prevents orphan headings that appear with no content below them.
 
@@ -291,7 +443,10 @@ def process_version_fences(
             i += 1
             continue
         elif in_code_block:
-            if stripped.startswith(code_fence_pattern) and stripped.rstrip(code_fence_pattern[0]) == "":
+            if (
+                stripped.startswith(code_fence_pattern)
+                and stripped.rstrip(code_fence_pattern[0]) == ""
+            ):
                 in_code_block = False
                 code_fence_pattern = ""
             if skip_heading_level == 0 and (not stack or stack[-1][0]):
@@ -460,7 +615,7 @@ def page_matches_version(
         The version tag being built.
     versions
         The full ordered list of version entries. When provided, version expressions
-        (e.g. ``">=0.7"``) are evaluated; otherwise only bare tag matching is used.
+        (e.g. `">=0.7"`) are evaluated; otherwise only bare tag matching is used.
 
     Returns
     -------

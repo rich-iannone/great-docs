@@ -1069,6 +1069,18 @@ div.sidebar-item-container {
         min-height: 0;
         overflow-y: auto;
     }
+
+    /* Smoother open/close transition for the sidebar.
+       Bootstrap collapse-horizontal animates width; we just improve the
+       easing and prevent content reflow by pinning inner min-width. */
+    #quarto-sidebar.sidebar-navigation.collapsing {
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        overflow: hidden;
+
+        > .sidebar-menu-container {
+            min-width: 280px;
+        }
+    }
 }
 
 /* ── Single-page section: expand content into sidebar space ──
@@ -1536,8 +1548,64 @@ div.sourceCode:hover > .gd-code-nav .gd-code-copy,
         padding-left: 5px;
     }
 
+    /* Vertically center the toggle button and title in the secondary nav */
+    .quarto-secondary-nav .container-fluid.d-flex {
+        align-items: center;
+        padding-left: 1rem;
+    }
+
     .quarto-secondary-nav-title {
-        padding-top: 7px;
+        padding-top: 0;
+        margin-bottom: 0.5rem;
+        padding-left: 0.5rem;
+    }
+
+    /* Style the sidebar toggle to match the top-nav icon buttons */
+    .quarto-secondary-nav .quarto-btn-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        background: rgba(0, 0, 0, 0.06);
+        border: 1px solid rgba(0, 0, 0, 0.15);
+        border-radius: 6px;
+        color: #495057;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-right: 6px;
+        flex-shrink: 0;
+
+        .bi {
+            font-size: 1.15rem;
+            line-height: 1;
+        }
+
+        &:hover {
+            background: rgba(0, 0, 0, 0.10);
+            border-color: rgba(0, 0, 0, 0.25);
+        }
+
+        &:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.15);
+        }
+    }
+
+    body.quarto-dark .quarto-secondary-nav .quarto-btn-toggle {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.18);
+        color: #dee2e6;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.14);
+            border-color: rgba(255, 255, 255, 0.28);
+        }
+
+        &:focus {
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+        }
     }
 
     /* Move margin/sidebar content below main content on mobile (like pkgdown) */
@@ -3646,6 +3714,10 @@ body.quarto-dark .source-link:hover {
         background-color: var(--gd-bg-secondary);
         border-bottom-color: var(--gd-border-color);
     }
+
+    body.quarto-dark header.headroom--unpinned .quarto-secondary-nav {
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
 }
 
 /* ==========================================================================
@@ -4314,6 +4386,23 @@ html[data-bs-theme="dark"] .gd-content-glow-mint  { --gd-glow-color: #00695c; }
 @media (min-width: 992px) {
     header.headroom--unpinned {
         transform: translateY(0%) !important;
+    }
+}
+
+/* Mobile: keep secondary nav (sidebar toggle + page title) always visible.
+   When headroom hides the header via translateY(-100%), the secondary nav
+   counter-translates by its own height so it stays at viewport top.
+   Math: parent moves -(navH+secH), child moves +secH → viewport y = 0. */
+@media (max-width: 991.98px) {
+    .quarto-secondary-nav {
+        position: relative;
+        z-index: 1;
+        transition: transform 200ms linear, box-shadow 200ms linear;
+    }
+
+    header.headroom--unpinned .quarto-secondary-nav {
+        transform: translateY(100%);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
     }
 }
 

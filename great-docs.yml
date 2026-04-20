@@ -217,6 +217,10 @@ nav_icons:
     Quick Start: rocket
     Configuration: settings
     Theming & Appearance: palette
+    Content & API: file-text
+    Publishing & Versioning: upload
+    AI-Assisted Workflows: wand-sparkles
+    Build & Quality: circle-check
     Cross-Referencing: link
     Internationalization: globe
     Scale-to-Fit: scaling

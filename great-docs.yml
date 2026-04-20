@@ -127,14 +127,14 @@ sections:
           - choose-gradient-theme.qmd
           - add-logo-favicon.qmd
           - customize-announcement-banner.qmd
-      - section: Publishing & Versioning
+      - section: Publishing
         contents:
           - create-changelog.qmd
           - github-pages-ci.qmd
           - add-custom-domain.qmd
           - enable-multi-version-docs.qmd
           - use-version-fences-and-badges.qmd
-      - section: AI-Assisted Workflows
+      - section: AI & LLMs
         contents:
           - install-great-docs-skill.qmd
           - build-site-with-llm.qmd
@@ -218,8 +218,8 @@ nav_icons:
     Configuration: settings
     Theming & Appearance: palette
     Content & API: file-text
-    Publishing & Versioning: upload
-    AI-Assisted Workflows: wand-sparkles
+    Publishing: upload
+    AI & LLMs: wand-sparkles
     Build & Quality: circle-check
     Cross-Referencing: link
     Internationalization: globe

@@ -246,6 +246,72 @@ class TestPreprocessVersion:
         assert "MyClass" in idx_content
         assert "my_func" in idx_content
 
+    def test_snapshot_preserves_rich_pages(self, tmp_path: Path):
+        """Rich renderer-generated pages should NOT be overwritten by snapshot fallback."""
+        rich_class_content = (
+            "---\n"
+            'title: "[MyClass]{.doc-object-name .doc-class}"\n'
+            "---\n\n"
+            "# [MyClass]{.doc-object-name .doc-class}\n\n"
+            "::: {.doc-subject}\nA rich description.\n:::\n\n"
+            "## Parameters {.doc-parameters}\n\n"
+            "Details here.\n\n"
+            "## Attributes {.doc-attributes}\n\n"
+            "- attr1\n\n"
+            "## Examples\n\n"
+            "```python\nMyClass()\n```\n"
+        )
+        source = tmp_path / "source"
+        _make_source_tree(
+            source,
+            {
+                "index.qmd": "---\ntitle: Home\n---\n\nHi",
+                "reference/MyClass.qmd": rich_class_content,
+            },
+        )
+
+        # Create a snapshot that includes MyClass
+        snap = ApiSnapshot(
+            version="0.2",
+            package_name="test_pkg",
+            symbols={
+                "MyClass": SymbolInfo(
+                    name="MyClass",
+                    kind="class",
+                    parameters=[ParameterInfo(name="x", annotation="int")],
+                ),
+            },
+        )
+        snap_path = tmp_path / "snapshots" / "v0.2.json"
+        snap.save(snap_path)
+
+        versions = parse_versions_config(
+            [
+                {"tag": "0.3", "label": "0.3"},
+                {"tag": "0.2", "label": "0.2", "api_snapshot": str(snap_path)},
+            ]
+        )
+
+        dest = tmp_path / "build"
+        pages = preprocess_version(
+            source,
+            dest,
+            versions[1],
+            versions,
+            project_root=tmp_path,
+        )
+
+        assert "reference/MyClass.html" in pages
+
+        # The rich content must be preserved, NOT replaced with minimal snapshot output
+        result_content = (dest / "reference" / "MyClass.qmd").read_text()
+        assert "{.doc-object-name" in result_content
+        assert "A rich description." in result_content
+        assert "Attributes" in result_content
+        assert "Examples" in result_content
+        # Should NOT have the minimal snapshot format
+        assert "*Kind:* class" not in result_content
+
 
 # ---------------------------------------------------------------------------
 # Site assembly
@@ -725,7 +791,7 @@ class TestExpandVersionBadges:
         content = (
             "Some text [version-badge new]\n"
             "\n"
-            "```{.markdown filename=\"reference.qmd\"}\n"
+            '```{.markdown filename="reference.qmd"}\n'
             "## Widget [version-badge new]\n"
             "## render() [version-badge changed 0.2]\n"
             "```\n"
@@ -913,9 +979,7 @@ class TestSyncStatusInlineScript:
 
         self._make_quarto_yml(tmp_path)
         status_path = tmp_path / "_page_status.json"
-        status_path.write_text(
-            json.dumps({"page_statuses": {}, "definitions": {}})
-        )
+        status_path.write_text(json.dumps({"page_statuses": {}, "definitions": {}}))
         _sync_status_inline_script(tmp_path)
         yml = (tmp_path / "_quarto.yml").read_text()
         assert "__GD_UPCOMING_DATA__=" not in yml

@@ -617,6 +617,16 @@ def _rebuild_api_from_snapshot(
 
     for name, sym in snap.symbols.items():
         qmd_path = ref_dir / f"{name}.qmd"
+
+        # Preserve existing rich renderer-generated pages (they contain full docstrings,
+        # examples, attributes, etc.). Only generate a minimal fallback page when no rich
+        # page exists.
+        if qmd_path.exists():
+            existing_content = qmd_path.read_text(encoding="utf-8")
+            if "{.doc-" in existing_content:
+                generated.append(f"reference/{name}.html")
+                continue
+
         sig = _format_signature(name, sym)
 
         lines = [

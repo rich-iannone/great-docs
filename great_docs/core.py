@@ -2455,10 +2455,9 @@ class GreatDocs:
         """
         Process custom sections: discover files, copy, generate index, wire nav.
 
-        Each configured section gets its own navbar link, sidebar, and
-        (optionally) an auto-generated index page. Blog-type sections
-        use Quarto's native `listing:` directive instead of cards and
-        skip the sidebar.
+        Each configured section gets its own navbar link, sidebar, and (optionally) an
+        auto-generated index page. Blog-type sections use Quarto's native `listing:` directive
+        instead of cards and skip the sidebar.
 
         Returns
         -------
@@ -2571,6 +2570,7 @@ class GreatDocs:
 
                 # Add sidebar (skipped for single-page sections)
                 dir_titles = section_cfg.get("dir_titles", {})
+                sidebar_groups = section_cfg.get("sidebar_groups")
                 self._add_section_sidebar(
                     title,
                     slug,
@@ -2578,6 +2578,7 @@ class GreatDocs:
                     has_user_index,
                     generate_index,
                     dir_titles=dir_titles,
+                    sidebar_groups=sidebar_groups,
                 )
 
                 # For single-page sections (no sidebar), inject a body class so
@@ -2979,6 +2980,7 @@ class GreatDocs:
         has_user_index: bool,
         has_generated_index: bool = False,
         dir_titles: dict[str, str] | None = None,
+        sidebar_groups: list[dict] | None = None,
     ) -> None:
         """
         Add a sidebar for the custom section to `_quarto.yml`.
@@ -2998,6 +3000,9 @@ class GreatDocs:
         dir_titles
             Optional mapping of subdirectory names (after prefix stripping) to
             custom sidebar section titles.
+        sidebar_groups
+            Optional list of group dicts for organizing flat pages into sidebar sections. Each dict
+            has `section` (title) and `contents` (list of page filenames without numeric prefix).
         """
         quarto_yml = self.project_path / "_quarto.yml"
         config = self._read_quarto_config(quarto_yml)
@@ -3011,53 +3016,89 @@ class GreatDocs:
             # Add index as the first item when one exists
             contents.append({"text": title, "href": f"{slug}/index.qmd"})
 
-        # Add each page (except index.qmd), grouping by subdirectory
-        # into sidebar section headers when subdirectories are present.
-        from pathlib import PurePosixPath
-
-        subdir_groups: dict[str, list[dict]] = {}
-        top_level_pages: list[dict] = []
-
+        # Build a filename -> page dict lookup for grouped sidebar
+        page_by_filename: dict[str, dict] = {}
         for page in pages:
-            if page["filename"] == "index.qmd":
-                continue
-            parts = PurePosixPath(page["filename"]).parts
-            if len(parts) > 1:
-                # Page is in a subdirectory — group by parent dir
-                subdir = parts[0]  # pragma: no cover
-                subdir_groups.setdefault(subdir, []).append(page)  # pragma: no cover
-            else:
-                top_level_pages.append(page)
+            if page["filename"] != "index.qmd":
+                page_by_filename[page["filename"]] = page
 
-        # Add top-level pages first
-        for page in top_level_pages:
-            contents.append(
-                {
-                    "text": page["title"],
-                    "href": f"{slug}/{page['filename']}",
-                }
-            )
+        if sidebar_groups:
+            # Use explicit sidebar groups to organize flat pages into sections
+            grouped_filenames: set[str] = set()
+            for group in sidebar_groups:
+                section_title = group.get("section", "")
+                group_contents_cfg = group.get("contents", [])
+                section_contents = []
+                for filename in group_contents_cfg:
+                    # Match against stripped filenames in page_by_filename
+                    page = page_by_filename.get(filename)
+                    if page:
+                        section_contents.append(
+                            {
+                                "text": page["title"],
+                                "href": f"{slug}/{page['filename']}",
+                            }
+                        )
+                        grouped_filenames.add(filename)
+                if section_contents:
+                    contents.append({"section": section_title, "contents": section_contents})
 
-        # Add subdirectory groups as section headers
-        if dir_titles is None:
-            dir_titles = {}
-        for subdir in sorted(subdir_groups.keys()):
-            clean_subdir = self._strip_numeric_prefix(subdir)  # pragma: no cover
-            section_title = dir_titles.get(  # pragma: no cover
-                clean_subdir,
-                clean_subdir.replace("-", " ").replace("_", " ").title(),
-            )  # pragma: no cover
-            section_contents = []  # pragma: no cover
-            for page in subdir_groups[subdir]:  # pragma: no cover
-                section_contents.append(  # pragma: no cover
+            # Add any ungrouped pages at the end
+            for filename, page in page_by_filename.items():
+                if filename not in grouped_filenames:
+                    contents.append(
+                        {
+                            "text": page["title"],
+                            "href": f"{slug}/{page['filename']}",
+                        }
+                    )
+        else:
+            # Default: flat listing with optional subdirectory grouping
+            from pathlib import PurePosixPath
+
+            subdir_groups_dict: dict[str, list[dict]] = {}
+            top_level_pages: list[dict] = []
+
+            for page in pages:
+                if page["filename"] == "index.qmd":
+                    continue
+                parts = PurePosixPath(page["filename"]).parts
+                if len(parts) > 1:
+                    # Page is in a subdirectory — group by parent dir
+                    subdir = parts[0]  # pragma: no cover
+                    subdir_groups_dict.setdefault(subdir, []).append(page)  # pragma: no cover
+                else:
+                    top_level_pages.append(page)
+
+            # Add top-level pages first
+            for page in top_level_pages:
+                contents.append(
                     {
                         "text": page["title"],
                         "href": f"{slug}/{page['filename']}",
                     }
                 )
-            contents.append(
-                {"section": section_title, "contents": section_contents}
-            )  # pragma: no cover
+
+            # Add subdirectory groups as section headers
+            if dir_titles is None:
+                dir_titles = {}
+            for subdir in sorted(subdir_groups_dict.keys()):
+                clean_subdir = self._strip_numeric_prefix(subdir)  # pragma: no cover
+                section_title = dir_titles.get(  # pragma: no cover
+                    clean_subdir,
+                    clean_subdir.replace("-", " ").replace("_", " ").title(),
+                )  # pragma: no cover
+                section_contents = []  # pragma: no cover
+                for page in subdir_groups_dict[subdir]:  # pragma: no cover
+                    section_contents.append(  # pragma: no cover
+                        {
+                            "text": page["title"],
+                            "href": f"{slug}/{page['filename']}",
+                        }
+                    )
+                contents.append(
+                    {"section": section_title, "contents": section_contents}
+                )  # pragma: no cover
 
         # Skip sidebar when a section has only a single page — the lone item
         # provides no navigation value and wastes horizontal space.  Without a

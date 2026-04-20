@@ -111,6 +111,39 @@ sections:
   - title: Recipes
     dir: recipes
     navbar_after: User Guide
+    sidebar_groups:
+      - section: Content & API
+        contents:
+          - hide-internal-symbols.qmd
+          - customize-api-organization.qmd
+          - document-a-cli.qmd
+          - cross-reference-items.qmd
+          - write-effective-docstrings.qmd
+          - add-images-diagrams.qmd
+          - embed-videos.qmd
+      - section: Theming & Appearance
+        contents:
+          - add-custom-css.qmd
+          - choose-gradient-theme.qmd
+          - add-logo-favicon.qmd
+          - customize-announcement-banner.qmd
+      - section: Publishing & Versioning
+        contents:
+          - create-changelog.qmd
+          - github-pages-ci.qmd
+          - add-custom-domain.qmd
+          - enable-multi-version-docs.qmd
+          - use-version-fences-and-badges.qmd
+      - section: AI-Assisted Workflows
+        contents:
+          - install-great-docs-skill.qmd
+          - build-site-with-llm.qmd
+          - customize-site-with-llm.qmd
+          - understand-llms-txt.qmd
+      - section: Build & Quality
+        contents:
+          - fix-common-build-errors.qmd
+          - proofread-documentation.qmd
 
 # Sidebar Filter
 # --------------

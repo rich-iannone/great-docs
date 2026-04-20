@@ -1543,7 +1543,7 @@ div.sourceCode:hover > .gd-code-nav .gd-code-copy,
 
 /* Adjust mobile secondary nav positioning */
 @media (max-width: 991.98px) {
-    #quarto-header .container-fluid.d-flex {
+    #quarto-header > .navbar .container-fluid.d-flex {
         margin-left: 0;
         padding-left: 5px;
     }
@@ -5660,7 +5660,8 @@ kbd {
 }
 
 .gd-menu-item {
-    display: block;
+    display: flex;
+    align-items: center;
     padding: 0.45rem 0.75rem;
     border-radius: 0.4rem;
     color: #495057;
@@ -5679,6 +5680,49 @@ kbd {
         outline-offset: -2px;
         background: rgba(0, 0, 0, 0.03);
     }
+}
+
+/* Label contains icon + text + inline badge; fills remaining space */
+.gd-menu-item-label {
+    flex: 1 1 auto;
+    min-width: 0;
+
+    /* Sidebar icons inside the overlay */
+    .gd-nav-icon {
+        flex-shrink: 0;
+        width: 15px;
+        height: 15px;
+        margin-right: 0.4em;
+        vertical-align: -0.15em;
+        opacity: 0.7;
+    }
+
+    /* Status badges sit inline right after the text */
+    .gd-sidebar-status-badge {
+        margin-left: 4px;
+        vertical-align: middle;
+    }
+}
+
+.gd-menu-item:hover .gd-nav-icon,
+.gd-menu-item-active .gd-nav-icon {
+    opacity: 1;
+}
+
+/* Upcoming rocket icon — pushed to the far right of the row */
+.gd-menu-item > .gd-sidebar-upcoming {
+    flex-shrink: 0;
+    margin-left: auto;
+    padding-left: 6px;
+}
+
+/* Section headers with icons */
+.gd-menu-section .gd-nav-icon {
+    width: 14px;
+    height: 14px;
+    margin-right: 0.35em;
+    vertical-align: -0.1em;
+    opacity: 0.6;
 }
 
 .gd-menu-item-active {
@@ -5749,6 +5793,76 @@ kbd {
     .gd-menu-overlay,
     .gd-menu-overlay-inner {
         transition: none;
+    }
+}
+
+/* ── Mobile menu overlay refinements ──
+   When opened via the Title Bar button the overlay acts as the primary
+   sidebar navigation.  We add backdrop blur, scroll lock, keep the
+   Title Bar visible above the overlay, and use fixed-height inner
+   scrolling so the card borders stay in place for long nav lists. */
+
+/* Scroll lock: prevent body from scrolling while menu is open */
+body.gd-menu-open {
+    overflow: hidden;
+}
+
+@media (max-width: 991.98px) {
+    /* Suppress Bootstrap's collapse sidebar on mobile — the overlay
+       replaces it entirely.  The sidebar DOM stays in the page so
+       keyboard-nav.js can still read its links. */
+    #quarto-sidebar {
+        display: none !important;
+    }
+
+    #quarto-sidebar-glass {
+        display: none !important;
+    }
+
+    /* Backdrop blur behind the overlay */
+    .gd-menu-overlay {
+        -webkit-backdrop-filter: blur(6px);
+        backdrop-filter: blur(6px);
+    }
+
+    /* Keep the Title Bar above the overlay when the menu is open.
+       The Title Bar lives inside #quarto-header, so we raise the
+       header's z-index above the overlay (1090) while the menu is
+       active.  The top navbar stays behind the overlay so only the
+       Title Bar peeks through. */
+    body.gd-menu-open #quarto-header {
+        z-index: 1091;
+    }
+
+    body.gd-menu-open #quarto-header > .navbar {
+        position: relative;
+        z-index: -1;
+    }
+
+    /* Size the card to sit below the Title Bar with internal scrolling.
+       margin-top  15px → breathing room below the Title Bar
+       margin-bottom 20px → clearance for mobile Safari bottom chrome */
+    .gd-menu-overlay-inner {
+        width: calc(100% - 2rem);
+        max-width: 420px;
+        max-height: calc(100vh - 5rem - 35px);
+        margin-top: 15px;
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Fixed header, scrollable body */
+    .gd-menu-overlay-body {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -1.5rem -1.5rem;
+        padding: 0 1.5rem 1.5rem;
+    }
+
+    .gd-menu-overlay-header {
+        flex-shrink: 0;
     }
 }
 

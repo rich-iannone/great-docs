@@ -89,7 +89,7 @@ def run_lint(
     from .core import GreatDocs
 
     result = LintResult()
-    all_checks = {"docstrings", "cross-refs", "style", "directives"}
+    all_checks = {"docstrings", "cross-refs", "style", "directives", "stale-versions"}
 
     if checks is None:
         checks = all_checks
@@ -192,6 +192,9 @@ def run_lint(
 
     if "directives" in checks:
         _check_directive_consistency(pkg, importable_name, exports, result)
+
+    if "stale-versions" in checks:
+        _check_stale_versions(project_root, result)
 
     return result
 
@@ -497,3 +500,246 @@ def _check_directive_consistency(
                         _check_one(f"{name}.{member_name}", member_doc)
         except Exception:
             pass
+
+
+# ---------------------------------------------------------------------------
+# Stale version annotations
+# ---------------------------------------------------------------------------
+
+# Default thresholds (used when no config overrides)
+_DEFAULT_BADGE_THRESHOLD = 3  # releases behind latest
+_DEFAULT_CALLOUT_THRESHOLD = 4  # releases behind latest
+
+
+def _check_stale_versions(project_root: Path, result: LintResult) -> None:
+    """
+    Flag stale version-annotated content in .qmd files.
+
+    Checks for:
+      - `[version-badge new X]` where X is many releases behind latest
+      - `::: {.version-note version="X"}` / `::: {.version-deprecated version="X"}`
+        where X is very old
+      - `upcoming: "X"` frontmatter where X is already released
+    """
+    import yaml
+
+    # Load great-docs.yml for versions list and optional lint config
+    config_path = project_root / "great-docs.yml"
+    if not config_path.exists():
+        return
+
+    try:
+        raw_config = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    except Exception:
+        return
+
+    versions_raw = raw_config.get("versions", [])
+    if not versions_raw:
+        return
+
+    from ._versioning import parse_versions_config
+
+    versions = parse_versions_config(versions_raw)
+    if not versions:
+        return
+
+    # Determine the latest non-prerelease version
+    latest_entry = None
+    for v in versions:
+        if v.latest:
+            latest_entry = v
+            break
+    if latest_entry is None:
+        for v in versions:
+            if not v.prerelease:
+                latest_entry = v
+                break
+    if latest_entry is None:
+        return
+
+    # Optional config overrides
+    lint_cfg = raw_config.get("lint", {}) or {}
+    stale_cfg = lint_cfg.get("stale_versions", {}) or {}
+    badge_threshold = int(stale_cfg.get("badge_threshold", _DEFAULT_BADGE_THRESHOLD))
+    callout_threshold = int(stale_cfg.get("callout_threshold", _DEFAULT_CALLOUT_THRESHOLD))
+
+    # Parse the real badge expiry config (new_is_old)
+    from ._versioning import is_badge_expired, parse_badge_expiry
+
+    badge_expiry = parse_badge_expiry(raw_config.get("new_is_old"))
+
+    # Build set of released version identifiers for upcoming check
+    released_versions: set[str] = set()
+    for v in versions:
+        if not v.prerelease:
+            released_versions.add(v.tag)
+            if v.version:
+                released_versions.add(v.version)
+
+    # Compiled patterns (same as in _versioned_build)
+    badge_re = re.compile(
+        r"\[version-badge\s+(new|changed|deprecated)(?:\s+(\S+))?\]",
+        re.IGNORECASE,
+    )
+    note_re = re.compile(
+        r'^:::\s*\{\.version-note(?:\s+versions?="([^"]*)")?\}\s*$',
+        re.MULTILINE,
+    )
+    deprecated_re = re.compile(
+        r'^:::\s*\{\.version-deprecated(?:\s+versions?="([^"]*)")?\}\s*$',
+        re.MULTILINE,
+    )
+
+    # Collect .qmd files (skip _site, _extensions, build dirs, hidden dirs)
+    qmd_files = []
+    for qmd in project_root.rglob("*.qmd"):
+        rel = qmd.relative_to(project_root)
+        parts = rel.parts
+        if any(p.startswith("_") or p.startswith(".") for p in parts):
+            continue
+        qmd_files.append(qmd)
+
+    for qmd_file in sorted(qmd_files):
+        try:
+            content = qmd_file.read_text(encoding="utf-8")
+        except OSError:
+            continue
+
+        rel_path = str(qmd_file.relative_to(project_root))
+
+        # --- Check stale badges ---
+        for m in badge_re.finditer(content):
+            badge_type = m.group(1).lower()
+            badge_version = m.group(2)
+            if not badge_version:
+                continue
+            distance = _version_distance(badge_version, latest_entry, versions)
+            if distance is not None and distance >= badge_threshold:
+                lineno = content[: m.start()].count("\n") + 1
+
+                # For "new" badges, check whether it truly no longer displays
+                # using the project's actual new_is_old expiry setting
+                if badge_type == "new":
+                    expired = is_badge_expired(badge_version, latest_entry, versions, badge_expiry)
+                    if expired:
+                        advice = "consider removing badge since it no longer displays"
+                    else:
+                        advice = (
+                            "badge still displays but is getting old; "
+                            "consider whether it's still useful"
+                        )
+                else:
+                    # changed/deprecated badges always display regardless of
+                    # new_is_old config
+                    advice = (
+                        "badge still displays in all versions; consider whether it's still useful"
+                    )
+
+                result.issues.append(
+                    LintIssue(
+                        check="stale-badge",
+                        severity="warning",
+                        symbol=f"{rel_path}:{lineno}",
+                        message=(
+                            f"[version-badge {badge_type} {badge_version}] is "
+                            f"{distance} releases behind latest; {advice}"
+                        ),
+                    )
+                )
+
+        # --- Check stale callouts ---
+        for m in note_re.finditer(content):
+            callout_version = m.group(1)
+            if not callout_version:
+                continue
+            distance = _version_distance(callout_version, latest_entry, versions)
+            if distance is not None and distance >= callout_threshold:
+                lineno = content[: m.start()].count("\n") + 1
+                result.issues.append(
+                    LintIssue(
+                        check="stale-callout",
+                        severity="info",
+                        symbol=f"{rel_path}:{lineno}",
+                        message=(
+                            f'::: {{.version-note version="{callout_version}"}} is '
+                            f"{distance} releases old; "
+                            f"consider consolidating into main text"
+                        ),
+                    )
+                )
+
+        for m in deprecated_re.finditer(content):
+            callout_version = m.group(1)
+            if not callout_version:
+                continue
+            distance = _version_distance(callout_version, latest_entry, versions)
+            if distance is not None and distance >= callout_threshold:
+                lineno = content[: m.start()].count("\n") + 1
+                result.issues.append(
+                    LintIssue(
+                        check="stale-callout",
+                        severity="info",
+                        symbol=f"{rel_path}:{lineno}",
+                        message=(
+                            f'::: {{.version-deprecated version="{callout_version}"}} is '
+                            f"{distance} releases old; "
+                            f"consider consolidating into main text"
+                        ),
+                    )
+                )
+
+        # --- Check stale upcoming frontmatter ---
+        upcoming_val = _extract_frontmatter_upcoming(content)
+        if upcoming_val and upcoming_val in released_versions:
+            result.issues.append(
+                LintIssue(
+                    check="stale-upcoming",
+                    severity="warning",
+                    symbol=f"{rel_path}:1",
+                    message=(
+                        f'upcoming: "{upcoming_val}" references an already-released version; '
+                        f"remove the upcoming frontmatter"
+                    ),
+                )
+            )
+
+
+def _version_distance(
+    badge_version: str,
+    latest_entry,
+    versions: list,
+) -> int | None:
+    """
+    Count how many non-prerelease positions *badge_version* is behind *latest_entry*.
+
+    Returns None if the version is not found in the list.
+    """
+    from ._versioning import _find_entry
+
+    entry = _find_entry(badge_version, versions)
+    if entry is None:
+        return None
+    non_pre = [v for v in versions if not v.prerelease]
+    badge_idx = None
+    latest_idx = None
+    for i, v in enumerate(non_pre):
+        if v.tag == entry.tag:
+            badge_idx = i
+        if v.tag == latest_entry.tag:
+            latest_idx = i
+    if badge_idx is None or latest_idx is None:
+        return None
+    # non_pre is ordered newest-first, so badge_idx > latest_idx means older
+    return badge_idx - latest_idx
+
+
+def _extract_frontmatter_upcoming(content: str) -> str | None:
+    """Extract the `upcoming:` value from YAML frontmatter."""
+    fm_match = re.match(r"^---\s*\n(.*?)\n---\s*\n", content, re.DOTALL)
+    if not fm_match:
+        return None
+    fm = fm_match.group(1)
+    m = re.search(r"^upcoming\s*:\s*(.+)$", fm, re.MULTILINE)
+    if not m:
+        return None
+    return m.group(1).strip().strip('"').strip("'")

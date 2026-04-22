@@ -202,6 +202,7 @@ class GreatDocs:
             "theme-init.js",
             "copy-code.js",
             "tooltips.js",
+            "color-swatch.js",
             "mermaid-renderer.js",
             "responsive-tables.js",
             "video-embed.js",
@@ -9794,6 +9795,7 @@ body-classes: "gd-homepage"
             "theme-init.js",
             "copy-code.js",
             "tooltips.js",
+            "color-swatch.js",
             "mermaid-renderer.js",
             "responsive-tables.js",
             "video-embed.js",
@@ -10417,6 +10419,33 @@ body-classes: "gd-homepage"
         )
         if not has_tooltips:
             config["format"]["html"]["include-after-body"].append(tooltips_script_entry)
+
+        # Add color-swatch script (always enabled — loaded after tooltips)
+        # Use inline loader to resolve path relative to site root (Quarto does not
+        # rewrite bare src= paths for scripts appended after its processing pass).
+        color_swatch_entry = {
+            "text": (
+                "<script>"
+                "(function(){var s=document.createElement('script');"
+                "s.src=(document.querySelector('link[rel=\"canonical\"]')||{href:location.href})"
+                ".href.replace(/\\/[^\\/]*$/,'').replace(/\\/[^\\/]*$/,'')+'/color-swatch.js';"
+                "var h=document.currentScript;"
+                "h.parentNode.insertBefore(s,h.nextSibling);})()"
+                "</script>"
+            )
+        }
+        # Remove any stale plain <script src="color-swatch.js"> entries so the
+        # dynamic loader below is used instead.
+        config["format"]["html"]["include-after-body"] = [
+            item
+            for item in config["format"]["html"]["include-after-body"]
+            if not (
+                isinstance(item, dict)
+                and "color-swatch.js" in item.get("text", "")
+                and "createElement" not in item.get("text", "")
+            )
+        ]
+        config["format"]["html"]["include-after-body"].append(color_swatch_entry)
 
         # Add responsive tables script (always enabled — wraps tables in scroll containers)
         responsive_tables_script_entry = {"text": '<script src="responsive-tables.js"></script>'}

@@ -1,0 +1,6 @@
+- name: Primary
+  hex: "#2563eb"
+- name: Secondary
+  hex: "#6b7280"
+- name: Accent
+  hex: "#f97316"

@@ -482,8 +482,14 @@ def _compute_head_tail(
     n_head: int,
     n_tail: int,
     show_all: bool,
+    row_index_offset: int = 0,
 ) -> tuple[list[list], list[int], bool]:
     """Select head and tail rows, compute row numbers.
+
+    Parameters
+    ----------
+    row_index_offset
+        Starting number for row indices (default 0).
 
     Returns
     -------
@@ -491,15 +497,16 @@ def _compute_head_tail(
         (display_rows, row_numbers, is_full_dataset)
     """
     if show_all or n_head + n_tail >= total_rows:
-        row_numbers = list(range(1, total_rows + 1))
+        row_numbers = list(range(row_index_offset, row_index_offset + total_rows))
         return rows, row_numbers, True
 
     head_rows = rows[:n_head]
     tail_rows = rows[-n_tail:] if n_tail > 0 else []
     display_rows = head_rows + tail_rows
 
-    head_nums = list(range(1, n_head + 1))
-    tail_nums = list(range(total_rows - n_tail + 1, total_rows + 1)) if n_tail > 0 else []
+    head_nums = list(range(row_index_offset, row_index_offset + n_head))
+    tail_start = row_index_offset + total_rows - n_tail
+    tail_nums = list(range(tail_start, row_index_offset + total_rows)) if n_tail > 0 else []
     row_numbers = head_nums + tail_nums
 
     return display_rows, row_numbers, False
@@ -1108,46 +1115,199 @@ def tbl_preview(
     min_tbl_width: int = 500,
     caption: str | None = None,
     highlight_missing: bool = True,
+    row_index_offset: int = 0,
     id: str | None = None,
 ) -> TblPreview:
-    """Generate a beautiful table preview.
+    """
+    Generate a self-contained HTML table preview from almost any tabular data source.
+
+    The `tbl_preview()` function gives you a quick, polished look at a dataset without pulling in
+    heavy rendering dependencies. Pass it a Polars DataFrame, a Pandas DataFrame, a PyArrow Table,
+    a file path to a CSV / TSV / JSONL / Parquet / Feather file, a column-oriented dictionary, or a
+    list of row dictionaries—and get back a styled HTML table that renders identically in notebooks,
+    Quarto documents, and static HTML pages.
+
+    The preview shows a configurable number of rows from the top and bottom of the table, separated
+    by a blue divider line when the full dataset exceeds the requested row count. Each column header
+    displays the column name and, beneath it, a compact dtype label (e.g., `i64`, `str`, `f64`). A
+    header banner shows a colored badge identifying the data source type (Polars, Pandas, CSV,
+    Parquet, etc.) alongside row and column counts. Missing values (`None`, `NaN`, `NA`) are
+    highlighted in red so they stand out immediately.
+
+    The output is a :class:`TblPreview` object with `_repr_html_()` support, so it displays
+    automatically in Jupyter notebooks and Quarto code cells. All CSS is scoped to a unique id,
+    and the table includes full dark-mode support. No JavaScript is required.
 
     Parameters
     ----------
     data
-        The table data. Accepts a Polars DataFrame, Pandas DataFrame, PyArrow Table, file path (CSV,
-        TSV, JSONL, Parquet, Feather/Arrow IPC), column-oriented dict, or list of row dicts.
+        The table to preview. This can be a Polars DataFrame, a Pandas DataFrame, a PyArrow Table, a
+        file path (as a string or `pathlib.Path` object), a column-oriented dictionary, or a list of
+        row dictionaries. When providing a file path, the extension determines the loader: `.csv`,
+        `.tsv`, `.jsonl` (or `.ndjson`), `.parquet`, `.feather`, and `.arrow` (Arrow IPC) are all
+        supported. Read the *Supported Input Data Types* section for details on each accepted
+        format.
     columns
-        Subset of columns to display. `None` shows all columns.
+        The columns to display in the preview, by default `None` (all columns are shown). This
+        can be a list of column name strings. If any name does not match a column in the table, a
+        `KeyError` is raised. This is useful for focusing on a subset of a wide dataset.
     n_head
-        Number of rows to show from the start of the table.
+        The number of rows to show from the start of the table. Set to `5` by default. When the
+        table has fewer rows than `n_head + n_tail`, the full table is displayed without a
+        divider.
     n_tail
-        Number of rows to show from the end of the table.
+        The number of rows to show from the end of the table. Set to `5` by default.
     limit
-        Maximum allowed sum of `n_head` and `n_tail`.
+        The limit value for the sum of `n_head=` and `n_tail=` (the total number of rows shown).
+        If the sum of `n_head=` and `n_tail=` exceeds the limit, a `ValueError` is raised. The
+        default value is `50`. Increase this when you need to display more rows.
     show_all
-        If `True`, display the entire table (ignores `n_head`/`n_tail`).
+        Should the entire table be displayed? If `True`, all rows are shown regardless of the
+        `n_head=` and `n_tail=` settings. By default, this is `False`.
     show_row_numbers
-        Whether to show a row-number column on the left.
+        Should row numbers be shown? The numbers appear in a narrow gutter column on the left side
+        of the table, separated from the data columns by a subtle blue vertical line. By default,
+        this is set to `True`.
     show_dtypes
-        Whether to show dtype sublabels under column names.
+        Should data type labels be displayed beneath each column name? The labels use short
+        abbreviations (e.g., `i64` for 64-bit integer, `str` for string, `f64` for 64-bit float). By
+        default, this is set to `True`.
     show_dimensions
-        Whether to show the header banner with row/column counts.
+        Should the header banner be shown? The banner displays a colored badge identifying the data
+        source type alongside row and column counts in labeled pill badges. By default, this is set
+        to `True`.
     max_col_width
-        Maximum width of any column in pixels.
+        The maximum width of any single column in pixels. Column widths are computed automatically
+        to fit their content up to this ceiling, beyond which cell text is truncated with an
+        ellipsis. The default value is `250` pixels.
     min_tbl_width
-        Minimum total table width in pixels.
+        The minimum total width of the table in pixels. If the sum of the computed column widths is
+        less than this value, columns are proportionally widened to fill the available space. The
+        default value is `500` pixels.
     caption
-        Optional caption displayed below the header banner.
+        An optional caption string displayed below the header banner and above the column headers.
+        Useful for labeling a preview with a dataset name or description. By default, no caption is
+        shown.
     highlight_missing
-        Whether to highlight missing values (None/NaN/NA).
+        Should missing values (`None`, `NaN`, `NA`) be highlighted? When `True` (the default),
+        missing cells are displayed in red text on a light red background so they stand out at a
+        glance.
+    row_index_offset
+        The starting number for row indices. Defaults to `0`, matching the zero-based indexing
+        convention of Python, Polars, and Pandas. Set to `1` for one-based numbering (e.g., for
+        presentation to audiences unfamiliar with zero-based indexing).
     id
-        HTML id for the table container. Auto-generated if `None`.
+        An HTML `id` attribute for the outer `<div>` container. If `None` (the default), a unique ID
+        is auto-generated using `secrets.token_hex(4)`. Providing your own ID is useful when you
+        need to target the table with custom CSS or JavaScript.
 
     Returns
     -------
     TblPreview
-        Rendered table with `_repr_html_()`, `as_html()`, and `save()` methods.
+        A rendered table preview object. The object has `_repr_html_()` for automatic notebook
+        display.
+
+    Supported Input Data Types
+    --------------------------
+    The `data` parameter accepts any of the following:
+
+    - **Polars DataFrame** — displays a blue *Polars* badge
+    - **Pandas DataFrame** — displays a dark purple *Pandas* badge
+    - **PyArrow Table** — displays an indigo *Arrow* badge
+    - **CSV file** (`.csv`) — loaded automatically; displays a cream *CSV* badge
+    - **TSV file** (`.tsv`) — loaded automatically; displays a green *TSV* badge
+    - **JSONL file** (`.jsonl` or `.ndjson`) — loaded line-by-line; displays a blue *JSONL*
+      badge
+    - **Parquet file** (`.parquet`) — requires `polars`, `pandas`, or `pyarrow`; displays
+      a purple *Parquet* badge
+    - **Feather / Arrow IPC file** (`.feather` or `.arrow`) — requires `polars`, `pandas`,
+      or `pyarrow`; displays an orange *Feather* badge
+    - **Dictionary** (column-oriented, `dict[str, list]`) — displays a gray *Table* badge
+    - **List of dictionaries** (row-oriented, `list[dict]`) — displays a gray *Table* badge
+
+    For file-based inputs, pass a string or `pathlib.Path` object. The file extension is used to
+    determine the format. Polars is preferred for loading when available; Pandas and PyArrow are
+    used as fallbacks.
+
+    Examples
+    --------
+    The simplest way to preview a table is to pass a Python dictionary:
+
+    ```{python}
+    from great_docs import tbl_preview
+
+    tbl_preview({"city": ["Tokyo", "Paris", "New York"], "population": [13960000, 2161000, 8336000]})
+    ```
+
+    The result is a styled HTML table with a header banner showing the row and column count, dtype
+    labels beneath each column name, and row numbers on the left.
+
+    You can also pass a Polars DataFrame:
+
+    ```{python}
+    import polars as pl
+
+    df = pl.DataFrame({
+        "product": ["Widget", "Gadget", "Gizmo", "Doohickey", "Thingamajig"],
+        "category": ["Electronics", "Tools", "Kitchen", "Garden", "Office"],
+        "price": [29.99, 49.50, 12.00, 8.75, 199.99],
+        "in_stock": [True, False, True, True, False],
+    })
+
+    tbl_preview(df)
+    ```
+
+    For large tables, only the first `n_head=` and last `n_tail=` rows are shown, separated by a
+    blue divider line. Adjust the counts to show more or fewer rows:
+
+    ```{python}
+    tbl_preview(df, n_head=2, n_tail=1)
+    ```
+
+    Use `columns=` to focus on specific columns in a wide dataset:
+
+    ```{python}
+    tbl_preview(df, columns=["product", "price"])
+    ```
+
+    File paths work directly—no need to load the data yourself:
+
+    ```{python}
+    #| echo: false
+    #| output: false
+    import pathlib, json
+    _d = pathlib.Path("assets/tbl-preview-data")
+    _d.mkdir(parents=True, exist_ok=True)
+    (_d / "students.csv").write_text(
+        "name,subject,score,grade,passed\\n"
+        "Alice,Math,95.5,A,true\\n"
+        "Bob,Science,82.0,B,true\\n"
+        "Charlie,English,71.3,C,true\\n"
+        "Diana,History,60.0,D,true\\n"
+        "Eve,Art,55.8,F,false\\n"
+        "Frank,Math,88.2,B+,true\\n"
+        "Grace,Science,79.9,C+,true\\n"
+        "Hank,English,91.0,A-,true\\n"
+        "Iris,History,66.4,D+,true\\n"
+        "Jack,Art,73.7,C,true\\n"
+    )
+    ```
+
+    ```{python}
+    tbl_preview("assets/tbl-preview-data/students.csv")
+    ```
+
+    Add a caption to label the preview:
+
+    ```{python}
+    tbl_preview(df, caption="Product Catalog for Q1 2026")
+    ```
+
+    For a minimal look, turn off the header banner, dtype labels, and row numbers:
+
+    ```{python}
+    tbl_preview(df, show_dimensions=False, show_dtypes=False, show_row_numbers=False)
+    ```
     """
     if not show_all and n_head + n_tail > limit:
         raise ValueError(
@@ -1164,7 +1324,7 @@ def tbl_preview(
 
     # 3. Compute head/tail split
     display_rows, row_numbers, is_full = _compute_head_tail(
-        all_rows, total_rows, n_head, n_tail, show_all
+        all_rows, total_rows, n_head, n_tail, show_all, row_index_offset
     )
 
     # 4. Detect alignments

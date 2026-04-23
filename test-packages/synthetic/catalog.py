@@ -357,6 +357,10 @@ ALL_PACKAGES: list[str] = [
     # 176–177: Auto-include / no-auto-exclude discovery overrides
     "gdtest_auto_include",  # 176
     "gdtest_no_auto_exclude",  # 177
+    # 178: Table preview showcase
+    "gdtest_tbl_preview",  # 178
+    # 179: Table preview shortcode showcase
+    "gdtest_tbl_shortcode",  # 179
 ]
 
 
@@ -2004,6 +2008,23 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "alongside real API (Adapter, run). The no_auto_exclude config option "
         "is set to true, so ALL names pass through — none are automatically "
         "excluded. Tests complete bypass of the AUTO_EXCLUDE filter."
+    ),
+    "gdtest_tbl_preview": (
+        "Table preview showcase exercising tbl_preview() with six user-guide "
+        "pages: basic dict/list-of-dicts previews, Pandas DataFrames, Polars "
+        "DataFrames, missing-value highlighting (None/NaN/Inf), column subsets "
+        "and wide tables, and a full-options page showing every parameter. "
+        "Tests badge rendering (Table/Pandas/Polars), head/tail splitting, "
+        "dark-mode CSS, HTML escaping, and side-by-side comparison with raw "
+        "DataFrame output."
+    ),
+    "gdtest_tbl_shortcode": (
+        "tbl-preview Quarto shortcode showcase with CSV, TSV, and JSONL data "
+        "files in assets/. Five user-guide pages exercise every shortcode "
+        "parameter — caption, columns, n_head, n_tail, show_all, "
+        "show_row_numbers, show_dtypes, show_dimensions, max_col_width — "
+        "plus multi-table pages and wide-table horizontal scroll. No Python "
+        "code cells; all rendering is done via the shortcode."
     ),
 }
 

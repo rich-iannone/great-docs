@@ -313,3 +313,10 @@ reference:
         - GreatDocs.build
         - GreatDocs.preview
         - GreatDocs.check_links
+
+    - title: Table Preview
+      desc: Generate styled HTML table previews from any tabular data source
+      contents:
+        - tbl_preview
+        - enable_tbl_preview
+        - disable_tbl_preview

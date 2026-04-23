@@ -115,7 +115,7 @@ def _sync_status_inline_script(dest_dir: Path) -> None:
 
     Instead of modifying the existing (large, SVG-laden) `__GD_STATUS_DATA__` script (which breaks
     when round-tripped through yaml12 due to nested quoting issues) we append a tiny new `<script>`
-    that only carries the lightweight `upcoming_pages` map.  The page-status-badges JS reads both
+    that only carries the lightweight `upcoming_pages` map. The page-status-badges JS reads both
     globals.
 
     Must be called AFTER `_update_page_status_json` so that the JSON file contains the
@@ -668,9 +668,9 @@ def _rebuild_api_from_snapshot(
     # --- Update or generate index page ---
     index_path = ref_dir / "index.qmd"
 
-    # Detect whether the existing index is a rich renderer-generated page (has Pandoc
-    # attribute classes like {.doc-label ...}) vs. a plain placeholder.  Rich pages are
-    # preserved and pruned; plain/missing pages are regenerated from the snapshot.
+    # Detect whether the existing index is a rich renderer-generated page (has Pandoc attribute
+    # classes like {.doc-label ...}) vs. a plain placeholder. Rich pages are preserved and pruned;
+    # plain/missing pages are regenerated from the snapshot.
     _has_rich_index = False
     if index_path.exists():
         _idx_content = index_path.read_text(encoding="utf-8")
@@ -755,40 +755,120 @@ def _is_valid_ref_name(name: str, valid_symbols: set[str], valid_classes: set[st
 def _prune_reference_index(
     index_qmd: Path, valid_symbols: set[str], valid_classes: set[str]
 ) -> None:
-    """Remove links/rows for symbols not in the snapshot from reference/index.qmd."""
+    """Remove links/rows for symbols not in the snapshot from reference/index.qmd.
+
+    This handles three levels of cleanup:
+    1. Remove link lines referencing symbols not in the snapshot.
+    2. Remove orphaned definition-list descriptions (`:   ...`) that followed a removed link.
+    3. Remove empty section headers (`## Title {.doc-group}` plus their `.doc-description` divs)
+       when all entries in the section have been removed.
+    """
+    import re
+
     content = index_qmd.read_text(encoding="utf-8")
     lines = content.split("\n")
-    new_lines: list[str] = []
 
-    for line in lines:
+    # --- Pass 1: mark link lines for removal and their trailing description lines ---
+    remove_indices: set[int] = set()
+
+    for i, line in enumerate(lines):
         stripped = line.strip()
-
-        # Check for definition-list or link-style entries referencing a .qmd file
-        # Patterns: "- [SymbolName](SymbolName.qmd)" or link with anchor
-        import re
 
         qmd_ref = re.search(r"\(([^)]+)\.qmd(?:#[^)]*)?\)", stripped)
         if qmd_ref:
             symbol_name = qmd_ref.group(1)
             if not _is_valid_ref_name(symbol_name, valid_symbols, valid_classes):
-                continue  # Skip this line
+                remove_indices.add(i)
+                # Also remove the following definition-list description line(s)
+                # Pattern: `:   description text` (Pandoc definition list)
+                j = i + 1
+                while j < len(lines):
+                    next_stripped = lines[j].strip()
+                    if next_stripped == "":
+                        # Blank line between entries — remove it too
+                        remove_indices.add(j)
+                        j += 1
+                        continue
+                    if next_stripped.startswith(":"):
+                        remove_indices.add(j)
+                        j += 1
+                        continue
+                    break
+                continue
 
-        # Also check for bare .qmd references like "  - Name.qmd"
         bare_ref = re.match(r"^\s*-\s+(\S+)\.qmd\s*$", stripped)
         if bare_ref:
             symbol_name = bare_ref.group(1)
             if not _is_valid_ref_name(symbol_name, valid_symbols, valid_classes):
+                remove_indices.add(i)
+
+    filtered = [line for i, line in enumerate(lines) if i not in remove_indices]
+
+    # --- Pass 2: remove empty sections ---
+    # A section block looks like:
+    #   ## Title {.doc-group}
+    #   <blank>
+    #   ::: {.doc-description}
+    #   description text
+    #   :::
+    #   <blank>
+    #   (entries would follow here)
+    #
+    # If the next non-blank content after the closing ::: is another ## heading or EOF,
+    # the section is empty and should be removed entirely.
+    result: list[str] = []
+    idx = 0
+    while idx < len(filtered):
+        line = filtered[idx]
+        stripped = line.strip()
+
+        # Detect a section header with {.doc-group}
+        if stripped.startswith("##") and "{.doc-group}" in stripped:
+            # Collect the entire section header block (header + optional blank +
+            # description div + optional trailing blank)
+            block_start = idx
+            idx += 1
+
+            # Skip blank lines after header
+            while idx < len(filtered) and filtered[idx].strip() == "":
+                idx += 1
+
+            # If there's a ::: {.doc-description} div, consume it
+            if idx < len(filtered) and filtered[idx].strip().startswith("::: {.doc-description"):
+                idx += 1
+                # Consume lines until closing :::
+                while idx < len(filtered) and filtered[idx].strip() != ":::":
+                    idx += 1
+                if idx < len(filtered):
+                    idx += 1  # skip the closing :::
+
+            # Skip trailing blank lines
+            while idx < len(filtered) and filtered[idx].strip() == "":
+                idx += 1
+
+            # Now check if the section has any content: the next line should be
+            # something other than another ## heading or EOF
+            if idx >= len(filtered) or filtered[idx].strip().startswith("##"):
+                # Empty section — drop the entire block by not appending it
                 continue
+            else:
+                # Non-empty section — keep the block
+                result.extend(filtered[block_start:idx])
+        else:
+            result.append(line)
+            idx += 1
 
-        new_lines.append(line)
-
-    index_qmd.write_text("\n".join(new_lines), encoding="utf-8")
+    index_qmd.write_text("\n".join(result), encoding="utf-8")
 
 
 def _prune_quarto_sidebar(
     dest_dir: Path, section: str, valid_symbols: set[str], valid_classes: set[str]
 ) -> None:
-    """Remove sidebar entries for missing symbols/commands from _quarto.yml."""
+    """Remove sidebar entries for missing symbols/commands from _quarto.yml.
+
+    Handles both flat string entries (`reference/Name.qmd`) and nested section groups
+    (`section: Title` with `contents: [...]`). Empty section groups are removed entirely.
+    """
     quarto_yml = dest_dir / "_quarto.yml"
     if not quarto_yml.exists():
         return
@@ -808,32 +888,55 @@ def _prune_quarto_sidebar(
             if not contents:
                 continue
 
-            # Check if this sidebar references our section
-            has_section_ref = any(
-                (isinstance(c, str) and c.startswith(f"{section}/")) for c in contents
-            )
-            if not has_section_ref:
+            # Check if this sidebar has any reference to our section (flat or nested)
+            def _has_section_ref(items: list) -> bool:
+                for c in items:
+                    if isinstance(c, str) and c.startswith(f"{section}/"):
+                        return True
+                    if isinstance(c, dict):
+                        sub = c.get("contents", [])
+                        if sub and _has_section_ref(sub):
+                            return True
+                return False
+
+            if not _has_section_ref(contents):
                 continue
 
-            new_contents = []
-            for item in contents:
-                if isinstance(item, str) and item.startswith(f"{section}/"):
-                    # e.g. "reference/GreatDocs.qmd" → "GreatDocs"
-                    # e.g. "reference/cli/api_diff.qmd" → keep (handled by CLI pruning)
-                    if "/" in item.replace(f"{section}/", "", 1):
-                        # Sub-path like reference/cli/... — keep, CLI pruning handles it
-                        new_contents.append(item)
-                    else:
-                        stem = Path(item).stem
-                        if _is_valid_ref_name(stem, valid_symbols, valid_classes):
-                            new_contents.append(item)
+            def _prune_contents(items: list) -> tuple[list, bool]:
+                """Recursively prune items, returning (new_items, was_modified)."""
+                new_items: list = []
+                changed = False
+                for item in items:
+                    if isinstance(item, str) and item.startswith(f"{section}/"):
+                        if "/" in item.replace(f"{section}/", "", 1):
+                            # Sub-path like reference/cli/... — keep
+                            new_items.append(item)
                         else:
-                            modified = True
-                else:
-                    new_contents.append(item)
+                            stem = Path(item).stem
+                            if _is_valid_ref_name(stem, valid_symbols, valid_classes):
+                                new_items.append(item)
+                            else:
+                                changed = True
+                    elif isinstance(item, dict) and "section" in item:
+                        sub_contents = item.get("contents", [])
+                        pruned_sub, sub_changed = _prune_contents(sub_contents)
+                        if sub_changed:
+                            changed = True
+                        if pruned_sub:
+                            new_item = dict(item)
+                            new_item["contents"] = pruned_sub
+                            new_items.append(new_item)
+                        else:
+                            # All entries removed — drop the entire section group
+                            changed = True
+                    else:
+                        new_items.append(item)
+                return new_items, changed
 
-            if modified:
+            new_contents, was_modified = _prune_contents(contents)
+            if was_modified:
                 sidebar["contents"] = new_contents
+                modified = True
 
         if modified:
             yaml.dump(

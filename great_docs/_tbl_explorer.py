@@ -106,6 +106,12 @@ def _render_explorer_css(uid: str) -> str:
     """Return CSS for the interactive toolbar, sort indicators, and pagination."""
     s = f"#gd-tbl-{uid}"
     return f"""<style>
+/* ── Table scroll wrapper ────────────────────────── */
+{s} .gd-tbl-scroll {{
+  overflow-x: auto;
+  overflow-y: hidden;
+  width: 100%;
+}}
 /* ── Toolbar ─────────────────────────────────────── */
 {s} .gd-tbl-toolbar {{
   display: flex;
@@ -925,18 +931,20 @@ def tbl_explorer(
     # 11. Assemble
     html = (
         f'<div id="gd-tbl-{uid}" class="gd-tbl-explorer" '
-        f'style="padding-left: 0px; overflow-x: auto; overflow-y: hidden; '
+        f'style="padding-left: 0px; overflow: hidden; '
         f'width: 100%; max-width: 100%;">\n'
         f"{base_css}\n"
         f"{explorer_css}\n"
         f'<script type="application/json" class="gd-tbl-data" '
         f'data-table-id="gd-tbl-{uid}">\n{data_json}\n</script>\n'
+        f'<div class="gd-tbl-scroll">\n'
         f'<table class="gt_table" data-quarto-disable-processing="true" '
         f'data-quarto-bootstrap="false">\n'
         f"{colgroup}\n"
         f"<thead>\n{header}\n{column_labels}\n</thead>\n"
         f"{body}\n"
         f"</table>\n"
+        f"</div>\n"
         f"<script>{js_source}</script>\n"
         f"</div>"
     )

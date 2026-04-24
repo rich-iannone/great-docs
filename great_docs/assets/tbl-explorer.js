@@ -215,10 +215,11 @@
     });
     bar.appendChild(reset.wrap);
 
-    // Insert toolbar before the table
-    var tbl = el.querySelector("table");
-    if (tbl) {
-      el.insertBefore(bar, tbl);
+    // Insert toolbar before the scroll wrapper (or table)
+    var scrollWrap = el.querySelector(".gd-tbl-scroll");
+    var insertRef = scrollWrap || el.querySelector("table");
+    if (insertRef) {
+      el.insertBefore(bar, insertRef);
     }
   }
 

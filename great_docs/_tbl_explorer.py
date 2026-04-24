@@ -116,22 +116,220 @@ def _render_explorer_css(uid: str) -> str:
   font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
   font-size: 13px;
 }}
-{s} .gd-tbl-filter {{
+/* ── Filter bar ──────────────────────────────────── */
+{s} .gd-tbl-filter-bar {{
   flex: 1 1 200px;
-  min-width: 150px;
-  padding: 6px 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+  padding: 3px 6px;
   border: 1px solid #ccc;
   border-radius: 4px;
-  font-size: 13px;
+  background: #fff;
+  position: relative;
+}}
+{s} .gd-tbl-filter-tokens {{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}}
+{s} .gd-tbl-filter-token {{
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px 2px 8px;
+  background: #e8f0fe;
+  border: 1px solid #c4d9f2;
+  border-radius: 12px;
+  font-size: 11px;
+  color: #1a3a5c;
+  white-space: nowrap;
+  max-width: 260px;
+  line-height: 1.4;
+}}
+{s} .gd-tbl-filter-token-text {{
+  overflow: hidden;
+  text-overflow: ellipsis;
+}}
+{s} .gd-tbl-filter-token-x {{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: #d0dfef;
+  color: #4a6a8a;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 50%;
+  padding: 0;
+  padding-bottom: 2px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: background 0.1s, color 0.1s;
+}}
+{s} .gd-tbl-filter-token-x:hover {{
+  background: #a0bdd8;
+  color: #1a3a5c;
+}}
+{s} .gd-tbl-filter-token-case {{
+  font-size: 9px;
+  font-weight: 700;
+  color: #4477aa;
+  border: 1px solid #a0bdd8;
+  border-radius: 3px;
+  padding: 0 3px;
+  line-height: 1.4;
+  flex-shrink: 0;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+}}
+{s} .gd-tbl-filter-add {{
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  padding: 3px;
+  color: #6699CC;
+}}
+{s} .gd-tbl-filter-add:hover {{
+  background: #eef3fb;
+  border-radius: 3px;
+}}
+/* ── Filter wizard dropdown ──────────────────────── */
+{s} .gd-tbl-filter-wizard {{
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  z-index: 200;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  padding: 8px 0;
+  min-width: 200px;
+  max-width: 320px;
+  max-height: 300px;
+  overflow-y: auto;
+  font-size: 12px;
+}}
+{s} .gd-tbl-fw-label {{
+  display: block;
+  padding: 4px 12px 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #888;
+  font-weight: 600;
+}}
+{s} .gd-tbl-fw-options {{
+  display: flex;
+  flex-direction: column;
+}}
+{s} .gd-tbl-fw-option {{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 12px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 12px;
+  font-family: inherit;
+  color: #333;
+  cursor: pointer;
+  transition: background 0.1s;
+}}
+{s} .gd-tbl-fw-option:hover {{
+  background: #f0f4fb;
+}}
+{s} .gd-tbl-fw-dtype {{
+  font-size: 9px;
+  color: #999;
+  background: #f0f0f0;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: 8px;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+}}
+{s} .gd-tbl-fw-input {{
+  margin: 4px 12px;
+  padding: 5px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 12px;
   font-family: inherit;
   background: #fff;
   color: #333;
   outline: none;
-  transition: border-color 0.15s;
+  width: calc(100% - 24px);
+  box-sizing: border-box;
 }}
-{s} .gd-tbl-filter:focus {{
+{s} .gd-tbl-fw-input:focus {{
   border-color: #6699CC;
   box-shadow: 0 0 0 2px rgba(102,153,204,0.2);
+}}
+{s} .gd-tbl-fw-between {{
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 4px;
+}}
+{s} .gd-tbl-fw-between .gd-tbl-fw-input {{
+  flex: 1;
+  margin: 4px;
+  min-width: 60px;
+}}
+{s} .gd-tbl-fw-sep {{
+  font-size: 11px;
+  color: #888;
+  flex-shrink: 0;
+}}
+{s} .gd-tbl-fw-commit {{
+  margin: 4px 12px 6px;
+  font-size: 11px;
+  padding: 4px 14px;
+}}
+{s} .gd-tbl-fw-input-row {{
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 8px;
+}}
+{s} .gd-tbl-fw-input-row .gd-tbl-fw-input {{
+  flex: 1;
+  margin: 4px 0;
+  width: auto;
+}}
+{s} .gd-tbl-fw-case {{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 26px;
+  margin-left: 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #f8f8f8;
+  color: #999;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}}
+{s} .gd-tbl-fw-case:hover {{
+  border-color: #999;
+  color: #666;
+}}
+{s} .gd-tbl-fw-case.active {{
+  background: #e0edff;
+  border-color: #6699CC;
+  color: #336699;
 }}
 {s} .gd-tbl-btn {{
   display: inline-flex;
@@ -197,8 +395,7 @@ def _render_explorer_css(uid: str) -> str:
 }}
 /* Keep tooltip from overflowing right edge */
 {s} .gd-tbl-btn-wrap:last-child .gd-tbl-tooltip {{
-  left: auto;
-  right: 0;
+  left: 0;
   transform: none;
 }}
 {s} .gd-tbl-btn-wrap:hover .gd-tbl-tooltip {{
@@ -324,16 +521,94 @@ def _render_explorer_css(uid: str) -> str:
   color: #999;
 }}
 /* ── Dark mode ───────────────────────────────────── */
-body.quarto-dark {s} .gd-tbl-filter,
-html.quarto-dark {s} .gd-tbl-filter,
-:root[data-bs-theme="dark"] {s} .gd-tbl-filter {{
+body.quarto-dark {s} .gd-tbl-filter-bar,
+html.quarto-dark {s} .gd-tbl-filter-bar,
+:root[data-bs-theme="dark"] {s} .gd-tbl-filter-bar {{
   background-color: #2a2a3e;
   border-color: #444;
+}}
+body.quarto-dark {s} .gd-tbl-filter-token,
+html.quarto-dark {s} .gd-tbl-filter-token,
+:root[data-bs-theme="dark"] {s} .gd-tbl-filter-token {{
+  background: #2d3a50;
+  border-color: #3d5070;
+  color: #b0ccee;
+}}
+body.quarto-dark {s} .gd-tbl-filter-token-x:hover,
+html.quarto-dark {s} .gd-tbl-filter-token-x:hover,
+:root[data-bs-theme="dark"] {s} .gd-tbl-filter-token-x:hover {{
+  background: #3d5070;
+  color: #e0e8f0;
+}}
+body.quarto-dark {s} .gd-tbl-filter-token-case,
+html.quarto-dark {s} .gd-tbl-filter-token-case,
+:root[data-bs-theme="dark"] {s} .gd-tbl-filter-token-case {{
+  color: #88bbee;
+  border-color: #4d6888;
+}}
+body.quarto-dark {s} .gd-tbl-fw-case,
+html.quarto-dark {s} .gd-tbl-fw-case,
+:root[data-bs-theme="dark"] {s} .gd-tbl-fw-case {{
+  background: #2a2a3e;
+  border-color: #555;
+  color: #888;
+}}
+body.quarto-dark {s} .gd-tbl-fw-case:hover,
+html.quarto-dark {s} .gd-tbl-fw-case:hover,
+:root[data-bs-theme="dark"] {s} .gd-tbl-fw-case:hover {{
+  border-color: #888;
+  color: #bbb;
+}}
+body.quarto-dark {s} .gd-tbl-fw-case.active,
+html.quarto-dark {s} .gd-tbl-fw-case.active,
+:root[data-bs-theme="dark"] {s} .gd-tbl-fw-case.active {{
+  background: #2d3a50;
+  border-color: #6699CC;
+  color: #88bbee;
+}}
+body.quarto-dark {s} .gd-tbl-filter-add,
+html.quarto-dark {s} .gd-tbl-filter-add,
+:root[data-bs-theme="dark"] {s} .gd-tbl-filter-add {{
+  color: #88bbee;
+}}
+body.quarto-dark {s} .gd-tbl-filter-add:hover,
+html.quarto-dark {s} .gd-tbl-filter-add:hover,
+:root[data-bs-theme="dark"] {s} .gd-tbl-filter-add:hover {{
+  background: #353550;
+}}
+body.quarto-dark {s} .gd-tbl-filter-wizard,
+html.quarto-dark {s} .gd-tbl-filter-wizard,
+:root[data-bs-theme="dark"] {s} .gd-tbl-filter-wizard {{
+  background: #1e1e32;
+  border-color: #444;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}}
+body.quarto-dark {s} .gd-tbl-fw-option,
+html.quarto-dark {s} .gd-tbl-fw-option,
+:root[data-bs-theme="dark"] {s} .gd-tbl-fw-option {{
+  color: #ddd;
+}}
+body.quarto-dark {s} .gd-tbl-fw-option:hover,
+html.quarto-dark {s} .gd-tbl-fw-option:hover,
+:root[data-bs-theme="dark"] {s} .gd-tbl-fw-option:hover {{
+  background: #2a2a44;
+}}
+body.quarto-dark {s} .gd-tbl-fw-dtype,
+html.quarto-dark {s} .gd-tbl-fw-dtype,
+:root[data-bs-theme="dark"] {s} .gd-tbl-fw-dtype {{
+  background: #333;
+  color: #aaa;
+}}
+body.quarto-dark {s} .gd-tbl-fw-input,
+html.quarto-dark {s} .gd-tbl-fw-input,
+:root[data-bs-theme="dark"] {s} .gd-tbl-fw-input {{
+  background: #2a2a3e;
+  border-color: #555;
   color: #e0e0e0;
 }}
-body.quarto-dark {s} .gd-tbl-filter:focus,
-html.quarto-dark {s} .gd-tbl-filter:focus,
-:root[data-bs-theme="dark"] {s} .gd-tbl-filter:focus {{
+body.quarto-dark {s} .gd-tbl-fw-input:focus,
+html.quarto-dark {s} .gd-tbl-fw-input:focus,
+:root[data-bs-theme="dark"] {s} .gd-tbl-fw-input:focus {{
   border-color: #6699CC;
   box-shadow: 0 0 0 2px rgba(102,153,204,0.3);
 }}

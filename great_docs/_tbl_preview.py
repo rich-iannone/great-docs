@@ -896,7 +896,8 @@ body.quarto-dark {s} .gt_table_body .gt_row,
 html.quarto-dark {s} .gt_table_body .gt_row,
 :root[data-bs-theme="dark"] {s} .gt_table_body .gt_row {{
   color: #d0d0d0;
-  border-top-color: #333;
+  border-top-color: #4b4b4b;
+  border-bottom-color: #4b4b4b;
   border-left-color: #333;
   border-right-color: #333;
 }}

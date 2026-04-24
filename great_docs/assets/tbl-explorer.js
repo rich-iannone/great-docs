@@ -504,10 +504,6 @@
     btn.setAttribute("aria-expanded", "false");
     updateColBtnLabel(btn, state);
 
-    var tip = document.createElement("span");
-    tip.className = "gd-tbl-tooltip";
-    tip.textContent = "Select Columns";
-
     var menu = document.createElement("div");
     menu.className = "gd-tbl-col-menu";
     menu.setAttribute("role", "menu");
@@ -568,15 +564,12 @@
     });
 
     wrap.appendChild(btn);
-    wrap.appendChild(tip);
     wrap.appendChild(menu);
     return wrap;
   }
 
   function updateColBtnLabel(btn, state) {
-    var total = state.columns.length;
-    var vis = state.visibleCols.length;
-    btn.textContent = vis < total ? "Columns (" + vis + "/" + total + ")" : "Columns";
+    btn.textContent = "Columns";
   }
 
   // ── Sorting ────────────────────────────────────────────────

@@ -14,6 +14,18 @@
   var COPIED_MS = 2000;
   var PAGE_WINDOW = 2;
 
+  // i18n helper — read translations from <meta name="gd-i18n">
+  var _i18nCache = null;
+  function _gdT(key, fallback) {
+    if (!_i18nCache) {
+      try {
+        var meta = document.querySelector('meta[name="gd-i18n"]');
+        _i18nCache = meta ? JSON.parse(meta.getAttribute('content')) : {};
+      } catch (e) { _i18nCache = {}; }
+    }
+    return _i18nCache[key] || fallback;
+  }
+
   // SVG sort indicator icons (all same viewBox for consistent width)
   var SORT_W = 10, SORT_H = 14;
   var SVG_SORT_NONE = '<svg width="' + SORT_W + '" height="' + SORT_H + '" viewBox="0 0 10 14" fill="currentColor" xmlns="http://www.w3.org/2000/svg">' +
@@ -68,7 +80,7 @@
     this.filterQuery = "";   // kept for search highlight compat
     this.visibleCols = this.columns.map(function (_, i) { return i; });
     this.currentPage = 1;
-    this.pageSize = this.cfg.pageSize || 20;
+    this.pageSize = this.cfg.pageSize != null ? this.cfg.pageSize : 10;
     this._nextFilterId = 1;
   }
 
@@ -85,13 +97,13 @@
   // {key, label, needsValue, appliesTo(dtype)}
   var FILTER_OPS = [
     // String ops
-    {key:"contains",    label:"contains",      needsValue:true,  appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
-    {key:"not_contains",label:"doesn\u2019t contain",needsValue:true,appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
-    {key:"starts_with", label:"starts with",   needsValue:true,  appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
-    {key:"ends_with",   label:"ends with",     needsValue:true,  appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
-    {key:"eq_str",      label:"equals",        needsValue:true,  appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
-    {key:"is_empty",    label:"is empty",      needsValue:false, appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
-    {key:"not_empty",   label:"is not empty",  needsValue:false, appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
+    {key:"contains",    label:_gdT("tbl_filter_contains","contains"),      needsValue:true,  appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
+    {key:"not_contains",label:_gdT("tbl_filter_not_contains","doesn\u2019t contain"),needsValue:true,appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
+    {key:"starts_with", label:_gdT("tbl_filter_starts_with","starts with"),   needsValue:true,  appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
+    {key:"ends_with",   label:_gdT("tbl_filter_ends_with","ends with"),     needsValue:true,  appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
+    {key:"eq_str",      label:_gdT("tbl_filter_equals","equals"),        needsValue:true,  appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
+    {key:"is_empty",    label:_gdT("tbl_filter_is_empty","is empty"),      needsValue:false, appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
+    {key:"not_empty",   label:_gdT("tbl_filter_not_empty","is not empty"),  needsValue:false, appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
     // Numeric ops
     {key:"eq",  label:"\u003D",  needsValue:true, appliesTo:isNumeric},
     {key:"neq", label:"\u2260",  needsValue:true, appliesTo:isNumeric},
@@ -99,13 +111,13 @@
     {key:"lte", label:"\u2264",  needsValue:true, appliesTo:isNumeric},
     {key:"gt",  label:"\u003E",  needsValue:true, appliesTo:isNumeric},
     {key:"gte", label:"\u2265",  needsValue:true, appliesTo:isNumeric},
-    {key:"between",label:"between",needsValue:"two",appliesTo:isNumeric},
+    {key:"between",label:_gdT("tbl_filter_between","between"),needsValue:"two",appliesTo:isNumeric},
     // Bool ops
-    {key:"is_true",  label:"is true",  needsValue:false, appliesTo:isBool},
-    {key:"is_false", label:"is false", needsValue:false, appliesTo:isBool},
+    {key:"is_true",  label:_gdT("tbl_filter_is_true","is true"),  needsValue:false, appliesTo:isBool},
+    {key:"is_false", label:_gdT("tbl_filter_is_false","is false"), needsValue:false, appliesTo:isBool},
     // Universal ops
-    {key:"is_null",     label:"is null",     needsValue:false, appliesTo:function(){return true;}},
-    {key:"is_not_null", label:"is not null", needsValue:false, appliesTo:function(){return true;}}
+    {key:"is_null",     label:_gdT("tbl_filter_is_null","is null"),     needsValue:false, appliesTo:function(){return true;}},
+    {key:"is_not_null", label:_gdT("tbl_filter_is_not_null","is not null"), needsValue:false, appliesTo:function(){return true;}}
   ];
 
   function getOpsForDtype(dtype) {
@@ -185,6 +197,12 @@
       });
       filterBar.appendChild(addBtn);
 
+      // Placeholder hint for empty filter bar
+      var filterHint = document.createElement("span");
+      filterHint.className = "gd-tbl-filter-hint";
+      filterHint.innerHTML = '<svg width="16" height="10" viewBox="0 0 16 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="15" y1="5" x2="3" y2="5"/><polyline points="6 1 2 5 6 9"/></svg> ' + _gdT("tbl_filter_hint", "Add Data Filter");
+      filterBar.appendChild(filterHint);
+
       bar.appendChild(filterBar);
     }
 
@@ -193,7 +211,7 @@
     }
 
     if (state.cfg.copyable) {
-      var copy = makeIconBtn(SVG_COPY, "Copy table to clipboard", "Copy");
+      var copy = makeIconBtn(SVG_COPY, "Copy table to clipboard", _gdT("tbl_copy_tooltip", "Copy"));
       copy.btn.addEventListener("click", function () {
         handleCopy(state, false, copy.btn);
       });
@@ -201,7 +219,7 @@
     }
 
     if (state.cfg.downloadable) {
-      var dl = makeIconBtn(SVG_DOWNLOAD, "Download as CSV", "Download");
+      var dl = makeIconBtn(SVG_DOWNLOAD, "Download as CSV", _gdT("tbl_download_tooltip", "Download"));
       dl.btn.addEventListener("click", function () {
         handleDownload(state);
       });
@@ -209,7 +227,7 @@
     }
 
     // Reset button (always present if toolbar exists)
-    var reset = makeIconBtn(SVG_RESET, "Reset all filters and sorting", "Reset");
+    var reset = makeIconBtn(SVG_RESET, "Reset all filters and sorting", _gdT("tbl_reset_tooltip", "Reset"));
     reset.btn.addEventListener("click", function () {
       handleReset(el, state);
     });
@@ -228,6 +246,10 @@
   function startFilterWizard(el, state, filterBar, tokenArea) {
     // Remove any existing wizard
     closeFilterWizard(filterBar);
+
+    // Hide the hint while wizard is open
+    var hint = filterBar.querySelector(".gd-tbl-filter-hint");
+    if (hint) hint.style.display = "none";
 
     var wizard = document.createElement("div");
     wizard.className = "gd-tbl-filter-wizard";
@@ -319,7 +341,7 @@
     var input = document.createElement("input");
     input.type = isNumeric(col.dtype) ? "number" : "text";
     input.className = "gd-tbl-fw-input";
-    input.placeholder = "Enter value\u2026";
+    input.placeholder = _gdT("tbl_filter_enter_value", "Enter value\u2026");
     input.setAttribute("aria-label", "Filter value");
     inputRow.appendChild(input);
 
@@ -330,11 +352,11 @@
       caseBtn.className = "gd-tbl-fw-case";
       caseBtn.textContent = "Aa";
       caseBtn.setAttribute("aria-label", "Toggle case sensitivity");
-      caseBtn.title = "Case insensitive";
+      caseBtn.title = _gdT("tbl_filter_case_insensitive", "Case insensitive");
       caseBtn.addEventListener("click", function () {
         caseSensitive = !caseSensitive;
         caseBtn.classList.toggle("active", caseSensitive);
-        caseBtn.title = caseSensitive ? "Case sensitive" : "Case insensitive";
+        caseBtn.title = caseSensitive ? _gdT("tbl_filter_case_sensitive", "Case sensitive") : _gdT("tbl_filter_case_insensitive", "Case insensitive");
       });
       inputRow.appendChild(caseBtn);
     }
@@ -342,7 +364,7 @@
 
     var commitBtn = document.createElement("button");
     commitBtn.className = "gd-tbl-btn gd-tbl-fw-commit";
-    commitBtn.textContent = "Apply";
+    commitBtn.textContent = _gdT("tbl_filter_apply", "Apply");
     commitBtn.addEventListener("click", function () {
       var val = input.value.trim();
       if (!val) return;
@@ -369,7 +391,7 @@
 
     var heading = document.createElement("span");
     heading.className = "gd-tbl-fw-label";
-    heading.textContent = col.name + " between";
+    heading.textContent = col.name + " " + _gdT("tbl_filter_between", "between");
     wizard.appendChild(heading);
 
     var row = document.createElement("span");
@@ -378,26 +400,26 @@
     var inputLo = document.createElement("input");
     inputLo.type = "number";
     inputLo.className = "gd-tbl-fw-input";
-    inputLo.placeholder = "min";
+    inputLo.placeholder = _gdT("tbl_filter_min", "min");
     inputLo.setAttribute("aria-label", "Minimum value");
     row.appendChild(inputLo);
 
     var sep = document.createElement("span");
-    sep.textContent = " and ";
+    sep.textContent = " " + _gdT("tbl_filter_and", "and") + " ";
     sep.className = "gd-tbl-fw-sep";
     row.appendChild(sep);
 
     var inputHi = document.createElement("input");
     inputHi.type = "number";
     inputHi.className = "gd-tbl-fw-input";
-    inputHi.placeholder = "max";
+    inputHi.placeholder = _gdT("tbl_filter_max", "max");
     inputHi.setAttribute("aria-label", "Maximum value");
     row.appendChild(inputHi);
     wizard.appendChild(row);
 
     var commitBtn = document.createElement("button");
     commitBtn.className = "gd-tbl-btn gd-tbl-fw-commit";
-    commitBtn.textContent = "Apply";
+    commitBtn.textContent = _gdT("tbl_filter_apply", "Apply");
     commitBtn.addEventListener("click", function () {
       var lo = inputLo.value.trim();
       var hi = inputHi.value.trim();
@@ -485,11 +507,24 @@
       pill.appendChild(closeBtn);
       tokenArea.appendChild(pill);
     }
+    // Update hint visibility based on token count
+    var filterBar = tokenArea.closest ? tokenArea.closest(".gd-tbl-filter-bar") : tokenArea.parentNode;
+    if (filterBar) updateFilterHint(filterBar);
   }
 
   function closeFilterWizard(filterBar) {
     var w = filterBar.querySelector(".gd-tbl-filter-wizard");
     if (w && w.parentNode) w.parentNode.removeChild(w);
+    // Show hint again if no tokens
+    updateFilterHint(filterBar);
+  }
+
+  function updateFilterHint(container) {
+    var hint = container.querySelector(".gd-tbl-filter-hint");
+    if (!hint) return;
+    var hasTokens = container.querySelector(".gd-tbl-filter-token") != null;
+    var hasWizard = container.querySelector(".gd-tbl-filter-wizard") != null;
+    hint.style.display = (hasTokens || hasWizard) ? "none" : "";
   }
 
   // ── Column Toggle ──────────────────────────────────────────
@@ -569,7 +604,7 @@
   }
 
   function updateColBtnLabel(btn, state) {
-    btn.textContent = "Columns";
+    btn.textContent = _gdT("tbl_columns_btn", "Columns");
   }
 
   // ── Sorting ────────────────────────────────────────────────
@@ -874,7 +909,10 @@
 
     // Close any open filter wizard
     var filterBar = el.querySelector(".gd-tbl-filter-bar");
-    if (filterBar) closeFilterWizard(filterBar);
+    if (filterBar) {
+      closeFilterWizard(filterBar);
+      updateFilterHint(filterBar);
+    }
 
     // Reset column checkboxes
     var cbs = el.querySelectorAll(".gd-tbl-col-menu input[type=checkbox]");
@@ -905,10 +943,12 @@
 
     var pageRows = getVisiblePageRows(state);
     var startIdx = state.pageSize > 0 ? (state.currentPage - 1) * state.pageSize : 0;
+    var colCount = state.visibleCols.length + (state.cfg.showRowNumbers ? 1 : 0);
 
     var tbody = document.createElement("tbody");
     tbody.className = "gt_table_body";
 
+    // Render data rows
     for (var r = 0; r < pageRows.length; r++) {
       var row = pageRows[r];
       var tr = document.createElement("tr");
@@ -946,10 +986,75 @@
       tbody.appendChild(tr);
     }
 
+    // "Empty Table" message when filtering removes all rows
+    if (pageRows.length === 0 && state.filteredRows.length === 0 && state.filterTokens.length > 0) {
+      var msgTr = document.createElement("tr");
+      msgTr.className = "gd-tbl-placeholder-row";
+      var msgTd = document.createElement("td");
+      msgTd.setAttribute("colspan", String(colCount));
+      msgTd.className = "gt_row";
+      msgTd.style.cssText = "border:none !important; padding:0 !important;";
+      var msgDiv = document.createElement("div");
+      msgDiv.className = "gd-tbl-empty-msg";
+      msgDiv.textContent = _gdT("tbl_no_matching_rows", "No matching rows");
+      msgTd.appendChild(msgDiv);
+      msgTr.appendChild(msgTd);
+      tbody.appendChild(msgTr);
+    }
+
+    // Stable height: pad with placeholder rows to maintain consistent table size
+    var MIN_VISIBLE_ROWS = 10;
+    if (state.pageSize > 0 || pageRows.length < MIN_VISIBLE_ROWS) {
+      if (!state._rowHeight) {
+        state._rowHeight = 23; // fallback
+      }
+      var targetRows = state.pageSize > 0 ? state.pageSize : MIN_VISIBLE_ROWS;
+      var renderedDataRows = pageRows.length;
+      // The empty-message row counts as one row for spacing
+      var fillerStart = renderedDataRows + (pageRows.length === 0 && state.filterTokens.length > 0 ? 1 : 0);
+      for (var p = fillerStart; p < targetRows; p++) {
+        var ptr = document.createElement("tr");
+        ptr.className = "gd-tbl-placeholder-row";
+        for (var pc = 0; pc < colCount; pc++) {
+          var ptd = document.createElement("td");
+          ptd.className = "gt_row";
+          var dot = document.createElement("span");
+          dot.className = "gd-tbl-placeholder-dot";
+          ptd.appendChild(dot);
+          ptr.appendChild(ptd);
+        }
+        tbody.appendChild(ptr);
+      }
+    }
+
     if (oldBody) {
       tbl.replaceChild(tbody, oldBody);
     } else {
       tbl.appendChild(tbody);
+    }
+
+    // Measure actual row height from first data row for placeholder sizing
+    var hasPlaceholders = tbody.querySelector(".gd-tbl-placeholder-row") != null;
+    if (hasPlaceholders && !state._rowHeightMeasured) {
+      var firstDataRow = tbody.querySelector("tr:not(.gd-tbl-placeholder-row)");
+      if (firstDataRow) {
+        var measuredH = firstDataRow.getBoundingClientRect().height;
+        if (measuredH > 0) {
+          state._rowHeight = measuredH;
+          state._rowHeightMeasured = true;
+          // Apply measured height to placeholder rows
+          var placeholders = tbody.querySelectorAll(".gd-tbl-placeholder-row td");
+          for (var ph = 0; ph < placeholders.length; ph++) {
+            placeholders[ph].style.height = measuredH + "px";
+          }
+        }
+      }
+    } else if (hasPlaceholders && state._rowHeightMeasured) {
+      // Apply stored height to placeholder rows
+      var placeholders = tbody.querySelectorAll(".gd-tbl-placeholder-row td");
+      for (var ph = 0; ph < placeholders.length; ph++) {
+        placeholders[ph].style.height = state._rowHeight + "px";
+      }
     }
 
     // Update colgroup to hide toggled columns

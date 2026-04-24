@@ -205,6 +205,21 @@ def _render_explorer_css(uid: str) -> str:
   background: #eef3fb;
   border-radius: 3px;
 }}
+{s} .gd-tbl-filter-hint {{
+  color: #b0b0b0;
+  font-size: 12px;
+  font-style: italic;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 4px;
+  user-select: none;
+  pointer-events: none;
+}}
+{s} .gd-tbl-filter-hint svg {{
+  flex-shrink: 0;
+  stroke: #b0b0b0;
+}}
 /* ── Filter wizard dropdown ──────────────────────── */
 {s} .gd-tbl-filter-wizard {{
   position: absolute;
@@ -584,6 +599,16 @@ html.quarto-dark {s} .gd-tbl-filter-add:hover,
 :root[data-bs-theme="dark"] {s} .gd-tbl-filter-add:hover {{
   background: #353550;
 }}
+body.quarto-dark {s} .gd-tbl-filter-hint,
+html.quarto-dark {s} .gd-tbl-filter-hint,
+:root[data-bs-theme="dark"] {s} .gd-tbl-filter-hint {{
+  color: #666;
+}}
+body.quarto-dark {s} .gd-tbl-filter-hint svg,
+html.quarto-dark {s} .gd-tbl-filter-hint svg,
+:root[data-bs-theme="dark"] {s} .gd-tbl-filter-hint svg {{
+  stroke: #666;
+}}
 body.quarto-dark {s} .gd-tbl-filter-wizard,
 html.quarto-dark {s} .gd-tbl-filter-wizard,
 :root[data-bs-theme="dark"] {s} .gd-tbl-filter-wizard {{
@@ -706,6 +731,44 @@ html.quarto-dark {s} .gd-tbl-btn-copied,
   color: #4ade80;
   border-color: #4ade80;
 }}
+/* ── Placeholder rows (stable height) ────────────── */
+{s} .gd-tbl-placeholder-row td {{
+  border-top: none !important;
+  border-bottom: none !important;
+  padding: 0 !important;
+  height: 0;
+  line-height: 0;
+  overflow: hidden;
+  position: relative;
+}}
+{s} .gd-tbl-placeholder-row td .gd-tbl-placeholder-dot {{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #d0d0d0;
+}}
+{s} .gd-tbl-empty-msg {{
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+  font-style: italic;
+  padding: 8px 0 4px 0;
+  user-select: none;
+}}
+body.quarto-dark {s} .gd-tbl-placeholder-row td .gd-tbl-placeholder-dot,
+html.quarto-dark {s} .gd-tbl-placeholder-row td .gd-tbl-placeholder-dot,
+:root[data-bs-theme="dark"] {s} .gd-tbl-placeholder-row td .gd-tbl-placeholder-dot {{
+  background: #555;
+}}
+body.quarto-dark {s} .gd-tbl-empty-msg,
+html.quarto-dark {s} .gd-tbl-empty-msg,
+:root[data-bs-theme="dark"] {s} .gd-tbl-empty-msg {{
+  color: #777;
+}}
 </style>"""
 
 
@@ -757,7 +820,7 @@ def tbl_explorer(
     min_tbl_width: int = 500,
     caption: str | None = None,
     highlight_missing: bool = True,
-    page_size: int = 20,
+    page_size: int = 10,
     sortable: bool = True,
     filterable: bool = True,
     column_toggle: bool = True,

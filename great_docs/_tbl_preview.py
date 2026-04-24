@@ -803,15 +803,15 @@ def _render_scoped_css(uid: str) -> str:
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-  padding-bottom: 2px;
-  margin-bottom: 2px;
+  padding-bottom: 0;
+  margin-bottom: 0;
 }}
 {s} .gd-tbl-dtype {{
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-  padding-top: 2px;
-  margin-top: 2px;
+  padding-top: 0;
+  margin-top: 0;
   color: #666666;
 }}
 /* Header badge styling */

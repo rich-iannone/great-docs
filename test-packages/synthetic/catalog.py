@@ -361,6 +361,8 @@ ALL_PACKAGES: list[str] = [
     "gdtest_tbl_preview",  # 178
     # 179: Table preview shortcode showcase
     "gdtest_tbl_shortcode",  # 179
+    # 180: Interactive table explorer showcase
+    "gdtest_tbl_explorer",  # 180
 ]
 
 
@@ -2025,6 +2027,15 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "show_row_numbers, show_dtypes, show_dimensions, max_col_width — "
         "plus multi-table pages and wide-table horizontal scroll. No Python "
         "code cells; all rendering is done via the shortcode."
+    ),
+    "gdtest_tbl_explorer": (
+        "Interactive table explorer showcase exercising tbl_explorer() with "
+        "eight user-guide pages: basic sorting/filtering, pagination (custom "
+        "page sizes, no pagination), column toggling (wide tables, subsets, "
+        "toggle disabled), copy/download controls (various combinations), "
+        "missing-value highlighting, minimal chrome (hide row numbers, dtypes, "
+        "dimensions), tbl-explorer Quarto shortcode with CSV/TSV/JSONL files, "
+        "and a side-by-side comparison of tbl_preview() vs tbl_explorer()."
     ),
 }
 

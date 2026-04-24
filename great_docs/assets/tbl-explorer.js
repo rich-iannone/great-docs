@@ -97,13 +97,13 @@
   // {key, label, needsValue, appliesTo(dtype)}
   var FILTER_OPS = [
     // String ops
-    {key:"contains",    label:"contains",      needsValue:true,  appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
-    {key:"not_contains",label:"doesn\u2019t contain",needsValue:true,appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
-    {key:"starts_with", label:"starts with",   needsValue:true,  appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
-    {key:"ends_with",   label:"ends with",     needsValue:true,  appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
-    {key:"eq_str",      label:"equals",        needsValue:true,  appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
-    {key:"is_empty",    label:"is empty",      needsValue:false, appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
-    {key:"not_empty",   label:"is not empty",  needsValue:false, appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
+    {key:"contains",    label:_gdT("tbl_filter_contains","contains"),      needsValue:true,  appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
+    {key:"not_contains",label:_gdT("tbl_filter_not_contains","doesn\u2019t contain"),needsValue:true,appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
+    {key:"starts_with", label:_gdT("tbl_filter_starts_with","starts with"),   needsValue:true,  appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
+    {key:"ends_with",   label:_gdT("tbl_filter_ends_with","ends with"),     needsValue:true,  appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
+    {key:"eq_str",      label:_gdT("tbl_filter_equals","equals"),        needsValue:true,  appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
+    {key:"is_empty",    label:_gdT("tbl_filter_is_empty","is empty"),      needsValue:false, appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
+    {key:"not_empty",   label:_gdT("tbl_filter_not_empty","is not empty"),  needsValue:false, appliesTo:function(d){return !isNumeric(d) && !isBool(d);}},
     // Numeric ops
     {key:"eq",  label:"\u003D",  needsValue:true, appliesTo:isNumeric},
     {key:"neq", label:"\u2260",  needsValue:true, appliesTo:isNumeric},
@@ -111,13 +111,13 @@
     {key:"lte", label:"\u2264",  needsValue:true, appliesTo:isNumeric},
     {key:"gt",  label:"\u003E",  needsValue:true, appliesTo:isNumeric},
     {key:"gte", label:"\u2265",  needsValue:true, appliesTo:isNumeric},
-    {key:"between",label:"between",needsValue:"two",appliesTo:isNumeric},
+    {key:"between",label:_gdT("tbl_filter_between","between"),needsValue:"two",appliesTo:isNumeric},
     // Bool ops
-    {key:"is_true",  label:"is true",  needsValue:false, appliesTo:isBool},
-    {key:"is_false", label:"is false", needsValue:false, appliesTo:isBool},
+    {key:"is_true",  label:_gdT("tbl_filter_is_true","is true"),  needsValue:false, appliesTo:isBool},
+    {key:"is_false", label:_gdT("tbl_filter_is_false","is false"), needsValue:false, appliesTo:isBool},
     // Universal ops
-    {key:"is_null",     label:"is null",     needsValue:false, appliesTo:function(){return true;}},
-    {key:"is_not_null", label:"is not null", needsValue:false, appliesTo:function(){return true;}}
+    {key:"is_null",     label:_gdT("tbl_filter_is_null","is null"),     needsValue:false, appliesTo:function(){return true;}},
+    {key:"is_not_null", label:_gdT("tbl_filter_is_not_null","is not null"), needsValue:false, appliesTo:function(){return true;}}
   ];
 
   function getOpsForDtype(dtype) {
@@ -391,7 +391,7 @@
 
     var heading = document.createElement("span");
     heading.className = "gd-tbl-fw-label";
-    heading.textContent = col.name + " between";
+    heading.textContent = col.name + " " + _gdT("tbl_filter_between", "between");
     wizard.appendChild(heading);
 
     var row = document.createElement("span");

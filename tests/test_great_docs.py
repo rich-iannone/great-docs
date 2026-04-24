@@ -24683,6 +24683,7 @@ def test_create_api_sections_from_config_basic():
                         {"title": "Classes", "contents": ["ClassA"]},
                         {"title": "Functions", "contents": ["func_b"]},
                     ],
+                    "should_split_methods": lambda self, n: n > 5,
                 },
             )()
 
@@ -24728,6 +24729,7 @@ def test_create_api_sections_from_config_large_class():
                     "reference": [
                         {"title": "Classes", "contents": ["BigClass"]},
                     ],
+                    "should_split_methods": lambda self, n: n > 5,
                 },
             )()
 
@@ -24772,6 +24774,7 @@ def test_create_api_sections_from_config_dict_items():
                             ],
                         },
                     ],
+                    "should_split_methods": lambda self, n: n > 5,
                 },
             )()
 

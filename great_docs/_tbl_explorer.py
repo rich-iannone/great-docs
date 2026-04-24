@@ -401,7 +401,8 @@ def _render_explorer_css(uid: str) -> str:
 }}
 /* Keep tooltip from overflowing right edge */
 {s} .gd-tbl-btn-wrap:last-child .gd-tbl-tooltip {{
-  left: 0;
+  left: auto;
+  right: 0;
   transform: none;
 }}
 {s} .gd-tbl-btn-wrap:hover .gd-tbl-tooltip {{
@@ -766,62 +767,143 @@ def tbl_explorer(
     search_highlight: bool = True,
     id: str | None = None,
 ) -> TblExplorer:
-    """Generate an interactive table explorer from tabular data.
+    """
+    Generate an interactive table explorer from almost any tabular data source.
 
-    Produces a self-contained HTML widget with a static table baseline that is progressively
-    enhanced by JavaScript to add sorting, filtering, pagination, column toggling,
-    copy-to-clipboard, and CSV download.
+    The `tbl_explorer()` function creates a self-contained, interactive HTML table widget from
+    tabular data. Pass it a Polars DataFrame, a Pandas DataFrame, a PyArrow Table, a file path to a
+    CSV / TSV / JSONL / Parquet / Feather file, a column-oriented dictionary, or a list of row
+    dictionaries—and get back an interactive table with sorting, token-based filtering, pagination,
+    column toggling, copy-to-clipboard, and CSV download.
+
+    The output uses **progressive enhancement**: the initial HTML contains a fully rendered static
+    table (the first page of data) that is readable without JavaScript. When JavaScript is available,
+    the static table is enhanced with interactive controls. All row data is embedded as inline JSON
+    within the HTML, so the widget is completely self-contained with no external dependencies.
+
+    The interactive toolbar includes a token-based filter bar (with type-aware operators for string,
+    numeric, and boolean columns), a column visibility dropdown, copy and download buttons, and a
+    reset control. Column headers are clickable for single-column sorting, and shift-click enables
+    multi-column sorting. Pagination is enabled by default at 20 rows per page.
+
+    The output is a :class:`TblExplorer` object with `_repr_html_()` support, so it displays
+    automatically in Jupyter notebooks and Quarto code cells. All CSS is scoped to a unique id, and
+    the table includes full dark-mode support.
 
     Parameters
     ----------
     data
-        The table to explore. Accepts the same inputs as `~great_docs.tbl_preview`: Polars/Pandas
-        DataFrames, PyArrow Tables, file paths (CSV/TSV/JSONL/Parquet/Feather/Arrow IPC),
-        column-oriented dicts, or row-oriented lists of dicts.
+        The table to explore. This can be a Polars DataFrame, a Pandas DataFrame, a PyArrow Table,
+        a file path (as a string or `pathlib.Path` object), a column-oriented dictionary, or a list
+        of row dictionaries. When providing a file path, the extension determines the loader:
+        `.csv`, `.tsv`, `.jsonl` (or `.ndjson`), `.parquet`, `.feather`, and `.arrow` (Arrow IPC)
+        are all supported. Read the *Supported Input Data Types* section for details on each
+        accepted format.
     columns
-        Subset of columns to show, by default `None` (all columns).
+        The columns to display in the explorer, by default `None` (all columns are shown). This
+        can be a list of column name strings. If any name does not match a column in the table, a
+        `KeyError` is raised. This is useful for focusing on a subset of a wide dataset.
     show_row_numbers
-        Display a row-number gutter column on the left.
+        Should row numbers be shown? The numbers appear in a narrow gutter column on the left side
+        of the table, separated from the data columns by a subtle blue vertical line. By default,
+        this is set to `True`.
     show_dtypes
-        Display short dtype labels beneath column names.
+        Should data type labels be displayed beneath each column name? The labels use short
+        abbreviations (e.g., `i64` for 64-bit integer, `str` for string, `f64` for 64-bit float).
+        By default, this is set to `True`.
     show_dimensions
-        Display the header banner with source-type badge and row/column counts.
+        Should the header banner be shown? The banner displays a colored badge identifying the data
+        source type alongside row and column counts in labeled pill badges. By default, this is set
+        to `True`.
     max_col_width
-        Maximum pixel width for any column.
+        The maximum width of any single column in pixels. Column widths are computed automatically
+        to fit their content up to this ceiling, beyond which cell text is truncated with an
+        ellipsis. The default value is `250` pixels.
     min_tbl_width
-        Minimum total table width in pixels.
+        The minimum total width of the table in pixels. If the sum of the computed column widths is
+        less than this value, columns are proportionally widened to fill the available space. The
+        default value is `500` pixels.
     caption
-        Optional caption text displayed above the column headers.
+        An optional caption string displayed below the header banner and above the column headers.
+        Useful for labeling an explorer with a dataset name or description. By default, no caption
+        is shown.
     highlight_missing
-        Highlight `None`/`NaN`/`NA` values in red.
+        Should missing values (`None`, `NaN`, `NA`) be highlighted? When `True` (the default),
+        missing cells are displayed in red text on a light red background so they stand out at a
+        glance.
     page_size
-        Number of rows per page. Set to `0` to disable pagination and show all rows at once.
+        The number of rows to display per page. The default value is `20`. Set to `0` to disable
+        pagination entirely and display all rows at once. The pagination bar shows the current range
+        (e.g., "Showing 1–20 of 150 rows") and page navigation buttons.
     sortable
-        Enable click-to-sort on column headers.
+        Should column sorting be enabled? When `True` (the default), clicking a column header
+        cycles through ascending → descending → unsorted. Hold **Shift** and click to add
+        multi-column sorting. Sort indicators appear as SVG arrows next to column names.
     filterable
-        Enable the global filter text input.
+        Should the token-based filter bar be shown? When `True` (the default), a filter bar appears
+        in the toolbar with a **+** button to add structured filters. Each filter is a token with a
+        column, operator, and optional value. Available operators depend on the column type:
+        string columns offer contains, starts with, ends with, etc.; numeric columns offer
+        comparison operators including between; boolean columns offer is true/is false. Filters
+        support case-sensitive matching via an **Aa** toggle.
     column_toggle
-        Enable the column-visibility dropdown.
+        Should the column visibility dropdown be shown? When `True` (the default), a **Columns**
+        button appears in the toolbar. Clicking it opens a dropdown with checkboxes for each
+        column. At least one column must remain visible.
     copyable
-        Enable the copy-to-clipboard button.
+        Should the copy-to-clipboard button be shown? When `True` (the default), a clipboard icon
+        appears in the toolbar. Clicking it copies the currently visible page of data as
+        tab-separated values. On success, the icon briefly changes to a green checkmark.
     downloadable
-        Enable the CSV download button.
+        Should the CSV download button be shown? When `True` (the default), a download icon appears
+        in the toolbar. Clicking it downloads the full filtered dataset (all pages) as a CSV file.
     resizable
-        Enable column drag-resize (reserved for future use).
+        Should column drag-resize be enabled? Reserved for future use. Currently has no effect.
+        The default value is `False`.
     sticky_header
-        Make column headers sticky on vertical scroll.
+        Should column headers remain visible when scrolling vertically? When `True` (the default),
+        the header row sticks to the top of the table container as the user scrolls through rows.
     search_highlight
-        Highlight matching cell text when filtering.
+        Should matching cell text be highlighted when a "contains" filter is active? When `True`
+        (the default), text matching the filter value is highlighted with a colored background. Set
+        to `False` to disable highlighting.
     id
-        HTML `id` for the container. Auto-generated if `None`.
+        An HTML `id` attribute for the outer `<div>` container. If `None` (the default), a unique
+        ID is auto-generated using `secrets.token_hex(4)`. Providing your own ID is useful when you
+        need to target the table with custom CSS or JavaScript.
 
     Returns
     -------
     TblExplorer
-        A rendered interactive table object with `_repr_html_()` support.
+        A rendered interactive table object. The object has `_repr_html_()` for automatic notebook
+        display.
+
+    Supported Input Data Types
+    --------------------------
+    The `data` parameter accepts any of the following:
+
+    - **Polars DataFrame** — displays a blue *Polars* badge
+    - **Pandas DataFrame** — displays a dark purple *Pandas* badge
+    - **PyArrow Table** — displays an indigo *Arrow* badge
+    - **CSV file** (`.csv`) — loaded automatically; displays a cream *CSV* badge
+    - **TSV file** (`.tsv`) — loaded automatically; displays a green *TSV* badge
+    - **JSONL file** (`.jsonl` or `.ndjson`) — loaded line-by-line; displays a blue *JSONL*
+      badge
+    - **Parquet file** (`.parquet`) — requires `polars`, `pandas`, or `pyarrow`; displays
+      a purple *Parquet* badge
+    - **Feather / Arrow IPC file** (`.feather` or `.arrow`) — requires `polars`, `pandas`,
+      or `pyarrow`; displays an orange *Feather* badge
+    - **Dictionary** (column-oriented, `dict[str, list]`) — displays a gray *Table* badge
+    - **List of dictionaries** (row-oriented, `list[dict]`) — displays a gray *Table* badge
+
+    For file-based inputs, pass a string or `pathlib.Path` object. The file extension is used to
+    determine the format. Polars is preferred for loading when available; Pandas and PyArrow are
+    used as fallbacks.
 
     Examples
     --------
+    The simplest way to explore a table is to pass a Python dictionary:
+
     ```{python}
     from great_docs import tbl_explorer
 
@@ -830,6 +912,47 @@ def tbl_explorer(
         "population": [13960000, 2161000, 8336000, 8982000, 5312000],
         "country": ["Japan", "France", "USA", "UK", "Australia"],
     })
+    ```
+
+    You can also pass a Polars DataFrame:
+
+    ```{python}
+    import polars as pl
+
+    df = pl.DataFrame({
+        "product": ["Widget", "Gadget", "Gizmo", "Doohickey", "Thingamajig"],
+        "category": ["Electronics", "Tools", "Kitchen", "Garden", "Office"],
+        "price": [29.99, 49.50, 12.00, 8.75, 199.99],
+        "in_stock": [True, False, True, True, False],
+    })
+
+    tbl_explorer(df)
+    ```
+
+    Load a CSV file and show only specific columns:
+
+    ```python
+    tbl_explorer("data/sales.csv", columns=["product", "revenue", "units"])
+    ```
+
+    Disable pagination to show all rows at once:
+
+    ```python
+    tbl_explorer(df, page_size=0)
+    ```
+
+    Create a minimal, sort-only table with no toolbar controls:
+
+    ```python
+    tbl_explorer(
+        df,
+        sortable=True,
+        filterable=False,
+        column_toggle=False,
+        copyable=False,
+        downloadable=False,
+        page_size=0,
+    )
     ```
     """
     import warnings

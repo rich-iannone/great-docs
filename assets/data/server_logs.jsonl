@@ -1,0 +1,6 @@
+{"timestamp": "2025-01-15T08:30:00", "level": "INFO", "module": "auth", "message": "User login successful"}
+{"timestamp": "2025-01-15T08:31:12", "level": "WARNING", "module": "db", "message": "Slow query detected (3.2s)"}
+{"timestamp": "2025-01-15T08:32:45", "level": "ERROR", "module": "api", "message": "Request timeout on /v2/users"}
+{"timestamp": "2025-01-15T08:33:01", "level": "INFO", "module": "cache", "message": "Cache miss for key user:42"}
+{"timestamp": "2025-01-15T08:34:20", "level": "DEBUG", "module": "auth", "message": "Token refresh for session abc123"}
+{"timestamp": "2025-01-15T08:35:55", "level": "ERROR", "module": "db", "message": "Connection pool exhausted"}

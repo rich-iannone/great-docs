@@ -14,14 +14,14 @@
   const MOUSE_INFLUENCE = 0.12;
 
   /* ── Dark-mode starfield constants ─────────────────────── */
-  const STAR_COUNT     = 800;
+  const STAR_COUNT     = 1000;
   const SPEED          = 0.40;
   const DEPTH          = 950;
   const TWINKLE_SPEED  = 0.035;   // sine-wave twinkle rate
-  const QUASAR_CHANCE  = 0.07;    // fraction of stars that glow
+  const QUASAR_CHANCE  = 0.10;    // fraction of stars that glow
 
   /* Nebula cloud count */
-  const NEBULA_COUNT   = 12;
+  const NEBULA_COUNT   = 18;
 
   /* Star colour palette (dark mode) — cool whites, blues, warm hints */
   const STAR_COLORS = [
@@ -101,6 +101,7 @@
       z: zOverride !== undefined ? zOverride : Math.random() * DEPTH,
       phase: Math.random() * Math.PI * 2,           // twinkle phase offset
       quasar: Math.random() < QUASAR_CHANCE,         // whether this star glows
+      flareAngle: Math.random() * Math.PI,           // unique spike rotation
       r: color[0], g: color[1], b: color[2],
     };
   }
@@ -201,8 +202,72 @@
       var t3     = t * t * t;
       var radius = 0.3 + t * 1.6 + t3 * 8.0;
 
-      // Core dot
-      ctx.fillStyle = "rgba(" + s.r + "," + s.g + "," + s.b + "," + alpha + ")";
+      // ── Starburst flare for near stars ──────────────────
+      // Stars beyond t > 0.45 get 4-point diffraction spikes
+      // that grow with proximity, giving a shining "flare" look
+      // instead of flat discs.
+      var flareIntensity = t > 0.45 ? (t - 0.45) / 0.55 : 0; // 0..1 ramp
+
+      if (flareIntensity > 0) {
+        var fi2 = flareIntensity * flareIntensity;
+        var spikeLen = radius * (3 + fi2 * 14);    // spike length grows fast
+        var spikeW   = radius * (0.15 + fi2 * 0.3); // spike half-width (thin)
+        var spikeA   = alpha * (0.35 + fi2 * 0.5);  // spike opacity
+
+        ctx.save();
+        ctx.translate(sx, sy);
+
+        // Draw 4 spikes (2 pairs at 90°)
+        for (var sp = 0; sp < 4; sp++) {
+          ctx.save();
+          ctx.rotate(sp * Math.PI / 2);
+
+          // Each spike is a narrow gradient that tapers to transparent
+          var sGrad = ctx.createLinearGradient(0, 0, spikeLen, 0);
+          sGrad.addColorStop(0,    "rgba(255,255,255," + (spikeA * 0.9) + ")");
+          sGrad.addColorStop(0.15, "rgba(" + s.r + "," + s.g + "," + s.b + "," + (spikeA * 0.6) + ")");
+          sGrad.addColorStop(0.5,  "rgba(" + s.r + "," + s.g + "," + s.b + "," + (spikeA * 0.2) + ")");
+          sGrad.addColorStop(1,    "rgba(" + s.r + "," + s.g + "," + s.b + ",0)");
+          ctx.fillStyle = sGrad;
+
+          // Tapered diamond shape for each spike
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(spikeLen * 0.25, -spikeW);
+          ctx.lineTo(spikeLen, 0);
+          ctx.lineTo(spikeLen * 0.25, spikeW);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.restore();
+        }
+
+        // Soft bloom halo behind the core
+        var bloomR = radius * (2 + fi2 * 4);
+        var bloomA = alpha * 0.3 * fi2;
+        var bGrad = ctx.createRadialGradient(0, 0, radius * 0.3, 0, 0, bloomR);
+        bGrad.addColorStop(0,   "rgba(255,255,255," + (bloomA * 0.8) + ")");
+        bGrad.addColorStop(0.3, "rgba(" + s.r + "," + s.g + "," + s.b + "," + (bloomA * 0.4) + ")");
+        bGrad.addColorStop(1,   "rgba(" + s.r + "," + s.g + "," + s.b + ",0)");
+        ctx.fillStyle = bGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, bloomR, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      // White-hot core with colour fringe (replaces flat disc)
+      if (flareIntensity > 0) {
+        // Bright core: white center fading to star colour
+        var coreGrad = ctx.createRadialGradient(sx, sy, 0, sx, sy, radius * 1.2);
+        coreGrad.addColorStop(0,   "rgba(255,255,255," + Math.min(alpha * 1.3, 1) + ")");
+        coreGrad.addColorStop(0.5, "rgba(" + s.r + "," + s.g + "," + s.b + "," + alpha + ")");
+        coreGrad.addColorStop(1,   "rgba(" + s.r + "," + s.g + "," + s.b + ",0)");
+        ctx.fillStyle = coreGrad;
+      } else {
+        ctx.fillStyle = "rgba(" + s.r + "," + s.g + "," + s.b + "," + alpha + ")";
+      }
       ctx.beginPath();
       ctx.arc(sx, sy, radius, 0, Math.PI * 2);
       ctx.fill();

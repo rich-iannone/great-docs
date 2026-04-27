@@ -473,18 +473,55 @@ df
 ```
 ````
 
-Control execution with hash-pipe (`#|`) options:
+Here's that same block running live:
+
+```{python}
+import pandas as pd
+
+df = pd.DataFrame({"x": [1, 2, 3], "y": [4, 5, 6]})
+df
+```
+
+Control execution with hash-pipe (`#|`) options. For example, the following block hides its source
+code and produces only the figure output with a caption:
 
 ````markdown
 ```{{python}}
 #| echo: false
-#| fig-cap: "Monthly revenue trend"
+#| fig-cap: "A simple plotnine chart"
 
-import matplotlib.pyplot as plt
-plt.plot([1, 2, 3], [10, 20, 15])
-plt.show()
+from plotnine import ggplot, aes, geom_col, theme_minimal, labs
+import pandas as pd
+
+df = pd.DataFrame({"category": ["A", "B", "C", "D"], "value": [4, 7, 3, 8]})
+
+(
+    ggplot(df, aes(x="category", y="value"))
+    + geom_col(fill="#4682B4")
+    + theme_minimal()
+    + labs(x="Category", y="Value")
+)
 ```
 ````
+
+And here it is rendered (notice only the plot appears because `echo: false` hides the code):
+
+```{python}
+#| echo: false
+#| fig-cap: "A simple plotnine chart"
+
+from plotnine import ggplot, aes, geom_col, theme_minimal, labs
+import pandas as pd
+
+df = pd.DataFrame({"category": ["A", "B", "C", "D"], "value": [4, 7, 3, 8]})
+
+(
+    ggplot(df, aes(x="category", y="value"))
+    + geom_col(fill="#4682B4")
+    + theme_minimal()
+    + labs(x="Category", y="Value")
+)
+```
 
 Common hash-pipe options:
 

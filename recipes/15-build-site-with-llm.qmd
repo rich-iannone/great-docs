@@ -71,6 +71,6 @@ The agent *cannot* install Python or Quarto, publish your package to PyPI, confi
 
 ## Tips for effective prompts
 
-Be specific about what you want rather than asking for "a good documentation site." A prompt like "add a user guide page about caching that explains TTL, LRU, and invalidation strategies" gives the agent enough context to produce useful content on the first try. If the result needs adjustment, follow up with targeted corrections like "move the LRU section before TTL" rather than asking the agent to start over.
+Be specific about what you want rather than asking for "a good documentation site". A prompt like "add a user guide page about caching that explains TTL, LRU, and invalidation strategies" gives the agent enough context to produce useful content on the first try. If the result needs adjustment, follow up with targeted corrections like "move the LRU section before TTL" rather than asking the agent to start over.
 
 When making multiple changes, ask for one change at a time and rebuild between each step. This makes it easy to spot which change caused an issue if something goes wrong.

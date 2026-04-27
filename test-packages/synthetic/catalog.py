@@ -363,6 +363,10 @@ ALL_PACKAGES: list[str] = [
     "gdtest_tbl_shortcode",  # 179
     # 180: Interactive table explorer showcase
     "gdtest_tbl_explorer",  # 180
+    # 181: Decorative horizontal rule shortcode showcase
+    "gdtest_hr_shortcode",  # 181
+    # 182: Site-wide accent_color config option
+    "gdtest_accent_color",  # 182
 ]
 
 
@@ -2036,6 +2040,22 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "missing-value highlighting, minimal chrome (hide row numbers, dtypes, "
         "dimensions), tbl-explorer Quarto shortcode with CSV/TSV/JSONL files, "
         "and a side-by-side comparison of tbl_preview() vs tbl_explorer()."
+    ),
+    "gdtest_hr_shortcode": (
+        "Decorative horizontal rule shortcode showcase exercising the "
+        "{{< hr >}} shortcode in six user-guide pages: line styles (solid, "
+        "dashed, dotted, double), palette and custom colors, sizing and "
+        "alignment (thickness, width, align, spacing), embedded text with "
+        "symbols and labels, all nine presets (gradient-shimmer, gradient-"
+        "static, fade, fade-edges, dots, diamond, ornament, wave, double-"
+        "line), and combined options with real-world examples."
+    ),
+    "gdtest_accent_color": (
+        "Site-wide accent_color config option that sets --gd-accent via "
+        "great-docs.yml. Uses a distinctive teal (#0d9488) to verify the "
+        "accent propagates to default hr shortcodes, gradient presets, "
+        "and text dividers while palette colors (sky, peach, etc.) retain "
+        "their own hues. Tests light and dark mode handling."
     ),
 }
 

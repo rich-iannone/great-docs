@@ -4244,6 +4244,359 @@ body.quarto-dark .gd-cta-desc {
     }
 }
 
+/* ── Horizontal Rule Shortcode ────────────────────────── */
+
+/* Palette color tokens — representative hue from each gradient preset */
+:root {
+    --gd-palette-sky: #0077b6;
+    --gd-palette-peach: #e07a3a;
+    --gd-palette-prism: #6d28d9;
+    --gd-palette-lilac: #a855f7;
+    --gd-palette-slate: #64748b;
+    --gd-palette-honey: #d97706;
+    --gd-palette-dusk: #4338ca;
+    --gd-palette-mint: #0d9488;
+    --gd-palette-accent: var(--gd-accent, #6366f1);
+}
+
+html[data-bs-theme="dark"] {
+    --gd-palette-sky: #38bdf8;
+    --gd-palette-peach: #fb923c;
+    --gd-palette-prism: #a78bfa;
+    --gd-palette-lilac: #c084fc;
+    --gd-palette-slate: #94a3b8;
+    --gd-palette-honey: #fbbf24;
+    --gd-palette-dusk: #818cf8;
+    --gd-palette-mint: #2dd4bf;
+    --gd-palette-accent: var(--gd-accent, #818cf8);
+}
+
+.gd-hr {
+    --gd-hr-color: var(--gd-accent, #6366f1);
+    --gd-hr-thickness: 2px;
+    --gd-hr-width: 100%;
+    --gd-hr-spacing: 2rem;
+
+    border: none;
+    height: var(--gd-hr-thickness);
+    width: var(--gd-hr-width);
+    max-width: 100%;
+    margin: var(--gd-hr-spacing) auto;
+    background: var(--gd-hr-color);
+    opacity: 0.7;
+    display: block;
+}
+
+/* ─ Line Styles ─ */
+.gd-hr--dotted {
+    background: none;
+    border-top: var(--gd-hr-thickness) dotted var(--gd-hr-color);
+    height: 0;
+}
+
+.gd-hr--dashed {
+    background: none;
+    border-top: var(--gd-hr-thickness) dashed var(--gd-hr-color);
+    height: 0;
+}
+
+.gd-hr--double {
+    background: none;
+    border-top: calc(var(--gd-hr-thickness) * 0.5) double var(--gd-hr-color);
+    height: 0;
+    border-top-width: calc(var(--gd-hr-thickness) + 2px);
+}
+
+/* ─ Alignment ─ */
+.gd-hr--left {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+.gd-hr--right {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+/* ─ With-Text Structure ─ */
+.gd-hr--with-text {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    height: auto;
+    background: none;
+    border: none;
+    width: var(--gd-hr-width);
+    max-width: 100%;
+    margin: var(--gd-hr-spacing) auto;
+    opacity: 1;
+}
+
+.gd-hr--with-text.gd-hr--left {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+.gd-hr--with-text.gd-hr--right {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+.gd-hr-line {
+    flex: 1;
+    height: var(--gd-hr-thickness, 2px);
+    background: var(--gd-hr-color);
+    opacity: 0.7;
+}
+
+.gd-hr-text {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--gd-hr-color);
+    white-space: nowrap;
+    user-select: none;
+    line-height: 1;
+}
+
+.gd-hr-text--sm {
+    font-size: 0.75rem;
+}
+
+.gd-hr-text--lg {
+    font-size: 1.2rem;
+}
+
+/* ─ Presets ─ */
+
+/* Gradient shimmer (animated) — generalizes .gd-fw-rule */
+.gd-hr--gradient-shimmer {
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--gd-hr-color, var(--gd-accent, #6366f1)) 25%,
+        var(--gd-accent-secondary, #a855f7) 50%,
+        var(--gd-hr-color, var(--gd-accent, #6366f1)) 75%,
+        transparent
+    );
+    background-size: 200% 100%;
+    animation: gd-hr-shimmer 4s ease-in-out infinite;
+    border: none;
+    height: var(--gd-hr-thickness);
+}
+
+@keyframes gd-hr-shimmer {
+    0%   { background-position: 100% 0; }
+    50%  { background-position: 0% 0; }
+    100% { background-position: 100% 0; }
+}
+
+/* Gradient static (non-animated) */
+.gd-hr--gradient-static {
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--gd-hr-color, var(--gd-accent, #6366f1)) 25%,
+        var(--gd-accent-secondary, #a855f7) 50%,
+        var(--gd-hr-color, var(--gd-accent, #6366f1)) 75%,
+        transparent
+    );
+    border: none;
+    height: var(--gd-hr-thickness);
+}
+
+/* Fade — full opacity at center, transparent at edges */
+.gd-hr--fade {
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--gd-hr-color) 20%,
+        var(--gd-hr-color) 80%,
+        transparent
+    );
+    border: none;
+    height: var(--gd-hr-thickness);
+}
+
+/* Fade-edges — transparent edges to colored center */
+.gd-hr--fade-edges {
+    background: radial-gradient(
+        ellipse at center,
+        var(--gd-hr-color) 0%,
+        transparent 70%
+    );
+    border: none;
+    height: var(--gd-hr-thickness);
+}
+
+/* Dots — three centered dots, no line */
+.gd-hr--dots {
+    background: none;
+    border: none;
+    height: auto;
+    text-align: center;
+    opacity: 1;
+}
+
+.gd-hr--dots::after {
+    content: "·  ·  ·";
+    font-size: 1.5rem;
+    letter-spacing: 0.3em;
+    color: var(--gd-hr-color);
+    opacity: 0.8;
+}
+
+/* Diamond — centered diamond flanked by thin lines */
+.gd-hr--diamond {
+    background: none;
+    border: none;
+    height: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    opacity: 1;
+}
+
+.gd-hr--diamond::before,
+.gd-hr--diamond::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--gd-hr-color);
+    opacity: 0.5;
+}
+
+.gd-hr--diamond::before {
+    content: "";
+}
+
+/* Insert diamond via a nested approach — use a wrapper trick.
+   Since <hr> can't have children, we use a background trick instead. */
+hr.gd-hr--diamond {
+    display: flex;
+}
+
+hr.gd-hr--diamond::before {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gd-hr-color));
+}
+
+hr.gd-hr--diamond::after {
+    content: "◇";
+    flex: none;
+    height: auto;
+    background: none;
+    font-size: 1rem;
+    color: var(--gd-hr-color);
+    opacity: 0.8;
+    padding: 0 0.5rem;
+}
+
+/* Ornament — fleuron between fading lines */
+.gd-hr--ornament {
+    background: none;
+    border: none;
+    height: auto;
+    display: flex;
+    align-items: center;
+    opacity: 1;
+}
+
+hr.gd-hr--ornament::before {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gd-hr-color));
+}
+
+hr.gd-hr--ornament::after {
+    content: "❧";
+    flex: none;
+    height: auto;
+    background: none;
+    font-size: 1.2rem;
+    color: var(--gd-hr-color);
+    opacity: 0.7;
+    padding: 0 0.75rem;
+}
+
+/* Wave — repeating wave pattern */
+.gd-hr--wave {
+    background: repeating-linear-gradient(
+        135deg,
+        var(--gd-hr-color) 0px,
+        var(--gd-hr-color) 2px,
+        transparent 2px,
+        transparent 6px
+    );
+    border: none;
+    height: var(--gd-hr-thickness);
+    opacity: 0.6;
+}
+
+/* Double-line — two parallel lines */
+.gd-hr--double-line {
+    background: none;
+    border: none;
+    height: calc(var(--gd-hr-thickness) * 2 + 3px);
+    position: relative;
+    opacity: 0.7;
+}
+
+.gd-hr--double-line::before,
+.gd-hr--double-line::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: var(--gd-hr-thickness);
+    background: var(--gd-hr-color);
+}
+
+.gd-hr--double-line::before {
+    top: 0;
+}
+
+.gd-hr--double-line::after {
+    bottom: 0;
+}
+
+/* ─ Dark Mode ─ */
+body.quarto-dark .gd-hr {
+    opacity: 0.6;
+}
+
+body.quarto-dark .gd-hr--with-text {
+    opacity: 1;
+}
+
+body.quarto-dark .gd-hr-line {
+    opacity: 0.5;
+}
+
+body.quarto-dark .gd-hr-text {
+    opacity: 0.85;
+}
+
+body.quarto-dark .gd-hr--dots::after {
+    opacity: 0.6;
+}
+
+/* ─ Reduced Motion ─ */
+@media (prefers-reduced-motion: reduce) {
+    .gd-hr--gradient-shimmer {
+        animation: none;
+    }
+}
+
+/* ─ Responsive ─ */
+@media (max-width: 768px) {
+    .gd-hr {
+        --gd-hr-spacing: 1.5rem;
+    }
+}
+
 /* ── Feature Wall Closing ─────────────────────────────── */
 
 .gd-fw-rule {

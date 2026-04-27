@@ -10778,6 +10778,34 @@ body-classes: "gd-homepage"
             if "navbar-style.js" not in resources_list:
                 resources_list.append("navbar-style.js")
 
+        # Add site-wide accent color if configured
+        accent_color = self._config.accent_color
+        if accent_color:
+            import html as html_mod_ac
+
+            accent_css_parts: list[str] = []
+            for mode in ("light", "dark"):
+                color_val = accent_color.get(mode)
+                if not color_val:
+                    continue
+                escaped = html_mod_ac.escape(color_val)
+                if mode == "light":
+                    selector = ":root, html.quarto-light, :root[data-bs-theme='light']"
+                else:
+                    selector = "html.quarto-dark, :root[data-bs-theme='dark']"
+                accent_css_parts.append(f"{selector} {{\n    --gd-accent: {escaped};\n}}")
+            if accent_css_parts:
+                accent_css = "\n".join(accent_css_parts)
+                accent_style_tag = (
+                    f"<style>\n/* Great Docs: accent_color overrides */\n{accent_css}\n</style>"
+                )
+                after_body = config["format"]["html"].setdefault("include-after-body", [])
+                if isinstance(after_body, str):
+                    after_body = [after_body]
+                    config["format"]["html"]["include-after-body"] = after_body
+                after_body[:] = [h for h in after_body if "accent_color overrides" not in str(h)]
+                after_body.append({"text": accent_style_tag})
+
         # Add navbar solid color if configured (ignored when `navbar_style` is set)
         navbar_color = self._config.navbar_color
         if navbar_color:

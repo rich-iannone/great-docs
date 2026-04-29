@@ -375,6 +375,9 @@ ALL_PACKAGES: list[str] = [
     "gdtest_inline_always",  # 185
     "gdtest_inline_never",  # 186
     "gdtest_inline_threshold",  # 187
+    # 188–189: Inherited member documentation
+    "gdtest_ref_inherited_explicit",  # 188
+    "gdtest_ref_include_inherited",  # 189
 ]
 
 
@@ -570,6 +573,8 @@ DIMENSIONS: dict[str, dict[str, str]] = {
     "P6": {"axis": "reference", "label": "Module expansion"},
     "P7": {"axis": "reference", "label": "Big class ref"},
     "P8": {"axis": "reference", "label": "Reference title"},
+    "P9": {"axis": "reference", "label": "Explicit inherited members"},
+    "P10": {"axis": "reference", "label": "include_inherited flag"},
     # Site/theme axes
     "Q1": {"axis": "theme", "label": "Cosmo theme"},
     "Q2": {"axis": "theme", "label": "Lumen theme"},
@@ -2101,6 +2106,17 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "Tests inline_methods: 10 custom numeric threshold. CompactClient "
         "(8 methods) stays inline while FullClient (12 methods) gets split "
         "into a separate method section."
+    ),
+    # ── 188–189: Inherited member documentation ────────────────────────────
+    "gdtest_ref_inherited_explicit": (
+        "Reference config listing inherited methods (validate, reset) explicitly "
+        "in the members list of AdvancedProcessor. The child class page should "
+        "document all three listed methods even though two are inherited."
+    ),
+    "gdtest_ref_include_inherited": (
+        "Reference config using include_inherited: true on Circle. The renderer "
+        "should automatically include inherited methods (describe) from Shape "
+        "without the user listing them explicitly."
     ),
 }
 

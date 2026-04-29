@@ -267,6 +267,43 @@ reference:
 
 When `members: false` is set, only the class itself is documented. You can then place individual methods wherever you want in your reference structure.
 
+### Documenting Inherited Methods
+
+By default, only methods defined directly on a class are documented. If your class hierarchy uses inheritance and you want child classes to show inherited methods, there are two approaches.
+
+**Explicit member list.** List the methods you want documented (including inherited ones) in the `members` key:
+
+```{.yaml filename="great-docs.yml"}
+reference:
+  - title: API
+    contents:
+      - BaseProcessor
+      - name: AdvancedProcessor
+        members:
+          - process        # own method
+          - validate       # inherited from BaseProcessor
+          - reset          # inherited from BaseProcessor
+```
+
+This gives you full control over which inherited methods appear and in what order.
+
+**Auto-include inherited methods.** Use `include_inherited: true` to automatically document all inherited methods without listing them explicitly:
+
+```{.yaml filename="great-docs.yml"}
+reference:
+  - title: Shapes
+    contents:
+      - Shape
+      - name: Circle
+        include_inherited: true  # includes area(), perimeter(), describe() from Shape
+```
+
+With this flag, the child class page will show its own methods plus all public methods inherited from parent classes.
+
+::: {.callout-tip}
+You can combine both approaches. Use `include_inherited: true` for convenience, or provide an explicit `members` list when you want to cherry-pick specific inherited methods or control ordering.
+:::
+
 ### Excluding Items with `exclude`
 
 To exclude items from documentation, add them to the `exclude` list in `great-docs.yml`:

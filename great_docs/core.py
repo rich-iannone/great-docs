@@ -7228,13 +7228,25 @@ class GreatDocs:
                         continue
 
                     members = item.get("members", True)
+                    include_inherited = item.get("include_inherited", None)
 
                     if members is False:
                         # Don't document methods - just the class
                         section_contents.append({"name": name, "members": []})
+                    elif isinstance(members, list):
+                        # Explicit member list — pass through directly
+                        entry: dict = {"name": name, "members": members}
+                        if include_inherited is not None:
+                            entry["include_inherited"] = include_inherited
+                        section_contents.append(entry)
                     else:
                         # Default: inline documentation (members: true)
-                        section_contents.append(name)
+                        if include_inherited is not None:
+                            section_contents.append(
+                                {"name": name, "include_inherited": include_inherited}
+                            )
+                        else:
+                            section_contents.append(name)
 
             if section_contents:
                 sections.append(
@@ -7350,13 +7362,26 @@ class GreatDocs:
                         continue  # pragma: no cover
 
                     members = item.get("members", True)
+                    include_inherited = item.get("include_inherited", None)
 
                     if members is False:
                         # Don't document methods - just the class
                         section_contents.append({"name": name, "members": []})
+                    elif isinstance(members, list):
+                        # Explicit member list — pass through so inherited
+                        # methods listed here are documented
+                        entry: dict = {"name": name, "members": members}
+                        if include_inherited is not None:
+                            entry["include_inherited"] = include_inherited
+                        section_contents.append(entry)
                     else:
                         # Default: inline documentation (members: true)
-                        section_contents.append(name)  # pragma: no cover
+                        if include_inherited is not None:
+                            section_contents.append(
+                                {"name": name, "include_inherited": include_inherited}
+                            )
+                        else:
+                            section_contents.append(name)
 
             if section_contents:
                 sections.append(

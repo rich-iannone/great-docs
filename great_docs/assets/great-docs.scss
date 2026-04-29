@@ -6192,6 +6192,67 @@ td > p:has(> svg.gd-icon) {
 }
 
 
+/* ── Keyboard Keys Shortcode ──────────────────────────────────── */
+
+.gd-keys {
+    display: inline-block;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+        "Liberation Mono", monospace;
+    font-size: 0.8em;
+    font-weight: 500;
+    line-height: 1;
+    padding: 0.15em 0.45em;
+    min-width: 1.6em;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    color: #1f2328;
+    background: linear-gradient(180deg, #f6f8fa 0%, #eaeef2 100%);
+    border: 1px solid #d0d7de;
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    box-shadow: 0 1px 0 rgba(27, 31, 36, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.gd-keys-sep {
+    display: inline-block;
+    margin: 0 0.15em;
+    font-size: 0.85em;
+    color: #656d76;
+    vertical-align: baseline;
+    user-select: none;
+}
+
+/* Function keys (F1–F20): smallcaps-height text on the baseline */
+.gd-keys-fn {
+    font-size: 0.7em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 0.25em 0.45em;
+    text-transform: uppercase;
+    position: relative;
+    top: -1.1px;
+}
+
+/* Dark mode */
+body.quarto-dark .gd-keys,
+html.quarto-dark .gd-keys,
+:root[data-bs-theme="dark"] .gd-keys {
+    color: #e6edf3;
+    background: linear-gradient(180deg, #2d333b 0%, #22272e 100%);
+    border-color: #444c56;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+body.quarto-dark .gd-keys-sep,
+html.quarto-dark .gd-keys-sep,
+:root[data-bs-theme="dark"] .gd-keys-sep {
+    color: #8b949e;
+}
+
+
 /* ── Video embedding enhancements ────────────────────────────── */
 
 /* Subtle border around video containers so the frame edge is visible */

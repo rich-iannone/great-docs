@@ -878,3 +878,37 @@ class TestShouldSplitMethods:
         cfg = _make_config(tmp_project, "inline_methods: null\n")
         assert cfg.should_split_methods(5) is False
         assert cfg.should_split_methods(6) is True
+
+    def test_zero_threshold_splits_any_methods(self, tmp_project: Path):
+        cfg = _make_config(tmp_project, "inline_methods: 0\n")
+        assert cfg.should_split_methods(0) is False
+        assert cfg.should_split_methods(1) is True
+
+    def test_one_threshold(self, tmp_project: Path):
+        cfg = _make_config(tmp_project, "inline_methods: 1\n")
+        assert cfg.should_split_methods(1) is False
+        assert cfg.should_split_methods(2) is True
+
+    def test_float_value_truncated_to_int(self, tmp_project: Path):
+        cfg = _make_config(tmp_project, "inline_methods: 3.9\n")
+        # float 3.9 → int(3.9) = 3
+        assert cfg.should_split_methods(3) is False
+        assert cfg.should_split_methods(4) is True
+
+    def test_negative_threshold_always_splits(self, tmp_project: Path):
+        cfg = _make_config(tmp_project, "inline_methods: -1\n")
+        # Any method_count > -1 is always true
+        assert cfg.should_split_methods(0) is False  # zero-methods guard
+        assert cfg.should_split_methods(1) is True
+
+    def test_large_threshold_never_splits_in_practice(self, tmp_project: Path):
+        cfg = _make_config(tmp_project, "inline_methods: 1000\n")
+        assert cfg.should_split_methods(999) is False
+        assert cfg.should_split_methods(1000) is False
+        assert cfg.should_split_methods(1001) is True
+
+    def test_config_default_value_in_defaults(self, tmp_project: Path):
+        """The inline_methods default should be 5 in DEFAULT_CONFIG."""
+        from great_docs.config import DEFAULT_CONFIG
+
+        assert DEFAULT_CONFIG["inline_methods"] == 5

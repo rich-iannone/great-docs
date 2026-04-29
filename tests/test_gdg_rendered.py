@@ -8765,3 +8765,115 @@ def test_DED_inline_never_both_methods_sections_in_sidebar():
     content = index_html.read_text(encoding="utf-8")
     assert "TinyWidget Methods" in content, "Should have TinyWidget Methods section"
     assert "MediumService Methods" in content, "Should have MediumService Methods section"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DED: Inherited Member Documentation
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_INHERITED_EXPLICIT_PKG = "gdtest_ref_inherited_explicit"
+_INCLUDE_INHERITED_PKG = "gdtest_ref_include_inherited"
+
+
+@requires_bs4
+def test_DED_ref_inherited_explicit_page_exists():
+    """gdtest_ref_inherited_explicit: AdvancedProcessor page exists."""
+    pkg = _INHERITED_EXPLICIT_PKG
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "AdvancedProcessor.html").exists(), "AdvancedProcessor page should exist"
+
+
+@requires_bs4
+def test_DED_ref_inherited_explicit_own_method():
+    """gdtest_ref_inherited_explicit: own method 'process' documented."""
+    pkg = _INHERITED_EXPLICIT_PKG
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    soup = _load_html(_ref_dir(pkg) / "AdvancedProcessor.html")
+    text = soup.get_text()
+    assert "process" in text, "Own method 'process' should appear on page"
+
+
+@requires_bs4
+def test_DED_ref_inherited_explicit_inherited_methods():
+    """gdtest_ref_inherited_explicit: inherited methods 'validate' and 'reset' documented."""
+    pkg = _INHERITED_EXPLICIT_PKG
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    soup = _load_html(_ref_dir(pkg) / "AdvancedProcessor.html")
+    text = soup.get_text()
+    assert "validate" in text, "Inherited method 'validate' should appear on page"
+    assert "reset" in text, "Inherited method 'reset' should appear on page"
+
+
+@requires_bs4
+def test_DED_ref_inherited_explicit_section_title():
+    """gdtest_ref_inherited_explicit: reference index has 'Core' section title."""
+    pkg = _INHERITED_EXPLICIT_PKG
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    index_html = _ref_dir(pkg) / "index.html"
+    if not index_html.exists():
+        pytest.skip("Reference index not found")
+
+    content = index_html.read_text(encoding="utf-8")
+    assert "Core" in content, "Section title 'Core' should appear in reference index"
+
+
+@requires_bs4
+def test_DED_ref_include_inherited_page_exists():
+    """gdtest_ref_include_inherited: Circle page exists."""
+    pkg = _INCLUDE_INHERITED_PKG
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "Circle.html").exists(), "Circle page should exist"
+
+
+@requires_bs4
+def test_DED_ref_include_inherited_own_methods():
+    """gdtest_ref_include_inherited: own methods 'area' and 'perimeter' documented."""
+    pkg = _INCLUDE_INHERITED_PKG
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    soup = _load_html(_ref_dir(pkg) / "Circle.html")
+    text = soup.get_text()
+    assert "area" in text, "Own method 'area' should appear on page"
+    assert "perimeter" in text, "Own method 'perimeter' should appear on page"
+
+
+@requires_bs4
+def test_DED_ref_include_inherited_inherited_method():
+    """gdtest_ref_include_inherited: inherited method 'describe' auto-documented."""
+    pkg = _INCLUDE_INHERITED_PKG
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    soup = _load_html(_ref_dir(pkg) / "Circle.html")
+    text = soup.get_text()
+    assert "describe" in text, (
+        "Inherited method 'describe' should appear via include_inherited: true"
+    )
+
+
+@requires_bs4
+def test_DED_ref_include_inherited_section_title():
+    """gdtest_ref_include_inherited: reference index has 'Shapes' section title."""
+    pkg = _INCLUDE_INHERITED_PKG
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    index_html = _ref_dir(pkg) / "index.html"
+    if not index_html.exists():
+        pytest.skip("Reference index not found")
+
+    content = index_html.read_text(encoding="utf-8")
+    assert "Shapes" in content, "Section title 'Shapes' should appear in reference index"

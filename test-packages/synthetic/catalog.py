@@ -370,6 +370,11 @@ ALL_PACKAGES: list[str] = [
     "gdtest_accent_color",  # 182
     # 183: Keyboard keys shortcode showcase
     "gdtest_keys_shortcode",  # 183
+    # 184–187: inline_methods config option variants
+    "gdtest_inline_methods",  # 184
+    "gdtest_inline_always",  # 185
+    "gdtest_inline_never",  # 186
+    "gdtest_inline_threshold",  # 187
 ]
 
 
@@ -586,6 +591,9 @@ DIMENSIONS: dict[str, dict[str, str]] = {
     "K51": {"axis": "config", "label": "i18n: Japanese (CJK)"},
     "K52": {"axis": "config", "label": "i18n: Arabic (RTL)"},
     "K53": {"axis": "config", "label": "nav_icons config"},
+    "K54": {"axis": "config", "label": "inline_methods: default (5)"},
+    "K55": {"axis": "config", "label": "inline_methods: true (never split)"},
+    "K56": {"axis": "config", "label": "inline_methods: false (always split)"},
     # Page tags axes
     "T1": {"axis": "tags", "label": "Page tags with hierarchy + shadow"},
     "T3": {"axis": "tags", "label": "Tag location top vs. bottom with per-page overrides"},
@@ -2073,6 +2081,26 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "arrows), shortcut combos (Ctrl+Shift+P auto-split), platform-aware "
         "rendering (macOS symbols ⌘⌥⇧⌃ vs Windows labels), and keys in "
         "context (headings, callouts, lists, blockquotes, prose)."
+    ),
+    "gdtest_inline_methods": (
+        "Tests the inline_methods config with the default threshold of 5. "
+        "SmallWidget (3 methods) stays inline while BigProcessor (8 methods) "
+        "gets split into a separate method section."
+    ),
+    "gdtest_inline_always": (
+        "Tests inline_methods: true which forces all class methods to stay "
+        "inline on the class page regardless of method count. LargeAPI with "
+        "8 methods stays inline instead of being split."
+    ),
+    "gdtest_inline_never": (
+        "Tests inline_methods: false which forces all class methods to be "
+        "split into separate pages regardless of method count. Even TinyWidget "
+        "with 2 methods gets a companion method section."
+    ),
+    "gdtest_inline_threshold": (
+        "Tests inline_methods: 10 custom numeric threshold. CompactClient "
+        "(8 methods) stays inline while FullClient (12 methods) gets split "
+        "into a separate method section."
     ),
 }
 

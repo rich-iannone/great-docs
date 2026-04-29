@@ -335,6 +335,19 @@ sidebar_filter:
   min_items: 20   # Minimum items before showing filter (default: 20)
 ```
 
+## Method Page Splitting
+
+Control whether class methods get their own pages or stay inline on the class page:
+
+```{.yaml filename="great-docs.yml"}
+inline_methods: 5      # Split above 5 methods (default)
+inline_methods: 10     # Split above 10 methods
+inline_methods: true   # Always inline (never split)
+inline_methods: false  # Always split to separate pages
+```
+
+See [API Documentation: Smart Method Handling](05-api-documentation.qmd#smart-method-handling) for detailed examples.
+
 ## Markdown Pages
 
 Every HTML page gets a companion `.md` file generated automatically. A small widget appears in the top-right corner of each page allowing visitors to **copy** the page content as Markdown or **view** the raw `.md` file. This is enabled by default:

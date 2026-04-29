@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import textwrap
 import time
 import types
 import warnings
@@ -24683,6 +24684,7 @@ def test_create_api_sections_from_config_basic():
                         {"title": "Classes", "contents": ["ClassA"]},
                         {"title": "Functions", "contents": ["func_b"]},
                     ],
+                    "should_split_methods": lambda self, n: n > 5,
                 },
             )()
 
@@ -24728,6 +24730,7 @@ def test_create_api_sections_from_config_large_class():
                     "reference": [
                         {"title": "Classes", "contents": ["BigClass"]},
                     ],
+                    "should_split_methods": lambda self, n: n > 5,
                 },
             )()
 
@@ -24772,6 +24775,7 @@ def test_create_api_sections_from_config_dict_items():
                             ],
                         },
                     ],
+                    "should_split_methods": lambda self, n: n > 5,
                 },
             )()
 
@@ -41235,3 +41239,156 @@ def test_parse_package_exports_dotted_name():
         assert exports is not None
         assert "Alpha" in exports
         assert "Beta" in exports
+
+
+# ── inline_methods integration tests ─────────────────────────────────────────
+
+
+def test_create_api_sections_from_config_inline_methods_true_never_splits():
+    """inline_methods: true prevents splitting even for classes with many methods."""
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pkg_dir = Path(tmp_dir) / "inlinepkg"
+        pkg_dir.mkdir()
+        methods = "\n".join(f"    def method{i}(self): pass\n" for i in range(10))
+        (pkg_dir / "__init__.py").write_text(
+            f'class BigClass:\n    """Big."""\n{methods}',
+            encoding="utf-8",
+        )
+
+        sys.path.insert(0, tmp_dir)
+        try:
+            docs = GreatDocs(project_path=tmp_dir)
+            docs._config = type(
+                "Config",
+                (),
+                {
+                    "reference": [
+                        {"title": "Classes", "contents": ["BigClass"]},
+                    ],
+                    "should_split_methods": lambda self, n: False,  # never split
+                },
+            )()
+
+            with (
+                patch.object(docs, "_get_package_exports", return_value=["BigClass"]),
+                patch.object(docs, "_write_object_types_json"),
+            ):
+                result = docs._create_api_sections_from_config("inlinepkg")
+
+            assert result is not None
+            titles = [s["title"] for s in result]
+            # Should NOT create companion method section
+            assert "BigClass Methods" not in titles
+            # BigClass should be a plain string (not split)
+            classes_section = next(s for s in result if s["title"] == "Classes")
+            assert "BigClass" in classes_section["contents"]
+        finally:
+            sys.path.remove(tmp_dir)
+
+
+def test_create_api_sections_from_config_inline_methods_false_always_splits():
+    """inline_methods: false forces splitting even for classes with few methods."""
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pkg_dir = Path(tmp_dir) / "splitforcepkg"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text(
+            textwrap.dedent("""\
+            class SmallClass:
+                \"\"\"Small class with documented methods.\"\"\"
+
+                def method_a(self) -> str:
+                    \"\"\"
+                    Perform action A.
+
+                    Returns
+                    -------
+                    str
+                        The result.
+                    \"\"\"
+                    return "a"
+
+                def method_b(self) -> str:
+                    \"\"\"
+                    Perform action B.
+
+                    Returns
+                    -------
+                    str
+                        The result.
+                    \"\"\"
+                    return "b"
+            """),
+            encoding="utf-8",
+        )
+
+        sys.path.insert(0, tmp_dir)
+        try:
+            docs = GreatDocs(project_path=tmp_dir)
+            docs._config = type(
+                "Config",
+                (),
+                {
+                    "reference": [
+                        {"title": "Classes", "contents": ["SmallClass"]},
+                    ],
+                    "should_split_methods": lambda self, n: n > 0,  # always split
+                },
+            )()
+
+            with (
+                patch.object(docs, "_get_package_exports", return_value=["SmallClass"]),
+                patch.object(docs, "_write_object_types_json"),
+            ):
+                result = docs._create_api_sections_from_config("splitforcepkg")
+
+            assert result is not None
+            titles = [s["title"] for s in result]
+            # Should create companion method section even for 2 methods
+            assert "SmallClass Methods" in titles
+        finally:
+            sys.path.remove(tmp_dir)
+
+
+def test_create_api_sections_from_config_inline_methods_custom_threshold():
+    """inline_methods: 10 splits only above 10 methods."""
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pkg_dir = Path(tmp_dir) / "threshpkg"
+        pkg_dir.mkdir()
+        # Class with 8 methods (below threshold of 10)
+        methods = "\n".join(f"    def method{i}(self): pass\n" for i in range(8))
+        (pkg_dir / "__init__.py").write_text(
+            f'class MediumClass:\n    """Medium."""\n{methods}',
+            encoding="utf-8",
+        )
+
+        sys.path.insert(0, tmp_dir)
+        try:
+            docs = GreatDocs(project_path=tmp_dir)
+            docs._config = type(
+                "Config",
+                (),
+                {
+                    "reference": [
+                        {"title": "Classes", "contents": ["MediumClass"]},
+                    ],
+                    "should_split_methods": lambda self, n: n > 10,  # threshold=10
+                },
+            )()
+
+            with (
+                patch.object(docs, "_get_package_exports", return_value=["MediumClass"]),
+                patch.object(docs, "_write_object_types_json"),
+            ):
+                result = docs._create_api_sections_from_config("threshpkg")
+
+            assert result is not None
+            titles = [s["title"] for s in result]
+            # 8 methods < 10 threshold, should NOT split
+            assert "MediumClass Methods" not in titles
+            classes_section = next(s for s in result if s["title"] == "Classes")
+            assert "MediumClass" in classes_section["contents"]
+        finally:
+            sys.path.remove(tmp_dir)

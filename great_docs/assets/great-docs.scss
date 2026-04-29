@@ -1148,6 +1148,228 @@ a.sidebar-item-text.sidebar-link.text-start > span {
     padding-bottom: 8px;
 }
 
+/* ==========================================================================
+   Floating Sidebar Navigation (desktop only)
+   Transforms #quarto-sidebar into a pinned, independently-scrollable panel
+   with blur background, rounded border, and scroll affordances.
+   ========================================================================== */
+
+@media (min-width: 992px) {
+    #quarto-sidebar.gd-sidebar-float {
+        /* Sticky keeps the sidebar in the CSS grid flow.
+           JS sets top (stick offset) and max-height (shrinks for footer). */
+        display: flex;
+        flex-direction: column;
+        overflow: hidden !important; /* clip children to rounded corners; override .overflow-auto */
+        position: sticky;
+        transition: top 0.15s ease, max-height 0.15s ease;
+        /* Widen sidebar to reclaim space lost to border+padding.
+           Negative margin-right lets it extend slightly into the gap. */
+        margin-right: -12px;
+        /* align-self keeps the sidebar at the grid-row start so it
+           sticks near the top, not stretched to the full row height. */
+        align-self: start;
+    }
+
+    /* Suppress the old bottom border on the menu container —
+       it is now inside the float body. */
+    #quarto-sidebar.gd-sidebar-float .sidebar-menu-container {
+        border-bottom: none;
+    }
+
+    /* Remove default Bootstrap margin-bottom on the sidebar list
+       so the float body hugs the last item tightly. */
+    #quarto-sidebar.gd-sidebar-float .sidebar-menu-container > ul {
+        margin-bottom: 0;
+    }
+
+    #quarto-sidebar.gd-sidebar-float .sidebar-menu-container > ul > li:last-child {
+        padding-bottom: 7px;
+    }
+
+    /* Tighten vertical spacing between nav items inside the float */
+    #quarto-sidebar.gd-sidebar-float .sidebar-item {
+        margin-top: 0.1rem;
+        margin-bottom: 0.1em;
+    }
+
+    /* Override the ::before hover pill with a direct background on the link.
+       The ::before pseudo extends beyond the scroll container and gets clipped;
+       using the link's own background avoids that entirely. */
+    #quarto-sidebar.gd-sidebar-float .sidebar-link[href]::before {
+        display: none !important;
+        content: none !important;
+    }
+
+    #quarto-sidebar.gd-sidebar-float .sidebar-link[href] {
+        border-radius: 6px;
+        padding-left: 8px;
+        padding-right: 8px;
+        padding-top: 3px;
+        padding-bottom: 3px;
+        margin-left: -8px;
+        margin-right: 0;
+        transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    #quarto-sidebar.gd-sidebar-float .sidebar-link[href]:hover {
+        background-color: rgba(0, 0, 0, 0.04);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.10);
+    }
+
+    #quarto-sidebar.gd-sidebar-float.sidebar-navigation > * {
+        padding-top: 0.4em;
+    }
+
+    #quarto-sidebar.gd-sidebar-float > * {
+        padding-right: 0;
+    }
+}
+
+
+
+/* Scrollable body */
+.gd-sidebar-float-body {
+    display: none; /* hidden below 992px */
+}
+
+@media (min-width: 992px) {
+    .gd-sidebar-float-body {
+        display: block;
+        flex: 1 1 auto;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        position: relative;
+        /* Thin scrollbar for Webkit/Blink */
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+
+        &::-webkit-scrollbar {
+            width: 5px;
+        }
+        &::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        &::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.12);
+            border-radius: 4px;
+        }
+    }
+}
+
+/* Scroll affordance indicators (top / bottom) */
+.gd-sidebar-scroll-indicator {
+    display: none; /* hidden below 992px */
+}
+
+@media (min-width: 992px) {
+    /* Indicators are inside .gd-sidebar-float-body (the scroll container)
+       and use position:sticky so they pin to the top/bottom of the
+       visible scroll area without covering the "Pages" header above. */
+    .gd-sidebar-scroll-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: sticky;
+        left: 0;
+        right: 0;
+        min-height: 32px;
+        margin-top: -32px;  /* collapse out of flow so content isn't pushed */
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        z-index: 3;
+    }
+
+    .gd-sidebar-scroll-indicator.visible {
+        opacity: 1;
+        pointer-events: auto;
+        cursor: pointer;
+    }
+
+    .gd-sidebar-scroll-top {
+        top: 0;
+        background: linear-gradient(to bottom, rgba(250, 250, 253, 0.92) 0%, transparent 100%);
+    }
+
+    .gd-sidebar-scroll-bottom {
+        bottom: 0;
+        position: sticky;
+        margin-top: 0;
+        margin-bottom: -32px;
+        background: linear-gradient(to top, rgba(250, 250, 253, 0.92) 0%, transparent 100%);
+    }
+
+    .gd-sidebar-scroll-arrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.06);
+        color: $gray-600;
+        font-size: 0.65rem;
+        line-height: 1;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .gd-sidebar-scroll-indicator:hover .gd-sidebar-scroll-arrow {
+        background: rgba(0, 0, 0, 0.12);
+        color: $gray-800;
+    }
+}
+
+/* ── Dark mode: Floating Sidebar ── */
+body.quarto-dark {
+    @media (min-width: 992px) {
+        #quarto-sidebar.gd-sidebar-float {
+            background: rgba(30, 30, 30, 0.55);
+            border-color: rgba(255, 255, 255, 0.10);
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+        }
+
+
+        .gd-sidebar-float-body {
+            scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+
+            &::-webkit-scrollbar-thumb {
+                background: rgba(255, 255, 255, 0.12);
+            }
+        }
+
+        #quarto-sidebar.gd-sidebar-float .sidebar-link[href]:hover {
+            background-color: rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+        }
+
+        .gd-sidebar-scroll-top {
+            background: linear-gradient(to bottom, rgba(30, 30, 30, 0.92) 0%, transparent 100%);
+        }
+
+        .gd-sidebar-scroll-bottom {
+            background: linear-gradient(to top, rgba(30, 30, 30, 0.92) 0%, transparent 100%);
+        }
+
+        .gd-sidebar-scroll-arrow {
+            background: rgba(255, 255, 255, 0.08);
+            color: $gray-400;
+        }
+
+        .gd-sidebar-scroll-indicator:hover .gd-sidebar-scroll-arrow {
+            background: rgba(255, 255, 255, 0.15);
+            color: $gray-200;
+        }
+    }
+}
+
+/* Print: hide floating sidebar affordances */
+@media print {
+    .gd-sidebar-scroll-indicator {
+        display: none !important;
+    }
+}
+
 #quarto-header > nav > div {
     margin-left: 2%;
     margin-right: 2%;
@@ -1351,6 +1573,10 @@ body.quarto-light .navbar .gd-navbar-icon:hover {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
+}
+
+footer.footer .nav-footer {
+    margin-top: 10px;
 }
 
 .nav-footer {

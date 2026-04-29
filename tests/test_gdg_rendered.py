@@ -8623,3 +8623,145 @@ def test_KBD_no_shortcode_errors():
     for html_file in ug_dir.glob("*.html"):
         content = html_file.read_text()
         assert "keys shortcode error" not in content, f"Shortcode error in {html_file.name}"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DED: inline_methods Config Option
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_INLINE_DEFAULT_PKG = "gdtest_inline_methods"
+_INLINE_ALWAYS_PKG = "gdtest_inline_always"
+_INLINE_NEVER_PKG = "gdtest_inline_never"
+
+
+@requires_bs4
+def test_DED_inline_methods_default_splits_big_class():
+    """gdtest_inline_methods: BigProcessor (8 methods) gets a companion method section."""
+    pkg = _INLINE_DEFAULT_PKG
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    # BigProcessor should have members split to separate pages
+    assert (ref / "BigProcessor.html").exists(), "BigProcessor page should exist"
+    # Check for method pages (split classes get individual method pages)
+    method_pages = list(ref.glob("BigProcessor.*.html"))
+    assert len(method_pages) > 0, "BigProcessor should have separate method pages"
+
+
+@requires_bs4
+def test_DED_inline_methods_default_keeps_small_class_inline():
+    """gdtest_inline_methods: SmallWidget (3 methods) stays inline."""
+    pkg = _INLINE_DEFAULT_PKG
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "SmallWidget.html").exists(), "SmallWidget page should exist"
+    # SmallWidget should NOT have separate method pages
+    method_pages = list(ref.glob("SmallWidget.*.html"))
+    assert len(method_pages) == 0, "SmallWidget should not have separate method pages"
+
+
+@requires_bs4
+def test_DED_inline_methods_default_sidebar_has_method_section():
+    """gdtest_inline_methods: sidebar should list BigProcessor Methods section."""
+    pkg = _INLINE_DEFAULT_PKG
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    index_html = _site_dir(pkg) / "reference" / "index.html"
+    if not index_html.exists():
+        pytest.skip("Reference index not found")
+
+    content = index_html.read_text(encoding="utf-8")
+    assert "BigProcessor Methods" in content, "Reference index should list BigProcessor Methods"
+
+
+@requires_bs4
+def test_DED_inline_always_no_method_pages():
+    """gdtest_inline_always: inline_methods=true means no separate method pages."""
+    pkg = _INLINE_ALWAYS_PKG
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "LargeAPI.html").exists(), "LargeAPI page should exist"
+    # With inline_methods: true, no method pages should be created
+    method_pages = list(ref.glob("LargeAPI.*.html"))
+    assert len(method_pages) == 0, "LargeAPI should NOT have separate method pages"
+
+
+@requires_bs4
+def test_DED_inline_always_methods_on_class_page():
+    """gdtest_inline_always: methods are documented inline on the class page."""
+    pkg = _INLINE_ALWAYS_PKG
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    class_page = _ref_dir(pkg) / "LargeAPI.html"
+    if not class_page.exists():
+        pytest.skip("LargeAPI.html not found")
+
+    content = class_page.read_text(encoding="utf-8")
+    # Methods should be documented inline on the class page
+    assert "authenticate" in content, "Method 'authenticate' should be on class page"
+    assert "get" in content, "Method 'get' should be on class page"
+
+
+@requires_bs4
+def test_DED_inline_always_no_methods_section_in_sidebar():
+    """gdtest_inline_always: sidebar should NOT have a 'Methods' companion section."""
+    pkg = _INLINE_ALWAYS_PKG
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    index_html = _site_dir(pkg) / "reference" / "index.html"
+    if not index_html.exists():
+        pytest.skip("Reference index not found")
+
+    content = index_html.read_text(encoding="utf-8")
+    assert "LargeAPI Methods" not in content, "Should NOT have LargeAPI Methods section"
+
+
+@requires_bs4
+def test_DED_inline_never_small_class_split():
+    """gdtest_inline_never: TinyWidget (2 methods) is split despite being small."""
+    pkg = _INLINE_NEVER_PKG
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "TinyWidget.html").exists(), "TinyWidget page should exist"
+    # With inline_methods: false, even 2-method classes get split
+    method_pages = list(ref.glob("TinyWidget.*.html"))
+    assert len(method_pages) > 0, "TinyWidget should have separate method pages"
+
+
+@requires_bs4
+def test_DED_inline_never_medium_class_split():
+    """gdtest_inline_never: MediumService (4 methods) is split despite being below default."""
+    pkg = _INLINE_NEVER_PKG
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    ref = _ref_dir(pkg)
+    assert (ref / "MediumService.html").exists(), "MediumService page should exist"
+    method_pages = list(ref.glob("MediumService.*.html"))
+    assert len(method_pages) > 0, "MediumService should have separate method pages"
+
+
+@requires_bs4
+def test_DED_inline_never_both_methods_sections_in_sidebar():
+    """gdtest_inline_never: sidebar should have Methods sections for both classes."""
+    pkg = _INLINE_NEVER_PKG
+    if not _has_rendered_site(pkg):
+        pytest.skip(f"{pkg} not rendered")
+
+    index_html = _site_dir(pkg) / "reference" / "index.html"
+    if not index_html.exists():
+        pytest.skip("Reference index not found")
+
+    content = index_html.read_text(encoding="utf-8")
+    assert "TinyWidget Methods" in content, "Should have TinyWidget Methods section"
+    assert "MediumService Methods" in content, "Should have MediumService Methods section"

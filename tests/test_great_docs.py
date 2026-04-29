@@ -2066,6 +2066,53 @@ def test_build_sections_from_reference_config_with_members():
         assert "SimpleClass" in sections[0]["contents"]
 
 
+def test_build_sections_from_reference_config_explicit_members_list():
+    """Test building sections with explicit members list passes through correctly."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs = GreatDocs(project_path=tmp_dir)
+
+        reference_config = [
+            {
+                "title": "Classes",
+                "desc": "Parent and child",
+                "contents": [
+                    {"name": "foo", "members": ["__init__", "a"]},
+                    {"name": "bar", "members": ["__init__", "a", "b"]},
+                ],
+            }
+        ]
+
+        sections = docs._build_sections_from_reference_config(reference_config)
+
+        assert sections is not None
+        assert len(sections) == 1
+        contents = sections[0]["contents"]
+        assert {"name": "foo", "members": ["__init__", "a"]} in contents
+        assert {"name": "bar", "members": ["__init__", "a", "b"]} in contents
+
+
+def test_build_sections_from_reference_config_include_inherited():
+    """Test building sections with include_inherited option."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs = GreatDocs(project_path=tmp_dir)
+
+        reference_config = [
+            {
+                "title": "Classes",
+                "contents": [
+                    {"name": "bar", "include_inherited": True},
+                ],
+            }
+        ]
+
+        sections = docs._build_sections_from_reference_config(reference_config)
+
+        assert sections is not None
+        contents = sections[0]["contents"]
+        assert len(contents) == 1
+        assert contents[0] == {"name": "bar", "include_inherited": True}
+
+
 def test_build_sections_from_reference_config_empty_and_none():
     """Test that empty reference config returns None."""
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -24796,6 +24843,140 @@ def test_create_api_sections_from_config_dict_items():
             assert found
         finally:
             sys.path.remove(tmp_dir)
+
+
+def test_create_api_sections_from_config_explicit_members_passthrough():
+    """Test _create_api_sections_from_config passes explicit member lists through."""
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pkg_dir = Path(tmp_dir) / "inhpkg"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text(
+            'class Parent:\n    """Parent."""\n    def inherited(self): pass\n'
+            'class Child(Parent):\n    """Child."""\n    def own(self): pass\n',
+            encoding="utf-8",
+        )
+
+        sys.path.insert(0, tmp_dir)
+        try:
+            docs = GreatDocs(project_path=tmp_dir)
+            docs._config = type(
+                "Config",
+                (),
+                {
+                    "reference": [
+                        {
+                            "title": "API",
+                            "contents": [
+                                {
+                                    "name": "Child",
+                                    "members": ["own", "inherited"],
+                                },
+                            ],
+                        },
+                    ],
+                    "should_split_methods": lambda self, n: n > 5,
+                },
+            )()
+
+            with (
+                patch.object(docs, "_get_package_exports", return_value=["Child"]),
+                patch.object(docs, "_write_object_types_json"),
+            ):
+                result = docs._create_api_sections_from_config("inhpkg")
+
+            assert result is not None
+            section = result[0]
+            # The explicit members list should be passed through intact
+            found = False
+            for item in section["contents"]:
+                if isinstance(item, dict) and item.get("name") == "Child":
+                    assert item["members"] == ["own", "inherited"]
+                    found = True
+            assert found
+        finally:
+            sys.path.remove(tmp_dir)
+
+
+def test_create_api_sections_from_config_include_inherited():
+    """Test _create_api_sections_from_config passes include_inherited flag."""
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        pkg_dir = Path(tmp_dir) / "inhpkg2"
+        pkg_dir.mkdir()
+        (pkg_dir / "__init__.py").write_text(
+            'class Base:\n    """Base."""\n    def base_method(self): pass\n'
+            'class Derived(Base):\n    """Derived."""\n    def derived_method(self): pass\n',
+            encoding="utf-8",
+        )
+
+        sys.path.insert(0, tmp_dir)
+        try:
+            docs = GreatDocs(project_path=tmp_dir)
+            docs._config = type(
+                "Config",
+                (),
+                {
+                    "reference": [
+                        {
+                            "title": "API",
+                            "contents": [
+                                {
+                                    "name": "Derived",
+                                    "include_inherited": True,
+                                },
+                            ],
+                        },
+                    ],
+                    "should_split_methods": lambda self, n: n > 5,
+                },
+            )()
+
+            with (
+                patch.object(docs, "_get_package_exports", return_value=["Derived"]),
+                patch.object(docs, "_write_object_types_json"),
+            ):
+                result = docs._create_api_sections_from_config("inhpkg2")
+
+            assert result is not None
+            section = result[0]
+            # Should have include_inherited flag set
+            found = False
+            for item in section["contents"]:
+                if isinstance(item, dict) and item.get("name") == "Derived":
+                    assert item["include_inherited"] is True
+                    found = True
+            assert found
+        finally:
+            sys.path.remove(tmp_dir)
+
+
+def test_build_sections_from_reference_config_explicit_members():
+    """Test _build_sections_from_reference_config passes explicit members list."""
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        docs = GreatDocs(project_path=tmp_dir)
+        config = [
+            {
+                "title": "Classes",
+                "contents": [
+                    {"name": "Child", "members": ["own", "inherited"]},
+                    {"name": "Other", "members": ["x"], "include_inherited": True},
+                ],
+            },
+        ]
+        result = docs._build_sections_from_reference_config(config)
+
+        assert result is not None
+        contents = result[0]["contents"]
+        # Explicit members list passed through
+        assert contents[0] == {"name": "Child", "members": ["own", "inherited"]}
+        # include_inherited also attached
+        assert contents[1] == {
+            "name": "Other",
+            "members": ["x"],
+            "include_inherited": True,
+        }
 
 
 def test_build_sections_from_reference_config_empty():

@@ -145,6 +145,12 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "stable": True,  # /v/stable/ -> same as latest
         "dev": True,  # /v/dev/ -> prerelease version (if any)
     },
+    # Site-wide accent color (CSS color: hex, named, etc.)
+    # Sets the --gd-accent custom property used by shortcodes (hr, etc.),
+    # gradient presets, and other accent-colored elements.
+    # str: same color for both light and dark mode
+    # dict: {"light": str, "dark": str} for per-mode colors
+    "accent_color": None,
     # Navbar gradient preset (e.g., "sky", "peach", "lilac", etc.)
     "navbar_style": None,
     # Navbar solid background color (CSS color: hex, named, etc.)
@@ -1002,6 +1008,12 @@ class Config:
         return val
 
     @property
+    def hero_starfield(self) -> bool:
+        """Whether the interactive starfield animation is enabled on the hero."""
+        hero = self.hero
+        return bool(hero.get("starfield", False)) if hero else False
+
+    @property
     def hero_badges(self) -> str | list | None:
         """Get the hero badges config.
 
@@ -1160,6 +1172,30 @@ class Config:
     def attribution(self) -> bool:
         """Whether to show Great Docs attribution in the footer."""
         return bool(self.get("attribution", True))
+
+    @property
+    def accent_color(self) -> dict[str, str] | None:
+        """Get the normalized accent color configuration.
+
+        Returns
+        -------
+        dict[str, str] | None
+            A dict with `"light"` and/or `"dark"` keys mapping to CSS color strings. Returns `None`
+            when not configured.
+        """
+        raw = self.get("accent_color")
+        if raw is None or raw is False:
+            return None
+        if isinstance(raw, str):
+            return {"light": raw, "dark": raw}
+        if isinstance(raw, dict):
+            result: dict[str, str] = {}
+            for key in ("light", "dark"):
+                val = raw.get(key)
+                if val and isinstance(val, str):
+                    result[key] = val
+            return result if result else None
+        return None
 
     @property
     def navbar_style(self) -> str | None:

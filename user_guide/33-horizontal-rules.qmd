@@ -1,0 +1,453 @@
+---
+title: "Horizontal Rules"
+guide-section: "Site Content"
+tags: [Content, Extensions]
+status: experimental
+upcoming: "0.10"
+versions: ">=0.9"
+---
+
+# Horizontal Rules
+
+Markdown's `---` gives you a plain horizontal rule, but documentation sites often need something
+more expressive. Examples might include: a chapter divider, a gradient accent that matches your
+navbar, a decorative ornament between sections, or a labeled break that tells readers "Part Two
+starts here."
+
+The `{{{< hr >}}}` shortcode turns the humble `<hr>` into a flexible design tool. It supports four
+line styles, eight palette colors (plus any custom CSS color), adjustable thickness and width, text
+labels embedded in the rule, and nine ready-made presets.
+
+## Quick Start
+
+Drop a shortcode into any `.qmd` page to get a styled rule:
+
+````markdown
+{{{< hr >}}}
+````
+
+{{< hr >}}
+
+That gives you a 2px solid line at full width. To make it more interesting:
+
+````markdown
+{{{< hr preset="gradient-shimmer" >}}}
+````
+
+{{< hr preset="gradient-shimmer" >}}
+
+## Line Styles
+
+Four border styles are available via the `style` parameter:
+
+````markdown
+{{{< hr style="solid" >}}}
+{{{< hr style="dashed" >}}}
+{{{< hr style="dotted" >}}}
+{{{< hr style="double" >}}}
+````
+
+**Solid** (default):
+
+{{< hr style="solid" >}}
+
+**Dashed:**
+
+{{< hr style="dashed" >}}
+
+**Dotted:**
+
+{{< hr style="dotted" >}}
+
+**Double:**
+
+{{< hr style="double" >}}
+
+## Colors
+
+### Palette Colors
+
+Great Docs ships with eight gradient palette presets. Each one maps to a distinct color that adapts
+to dark mode automatically:
+
+| Name | Light | Dark | Example |
+|------|-------|------|---------|
+| `sky` | Deep blue | Bright sky | {{< hr color="sky" >}} |
+| `peach` | Warm orange | Soft peach | {{< hr color="peach" >}} |
+| `prism` | Rich purple | Soft violet | {{< hr color="prism" >}} |
+| `lilac` | Bright lilac | Light purple | {{< hr color="lilac" >}} |
+| `slate` | Cool gray | Light slate | {{< hr color="slate" >}} |
+| `honey` | Golden amber | Bright gold | {{< hr color="honey" >}} |
+| `dusk` | Indigo | Soft indigo | {{< hr color="dusk" >}} |
+| `mint` | Teal | Bright mint | {{< hr color="mint" >}} |
+
+### Custom Colors
+
+Any CSS color value works (hex codes, named colors, `rgb()`, or `hsl()`):
+
+````markdown
+{{{< hr color="#e11d48" >}}}
+{{{< hr color="#16a34a" >}}}
+{{{< hr color="#2563eb" >}}}
+````
+
+{{< hr color="#e11d48" >}}
+
+{{< hr color="#16a34a" >}}
+
+{{< hr color="#2563eb" >}}
+
+### Colored Line Styles
+
+Colors combine naturally with line styles:
+
+````markdown
+{{{< hr style="dashed" color="#e11d48" >}}}
+{{{< hr style="dotted" color="#2563eb" >}}}
+````
+
+{{< hr style="dashed" color="#e11d48" >}}
+
+{{< hr style="dotted" color="#2563eb" >}}
+
+## Thickness
+
+Control the line weight with named values or exact pixel sizes:
+
+| Value | Pixels |
+|-------|--------|
+| `thin` | 1px |
+| `medium` | 2px (default) |
+| `thick` | 4px |
+
+````markdown
+{{{< hr thickness="thin" >}}}
+{{{< hr >}}}
+{{{< hr thickness="thick" >}}}
+{{{< hr thickness="6px" >}}}
+````
+
+{{< hr thickness="thin" >}}
+
+{{< hr >}}
+
+{{< hr thickness="thick" >}}
+
+{{< hr thickness="6px" >}}
+
+## Width and Alignment
+
+By default, rules span the full container width. Use `width` to make them narrower, and `align` to
+position them when they don't fill the container:
+
+````markdown
+{{{< hr width="75%" >}}}
+{{{< hr width="50%" align="center" >}}}
+{{{< hr width="50%" align="left" >}}}
+{{{< hr width="50%" align="right" >}}}
+````
+
+{{< hr width="75%" >}}
+
+{{< hr width="50%" align="center" >}}
+
+{{< hr width="50%" align="left" >}}
+
+{{< hr width="50%" align="right" >}}
+
+The `width` parameter accepts any CSS length or percentage. Use `full` as a shorthand for `100%`.
+
+## Spacing
+
+Control the vertical margin around the rule with the `spacing` parameter:
+
+| Value | Margin |
+|-------|--------|
+| `compact` | 1rem |
+| `normal` | 2rem (default) |
+| `spacious` | 4rem |
+
+````markdown
+{{{< hr spacing="compact" >}}}
+{{{< hr spacing="spacious" >}}}
+````
+
+**Compact** (`1rem`):
+
+This is some text before the rule.
+
+{{< hr spacing="compact" >}}
+
+This is some text after the rule. Notice the tight spacing above and below.
+
+**Normal** (`2rem`, default):
+
+This is some text before the rule.
+
+{{< hr spacing="normal" >}}
+
+This is some text after the rule. This is the default amount of breathing room.
+
+**Spacious** (`4rem`):
+
+This is some text before the rule.
+
+{{< hr spacing="spacious" >}}
+
+This is some text after the rule. The extra whitespace creates a clear section break.
+
+## Embedded Text
+
+Place text or symbols in the center of a rule. The rule splits into two lines flanking the text:
+
+````markdown
+{{{< hr text="§" >}}}
+{{{< hr text="Continue Reading" >}}}
+{{{< hr text="★ ★ ★" >}}}
+````
+
+{{< hr text="§" >}}
+
+{{< hr text="Continue Reading" >}}
+
+{{< hr text="★ ★ ★" >}}
+
+### Text Size
+
+The sizes `sm`, `md` (default), and `lg` are available:
+
+````markdown
+{{{< hr text="Small" text-size="sm" >}}}
+{{{< hr text="Medium" >}}}
+{{{< hr text="Large" text-size="lg" >}}}
+````
+
+{{< hr text="Small" text-size="sm" >}}
+
+{{< hr text="Medium" >}}
+
+{{< hr text="Large" text-size="lg" >}}
+
+### Colored Text
+
+Add `text-color` to style the label independently from the line, or use `color` to tint both at once:
+
+````markdown
+{{{< hr text="Warning" color="#e11d48" text-color="#e11d48" >}}}
+{{{< hr text="Chapter One" color="#6366f1" >}}}
+````
+
+{{< hr text="Warning" color="#e11d48" text-color="#e11d48" >}}
+
+{{< hr text="Chapter One" color="#6366f1" >}}
+
+### Text with Width
+
+Text rules respect `width` and `align`:
+
+````markdown
+{{{< hr text="Centered" width="70%" >}}}
+{{{< hr text="Left" width="60%" align="left" >}}}
+````
+
+{{< hr text="Centered" width="70%" >}}
+
+{{< hr text="Left" width="60%" align="left" >}}
+
+## Presets
+
+Presets are ready-made visual styles that go beyond what `style` and `color` can achieve. Use
+`preset` to apply one:
+
+### Gradient Shimmer
+
+We can get a horizontal rule that animates with a gradient. It shimmers smoothly:
+
+````markdown
+{{{< hr preset="gradient-shimmer" >}}}
+````
+
+{{< hr preset="gradient-shimmer" >}}
+
+::: {.callout-note}
+The shimmer animation respects `prefers-reduced-motion`. Users who prefer reduced motion will see a
+static gradient instead.
+:::
+
+### Gradient Static
+
+The same gradient palette without animation:
+
+````markdown
+{{{< hr preset="gradient-static" >}}}
+````
+
+{{< hr preset="gradient-static" >}}
+
+### Fade
+
+Full opacity at center, fading to transparent at both edges:
+
+````markdown
+{{{< hr preset="fade" >}}}
+````
+
+{{< hr preset="fade" >}}
+
+### Fade Edges
+
+Transparent edges blooming into a colored center:
+
+````markdown
+{{{< hr preset="fade-edges" >}}}
+````
+
+{{< hr preset="fade-edges" >}}
+
+### Dots
+
+Three centered dots form a classic section break (with no line):
+
+````markdown
+{{{< hr preset="dots" >}}}
+````
+
+{{< hr preset="dots" >}}
+
+### Diamond
+
+A diamond ornament flanked by fading lines:
+
+````markdown
+{{{< hr preset="diamond" >}}}
+````
+
+{{< hr preset="diamond" >}}
+
+### Ornament
+
+An elegant fleuron (❧) between fading lines:
+
+````markdown
+{{{< hr preset="ornament" >}}}
+````
+
+{{< hr preset="ornament" >}}
+
+### Wave
+
+A subtle repeating diagonal pattern:
+
+````markdown
+{{{< hr preset="wave" >}}}
+````
+
+{{< hr preset="wave" >}}
+
+### Double Line
+
+Two parallel thin lines with a gap between them:
+
+````markdown
+{{{< hr preset="double-line" >}}}
+````
+
+{{< hr preset="double-line" >}}
+
+## Combining Options
+
+Presets define the visual pattern, but `width`, `align`, `spacing`, and `color` can still be
+overridden on top:
+
+````markdown
+{{{< hr preset="gradient-shimmer" width="60%" >}}}
+{{{< hr preset="fade" width="50%" spacing="spacious" >}}}
+{{{< hr preset="dots" color="#e11d48" >}}}
+{{{< hr preset="ornament" width="60%" spacing="spacious" >}}}
+````
+
+{{< hr preset="gradient-shimmer" width="60%" >}}
+
+{{< hr preset="fade" width="50%" spacing="spacious" >}}
+
+{{< hr preset="dots" color="#e11d48" >}}
+
+{{< hr preset="ornament" width="60%" spacing="spacious" >}}
+
+Style, color, and sizing options also combine freely:
+
+````markdown
+{{{< hr style="dashed" color="peach" width="75%" thickness="thick" >}}}
+{{{< hr style="dotted" color="#2563eb" width="40%" thickness="thin" align="right" >}}}
+````
+
+{{< hr style="dashed" color="peach" width="75%" thickness="thick" >}}
+
+{{< hr style="dotted" color="#2563eb" width="40%" thickness="thin" align="right" >}}
+
+## Real-World Patterns
+
+Here are some common documentation patterns and how to achieve them:
+
+**Blog-style section break:**
+
+````markdown
+{{{< hr preset="dots" spacing="spacious" >}}}
+````
+
+{{< hr preset="dots" spacing="spacious" >}}
+
+**Chapter divider with label:**
+
+````markdown
+{{{< hr text="Chapter Two" color="#6366f1" thickness="thick" width="80%" >}}}
+````
+
+{{< hr text="Chapter Two" color="#6366f1" thickness="thick" width="80%" >}}
+
+**Elegant page separator:**
+
+````markdown
+{{{< hr preset="ornament" width="60%" spacing="spacious" >}}}
+````
+
+{{< hr preset="ornament" width="60%" spacing="spacious" >}}
+
+**API section boundary:**
+
+````markdown
+{{{< hr preset="gradient-shimmer" >}}}
+````
+
+{{< hr preset="gradient-shimmer" >}}
+
+**Light decorative pause:**
+
+````markdown
+{{{< hr preset="fade" thickness="thin" width="50%" >}}}
+````
+
+{{< hr preset="fade" thickness="thin" width="50%" >}}
+
+## Parameter Reference
+
+| Parameter | Values | Default | Description |
+|-----------|--------|---------|-------------|
+| `style` | `solid`, `dashed`, `dotted`, `double` | `solid` | Line style |
+| `color` | Palette name, hex, CSS color | Site accent | Line color |
+| `thickness` | `thin`, `medium`, `thick`, or CSS value | `medium` (2px) | Line weight |
+| `width` | `full`, percentage, or CSS length | `100%` | Horizontal extent |
+| `align` | `center`, `left`, `right` | `center` | Position when width < 100% |
+| `spacing` | `compact`, `normal`, `spacious` | `normal` (2rem) | Vertical margin |
+| `text` | Any string | — | Text centered on the rule |
+| `text-size` | `sm`, `md`, `lg` | `md` | Size of embedded text |
+| `text-color` | Hex or CSS color | Inherits `color` | Text label color |
+| `preset` | See [Presets](#presets) | — | Ready-made visual style |
+
+## Dark Mode
+
+All colors adapt automatically in dark mode. Palette colors switch to brighter variants for
+visibility on dark backgrounds, and the overall opacity is reduced slightly for a softer look.
+Custom hex colors are preserved as-is but receive a subtle opacity adjustment.
+
+No extra configuration is needed as the shortcode works identically in both modes.

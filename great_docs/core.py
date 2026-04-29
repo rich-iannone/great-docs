@@ -197,6 +197,7 @@ class GreatDocs:
             "github-widget.js",
             "sidebar-filter.js",
             "sidebar-wrap.js",
+            "sidebar-float.js",
             "reference-switcher.js",
             "dark-mode-toggle.js",
             "theme-init.js",
@@ -228,6 +229,8 @@ class GreatDocs:
             js_files.append("page-status-badges.js")  # pragma: no cover
         if self._config.has_versions:
             js_files.append("version-selector.js")
+        if self._config.hero_starfield:
+            js_files.append("starfield.js")
         for js_file in js_files:
             js_src = self.assets_path / js_file
             if js_src.exists():
@@ -8589,7 +8592,17 @@ jupyter: python3
         if not parts:
             return "", None  # pragma: no cover
 
-        hero_html = '<div class="gd-hero">\n' + "\n".join(parts) + "\n</div>\n\n"
+        # ── Starfield canvas (optional) ─────────────────────────────
+        starfield_html = ""
+        if self._config.hero_starfield:
+            starfield_html = '<canvas id="gd-starfield"></canvas>\n'
+
+        hero_html = '<div class="gd-hero">\n' + starfield_html + "\n".join(parts) + "\n</div>\n\n"
+
+        # Append starfield script tag after the hero div so the canvas
+        # is in the DOM when the script executes.
+        if self._config.hero_starfield:
+            hero_html += '<script src="starfield.js"></script>\n\n'
 
         return hero_html, cleaned_content
 
@@ -9799,6 +9812,7 @@ body-classes: "gd-homepage"
             "github-widget.js",
             "sidebar-filter.js",
             "sidebar-wrap.js",
+            "sidebar-float.js",
             "dark-mode-toggle.js",
             "theme-init.js",
             "copy-code.js",
@@ -9821,6 +9835,8 @@ body-classes: "gd-homepage"
             js_resource_files.append("page-tags.js")  # pragma: no cover
         if self._config.page_status_enabled:
             js_resource_files.append("page-status-badges.js")  # pragma: no cover
+        if self._config.hero_starfield:
+            js_resource_files.append("starfield.js")
         for js_file in js_resource_files:
             if js_file not in config["project"]["resources"]:
                 config["project"]["resources"].append(js_file)
@@ -10165,6 +10181,27 @@ body-classes: "gd-homepage"
         )
         if not has_wrap:
             config["format"]["html"]["include-after-body"].append(wrap_script_entry)
+
+        # Add floating sidebar script (pinned, scrollable sidebar on desktop).
+        # Quarto does not always rewrite bare src paths in text entries for
+        # newly-added files, so we use an inline loader that reads the
+        # quarto:offset meta tag (always present) to resolve the site root.
+        float_inline = (
+            "<script>"
+            "(function(){"
+            "var s=document.createElement('script');"
+            "var m=document.querySelector('meta[name=\"quarto:offset\"]');"
+            "s.src=(m?m.content:'')+'sidebar-float.js';"
+            "document.body.appendChild(s);"
+            "})();"
+            "</script>"
+        )
+        float_script_entry = {"text": float_inline}
+        has_float = any(
+            "sidebar-float" in str(item) for item in config["format"]["html"]["include-after-body"]
+        )
+        if not has_float:
+            config["format"]["html"]["include-after-body"].append(float_script_entry)
 
         # Add sidebar filter script if enabled
         if metadata.get("sidebar_filter_enabled", True):
@@ -10754,6 +10791,34 @@ body-classes: "gd-homepage"
             resources_list = config["project"].setdefault("resources", [])
             if "navbar-style.js" not in resources_list:
                 resources_list.append("navbar-style.js")
+
+        # Add site-wide accent color if configured
+        accent_color = self._config.accent_color
+        if accent_color:
+            import html as html_mod_ac
+
+            accent_css_parts: list[str] = []
+            for mode in ("light", "dark"):
+                color_val = accent_color.get(mode)
+                if not color_val:
+                    continue
+                escaped = html_mod_ac.escape(color_val)
+                if mode == "light":
+                    selector = ":root, html.quarto-light, :root[data-bs-theme='light']"
+                else:
+                    selector = "html.quarto-dark, :root[data-bs-theme='dark']"
+                accent_css_parts.append(f"{selector} {{\n    --gd-accent: {escaped};\n}}")
+            if accent_css_parts:
+                accent_css = "\n".join(accent_css_parts)
+                accent_style_tag = (
+                    f"<style>\n/* Great Docs: accent_color overrides */\n{accent_css}\n</style>"
+                )
+                after_body = config["format"]["html"].setdefault("include-after-body", [])
+                if isinstance(after_body, str):
+                    after_body = [after_body]
+                    config["format"]["html"]["include-after-body"] = after_body
+                after_body[:] = [h for h in after_body if "accent_color overrides" not in str(h)]
+                after_body.append({"text": accent_style_tag})
 
         # Add navbar solid color if configured (ignored when `navbar_style` is set)
         navbar_color = self._config.navbar_color

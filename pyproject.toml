@@ -62,6 +62,7 @@ dev = [
 ]
 docs = [
     "jupyter>=1.0.0",
+    "plotnine>=0.13.0",
 ]
 
 

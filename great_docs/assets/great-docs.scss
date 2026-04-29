@@ -1148,6 +1148,228 @@ a.sidebar-item-text.sidebar-link.text-start > span {
     padding-bottom: 8px;
 }
 
+/* ==========================================================================
+   Floating Sidebar Navigation (desktop only)
+   Transforms #quarto-sidebar into a pinned, independently-scrollable panel
+   with blur background, rounded border, and scroll affordances.
+   ========================================================================== */
+
+@media (min-width: 992px) {
+    #quarto-sidebar.gd-sidebar-float {
+        /* Sticky keeps the sidebar in the CSS grid flow.
+           JS sets top (stick offset) and max-height (shrinks for footer). */
+        display: flex;
+        flex-direction: column;
+        overflow: hidden !important; /* clip children to rounded corners; override .overflow-auto */
+        position: sticky;
+        transition: top 0.15s ease, max-height 0.15s ease;
+        /* Widen sidebar to reclaim space lost to border+padding.
+           Negative margin-right lets it extend slightly into the gap. */
+        margin-right: -12px;
+        /* align-self keeps the sidebar at the grid-row start so it
+           sticks near the top, not stretched to the full row height. */
+        align-self: start;
+    }
+
+    /* Suppress the old bottom border on the menu container —
+       it is now inside the float body. */
+    #quarto-sidebar.gd-sidebar-float .sidebar-menu-container {
+        border-bottom: none;
+    }
+
+    /* Remove default Bootstrap margin-bottom on the sidebar list
+       so the float body hugs the last item tightly. */
+    #quarto-sidebar.gd-sidebar-float .sidebar-menu-container > ul {
+        margin-bottom: 0;
+    }
+
+    #quarto-sidebar.gd-sidebar-float .sidebar-menu-container > ul > li:last-child {
+        padding-bottom: 7px;
+    }
+
+    /* Tighten vertical spacing between nav items inside the float */
+    #quarto-sidebar.gd-sidebar-float .sidebar-item {
+        margin-top: 0.1rem;
+        margin-bottom: 0.1em;
+    }
+
+    /* Override the ::before hover pill with a direct background on the link.
+       The ::before pseudo extends beyond the scroll container and gets clipped;
+       using the link's own background avoids that entirely. */
+    #quarto-sidebar.gd-sidebar-float .sidebar-link[href]::before {
+        display: none !important;
+        content: none !important;
+    }
+
+    #quarto-sidebar.gd-sidebar-float .sidebar-link[href] {
+        border-radius: 6px;
+        padding-left: 8px;
+        padding-right: 8px;
+        padding-top: 3px;
+        padding-bottom: 3px;
+        margin-left: -8px;
+        margin-right: 0;
+        transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    #quarto-sidebar.gd-sidebar-float .sidebar-link[href]:hover {
+        background-color: rgba(0, 0, 0, 0.04);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.10);
+    }
+
+    #quarto-sidebar.gd-sidebar-float.sidebar-navigation > * {
+        padding-top: 0.4em;
+    }
+
+    #quarto-sidebar.gd-sidebar-float > * {
+        padding-right: 0;
+    }
+}
+
+
+
+/* Scrollable body */
+.gd-sidebar-float-body {
+    display: none; /* hidden below 992px */
+}
+
+@media (min-width: 992px) {
+    .gd-sidebar-float-body {
+        display: block;
+        flex: 1 1 auto;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        position: relative;
+        /* Thin scrollbar for Webkit/Blink */
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+
+        &::-webkit-scrollbar {
+            width: 5px;
+        }
+        &::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        &::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.12);
+            border-radius: 4px;
+        }
+    }
+}
+
+/* Scroll affordance indicators (top / bottom) */
+.gd-sidebar-scroll-indicator {
+    display: none; /* hidden below 992px */
+}
+
+@media (min-width: 992px) {
+    /* Indicators are inside .gd-sidebar-float-body (the scroll container)
+       and use position:sticky so they pin to the top/bottom of the
+       visible scroll area without covering the "Pages" header above. */
+    .gd-sidebar-scroll-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: sticky;
+        left: 0;
+        right: 0;
+        min-height: 32px;
+        margin-top: -32px;  /* collapse out of flow so content isn't pushed */
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        z-index: 3;
+    }
+
+    .gd-sidebar-scroll-indicator.visible {
+        opacity: 1;
+        pointer-events: auto;
+        cursor: pointer;
+    }
+
+    .gd-sidebar-scroll-top {
+        top: 0;
+        background: linear-gradient(to bottom, rgba(250, 250, 253, 0.92) 0%, transparent 100%);
+    }
+
+    .gd-sidebar-scroll-bottom {
+        bottom: 0;
+        position: sticky;
+        margin-top: 0;
+        margin-bottom: -32px;
+        background: linear-gradient(to top, rgba(250, 250, 253, 0.92) 0%, transparent 100%);
+    }
+
+    .gd-sidebar-scroll-arrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.06);
+        color: $gray-600;
+        font-size: 0.65rem;
+        line-height: 1;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .gd-sidebar-scroll-indicator:hover .gd-sidebar-scroll-arrow {
+        background: rgba(0, 0, 0, 0.12);
+        color: $gray-800;
+    }
+}
+
+/* ── Dark mode: Floating Sidebar ── */
+body.quarto-dark {
+    @media (min-width: 992px) {
+        #quarto-sidebar.gd-sidebar-float {
+            background: rgba(30, 30, 30, 0.55);
+            border-color: rgba(255, 255, 255, 0.10);
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+        }
+
+
+        .gd-sidebar-float-body {
+            scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+
+            &::-webkit-scrollbar-thumb {
+                background: rgba(255, 255, 255, 0.12);
+            }
+        }
+
+        #quarto-sidebar.gd-sidebar-float .sidebar-link[href]:hover {
+            background-color: rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+        }
+
+        .gd-sidebar-scroll-top {
+            background: linear-gradient(to bottom, rgba(30, 30, 30, 0.92) 0%, transparent 100%);
+        }
+
+        .gd-sidebar-scroll-bottom {
+            background: linear-gradient(to top, rgba(30, 30, 30, 0.92) 0%, transparent 100%);
+        }
+
+        .gd-sidebar-scroll-arrow {
+            background: rgba(255, 255, 255, 0.08);
+            color: $gray-400;
+        }
+
+        .gd-sidebar-scroll-indicator:hover .gd-sidebar-scroll-arrow {
+            background: rgba(255, 255, 255, 0.15);
+            color: $gray-200;
+        }
+    }
+}
+
+/* Print: hide floating sidebar affordances */
+@media print {
+    .gd-sidebar-scroll-indicator {
+        display: none !important;
+    }
+}
+
 #quarto-header > nav > div {
     margin-left: 2%;
     margin-right: 2%;
@@ -1351,6 +1573,10 @@ body.quarto-light .navbar .gd-navbar-icon:hover {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
+}
+
+footer.footer .nav-footer {
+    margin-top: 10px;
 }
 
 .nav-footer {
@@ -3963,13 +4189,67 @@ html:not(.theme-loaded) *::after {
     body[data-page="index"] .column-margin {
         grid-column: body-end / page-end !important;
     }
+
+    /* In dark mode every container gets an opaque --gd-bg-primary background
+       that hides the fixed starfield canvas (z-index: -1).  On the homepage
+       we punch all those layers transparent so the canvas shows through.
+       body/html keep their backgrounds — they sit BELOW the canvas in the
+       root stacking context and provide the base dark colour where the
+       canvas mask fades out. */
+    body.gd-homepage.quarto-dark #quarto-content,
+    body.gd-homepage.quarto-dark main.content,
+    body.gd-homepage.quarto-dark #quarto-document-content,
+    body.gd-homepage.quarto-dark .quarto-body-content,
+    body.gd-homepage.quarto-dark .page-columns,
+    body.gd-homepage.quarto-dark .page-rows-contents,
+    body.gd-homepage.quarto-dark .column-body,
+    body.gd-homepage.quarto-dark article,
+    body.gd-homepage.quarto-dark section {
+        background-color: transparent;
+    }
 }
 
 /* ── Hero Section ─────────────────────────────────────── */
 
+/* Prevent horizontal scrollbar from the 100vw starfield canvas */
+.gd-homepage {
+    overflow-x: clip;
+}
+
 .gd-hero {
     text-align: center;
     padding: 2.5rem 1rem 2rem;
+    position: relative;
+    overflow: visible;
+}
+
+/* Starfield canvas: breaks out of the hero to cover the full viewport width
+   and extends above into the navbar area and below into body content.
+   Uses fixed positioning relative to the viewport so Quarto's grid layout
+   doesn't clip or offset it. */
+#gd-starfield {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;         /* let clicks pass through to page content */
+    z-index: 0;
+    transition: opacity 0.15s ease-out;
+    mask-image: linear-gradient(to bottom, black 35%, transparent 85%);
+    -webkit-mask-image: linear-gradient(to bottom, black 35%, transparent 85%);
+}
+
+/* Re-enable pointer events only on the homepage hero area so the
+   dark-mode starfield can track the cursor there. */
+.gd-hero #gd-starfield {
+    pointer-events: auto;
+}
+
+/* Everything in the hero except the canvas must sit above it */
+.gd-hero > *:not(#gd-starfield) {
+    position: relative;
+    z-index: 1;
 }
 
 /* When a column-margin sidebar is present, Quarto adds page-full to <main>
@@ -4045,6 +4325,570 @@ html[data-bs-theme="dark"] .navbar-logo.dark-content  { display: inline !importa
 .gd-hero + section.level1 > h1:first-child,
 .gd-hero + section.level2 > h2:first-child {
     margin-top: 0.5rem !important;
+}
+
+/* ── CTA Cards ("Go Further" section) ─────────────────── */
+
+.gd-cta-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+    margin: 1.5rem 0 2rem;
+}
+
+.gd-cta-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 249, 250, 0.7));
+    text-decoration: none !important;
+    color: inherit !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    position: relative;
+    overflow: hidden;
+
+    &:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        border-color: rgba(0, 0, 0, 0.15);
+    }
+
+    &:hover .gd-cta-arrow {
+        transform: translateX(4px);
+        opacity: 1;
+    }
+}
+
+.gd-cta-icon {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+    line-height: 1;
+}
+
+.gd-cta-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    line-height: 1.3;
+}
+
+.gd-cta-desc {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #6c757d;
+    flex-grow: 1;
+}
+
+.gd-cta-arrow {
+    font-size: 1.25rem;
+    margin-top: 0.75rem;
+    opacity: 0.4;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    font-weight: 600;
+}
+
+/* Dark mode CTA cards */
+body.quarto-dark .gd-cta-card {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+
+    &:hover {
+        border-color: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+}
+
+body.quarto-dark .gd-cta-desc {
+    color: #adb5bd;
+}
+
+@media (max-width: 768px) {
+    .gd-cta-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
+/* ── Feature Wall ("And So Much More") ────────────────── */
+
+.gd-feature-wall {
+    margin: 3rem 0 2rem;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+    overflow-wrap: break-word;
+}
+
+.gd-fw-heading {
+    text-align: center;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.01em;
+}
+
+.gd-fw-large,
+.gd-fw-medium,
+.gd-fw-small {
+    text-align: justify;
+    text-justify: inter-word;
+}
+
+.gd-fw-large {
+    font-size: 1.65rem;
+    line-height: 1.45;
+    margin-bottom: 0.6rem;
+    letter-spacing: -0.01em;
+}
+
+.gd-fw-medium {
+    font-size: 1.15rem;
+    line-height: 1.55;
+    margin-bottom: 0.5rem;
+}
+
+.gd-fw-small {
+    font-size: 0.88rem;
+    line-height: 1.65;
+}
+
+/* Dim the middle-dot separators slightly */
+.gd-feature-wall b {
+    font-weight: 650;
+}
+
+@media (max-width: 768px) {
+    .gd-fw-large {
+        font-size: 1.35rem;
+    }
+    .gd-fw-medium {
+        font-size: 1.05rem;
+    }
+    .gd-fw-small {
+        font-size: 0.82rem;
+    }
+}
+
+/* ── Horizontal Rule Shortcode ────────────────────────── */
+
+/* Palette color tokens — representative hue from each gradient preset */
+:root {
+    --gd-palette-sky: #0077b6;
+    --gd-palette-peach: #e07a3a;
+    --gd-palette-prism: #6d28d9;
+    --gd-palette-lilac: #a855f7;
+    --gd-palette-slate: #64748b;
+    --gd-palette-honey: #d97706;
+    --gd-palette-dusk: #4338ca;
+    --gd-palette-mint: #0d9488;
+    --gd-palette-accent: var(--gd-accent, #6366f1);
+}
+
+html[data-bs-theme="dark"] {
+    --gd-palette-sky: #38bdf8;
+    --gd-palette-peach: #fb923c;
+    --gd-palette-prism: #a78bfa;
+    --gd-palette-lilac: #c084fc;
+    --gd-palette-slate: #94a3b8;
+    --gd-palette-honey: #fbbf24;
+    --gd-palette-dusk: #818cf8;
+    --gd-palette-mint: #2dd4bf;
+    --gd-palette-accent: var(--gd-accent, #818cf8);
+}
+
+.gd-hr {
+    --gd-hr-color: var(--gd-accent, #6366f1);
+    --gd-hr-thickness: 2px;
+    --gd-hr-width: 100%;
+    --gd-hr-spacing: 2rem;
+
+    border: none;
+    height: var(--gd-hr-thickness);
+    width: var(--gd-hr-width);
+    max-width: 100%;
+    margin: var(--gd-hr-spacing) auto;
+    background: var(--gd-hr-color);
+    opacity: 0.7;
+    display: block;
+}
+
+/* ─ Line Styles ─ */
+.gd-hr--dotted {
+    background: none;
+    border-top: var(--gd-hr-thickness) dotted var(--gd-hr-color);
+    height: 0;
+}
+
+.gd-hr--dashed {
+    background: none;
+    border-top: var(--gd-hr-thickness) dashed var(--gd-hr-color);
+    height: 0;
+}
+
+.gd-hr--double {
+    background: none;
+    border-top: calc(var(--gd-hr-thickness) * 0.5) double var(--gd-hr-color);
+    height: 0;
+    border-top-width: calc(var(--gd-hr-thickness) + 2px);
+}
+
+/* ─ Alignment ─ */
+.gd-hr--left {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+.gd-hr--right {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+/* ─ With-Text Structure ─ */
+.gd-hr--with-text {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    height: auto;
+    background: none;
+    border: none;
+    width: var(--gd-hr-width);
+    max-width: 100%;
+    margin: var(--gd-hr-spacing) auto;
+    opacity: 1;
+}
+
+.gd-hr--with-text.gd-hr--left {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+.gd-hr--with-text.gd-hr--right {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+.gd-hr-line {
+    flex: 1;
+    height: var(--gd-hr-thickness, 2px);
+    background: var(--gd-hr-color);
+    opacity: 0.7;
+}
+
+.gd-hr-text {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--gd-hr-color);
+    white-space: nowrap;
+    user-select: none;
+    line-height: 1;
+}
+
+.gd-hr-text--sm {
+    font-size: 0.75rem;
+}
+
+.gd-hr-text--lg {
+    font-size: 1.2rem;
+}
+
+/* ─ Presets ─ */
+
+/* Gradient shimmer (animated) — generalizes .gd-fw-rule */
+.gd-hr--gradient-shimmer {
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--gd-hr-color, var(--gd-accent, #6366f1)) 25%,
+        var(--gd-accent-secondary, #a855f7) 50%,
+        var(--gd-hr-color, var(--gd-accent, #6366f1)) 75%,
+        transparent
+    );
+    background-size: 200% 100%;
+    animation: gd-hr-shimmer 4s ease-in-out infinite;
+    border: none;
+    height: var(--gd-hr-thickness);
+}
+
+@keyframes gd-hr-shimmer {
+    0%   { background-position: 100% 0; }
+    50%  { background-position: 0% 0; }
+    100% { background-position: 100% 0; }
+}
+
+/* Gradient static (non-animated) */
+.gd-hr--gradient-static {
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--gd-hr-color, var(--gd-accent, #6366f1)) 25%,
+        var(--gd-accent-secondary, #a855f7) 50%,
+        var(--gd-hr-color, var(--gd-accent, #6366f1)) 75%,
+        transparent
+    );
+    border: none;
+    height: var(--gd-hr-thickness);
+}
+
+/* Fade — full opacity at center, transparent at edges */
+.gd-hr--fade {
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--gd-hr-color) 20%,
+        var(--gd-hr-color) 80%,
+        transparent
+    );
+    border: none;
+    height: var(--gd-hr-thickness);
+}
+
+/* Fade-edges — transparent edges to colored center */
+.gd-hr--fade-edges {
+    background: radial-gradient(
+        ellipse at center,
+        var(--gd-hr-color) 0%,
+        transparent 70%
+    );
+    border: none;
+    height: var(--gd-hr-thickness);
+}
+
+/* Dots — three centered dots, no line */
+.gd-hr--dots {
+    background: none;
+    border: none;
+    height: auto;
+    text-align: center;
+    opacity: 1;
+}
+
+.gd-hr--dots::after {
+    content: "·  ·  ·";
+    font-size: 1.5rem;
+    letter-spacing: 0.3em;
+    color: var(--gd-hr-color);
+    opacity: 0.8;
+}
+
+/* Diamond — centered diamond flanked by thin lines */
+.gd-hr--diamond {
+    background: none;
+    border: none;
+    height: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    opacity: 1;
+}
+
+.gd-hr--diamond::before,
+.gd-hr--diamond::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--gd-hr-color);
+    opacity: 0.5;
+}
+
+.gd-hr--diamond::before {
+    content: "";
+}
+
+/* Insert diamond via a nested approach — use a wrapper trick.
+   Since <hr> can't have children, we use a background trick instead. */
+hr.gd-hr--diamond {
+    display: flex;
+}
+
+hr.gd-hr--diamond::before {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gd-hr-color));
+}
+
+hr.gd-hr--diamond::after {
+    content: "◇";
+    flex: none;
+    height: auto;
+    background: none;
+    font-size: 1rem;
+    color: var(--gd-hr-color);
+    opacity: 0.8;
+    padding: 0 0.5rem;
+}
+
+/* Ornament — fleuron between fading lines */
+.gd-hr--ornament {
+    background: none;
+    border: none;
+    height: auto;
+    display: flex;
+    align-items: center;
+    opacity: 1;
+}
+
+hr.gd-hr--ornament::before {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gd-hr-color));
+}
+
+hr.gd-hr--ornament::after {
+    content: "❧";
+    flex: none;
+    height: auto;
+    background: none;
+    font-size: 1.2rem;
+    color: var(--gd-hr-color);
+    opacity: 0.7;
+    padding: 0 0.75rem;
+}
+
+/* Wave — repeating wave pattern */
+.gd-hr--wave {
+    background: repeating-linear-gradient(
+        135deg,
+        var(--gd-hr-color) 0px,
+        var(--gd-hr-color) 2px,
+        transparent 2px,
+        transparent 6px
+    );
+    border: none;
+    height: var(--gd-hr-thickness);
+    opacity: 0.6;
+}
+
+/* Double-line — two parallel lines */
+.gd-hr--double-line {
+    background: none;
+    border: none;
+    height: calc(var(--gd-hr-thickness) * 2 + 3px);
+    position: relative;
+    opacity: 0.7;
+}
+
+.gd-hr--double-line::before,
+.gd-hr--double-line::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: var(--gd-hr-thickness);
+    background: var(--gd-hr-color);
+}
+
+.gd-hr--double-line::before {
+    top: 0;
+}
+
+.gd-hr--double-line::after {
+    bottom: 0;
+}
+
+/* ─ Dark Mode ─ */
+body.quarto-dark .gd-hr {
+    opacity: 0.6;
+}
+
+body.quarto-dark .gd-hr--with-text {
+    opacity: 1;
+}
+
+body.quarto-dark .gd-hr-line {
+    opacity: 0.5;
+}
+
+body.quarto-dark .gd-hr-text {
+    opacity: 0.85;
+}
+
+body.quarto-dark .gd-hr--dots::after {
+    opacity: 0.6;
+}
+
+/* ─ Reduced Motion ─ */
+@media (prefers-reduced-motion: reduce) {
+    .gd-hr--gradient-shimmer {
+        animation: none;
+    }
+}
+
+/* ─ Responsive ─ */
+@media (max-width: 768px) {
+    .gd-hr {
+        --gd-hr-spacing: 1.5rem;
+    }
+}
+
+/* ── Feature Wall Closing ─────────────────────────────── */
+
+.gd-fw-rule {
+    border: none;
+    height: 2px;
+    margin: 3rem auto 2rem;
+    max-width: 30rem;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--gd-accent, #6366f1) 25%,
+        var(--gd-accent-secondary, #a855f7) 50%,
+        var(--gd-accent, #6366f1) 75%,
+        transparent
+    );
+    background-size: 200% 100%;
+    animation: gd-rule-shimmer 4s ease-in-out infinite;
+    opacity: 0.7;
+}
+
+@keyframes gd-rule-shimmer {
+    0%   { background-position: 100% 0; }
+    50%  { background-position: 0% 0; }
+    100% { background-position: 100% 0; }
+}
+
+.gd-fw-closing {
+    text-align: center;
+    padding: 0 1.5rem 2.5rem;
+    max-width: 38rem;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+}
+
+.gd-fw-closing p {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: #6b7280;
+    margin: 0;
+}
+
+body.quarto-dark .gd-fw-closing p {
+    color: #9ca3af;
+}
+
+.gd-fw-closing a {
+    color: var(--gd-accent, #6366f1);
+    text-decoration: none;
+    font-weight: 600;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.gd-fw-closing a:hover {
+    border-bottom-color: var(--gd-accent, #6366f1);
+}
+
+@media (max-width: 768px) {
+    .gd-fw-rule {
+        max-width: 80%;
+        margin: 2rem auto 1.5rem;
+    }
+    .gd-fw-closing p {
+        font-size: 0.95rem;
+    }
 }
 
 /* ── Hero Responsive ──────────────────────────────────── */
@@ -5345,6 +6189,67 @@ html[data-bs-theme="dark"] {
 td > p:has(> svg.gd-icon) {
     margin: 0;
     line-height: inherit;
+}
+
+
+/* ── Keyboard Keys Shortcode ──────────────────────────────────── */
+
+.gd-keys {
+    display: inline-block;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+        "Liberation Mono", monospace;
+    font-size: 0.8em;
+    font-weight: 500;
+    line-height: 1;
+    padding: 0.15em 0.45em;
+    min-width: 1.6em;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    color: #1f2328;
+    background: linear-gradient(180deg, #f6f8fa 0%, #eaeef2 100%);
+    border: 1px solid #d0d7de;
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    box-shadow: 0 1px 0 rgba(27, 31, 36, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.gd-keys-sep {
+    display: inline-block;
+    margin: 0 0.15em;
+    font-size: 0.85em;
+    color: #656d76;
+    vertical-align: baseline;
+    user-select: none;
+}
+
+/* Function keys (F1–F20): smallcaps-height text on the baseline */
+.gd-keys-fn {
+    font-size: 0.7em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 0.25em 0.45em;
+    text-transform: uppercase;
+    position: relative;
+    top: -1.1px;
+}
+
+/* Dark mode */
+body.quarto-dark .gd-keys,
+html.quarto-dark .gd-keys,
+:root[data-bs-theme="dark"] .gd-keys {
+    color: #e6edf3;
+    background: linear-gradient(180deg, #2d333b 0%, #22272e 100%);
+    border-color: #444c56;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+body.quarto-dark .gd-keys-sep,
+html.quarto-dark .gd-keys-sep,
+:root[data-bs-theme="dark"] .gd-keys-sep {
+    color: #8b949e;
 }
 
 

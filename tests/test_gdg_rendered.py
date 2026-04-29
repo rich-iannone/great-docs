@@ -8516,3 +8516,110 @@ def test_DED_sec_blog_user_index_copies_post_image():
 
     img = _site_dir(pkg) / "blog" / "first-post" / "post-banner.svg"
     assert img.exists(), "Post-level image first-post/post-banner.svg not copied"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Keys Shortcode — {{< keys >}} renders styled keyboard key caps
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_KBD_PKG = "gdtest_keys_shortcode"
+
+
+@requires_bs4
+def test_KBD_single_keys_page_exists():
+    """The single-keys user guide page should be rendered."""
+    if not _has_rendered_site(_KBD_PKG):
+        pytest.skip(f"{_KBD_PKG} not rendered")
+
+    html_path = _site_dir(_KBD_PKG) / "user-guide" / "single-keys.html"
+    assert html_path.exists(), "single-keys.html not found"
+
+
+@requires_bs4
+def test_KBD_shortcut_combos_page_exists():
+    """The shortcut-combos user guide page should be rendered."""
+    if not _has_rendered_site(_KBD_PKG):
+        pytest.skip(f"{_KBD_PKG} not rendered")
+
+    html_path = _site_dir(_KBD_PKG) / "user-guide" / "shortcut-combos.html"
+    assert html_path.exists(), "shortcut-combos.html not found"
+
+
+@requires_bs4
+def test_KBD_platform_aware_page_exists():
+    """The platform-aware user guide page should be rendered."""
+    if not _has_rendered_site(_KBD_PKG):
+        pytest.skip(f"{_KBD_PKG} not rendered")
+
+    html_path = _site_dir(_KBD_PKG) / "user-guide" / "platform-aware.html"
+    assert html_path.exists(), "platform-aware.html not found"
+
+
+@requires_bs4
+def test_KBD_keys_in_context_page_exists():
+    """The keys-in-context user guide page should be rendered."""
+    if not _has_rendered_site(_KBD_PKG):
+        pytest.skip(f"{_KBD_PKG} not rendered")
+
+    html_path = _site_dir(_KBD_PKG) / "user-guide" / "keys-in-context.html"
+    assert html_path.exists(), "keys-in-context.html not found"
+
+
+@requires_bs4
+def test_KBD_single_keys_contains_kbd_elements():
+    """Single keys page should contain <kbd> elements with gd-keys class."""
+    if not _has_rendered_site(_KBD_PKG):
+        pytest.skip(f"{_KBD_PKG} not rendered")
+
+    page = _site_dir(_KBD_PKG) / "user-guide" / "single-keys.html"
+    if not page.exists():
+        pytest.skip("single-keys.html not found")
+
+    soup = _load_html(page)
+    kbd_els = soup.find_all("kbd", class_="gd-keys")
+    assert len(kbd_els) >= 5, f"Expected ≥5 kbd elements, found {len(kbd_els)}"
+
+
+@requires_bs4
+def test_KBD_shortcut_combos_has_separator():
+    """Shortcut combos page should contain gd-keys-sep separator spans."""
+    if not _has_rendered_site(_KBD_PKG):
+        pytest.skip(f"{_KBD_PKG} not rendered")
+
+    page = _site_dir(_KBD_PKG) / "user-guide" / "shortcut-combos.html"
+    if not page.exists():
+        pytest.skip("shortcut-combos.html not found")
+
+    soup = _load_html(page)
+    seps = soup.find_all("span", class_="gd-keys-sep")
+    assert len(seps) >= 3, f"Expected ≥3 separator spans, found {len(seps)}"
+
+
+@requires_bs4
+def test_KBD_platform_mac_has_symbols():
+    """Platform-aware page with platform=mac should render macOS symbols."""
+    if not _has_rendered_site(_KBD_PKG):
+        pytest.skip(f"{_KBD_PKG} not rendered")
+
+    page = _site_dir(_KBD_PKG) / "user-guide" / "platform-aware.html"
+    if not page.exists():
+        pytest.skip("platform-aware.html not found")
+
+    content = page.read_text()
+    # macOS symbols for Cmd and Shift should appear
+    assert "⌘" in content, "Expected ⌘ (Command) symbol for mac platform"
+
+
+@requires_bs4
+def test_KBD_no_shortcode_errors():
+    """No keys shortcode should produce an error HTML comment."""
+    if not _has_rendered_site(_KBD_PKG):
+        pytest.skip(f"{_KBD_PKG} not rendered")
+
+    ug_dir = _site_dir(_KBD_PKG) / "user-guide"
+    if not ug_dir.exists():
+        pytest.skip("user-guide directory not found")
+
+    for html_file in ug_dir.glob("*.html"):
+        content = html_file.read_text()
+        assert "keys shortcode error" not in content, f"Shortcode error in {html_file.name}"

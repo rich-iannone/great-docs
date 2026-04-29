@@ -132,6 +132,7 @@ ALL_PACKAGES: list[str] = [
     "gdtest_source_disabled",  # 05
     "gdtest_sidebar_disabled",  # 06
     "gdtest_sidebar_min_items",  # 07
+    "gdtest_sidebar_float",  # 07b
     "gdtest_cli_name",  # 08
     "gdtest_dynamic_false",  # 09
     "gdtest_parser_google",  # 10
@@ -363,6 +364,12 @@ ALL_PACKAGES: list[str] = [
     "gdtest_tbl_shortcode",  # 179
     # 180: Interactive table explorer showcase
     "gdtest_tbl_explorer",  # 180
+    # 181: Decorative horizontal rule shortcode showcase
+    "gdtest_hr_shortcode",  # 181
+    # 182: Site-wide accent_color config option
+    "gdtest_accent_color",  # 182
+    # 183: Keyboard keys shortcode showcase
+    "gdtest_keys_shortcode",  # 183
 ]
 
 
@@ -1215,6 +1222,13 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "filter should appear even with just 4 items because the threshold "
         "is set low. Four functions (w, x, y, z)."
     ),
+    "gdtest_sidebar_float": (
+        "Stress test for the floating sidebar. Has 32 user guide pages "
+        "organized into 5 sections (Getting Started, Core Concepts, "
+        "Advanced Usage, Deployment, Reference). The sidebar should be "
+        "tall enough to require scrolling, with gradient affordances "
+        "visible and active-page auto-scrolling."
+    ),
     "gdtest_cli_name": (
         "Tests cli.name: 'mytool' (explicit CLI name). The CLI reference "
         "should show 'mytool' as the command name. Has a Click app with "
@@ -2036,6 +2050,29 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "missing-value highlighting, minimal chrome (hide row numbers, dtypes, "
         "dimensions), tbl-explorer Quarto shortcode with CSV/TSV/JSONL files, "
         "and a side-by-side comparison of tbl_preview() vs tbl_explorer()."
+    ),
+    "gdtest_hr_shortcode": (
+        "Decorative horizontal rule shortcode showcase exercising the "
+        "{{< hr >}} shortcode in six user-guide pages: line styles (solid, "
+        "dashed, dotted, double), palette and custom colors, sizing and "
+        "alignment (thickness, width, align, spacing), embedded text with "
+        "symbols and labels, all nine presets (gradient-shimmer, gradient-"
+        "static, fade, fade-edges, dots, diamond, ornament, wave, double-"
+        "line), and combined options with real-world examples."
+    ),
+    "gdtest_accent_color": (
+        "Site-wide accent_color config option that sets --gd-accent via "
+        "great-docs.yml. Uses a distinctive teal (#0d9488) to verify the "
+        "accent propagates to default hr shortcodes, gradient presets, "
+        "and text dividers while palette colors (sky, peach, etc.) retain "
+        "their own hues. Tests light and dark mode handling."
+    ),
+    "gdtest_keys_shortcode": (
+        "Keyboard keys shortcode showcase exercising the {{< keys >}} shortcode "
+        "in four user-guide pages: single keys (Esc, Enter, Tab, modifiers, "
+        "arrows), shortcut combos (Ctrl+Shift+P auto-split), platform-aware "
+        "rendering (macOS symbols ⌘⌥⇧⌃ vs Windows labels), and keys in "
+        "context (headings, callouts, lists, blockquotes, prose)."
     ),
 }
 

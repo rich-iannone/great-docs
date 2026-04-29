@@ -1,0 +1,278 @@
+---
+title: "Keyboard Keys"
+guide-section: "Site Content"
+tags: [Content, Extensions]
+status: experimental
+upcoming: "0.10"
+versions: ">=0.9"
+---
+
+# Keyboard Keys
+
+Documentation often needs to show keyboard shortcuts: "press {{< keys shortcut="Ctrl+S" >}} to
+save" or "hit {{< keys "Esc" >}} to close the dialog". The `{{{< keys >}}}` shortcode renders these
+as styled key caps with a subtle 3D border effect, monospace font, and automatic dark-mode support.
+
+It handles single keys, multi-key combos, and platform-aware rendering so that macOS readers see
+`⌘` while Windows readers see `Ctrl`.
+
+## Quick Start
+
+Wrap a key name in the shortcode to render a styled key cap:
+
+````markdown
+Press {{{< keys "Esc" >}}} to close.
+````
+
+Press {{< keys "Esc" >}} to close.
+
+For a multi-key shortcut, use the `shortcut` parameter. Keys are split on `+` automatically:
+
+````markdown
+{{{< keys shortcut="Ctrl+Shift+P" >}}}
+````
+
+{{< keys shortcut="Ctrl+Shift+P" >}}
+
+## Single Keys
+
+The simplest usage is a single key name passed as a positional argument. This works for any key
+you might find on a keyboard: letters, numbers, function keys, navigation keys, and modifiers.
+
+````markdown
+{{{< keys "Enter" >}}}
+{{{< keys "Tab" >}}}
+{{{< keys "Space" >}}}
+{{{< keys "F5" >}}}
+{{{< keys "A" >}}}
+````
+
+{{< keys "Enter" >}} {{< keys "Tab" >}} {{< keys "Space" >}} {{< keys "F5" >}} {{< keys "A" >}}
+
+Modifier keys render just like regular keys:
+
+{{< keys "Ctrl" >}} {{< keys "Shift" >}} {{< keys "Alt" >}}
+
+All keys share the same visual style: a rounded border, subtle shadow, and monospace font that
+mimics the appearance of physical key caps.
+
+## Shortcut Combos
+
+Most keyboard shortcuts involve pressing multiple keys together. The `shortcut` parameter accepts a
+string like `"Ctrl+Shift+P"`, splits it on `+`, and renders each key with a `+` separator between
+them:
+
+````markdown
+{{{< keys shortcut="Ctrl+C" >}}}
+{{{< keys shortcut="Ctrl+Shift+P" >}}}
+{{{< keys shortcut="Alt+F4" >}}}
+````
+
+{{< keys shortcut="Ctrl+C" >}}
+
+{{< keys shortcut="Ctrl+Shift+P" >}}
+
+{{< keys shortcut="Alt+F4" >}}
+
+| Action | Shortcut |
+|--------|----------|
+| Copy | {{< keys shortcut="Ctrl+C" >}} |
+| Paste | {{< keys shortcut="Ctrl+V" >}} |
+| Undo | {{< keys shortcut="Ctrl+Z" >}} |
+| Save | {{< keys shortcut="Ctrl+S" >}} |
+| Find | {{< keys shortcut="Ctrl+F" >}} |
+| Command palette | {{< keys shortcut="Ctrl+Shift+P" >}} |
+
+You can also build combos manually by placing individual keys next to each other:
+
+````markdown
+{{{< keys "Ctrl" >}}}+{{{< keys "Shift" >}}}+{{{< keys "P" >}}}
+````
+
+{{< keys "Ctrl" >}}+{{< keys "Shift" >}}+{{< keys "P" >}}
+
+Both approaches are valid. Use `shortcut=` for convenience, or manual placement when you want
+different separators or spacing between keys.
+
+## Platform-Aware Rendering
+
+Different operating systems use different key names. macOS has Command (⌘) and Option (⌥), while
+Windows uses Ctrl and Alt. The `platform` parameter translates key names so you can write
+platform-specific documentation without hard-coding symbols.
+
+### macOS
+
+With `platform="mac"`, standard modifier names are replaced with their macOS symbol equivalents.
+This is useful when writing documentation targeted at macOS users:
+
+| Key name | macOS symbol |
+|----------|-------------|
+| Ctrl | {{< keys "Ctrl" platform="mac" >}} (⌃) |
+| Cmd / Command | {{< keys "Cmd" platform="mac" >}} (⌘) |
+| Alt / Option | {{< keys "Alt" platform="mac" >}} (⌥) |
+| Shift | {{< keys "Shift" platform="mac" >}} (⇧) |
+| Up / Down / Left / Right | {{< keys "Up" platform="mac" >}} {{< keys "Down" platform="mac" >}} {{< keys "Left" platform="mac" >}} {{< keys "Right" platform="mac" >}} (▲▼◀▶) |
+
+A full shortcut with macOS rendering:
+
+````markdown
+{{{< keys shortcut="Cmd+Shift+P" platform="mac" >}}}
+````
+
+{{< keys shortcut="Cmd+Shift+P" platform="mac" >}}
+
+The symbols are compact and universally recognized by macOS users, making them ideal for
+application-specific documentation.
+
+### Windows
+
+With `platform="win"`, macOS-specific key names are translated to their Windows equivalents. This
+lets you write a single shortcode and render it appropriately for Windows readers:
+
+| macOS key | Windows key |
+|-----------|------------|
+| Cmd | {{< keys "Cmd" platform="win" >}} (Ctrl) |
+| Option | {{< keys "Option" platform="win" >}} (Alt) |
+
+````markdown
+{{{< keys shortcut="Cmd+S" platform="win" >}}}
+````
+
+{{< keys shortcut="Cmd+S" platform="win" >}}
+
+Keys that have no platform-specific equivalent (like letter keys and function keys) pass through
+unchanged.
+
+### Default (No Platform)
+
+Without a `platform` parameter, key names are rendered exactly as written. This is the right choice
+when your audience uses multiple platforms or when the shortcut is platform-neutral:
+
+{{< keys shortcut="Ctrl+Shift+P" >}}
+
+For most documentation, leaving `platform` unset is the simplest and most portable option.
+
+## In Context
+
+Keyboard keys work naturally in all common documentation contexts. The examples below show how
+`{{{< keys >}}}` integrates with prose, lists, callouts, and blockquotes.
+
+### Inline Prose
+
+Keys blend seamlessly into running text without disrupting the reading flow:
+
+To save your work, press {{< keys shortcut="Ctrl+S" >}}. If you need to undo, reach for
+{{< keys shortcut="Ctrl+Z" >}}. For more advanced operations, open the command palette with
+{{< keys shortcut="Ctrl+Shift+P" >}}.
+
+This pattern works well in tutorials where you walk readers through a series of actions.
+
+### Lists
+
+Shortcuts pair naturally with list items. Place the key combo first, followed by a description:
+
+- {{< keys shortcut="Ctrl+C" >}} Copy
+- {{< keys shortcut="Ctrl+V" >}} Paste
+- {{< keys shortcut="Ctrl+Z" >}} Undo
+- {{< keys shortcut="Ctrl+Y" >}} Redo
+- {{< keys shortcut="Ctrl+F" >}} Find
+
+This layout makes it easy to scan a list of shortcuts at a glance.
+
+### Callouts
+
+Callouts are a great way to highlight important shortcuts that readers should remember:
+
+:::{.callout-tip}
+## Quick Navigation
+Press {{< keys shortcut="Ctrl+P" >}} to quickly open any file by name, or
+{{< keys shortcut="Ctrl+Shift+P" >}} to access the full command palette.
+:::
+
+The styled key caps remain legible inside colored callout backgrounds.
+
+### Blockquotes
+
+Keys also render correctly inside blockquotes:
+
+> Press {{< keys "Esc" >}} to close any dialog or cancel the current operation.
+
+This is useful for quoting interface instructions or reproducing help text from an application.
+
+## Parameter Reference
+
+The table below summarizes all available parameters for the `{{{< keys >}}}` shortcode.
+
+| Parameter | Values | Default | Description |
+|-----------|--------|---------|-------------|
+| _(positional)_ | Any key name | (none) | Single key to render |
+| `shortcut` | Key combo string | (none) | Multi-key shortcut, split on `+` |
+| `platform` | `mac`, `win` | (none) | Translate keys for a specific OS |
+
+Either the positional argument or `shortcut` is required. The `platform` parameter is always
+optional.
+
+## Function Keys
+
+Function keys ({{< keys "F1" >}} through {{< keys "F20" >}}) receive a compact typographic
+treatment inspired by macOS menu glyphs. The text is rendered at x-height scale with slightly
+bolder weight, giving them a distinct look that sets them apart from regular keys:
+
+{{< keys "F1" >}} {{< keys "F2" >}} {{< keys "F3" >}} {{< keys "F4" >}} {{< keys "F5" >}}
+{{< keys "F6" >}} {{< keys "F7" >}} {{< keys "F8" >}} {{< keys "F9" >}} {{< keys "F10" >}}
+{{< keys "F11" >}} {{< keys "F12" >}}
+
+Function keys work in combos too:
+
+{{< keys shortcut="Ctrl+F5" >}}
+
+{{< keys shortcut="Alt+F4" >}}
+
+{{< keys shortcut="Cmd+Shift+F12" platform="mac" >}}
+
+The compact styling is applied automatically and is not platform-specific.
+
+## Dark Mode
+
+Key caps automatically adapt in dark mode. The background shifts to a dark gradient, borders become
+more subtle, and text brightens for readability. No extra configuration is needed; the shortcode
+works identically in both light and dark themes.
+
+## Copy/Paste Friendly
+
+Rendered shortcuts are plain text under the hood, so copying them from the page preserves the
+readable key names and separators. For example, copying a macOS shortcut like
+{{< keys shortcut="Cmd+Shift+P" platform="mac" >}} produces `⌘+⇧+P` in the clipboard. This
+makes it easy for readers to paste shortcuts into notes, chat messages, or other documents without
+losing meaning.
+
+## Symbol Tooltips
+
+When platform-aware rendering produces macOS symbols, each key cap includes a `title` attribute
+with the full key name. Hovering over {{< keys "Cmd" platform="mac" >}} shows "Command",
+{{< keys "Alt" platform="mac" >}} shows "Option", and so on. This helps readers who may not
+recognize every symbol at a glance.
+
+## Comparison with Quarto's Built-In `kbd`
+
+Quarto ships with its own `{{{< kbd >}}}` shortcode
+([documentation](https://quarto.org/docs/authoring/markdown-basics.html#keyboard-shortcuts)) that
+renders keyboard shortcuts as plain text. It supports per-OS keyword arguments (`mac=`, `win=`,
+`linux=`) and auto-detects the reader's operating system in HTML output:
+
+````markdown
+{{{< kbd Shift-Ctrl-P >}}}
+{{{< kbd mac=Shift-Command-O win=Shift-Control-O linux=Shift-Ctrl-L >}}}
+````
+
+The Great Docs `{{{< keys >}}}` shortcode differs in three ways:
+
+1. **Visual styling.** Keys render as styled caps with a 3D border, gradient background, and
+   monospace font rather than plain text.
+2. **Symbol translation.** With `platform="mac"`, modifier names are replaced by their macOS
+   symbols (⌘, ⌥, ⇧, ⌃) rather than spelled out.
+3. **Separator rendering.** Combo keys are joined by a styled `+` separator element.
+
+Choose `{{{< kbd >}}}` when you want minimal, format-agnostic output that works in PDF, DOCX, and
+other non-HTML targets. Choose `{{{< keys >}}}` when you are authoring HTML documentation and want
+visually distinct key-cap styling that matches the Great Docs design system.

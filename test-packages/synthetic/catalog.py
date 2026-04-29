@@ -368,6 +368,8 @@ ALL_PACKAGES: list[str] = [
     "gdtest_hr_shortcode",  # 181
     # 182: Site-wide accent_color config option
     "gdtest_accent_color",  # 182
+    # 183: Keyboard keys shortcode showcase
+    "gdtest_keys_shortcode",  # 183
 ]
 
 
@@ -2064,6 +2066,13 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "accent propagates to default hr shortcodes, gradient presets, "
         "and text dividers while palette colors (sky, peach, etc.) retain "
         "their own hues. Tests light and dark mode handling."
+    ),
+    "gdtest_keys_shortcode": (
+        "Keyboard keys shortcode showcase exercising the {{< keys >}} shortcode "
+        "in four user-guide pages: single keys (Esc, Enter, Tab, modifiers, "
+        "arrows), shortcut combos (Ctrl+Shift+P auto-split), platform-aware "
+        "rendering (macOS symbols ⌘⌥⇧⌃ vs Windows labels), and keys in "
+        "context (headings, callouts, lists, blockquotes, prose)."
     ),
 }
 

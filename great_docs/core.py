@@ -197,6 +197,7 @@ class GreatDocs:
             "github-widget.js",
             "sidebar-filter.js",
             "sidebar-wrap.js",
+            "sidebar-float.js",
             "reference-switcher.js",
             "dark-mode-toggle.js",
             "theme-init.js",
@@ -9820,6 +9821,7 @@ body-classes: "gd-homepage"
             "github-widget.js",
             "sidebar-filter.js",
             "sidebar-wrap.js",
+            "sidebar-float.js",
             "dark-mode-toggle.js",
             "theme-init.js",
             "copy-code.js",
@@ -10188,6 +10190,27 @@ body-classes: "gd-homepage"
         )
         if not has_wrap:
             config["format"]["html"]["include-after-body"].append(wrap_script_entry)
+
+        # Add floating sidebar script (pinned, scrollable sidebar on desktop).
+        # Quarto does not always rewrite bare src paths in text entries for
+        # newly-added files, so we use an inline loader that reads the
+        # quarto:offset meta tag (always present) to resolve the site root.
+        float_inline = (
+            "<script>"
+            "(function(){"
+            "var s=document.createElement('script');"
+            "var m=document.querySelector('meta[name=\"quarto:offset\"]');"
+            "s.src=(m?m.content:'')+'sidebar-float.js';"
+            "document.body.appendChild(s);"
+            "})();"
+            "</script>"
+        )
+        float_script_entry = {"text": float_inline}
+        has_float = any(
+            "sidebar-float" in str(item) for item in config["format"]["html"]["include-after-body"]
+        )
+        if not has_float:
+            config["format"]["html"]["include-after-body"].append(float_script_entry)
 
         # Add sidebar filter script if enabled
         if metadata.get("sidebar_filter_enabled", True):

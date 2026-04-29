@@ -42,6 +42,8 @@
 
     var els = document.querySelectorAll(".sidebar, .headroom-target");
     els.forEach(function (el) {
+      // Skip the floating sidebar — sidebar-float.js manages its own bounds
+      if (el.classList.contains('gd-sidebar-float')) return;
       el.style.top = h + "px";
       el.style.maxHeight = "calc(100vh - " + h + "px)";
     });

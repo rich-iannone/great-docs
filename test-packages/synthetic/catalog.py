@@ -132,6 +132,7 @@ ALL_PACKAGES: list[str] = [
     "gdtest_source_disabled",  # 05
     "gdtest_sidebar_disabled",  # 06
     "gdtest_sidebar_min_items",  # 07
+    "gdtest_sidebar_float",  # 07b
     "gdtest_cli_name",  # 08
     "gdtest_dynamic_false",  # 09
     "gdtest_parser_google",  # 10
@@ -1218,6 +1219,13 @@ PACKAGE_DESCRIPTIONS: dict[str, str] = {
         "Tests sidebar_filter.min_items: 3 (low threshold). The sidebar "
         "filter should appear even with just 4 items because the threshold "
         "is set low. Four functions (w, x, y, z)."
+    ),
+    "gdtest_sidebar_float": (
+        "Stress test for the floating sidebar. Has 32 user guide pages "
+        "organized into 5 sections (Getting Started, Core Concepts, "
+        "Advanced Usage, Deployment, Reference). The sidebar should be "
+        "tall enough to require scrolling, with gradient affordances "
+        "visible and active-page auto-scrolling."
     ),
     "gdtest_cli_name": (
         "Tests cli.name: 'mytool' (explicit CLI name). The CLI reference "

@@ -269,7 +269,9 @@ When `members: false` is set, only the class itself is documented. You can then 
 
 ### Documenting Inherited Methods
 
-By default, only methods defined directly on a class are documented. If your class hierarchy uses inheritance and you want child classes to show inherited methods, there are two approaches.
+By default, only methods defined directly on a class are documented. Inherited methods are excluded unless you opt in. This keeps reference pages focused and avoids duplicating parent class methods on every child page (especially important in deep class hierarchies where it would add significant clutter).
+
+If your class hierarchy uses inheritance and you want child classes to show inherited methods, there are two approaches.
 
 **Explicit member list.** List the methods you want documented (including inherited ones) in the `members` key:
 

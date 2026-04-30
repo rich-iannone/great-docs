@@ -5018,9 +5018,12 @@ html[data-bs-theme="dark"] a.gd-view-md-btn:hover {
 }
 .gd-announcement-banner a {
     font-weight: 600;
+    text-decoration: underline;
+    color: inherit;
 }
 .gd-announcement-banner a:hover {
     opacity: 0.85;
+    text-decoration: underline;
 }
 /* Dark mode overrides */
 html[data-bs-theme="dark"] .gd-announcement-info {

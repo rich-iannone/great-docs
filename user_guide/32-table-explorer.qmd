@@ -54,15 +54,9 @@ tbl_explorer("data/students.csv")
 
 ## Sorting
 
-Click any column header to cycle through three states: **ascending → descending → unsorted**. Sort indicators appear as SVG arrows next to column names.
+Click any column header to cycle through three states: **ascending → descending → unsorted**. Sort indicators appear as arrows next to column names.
 
-For multi-column sorting, hold **Shift** while clicking additional columns. Each column sorts within the groups established by prior sort columns. For example, shift-clicking *department* then *salary* will group by department and sort salaries within each department.
-
-```{python}
-#| echo: false
-#| output: false
-# This example is for reference; sorting is demonstrated interactively.
-```
+Multi-column sorting is always active. Clicking additional columns adds them to the sort stack, with each column sorting within the groups established by prior sort columns. For example, clicking *department* then *salary* will group by department and sort salaries within each department. To start over, use the reset button to clear all sort criteria.
 
 ## Token-Based Filtering
 

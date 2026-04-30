@@ -687,13 +687,13 @@
           applyState(el, state);
         }
 
-        th.addEventListener("click", function (e) {
-          doSort(e.shiftKey);
+        th.addEventListener("click", function () {
+          doSort(true);
         });
         th.addEventListener("keydown", function (e) {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            doSort(e.shiftKey);
+            doSort(true);
           }
         });
       })(ths[i], i - offset);

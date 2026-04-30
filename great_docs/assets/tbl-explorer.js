@@ -47,6 +47,7 @@
   var SVG_CHECK = '<svg' + ICON_ATTRS + ' style="color:#198754"><polyline points="20 6 9 17 4 12"/></svg>';
   var SVG_DOWNLOAD = '<svg' + ICON_ATTRS + '><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
   var SVG_RESET = '<svg' + ICON_ATTRS + '><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>';
+  var SVG_COLUMNS = '<svg' + ICON_ATTRS + '><rect x="3" y="3" width="4" height="18" rx="1"/><rect x="10" y="3" width="4" height="18" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>';
 
   /** Create an icon button with a tooltip that appears below, anchored left. */
   function makeIconBtn(svgHtml, ariaLabel, tooltipText) {
@@ -534,9 +535,22 @@
     wrap.className = "gd-tbl-col-wrap gd-tbl-btn-wrap";
 
     var btn = document.createElement("button");
-    btn.className = "gd-tbl-btn";
+    btn.className = "gd-tbl-btn gd-tbl-col-btn";
     btn.setAttribute("aria-haspopup", "true");
     btn.setAttribute("aria-expanded", "false");
+    btn.setAttribute("aria-label", _gdT("tbl_columns_btn", "Columns"));
+
+    // Icon for mobile (hidden on desktop via CSS)
+    var iconSpan = document.createElement("span");
+    iconSpan.className = "gd-tbl-col-btn-icon";
+    iconSpan.innerHTML = SVG_COLUMNS;
+    btn.appendChild(iconSpan);
+
+    // Text label for desktop (hidden on mobile via CSS)
+    var textSpan = document.createElement("span");
+    textSpan.className = "gd-tbl-col-btn-text";
+    btn.appendChild(textSpan);
+
     updateColBtnLabel(btn, state);
 
     var menu = document.createElement("div");
@@ -600,11 +614,21 @@
 
     wrap.appendChild(btn);
     wrap.appendChild(menu);
+
+    // Tooltip (visible on hover, useful when icon-only on mobile)
+    var tip = document.createElement("span");
+    tip.className = "gd-tbl-tooltip";
+    tip.textContent = _gdT("tbl_columns_btn", "Columns");
+    wrap.appendChild(tip);
+
     return wrap;
   }
 
   function updateColBtnLabel(btn, state) {
-    btn.textContent = _gdT("tbl_columns_btn", "Columns");
+    var textSpan = btn.querySelector(".gd-tbl-col-btn-text");
+    if (textSpan) {
+      textSpan.textContent = _gdT("tbl_columns_btn", "Columns");
+    }
   }
 
   // ── Sorting ────────────────────────────────────────────────

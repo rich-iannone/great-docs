@@ -430,11 +430,16 @@ def _render_explorer_css(uid: str) -> str:
   position: relative;
   display: inline-block;
 }}
+{s} .gd-tbl-col-wrap .gd-tbl-tooltip {{
+  left: auto;
+  right: 0;
+  transform: none;
+}}
 {s} .gd-tbl-col-menu {{
   display: none;
   position: absolute;
   top: 100%;
-  left: 0;
+  right: 0;
   z-index: 10;
   min-width: 180px;
   max-height: 300px;
@@ -768,6 +773,26 @@ body.quarto-dark {s} .gd-tbl-empty-msg,
 html.quarto-dark {s} .gd-tbl-empty-msg,
 :root[data-bs-theme="dark"] {s} .gd-tbl-empty-msg {{
   color: #777;
+}}
+/* ── Column toggle: responsive icon/text ─────────── */
+{s} .gd-tbl-col-btn-icon {{
+  display: none;
+  line-height: 0;
+}}
+{s} .gd-tbl-col-btn-icon svg {{
+  display: block;
+}}
+@media (max-width: 576px) {{
+  {s} .gd-tbl-col-btn-text {{
+    display: none;
+  }}
+  {s} .gd-tbl-col-btn-icon {{
+    display: inline-flex;
+  }}
+  {s} .gd-tbl-col-btn {{
+    padding: 5px 7px;
+    line-height: 0;
+  }}
 }}
 </style>"""
 

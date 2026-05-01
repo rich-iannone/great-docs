@@ -234,6 +234,7 @@ nav_icons:
     Installation: download
     Quick Start: rocket
     Authoring QMD Files: file-pen
+    Writing Docstrings: message-square-quote
     Configuration: settings
     Theming & Appearance: palette
     Content & API: file-text

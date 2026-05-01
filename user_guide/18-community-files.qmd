@@ -193,6 +193,8 @@ Great Docs also auto-detects `CITATION.cff` files. Unlike community files, the c
 
 ## Next Steps
 
+Community files give your project a professional, welcoming presence. Great Docs detects them automatically, so adding a `CONTRIBUTING.md` or `CODE_OF_CONDUCT.md` to your repo is all it takes to get a styled page in your documentation site.
+
 - [Changelog](changelog.qmd) covers auto-generated changelog from GitHub Releases
 - [Configuration](configuration.qmd) covers all `great-docs.yml` options
 - [Building & Previewing](building.qmd) explains the full build pipeline

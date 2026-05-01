@@ -283,3 +283,11 @@ This means:
 | `id` | `str` | auto | Custom HTML `id` for the container |
 
 The return value is a `TblExplorer` object with `_repr_html_()` (for notebook display), `as_html()` (returns the HTML string), and `save(path)` (writes HTML to a file) methods.
+
+## Next Steps
+
+The table explorer turns static data tables into interactive views with filtering, sorting, pagination, and CSV export. Use it when readers need to search through larger datasets or compare specific rows.
+
+- [Table Previews](table-previews.qmd) covers a lighter-weight table display for quick data summaries
+- [Scale-to-Fit](scale-to-fit.qmd) keeps wide tables readable on narrow screens
+- [Configuration](configuration.qmd) covers all `great-docs.yml` options

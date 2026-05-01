@@ -141,6 +141,8 @@ In all cases, the build completes successfully (the changelog is never a hard fa
 
 ## Next Steps
 
+The changelog is fully automatic: Great Docs fetches your GitHub Releases, formats them into a navigable page, and rebuilds it on every build. If you keep your release notes up to date on GitHub, your documentation site reflects them without any extra work.
+
 - [Configuration](configuration.qmd) covers all available `great-docs.yml` options
 - [Deployment](deployment.qmd) covers publishing your docs (including the changelog) to GitHub Pages
 - [Link Checker](link-checker.qmd) explains how to validate links across your site

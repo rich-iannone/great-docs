@@ -360,4 +360,6 @@ Group related content into sections that make sense for your users. A common pat
 
 ## Next Steps
 
+User guides give your documentation the narrative depth that API references alone can't provide. With numbered files, frontmatter sections, and automatic sidebar generation, you can build a structured guide that grows alongside your project.
+
 - [Deployment](deployment.qmd) covers publishing your documentation to GitHub Pages

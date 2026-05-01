@@ -506,3 +506,11 @@ The table below lists every parameter available on the `tbl_preview()` function.
 | `id` | `str` | auto | Custom HTML `id` for the container |
 
 The return value is a `TblPreview` object with `_repr_html_()` (for notebook display), `as_html()` (returns the HTML string), and `save(path)` (writes HTML to a file) methods.
+
+## Next Steps
+
+Table previews give readers a quick look at a dataset's structure and content without loading the full table. Use them in docstring examples, user guides, or anywhere you want to show data at a glance.
+
+- [Table Explorer](table-explorer.qmd) adds interactive filtering, sorting, and pagination for larger datasets
+- [Scale-to-Fit](scale-to-fit.qmd) keeps wide tables readable on narrow screens
+- [Writing Docstrings](writing-docstrings.qmd) covers embedding table previews in executable docstring examples

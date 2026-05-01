@@ -207,3 +207,11 @@ page_status:
 - **Remove stale statuses**: revisit `status: new` and `status: updated` periodically and remove them once the content is no longer recent.
 - **Combine with tags**: statuses and tags serve different purposes. Tags categorize content by topic; statuses communicate lifecycle. A page can have both.
 - **Custom statuses for workflows**: define statuses like `draft` or `review` to track editorial progress while keeping the documentation published.
+
+## Next Steps
+
+Status badges communicate lifecycle information at a glance. They work best when used selectively for pages that are genuinely new, recently updated, or approaching deprecation.
+
+- [Page Tags](page-tags.qmd) categorizes pages by topic with filterable tag listings
+- [API Evolution](api-evolution.qmd) tracks changes across releases at the API level
+- [Configuration](configuration.qmd) covers all status badge settings in `great-docs.yml`

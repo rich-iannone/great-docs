@@ -412,3 +412,11 @@ seo:
 ```
 
 And ensure your DNS is configured correctly (see [Adding a Custom Domain](../recipes/add-custom-domain.qmd)).
+
+## Next Steps
+
+Good SEO makes your documentation discoverable. Great Docs handles the technical foundations (sitemaps, canonical URLs, meta tags) automatically, so you can focus on writing clear titles and descriptions.
+
+- [Social Cards](social-cards.qmd) controls how links appear when shared on social platforms
+- [Deployment](deployment.qmd) covers publishing to GitHub Pages with SEO settings applied
+- [Configuration](configuration.qmd) covers all `great-docs.yml` options including SEO settings

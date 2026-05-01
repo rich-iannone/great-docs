@@ -269,14 +269,13 @@ docs.install()
 docs.build()
 ```
 
-## What's Next?
+## Next Steps
 
 Your documentation site is ready! If you're new to writing `.qmd` files, head to the
 [Authoring QMD Files](authoring-qmd-files.qmd) guide for a thorough introduction to Markdown,
 frontmatter, callouts, tabsets, and all the other building blocks available to you.
 
-From there, explore these topics to take your site further:
-
+- [Authoring QMD Files](authoring-qmd-files.qmd) covers Markdown, frontmatter, callouts, and other building blocks
 - [Configuration](configuration.qmd) covers customizing Great Docs behavior
 - [API Documentation](api-documentation.qmd) explains how API discovery works
 - [CLI Documentation](cli-documentation.qmd) covers Click CLI documentation

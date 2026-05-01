@@ -7,7 +7,9 @@ versions: ">=0.3"
 
 # Docs Linting
 
-Great Docs includes a built-in linter that analyzes your package's public API for documentation quality issues. It catches missing docstrings, broken cross-references, inconsistent formatting, and malformed directives (before your users ever see them).
+Great Docs includes a built-in linter that analyzes your package's public API for documentation
+quality issues. It catches missing docstrings, broken cross-references, inconsistent formatting, and
+malformed directives (before your users ever see them).
 
 ## Basic Usage
 
@@ -71,7 +73,8 @@ Finds public exports and class methods that lack docstrings.
 | `missing-docstring` | Error | A public export in `__all__` has no docstring |
 | `missing-docstring` | Warning | A public method on a documented class has no docstring |
 
-Private methods (names starting with `_`) and constructor dunders (`__init__`, `__new__`) are skipped automatically.
+Private methods (names starting with `_`) and constructor dunders (`__init__`, `__new__`) are
+skipped automatically.
 
 ### Broken Cross-References
 
@@ -93,11 +96,13 @@ def process(data):
     ...
 ```
 
-If `validate_input` exists in your public API but `transform_data` does not, the linter reports `transform_data` as a broken cross-reference.
+If `validate_input` exists in your public API but `transform_data` does not, the linter reports
+`transform_data` as a broken cross-reference.
 
 ### Style Consistency
 
-Detects docstrings that don't match your project's configured parser style. The `parser` setting in `great-docs.yml` determines which style is expected:
+Detects docstrings that don't match your project's configured parser style. The `parser` setting in
+`great-docs.yml` determines which style is expected:
 
 ```{.yaml filename="great-docs.yml"}
 parser: numpy    # or "google" or "sphinx"
@@ -219,7 +224,8 @@ The linter uses exit codes for CI integration:
 | `0` | No errors (warnings are allowed) |
 | `1` | At least one error was found |
 
-This means you can use `great-docs lint` directly in CI pipelines and it will fail the build only when there are errors.
+This means you can use `great-docs lint` directly in CI pipelines and it will fail the build only
+when there are errors.
 
 ## CI/CD Integration
 
@@ -289,3 +295,14 @@ Run linting alongside other Great Docs quality tools in CI:
       - name: Audit SEO
         run: great-docs seo
 ```
+
+## Next Steps
+
+The linter catches structural problems early: missing docstrings, malformed directives, broken
+cross-references, and inconsistencies that would otherwise surface as confusing gaps in the rendered
+site. Run it in CI to enforce documentation quality alongside code quality.
+
+- [Link Checker](link-checker.qmd) validates that all links resolve correctly
+- [Proofreading](proofreading.qmd) checks spelling, grammar, and style
+- [Writing Docstrings](writing-docstrings.qmd) covers the docstring format and directives that the
+linter validates

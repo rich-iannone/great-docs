@@ -221,3 +221,11 @@ Index pages (`index.qmd`) in these directories are skipped. API reference pages 
 - **Be consistent**: establish a tag naming convention early (e.g., always use title case).
 - **Use shadow tags for workflow**: tags like `needs-update` or `v2-migration` help you track editorial tasks without cluttering the reader experience.
 - **Combine with search**: tags improve discoverability today, and will integrate with enhanced search in a future release.
+
+## Next Steps
+
+Tags give readers a second way to navigate your documentation, organized by topic rather than page order. Start with a small set of well-chosen tags and expand as your content grows.
+
+- [Page Status Badges](page-status-badges.qmd) adds lifecycle indicators (new, updated, deprecated) to pages
+- [Custom Sections](custom-sections.qmd) covers organizing pages into named groups with sidebar navigation
+- [Configuration](configuration.qmd) covers all tag settings in `great-docs.yml`

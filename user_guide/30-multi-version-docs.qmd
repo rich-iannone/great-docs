@@ -615,4 +615,9 @@ Both directories should be added to your `.gitignore`. Great Docs does this auto
 
 ## Next Steps
 
-With versioned documentation configured, your readers can always find docs that match the release they're using. To get started, add a `versions` list to your `great-docs.yml` and run `great-docs build`. For a hands-on walkthrough, see the [Enable Multi-Version Documentation](../recipes/enable-multi-version-docs.qmd) recipe. For guidance on annotating content with fences, badges, and callouts, see [Use Version Fences and Badges](../recipes/use-version-fences-and-badges.qmd).
+With versioned documentation configured, your readers can always find docs that match the release they're using. Add a `versions` list to your `great-docs.yml` and run `great-docs build` to get started.
+
+- [Enable Multi-Version Documentation](../recipes/enable-multi-version-docs.qmd) is a hands-on recipe for setting up versioning
+- [Use Version Fences and Badges](../recipes/use-version-fences-and-badges.qmd) covers annotating content with version-specific callouts
+- [Deployment](deployment.qmd) covers publishing versioned sites to GitHub Pages
+- [Configuration](configuration.qmd) covers all `great-docs.yml` options including version settings

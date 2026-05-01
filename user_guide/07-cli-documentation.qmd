@@ -230,5 +230,7 @@ If commands show minimal help:
 
 ## Next Steps
 
+CLI documentation works best when your Click commands already have good help text and docstrings. Great Docs takes what you've written and turns it into browsable, searchable reference pages that stay in sync with your code.
+
 - [User Guides](user-guides.qmd) explains how to add narrative documentation
 - [Deployment](deployment.qmd) covers publishing to GitHub Pages

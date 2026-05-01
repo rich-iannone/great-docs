@@ -205,13 +205,12 @@ great-docs api-diff v0.1.0 v1.0.0 --timeline
 
 This is useful for spotting rapid API expansion or for confirming that a stabilization release didn't inadvertently expose new symbols. The default output is a `xychart-beta` Mermaid block; use `--json` for an array of `{version, symbols, classes, functions}` objects suitable for custom charting.
 
-## What's Next
+## Next Steps
 
-API Evolution is still experimental. As such the commands, shortcode options, and JSON schema may change as we gather feedback. Here are some directions we're exploring:
+API Evolution gives you visibility into how your package's public surface changes over time. Use the diff reports and shortcodes to keep users informed about additions, removals, and breaking changes across releases.
 
-- breaking-change reports (embedded directly in changelog pages)
-- per-version diffing in CI with automatic comments on pull requests that alter the public API surface
-- richer dependency graphs that include call edges and module-level relationships, not just class inheritance
-- interactive evolution tables with tooltips, filtering, and collapsible version ranges
+- [Versioned Docs](multi-version-docs.qmd) covers publishing multiple documentation versions side by side
+- [Changelog](changelog.qmd) covers auto-generated changelogs from GitHub Releases
+- [Configuration](configuration.qmd) covers all `great-docs.yml` options
 
 If you run into rough edges or have ideas for what would be most useful, please [open an issue](https://github.com/posit-dev/great-docs/issues).

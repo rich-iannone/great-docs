@@ -147,3 +147,11 @@ Replace `YOUR_VIDEO_ID` with the ID from your Loom share link (e.g., if the shar
 - **Ads**: YouTube may show ads on monetized videos, even in embeds. To guarantee an ad-free experience, upload to a channel you control with monetization disabled.
 - **Privacy**: Consider using `youtube-nocookie.com` embed URLs (e.g., `https://www.youtube-nocookie.com/embed/VIDEO_ID`) to reduce tracking.
 - **Multiple videos**: The thumbnail placeholder optimization means pages with many YouTube embeds still load quickly (only the thumbnails are fetched initially).
+
+## Next Steps
+
+Embedded videos bring tutorials, demos, and walkthroughs to life without leaving the documentation site. Great Docs lazy-loads all video embeds for fast page loads, regardless of how many videos appear on a page.
+
+- [Diagrams](diagrams.qmd) covers Mermaid diagrams for visualizing architecture and workflows
+- [Authoring QMD Files](authoring-qmd-files.qmd) covers other rich content like callouts, tabsets, and code blocks
+- [Theming & Appearance](theming.qmd) explains how video containers adapt to your site's styling

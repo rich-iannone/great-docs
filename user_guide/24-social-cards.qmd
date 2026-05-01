@@ -230,3 +230,11 @@ social_cards:
 ```
 
 With either of these settings, the Open Graph and Twitter Card meta tags will not be injected into any pages.
+
+## Next Steps
+
+Social cards control how your documentation looks when shared on Twitter, Slack, Discord, and other platforms. Great Docs generates the right meta tags automatically from your page titles and descriptions.
+
+- [SEO Optimization](seo.qmd) covers search engine visibility, sitemaps, and canonical URLs
+- [Configuration](configuration.qmd) covers all `great-docs.yml` options including social card settings
+- [Deployment](deployment.qmd) explains publishing to GitHub Pages where social cards take effect

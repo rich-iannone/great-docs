@@ -258,3 +258,11 @@ for file_result in results:
         if issue.suggestions:
             print(f"  Suggestions: {issue.suggestions[:3]}")
 ```
+
+## Next Steps
+
+Proofreading catches the small errors that accumulate over time: misspellings, repeated words, and style inconsistencies. Run it alongside the link checker and linter to keep your documentation polished.
+
+- [Link Checker](link-checker.qmd) validates that all links in your documentation resolve correctly
+- [Docs Linting](linting.qmd) checks docstring directives, cross-references, and structural issues
+- [Configuration](configuration.qmd) covers custom dictionaries and proofreading settings in `great-docs.yml`

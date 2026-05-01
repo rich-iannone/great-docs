@@ -1070,13 +1070,10 @@ becomes second nature.
 
 ## Next Steps
 
-Now that you know how to author `.qmd` files, explore these related topics:
+The syntax covered here (frontmatter, Markdown, callouts, tabsets, executable code, cross-references) applies everywhere in Great Docs: user guide pages, docstrings, recipes, and custom sections. Once it's second nature, you're well-prepared to dive into any of these topics:
 
 - [Writing Docstrings](writing-docstrings.qmd): structure docstrings with sections, executable examples, and Great Docs directives
 - [Configuration](configuration.qmd): customize your site's structure and behavior
 - [API Documentation](api-documentation.qmd): how Great Docs discovers and renders your package's API
 - [User Guides](user-guides.qmd): organize pages into a multi-page guide with sidebar navigation
 - [Cross-Referencing](cross-referencing.qmd): Great Docs' advanced linking system for API symbols
-
-Each of these builds on the authoring foundations covered here, so you'll be well-prepared to dive
-into any of them.

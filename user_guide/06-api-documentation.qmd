@@ -525,6 +525,8 @@ Either way, the rendered output reflects the current state of your package. You 
 
 ## Next Steps
 
+Great Docs handles the tedious parts of API documentation (discovery, classification, layout, linking) so you can focus on writing clear docstrings. Whether your package exports a handful of functions or hundreds of classes, the reference section stays organized and up to date.
+
 - [Writing Docstrings](writing-docstrings.qmd) covers docstring format, sections, executable examples, and `%nodoc`
 - [Cross-Referencing](cross-referencing.qmd) covers the full linking system (GDLS) for connecting API pages
 - [CLI Documentation](cli-documentation.qmd) covers Click CLI documentation

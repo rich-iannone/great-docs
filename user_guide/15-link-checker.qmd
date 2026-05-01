@@ -299,3 +299,11 @@ When using fake URLs in examples, mark them with `{.gd-no-link}` to make your in
 ```markdown
 Replace `https://your-api.com/endpoint`{.gd-no-link} with your actual API URL.
 ```
+
+## Next Steps
+
+The link checker catches broken references before your readers do. Run it locally during development and in CI before every deploy to keep your documentation reliable.
+
+- [Proofreading](proofreading.qmd) checks spelling, grammar, and style across your documentation
+- [Docs Linting](linting.qmd) validates docstring directives, cross-references, and structural issues
+- [Building & Previewing](building.qmd) covers the full build pipeline

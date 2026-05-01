@@ -203,5 +203,7 @@ None in this release.
 
 ## Next Steps
 
+A blog gives your project a voice beyond reference documentation. Use it for release announcements, tutorials, design rationale, or anything else that benefits from a chronological format. Great Docs handles the listing page, categories, and date sorting so you can focus on writing.
+
 - [Custom Sections](custom-sections.qmd) covers adding non-blog sections (examples, tutorials, etc.)
 - [Configuration](configuration.qmd) covers all available `great-docs.yml` options

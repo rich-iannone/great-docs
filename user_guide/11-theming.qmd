@@ -619,6 +619,8 @@ Use icons sparingly to draw attention to key information without cluttering the 
 
 ## Next Steps
 
+Great Docs gives you control over every visual aspect of your site, from broad choices like gradient themes and dark mode down to details like announcement banners and icon placement. Start with the defaults and customize as your project's identity evolves.
+
 - [Configuration](configuration.qmd) covers the functional settings (API discovery, parsers, GitHub integration)
 - [User Guides](user-guides.qmd) explains how to write and organize narrative documentation
 - [Deployment](deployment.qmd) shows how to publish your site to GitHub Pages

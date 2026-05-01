@@ -111,3 +111,11 @@ Understanding the translation pipeline can be helpful if you're contributing tra
 5. Each JavaScript widget reads from this meta tag using a shared `_gdT(key, fallback)` helper function
 
 If a translation is missing for a particular key, the English fallback is used automatically.
+
+## Next Steps
+
+Internationalization lets you serve documentation in your users' language with a single config setting. Great Docs translates all UI chrome (navigation, search, tooltips) while you focus on translating the content that matters most.
+
+- [Configuration](configuration.qmd) covers the `language` setting and other `great-docs.yml` options
+- [Theming & Appearance](theming.qmd) explains how translated labels integrate with your site's visual design
+- [SEO Optimization](seo.qmd) covers how language settings affect search engine indexing

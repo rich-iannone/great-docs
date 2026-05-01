@@ -113,4 +113,7 @@ You should see the Great Docs help message and the Quarto version number.
 
 ## Next Steps
 
-Now that Great Docs is installed, let's create your first documentation site in the [Quick Start](quickstart.qmd) guide.
+With Great Docs and Quarto installed, you're ready to generate your first documentation site.
+
+- [Quick Start](quickstart.qmd) walks you through `great-docs init` and `great-docs build`
+- [Configuration](configuration.qmd) covers customizing behavior through `great-docs.yml`

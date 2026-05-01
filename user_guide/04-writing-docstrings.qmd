@@ -432,6 +432,8 @@ details on which constructs are handled.
 
 ## Next Steps
 
+Well-structured docstrings are the foundation of a useful API reference. By choosing a consistent format, using the right sections, and embedding executable examples, you give Great Docs the raw material it needs to produce polished reference pages with minimal extra effort.
+
 - [API Documentation](api-documentation.qmd) explains how Great Docs discovers exports, classifies them, and organizes the reference
 - [Cross-Referencing](cross-referencing.qmd) covers `%seealso`, inline interlinks, and code autolinks in depth
 - [Linting](linting.qmd) checks for missing docstrings, malformed directives, and other issues

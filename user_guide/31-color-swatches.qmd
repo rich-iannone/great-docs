@@ -342,3 +342,11 @@ The table below lists every parameter available on the `{{{< color-swatch >}}}` 
 | `class` | string | — | Additional CSS classes |
 
 When both `file` and `palette` are provided, the preset colors appear first and the file colors are appended after them.
+
+## Next Steps
+
+Color swatches turn color definitions into visual, interactive documentation. Whether you maintain a design system or just want to showcase your package's theme palette, the shortcode handles rendering, contrast checks, and copy-to-clipboard.
+
+- [Theming & Appearance](theming.qmd) covers gradient themes, dark mode, and other visual customization
+- [Table Previews](table-previews.qmd) covers another visual component for rendering data tables
+- [Configuration](configuration.qmd) covers all `great-docs.yml` options

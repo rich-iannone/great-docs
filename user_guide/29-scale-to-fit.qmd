@@ -362,3 +362,11 @@ Note the key naming: global config uses **underscores** (`scale_to_fit`) to matc
 ## Putting It All Together
 
 For most projects, a single `scale_to_fit` entry in `great-docs.yml` is all you need. Pick the selectors that match your wide outputs, choose a minimum scale threshold that feels right, and every page on your site benefits automatically. When a particular page calls for something different, override the selectors or threshold in that page's frontmatter. And for the occasional one-off table or widget that just needs to fit, wrap it in a `:::{.scale-to-fit}` div and move on. The three levels work together so you can start simple and add precision only where it matters.
+
+## Next Steps
+
+Scale-to-fit keeps wide content readable on any screen size without horizontal scrolling. The three-level cascade (global, page, div) lets you start with a single config line and add precision only where needed.
+
+- [Table Previews](table-previews.qmd) covers the `tbl_preview()` function for rendering data tables
+- [Table Explorer](table-explorer.qmd) adds interactive filtering, sorting, and pagination to tables
+- [Configuration](configuration.qmd) covers all `great-docs.yml` options including scale-to-fit settings

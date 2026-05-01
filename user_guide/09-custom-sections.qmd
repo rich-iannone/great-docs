@@ -342,6 +342,8 @@ sections:
 
 ## Next Steps
 
+Custom sections let you go beyond the standard User Guide and API Reference to organize content in whatever way makes sense for your project. Whether it's a tutorials section, a cookbook, or a gallery of examples, each section gets its own navbar link, sidebar navigation, and optional index page.
+
 - [Blog](blog.qmd) covers setting up a blog with Quarto's listing directive
 - [Configuration](configuration.qmd) covers all available `great-docs.yml` options
 - [User Guides](user-guides.qmd) covers the User Guide section setup

@@ -198,3 +198,11 @@ graph TD
 ## Further Reading
 
 For the complete Mermaid syntax reference, see the [Mermaid documentation](https://mermaid.js.org/intro/). Quarto also provides additional options for diagram sizing and placement in the [Quarto Diagrams guide](https://quarto.org/docs/authoring/diagrams.html).
+
+## Next Steps
+
+Diagrams let you visualize architecture, workflows, and relationships directly in your documentation without external image editors. Mermaid's text-based syntax means diagrams stay in version control and update alongside your prose.
+
+- [Authoring QMD Files](authoring-qmd-files.qmd) covers other content building blocks like callouts, tabsets, and code blocks
+- [Videos](videos.qmd) covers embedding YouTube, Vimeo, and Loom content
+- [Theming & Appearance](theming.qmd) explains how diagrams inherit your site's color scheme

@@ -153,6 +153,8 @@ If your site looks correct in some places but outdated in others, the most relia
 
 ## Next Steps
 
+The build pipeline is designed to be fast and predictable. For most projects, `great-docs build` is all you need. When something goes wrong, the troubleshooting tips above cover the most common causes.
+
 - [Deployment](deployment.qmd) covers publishing your built site to GitHub Pages
 - [Configuration](configuration.qmd) covers all `great-docs.yml` options
 - [Link Checker](link-checker.qmd) explains how to validate links across your site

@@ -451,3 +451,11 @@ visibility on dark backgrounds, and the overall opacity is reduced slightly for 
 Custom hex colors are preserved as-is but receive a subtle opacity adjustment.
 
 No extra configuration is needed as the shortcode works identically in both modes.
+
+## Next Steps
+
+Horizontal rules provide visual separation between sections of content. The shortcode gives you control over style, color, thickness, and spacing, with presets for common patterns.
+
+- [Theming & Appearance](theming.qmd) covers the broader visual customization options
+- [Authoring QMD Files](authoring-qmd-files.qmd) covers other content building blocks like callouts and tabsets
+- [Keyboard Keys](keyboard-keys.qmd) covers another visual shortcode for rendering key-cap styled shortcuts

@@ -230,14 +230,10 @@ For versioned documentation, consider:
 - Using tools like `mike` for version switching
 - Tagging releases with corresponding docs
 
-## Summary
+## Next Steps
 
-With Great Docs and GitHub Pages, you get:
+With Great Docs and GitHub Pages, you get automatic builds on every push, preview deployments for pull requests, zero-maintenance hosting, custom domain support, and HTTPS out of the box. Your documentation stays in sync with your code automatically.
 
-- **Automatic builds** on every push
-- **Preview deployments** for pull requests
-- **Zero maintenance** hosting
-- **Custom domains** support
-- **HTTPS** out of the box
-
-Your documentation stays in sync with your code automatically!
+- [Building & Previewing](building.qmd) covers the full build pipeline and local preview
+- [Configuration](configuration.qmd) covers all `great-docs.yml` options
+- [SEO Optimization](seo.qmd) explains how to improve your site's search visibility

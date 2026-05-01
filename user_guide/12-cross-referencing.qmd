@@ -187,6 +187,8 @@ Code autolinks require no effort on your part, since they happen automatically. 
 
 ## Next Steps
 
+Cross-references turn a collection of standalone reference pages into a connected web of documentation. Use `%seealso` for structured navigation, interlinks for inline mentions, and let code autolinks handle the rest automatically.
+
 - [API Documentation](api-documentation.qmd) covers how discovery and organization work
 - [Configuration](configuration.qmd) covers the functional settings in `great-docs.yml`
 - [Theming & Appearance](theming.qmd) covers visual customization options

@@ -274,6 +274,8 @@ These constraints keep the feature predictable while it matures.
 
 ## Next Steps
 
+Custom pages give you an escape hatch for content that doesn't fit the standard page model. Use them sparingly for landing pages, dashboards, or anything that needs full control over HTML and layout.
+
 - [Custom Sections](custom-sections.qmd) covers multi-page section navigation
 - [Configuration](configuration.qmd) covers the broader `great-docs.yml` model
 - [Building & Previewing](building.qmd) explains where custom pages fit in the build pipeline

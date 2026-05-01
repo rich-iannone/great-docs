@@ -51,4 +51,10 @@ This User Guide covers everything you need to know to build and maintain great d
 
 **Quality and maintenance**: Link checking, proofreading, linting, changelogs, community files, page status badges, and tracking API evolution.
 
-Let's get started!
+## Next Steps
+
+This User Guide covers everything from first install to production deployment. Start at the beginning or jump to whatever topic you need.
+
+- [Installation](installation.qmd) gets Great Docs and Quarto set up on your machine
+- [Quick Start](quickstart.qmd) walks you through creating your first documentation site
+- [Authoring QMD Files](authoring-qmd-files.qmd) teaches the Markdown, frontmatter, and Quarto features you'll use everywhere

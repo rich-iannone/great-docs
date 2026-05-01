@@ -1011,6 +1011,8 @@ Great Docs generates and maintains a `_quarto.yml` file in your docs directory. 
 
 ## Next Steps
 
+With `great-docs.yml` you control everything from API discovery and docstring parsing to sidebar layout and GitHub integration. Most projects only need a handful of settings, but the full range is here when you need it.
+
 - [Theming & Appearance](theming.qmd) covers logos, gradients, banners, dark mode, hero sections, and other visual options
 - [API Documentation](api-documentation.qmd) explains how API discovery and organization works
 - [CLI Documentation](cli-documentation.qmd) covers Click CLI documentation

@@ -279,7 +279,8 @@ visually distinct key-cap styling that matches the Great Docs design system.
 
 ## Next Steps
 
-The keyboard keys shortcode renders key combinations as styled caps that match the Great Docs design system. Use it in tutorials, shortcut references, or anywhere you describe keyboard interactions.
+The keyboard keys shortcode renders key combinations as styled caps that match the Great Docs design
+system. Use it in tutorials, shortcut references, or anywhere you describe keyboard interactions.
 
 - [Horizontal Rules](horizontal-rules.qmd) covers another visual shortcode for section separators
 - [Authoring QMD Files](authoring-qmd-files.qmd) covers other content building blocks

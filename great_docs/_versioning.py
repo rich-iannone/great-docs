@@ -182,6 +182,35 @@ def _resolve_index(tag: str, versions: list[VersionEntry]) -> int | None:
     return None
 
 
+def _parse_version_tuple(tag: str) -> tuple[int, ...] | None:
+    """Parse a version string like `"0.5"`, `"v1.2.3"` into a tuple of ints.
+
+    Returns `None` when the string cannot be interpreted as a numeric version (e.g. `"dev"`).
+    """
+    cleaned = tag.lstrip("v")
+    parts = cleaned.split(".")
+    try:
+        return tuple(int(p) for p in parts)
+    except ValueError:
+        return None
+
+
+def _resolve_version_str(tag: str, versions: list[VersionEntry]) -> str:
+    """Return the best semantic version string for *tag*.
+
+    For entries with a `version` field (e.g. `tag="dev", version="0.10"`), the explicit version
+    wins. Otherwise the tag itself is returned.
+    """
+    for v in versions:
+        if v.tag == tag or (v.version and v.version == tag):
+            return v.version or v.tag
+    alt = tag[1:] if tag.startswith("v") else f"v{tag}"
+    for v in versions:
+        if v.tag == alt:
+            return v.version or v.tag
+    return tag
+
+
 def evaluate_version_expr(
     expr: str,
     target_tag: str,
@@ -242,7 +271,30 @@ def evaluate_version_expr(
         ref_idx = _resolve_index(ref_tag, versions)
 
         if ref_idx is None:
-            return False
+            # The referenced version is not in the configured versions list.
+            # Fall back to semantic version comparison so that e.g. >=0.5
+            # still works when only 0.9 and 0.10 are configured.
+            target_ver_str = _resolve_version_str(target_tag, versions)
+            target_tup = _parse_version_tuple(target_ver_str)
+            ref_tup = _parse_version_tuple(ref_tag)
+            if target_tup is None or ref_tup is None:
+                return False
+            if op == "" or op == "=":
+                if target_tup != ref_tup:
+                    return False
+            elif op == ">=":
+                if target_tup < ref_tup:
+                    return False
+            elif op == "<=":
+                if target_tup > ref_tup:
+                    return False
+            elif op == ">":
+                if target_tup <= ref_tup:
+                    return False
+            elif op == "<":
+                if target_tup >= ref_tup:
+                    return False
+            continue
 
         # Note: index 0 is the *newest*, so "newer" means *smaller* index.
         # ">=" means "this version or newer" → target_idx <= ref_idx

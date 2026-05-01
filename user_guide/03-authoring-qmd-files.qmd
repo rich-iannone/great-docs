@@ -56,8 +56,8 @@ Much of what you learn here also applies to writing Python docstrings. Great Doc
 docstrings through Quarto, so formatting like **bold**, `inline code`, lists, tables, and even
 callouts works inside your docstrings as well. You can even embed executable code cells in
 docstrings, which means your API examples can display rich outputs (tables, plots, and more) right
-on the reference page. See [API Documentation](api-documentation.qmd) for details on how Great Docs
-discovers and renders your package's API.
+on the reference page. See [Writing Docstrings](writing-docstrings.qmd) for the full guide on
+structuring docstrings for Great Docs.
 :::
 
 ## YAML Frontmatter
@@ -1072,6 +1072,7 @@ becomes second nature.
 
 Now that you know how to author `.qmd` files, explore these related topics:
 
+- [Writing Docstrings](writing-docstrings.qmd): structure docstrings with sections, executable examples, and Great Docs directives
 - [Configuration](configuration.qmd): customize your site's structure and behavior
 - [API Documentation](api-documentation.qmd): how Great Docs discovers and renders your package's API
 - [User Guides](user-guides.qmd): organize pages into a multi-page guide with sidebar navigation

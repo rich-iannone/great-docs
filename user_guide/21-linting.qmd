@@ -126,8 +126,8 @@ Checks for malformed or unrecognized Great Docs directives in docstrings.
 
 Great Docs recognizes these directives:
 
-- `%seealso`: Cross-reference related items
-- `%nodoc`: Exclude an item from documentation
+- `%seealso`: Cross-reference related items (see [Cross-Referencing](cross-referencing.qmd))
+- `%nodoc`: Exclude an item from documentation (see [Writing Docstrings](writing-docstrings.qmd#nodoc-exclude-an-item-from-documentation))
 
 Any other `%`-prefixed token (e.g., `%deprecated`, `%internal`) is flagged as unknown.
 

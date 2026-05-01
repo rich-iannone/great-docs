@@ -1,0 +1,438 @@
+---
+title: "Writing Docstrings"
+guide-section: "Getting Started"
+bread-crumbs: false
+tags: [API, Content, Getting Started]
+---
+
+# Writing Docstrings
+
+Your docstrings are the single biggest input to your API reference. Great Docs renders them through
+Quarto, which means everything you can do in a `.qmd` file (Markdown formatting, callouts, tables,
+executable code cells) also works inside a docstring. A well-written docstring becomes a polished
+reference page with almost no extra effort; a thin or poorly structured one leaves your users
+guessing.
+
+This page covers how to structure docstrings so that Great Docs can extract the most value from
+them: which format to choose, what sections are available, how to embed live examples, and how to
+use Great Docs directives to control what gets documented.
+
+## Choosing a Docstring Format
+
+Great Docs supports two widely used docstring conventions: **NumPy style** and **Google style**.
+Both produce the same rendered output. The difference is purely syntactic, so pick whichever your
+team already uses. If you're starting from scratch, either works well.
+
+When you run `great-docs init`, Great Docs analyzes your existing docstrings and auto-detects the
+style. You can override this in `great-docs.yml`:
+
+```{.yaml filename="great-docs.yml"}
+parser: numpy   # or "google"
+```
+
+### NumPy Style
+
+NumPy-style docstrings use underlined section headers. Parameters are listed one per line with the
+type on the same line as the name, separated by a colon:
+
+```python
+def connect(host: str, port: int = 5432) -> Connection:
+    """Open a connection to the database server.
+
+    Establishes a TCP connection to the specified host and port. The connection
+    is returned in an idle state, ready for queries. Call `close()` when you're
+    finished to release the underlying socket.
+
+    Parameters
+    ----------
+    host
+        The server hostname or IP address.
+    port
+        The TCP port number. Defaults to the standard PostgreSQL port.
+
+    Returns
+    -------
+    Connection
+        An open connection object.
+
+    Raises
+    ------
+    ConnectionError
+        If the server is unreachable or refuses the connection.
+
+    Examples
+    --------
+    ```{{python}}
+    conn = connect("localhost", port=5432)
+    ```
+    """
+    ...
+```
+
+### Google Style
+
+Google-style docstrings use indented section headers followed by a colon. Parameters are indented
+under the section header:
+
+```python
+def connect(host: str, port: int = 5432) -> Connection:
+    """Open a connection to the database server.
+
+    Establishes a TCP connection to the specified host and port. The connection
+    is returned in an idle state, ready for queries. Call `close()` when you're
+    finished to release the underlying socket.
+
+    Args:
+        host: The server hostname or IP address.
+        port: The TCP port number. Defaults to the standard PostgreSQL port.
+
+    Returns:
+        An open connection object.
+
+    Raises:
+        ConnectionError: If the server is unreachable or refuses the connection.
+
+    Examples:
+        ```{{python}}
+        conn = connect("localhost", port=5432)
+        ```
+    """
+    ...
+```
+
+Both formats render identically in the final documentation. Great Docs parses them using
+[griffe](https://mkdocstrings.github.io/griffe/) and produces structured HTML with proper headings,
+parameter tables, and type annotations.
+
+## Docstring Sections
+
+A docstring can contain several recognized sections. You don't need all of them for every function
+or class. Use only what's relevant. The standard sections are:
+
+| Section | Purpose |
+|---------|---------|
+| **Summary line** | A one-line description. Always present. Shows up in API index tables. |
+| **Extended description** | Extra paragraphs after the summary. Markdown formatting applies. |
+| **Parameters** | Describes each parameter (name, type, meaning, default). |
+| **Returns** | What the function returns, including the type. |
+| **Raises** | Exceptions the function may raise and when. |
+| **Notes** | Implementation details, algorithms, or caveats. |
+| **Examples** | Code demonstrating usage. Can be executable (see below). |
+| **See Also** | Related functions or classes. See [Cross-Referencing](cross-referencing.qmd). |
+| **Warnings** | Important cautions about usage. |
+| **References** | Citations or links to external resources. |
+
+Not every section needs to appear, and sections with no content are simply omitted from the
+rendered page. At minimum, include a summary line and a Parameters section for any function that
+accepts arguments. Returns and Raises sections are also high value: they tell users what to expect
+without reading source code.
+
+### Custom Sections
+
+Both NumPy and Google docstring formats allow you to define your own named sections beyond the
+standard ones. This is useful when a function has domain-specific concepts that deserve their own
+heading. For example, the Pointblank library uses custom sections like "Supported DataFrame Types",
+"Preprocessing", "Segmentation", and "Thresholds" to document recurring concepts that cut across
+many validation methods:
+
+```python
+def col_vals_gt(
+    self,
+    columns: str | list[str],
+    value: float | int,
+    na_pass: bool = False,
+    pre: Callable | None = None,
+    thresholds: Thresholds | None = None,
+) -> Validate:
+    """Are column data greater than a fixed value or data in another column?
+
+    The `col_vals_gt()` validation method checks whether column values
+    in a table are *greater than* a specified `value=`.
+
+    Parameters
+    ----------
+    columns
+        A single column or a list of columns to validate.
+    value
+        The value to compare against. This can be a single value or a
+        column name given in `col()`.
+    na_pass
+        Should any encountered None, NA, or Null values be considered
+        as passing test units? By default, this is `False`.
+    pre
+        An optional preprocessing function or lambda to apply to the
+        data table during interrogation.
+    thresholds
+        Failure-condition levels for reporting and reacting to
+        exceedences.
+
+    Returns
+    -------
+    Validate
+        The `Validate` object with the added validation step.
+
+    What Can Be Used in `value=`?
+    -----------------------------
+    The `value=` argument allows for a variety of input types:
+
+    - a single numeric value
+    - a single date or datetime value
+    - a `col()` object that represents a column name
+
+    Preprocessing
+    -------------
+    The `pre=` argument allows for a preprocessing function or lambda
+    to be applied to the data table during interrogation. The
+    transformed table only exists during the validation step and is
+    not stored.
+
+    Thresholds
+    ----------
+    The `thresholds=` parameter sets the failure-condition levels.
+    There are three levels: 'warning', 'error', and 'critical'.
+
+    Examples
+    --------
+    ...
+    """
+    ...
+```
+
+Each custom section becomes its own heading on the rendered reference page, giving readers a
+structured way to learn about concepts without cramming everything into the extended description.
+
+## Executable Examples in Docstrings
+
+One of the most powerful features of Great Docs is that executable code cells work inside
+docstrings. Instead of showing static code snippets, you can write live examples that Quarto runs
+during the build. The output (tables, plots, printed values) appears directly on the reference page.
+
+Use the same ```` ```{python} ```` syntax you'd use in a `.qmd` file:
+
+```python
+def preview(data, limit: int = 5):
+    """Display a preview of the first rows of a table.
+
+    Parameters
+    ----------
+    data
+        The table to preview.
+    limit
+        Maximum number of rows to show.
+
+    Examples
+    --------
+    Load a dataset and preview it:
+
+    ```{{python}}
+    import pointblank as pb
+
+    tbl = pb.load_dataset(dataset="small_table", tbl_type="polars")
+
+    pb.preview(tbl)
+    ```
+
+    The preview shows column names, types, and the first few rows. This
+    is useful for quickly inspecting data before writing validation steps.
+    """
+    ...
+```
+
+When Great Docs builds the site, Quarto executes the code block and embeds the resulting HTML
+table directly on the reference page. Readers see both the code and its output, so they know
+exactly what to expect when they call the function.
+
+### Tips for Executable Examples
+
+Executable examples are powerful, but they add build time and can break if APIs change. These
+guidelines help you get the most from them while keeping your builds fast and reliable:
+
+- **Set up shared state with hidden cells.** If every example needs the same imports or
+  configuration, use a hidden code cell at the top of the Examples section. Mark it with
+  `#| echo: false` and `#| output: false` so readers see only the meaningful examples:
+
+    ```python
+    """
+    Examples
+    --------
+    ```{{python}}
+    #| echo: false
+    #| output: false
+    import mypackage as mp
+    mp.config(report_header=False)
+    ```
+
+    Now the visible example is clean:
+
+    ```{{python}}
+    result = mp.transform(data)
+    result
+    ```
+    """
+    ```
+
+- **Add prose between code cells.** Docstring examples don't have to be just code. Intersperse
+  explanatory paragraphs that guide readers through what each example demonstrates and what the
+  output means.
+
+- **Keep examples self-contained.** Each example should run on its own. Don't rely on variables
+  defined in earlier examples unless you've set them up in a hidden cell.
+
+Following these patterns keeps your reference pages informative without turning the build into a
+fragile integration test.
+
+## Great Docs Directives
+
+Great Docs recognizes special `%`-prefixed directives that you can place anywhere in a docstring.
+These directives are stripped from the rendered output and used to control documentation behavior.
+
+### `%seealso`: Cross-Reference Related Items
+
+The `%seealso` directive adds a "See Also" section to the rendered reference page with clickable
+links to related symbols. Place it on its own line anywhere in the docstring:
+
+```python
+def encode(data: bytes, encoding: str = "utf-8") -> str:
+    """Encode bytes to a string.
+
+    %seealso decode, transcode
+    """
+    ...
+```
+
+You can add descriptions after each name, separated by a colon:
+
+```python
+def load(path: str) -> dict:
+    """Load data from a file.
+
+    %seealso save : Write data back to a file, validate : Check integrity
+    """
+    ...
+```
+
+You can also use multiple `%seealso` lines. Great Docs merges them into a single "See Also"
+section:
+
+```python
+def transform(data: dict) -> dict:
+    """Transform data before processing.
+
+    %seealso load : Read raw data from a file
+    %seealso save : Write transformed data back
+    %seealso validate : Check data integrity after transform
+    """
+    ...
+```
+
+For full details on cross-referencing (including inline interlinks and code autolinks), see
+[Cross-Referencing](cross-referencing.qmd).
+
+### `%nodoc`: Exclude an Item from Documentation
+
+Sometimes a function or class is public (no leading underscore) but you don't want it in the API
+reference. Perhaps it's a legacy function kept for backward compatibility, or an implementation
+detail that happens to be exported. The `%nodoc` directive tells Great Docs to skip it entirely:
+
+```python
+def _real_implementation():
+    ...
+
+def legacy_wrapper():
+    """Old entry point, kept for backward compatibility.
+
+    %nodoc
+    """
+    return _real_implementation()
+```
+
+When Great Docs discovers `legacy_wrapper` during static analysis, it reads the docstring, finds
+the `%nodoc` directive, and excludes the item from the generated reference. The function still
+exists in your package and still works; it simply won't appear in the documentation.
+
+This is different from the `exclude` list in `great-docs.yml`. The `exclude` config is for items
+you always want hidden (CLI entry points, internal modules). The `%nodoc` directive is for
+per-item decisions that live alongside the code, where the author of the function is best positioned
+to decide whether it belongs in the docs.
+
+You can verify which items are excluded by running `great-docs scan`. Items marked with `%nodoc`
+won't appear in the output.
+
+## Markdown in Docstrings
+
+Since Great Docs renders docstrings through Quarto, all standard Markdown formatting works:
+
+- **Bold** and *italic* text
+- `Inline code` with backticks
+- [Links](https://example.com) to external resources
+- Bulleted and numbered lists
+- Tables
+- Callout blocks (tip, note, warning, caution)
+- Block quotes
+- Images
+
+Here's an example showing callouts and tables inside a docstring:
+
+```python
+class DataStore:
+    """A persistent key-value store backed by SQLite.
+
+    ::: {.callout-warning}
+    The store is not thread-safe. If you need concurrent access, use
+    `ThreadSafeStore` instead.
+    :::
+
+    The following storage backends are supported:
+
+    | Backend  | Persistence | Speed  |
+    |----------|-------------|--------|
+    | memory   | None        | Fast   |
+    | sqlite   | Disk        | Medium |
+    | redis    | Network     | Varies |
+
+    %seealso ThreadSafeStore, connect
+    """
+    ...
+```
+
+All of this renders exactly as it would in a `.qmd` page: the callout becomes a styled warning
+box, the table gets proper formatting, and the `%seealso` directive produces a "See Also" section
+with links.
+
+## Linking to Other API Items
+
+Inside docstrings, you can create clickable links to other documented symbols using interlinks
+syntax. This is useful for guiding readers to related classes or functions:
+
+```python
+class Validator:
+    """Run validation checks on a data table.
+
+    After creating a `Validator`, add steps with methods like
+    [](`~mypackage.col_vals_gt`) and [](`~mypackage.col_vals_lt`),
+    then call [](`~mypackage.Validator.interrogate`) to run them.
+    """
+    ...
+```
+
+The `~` prefix strips the package path so readers see just `col_vals_gt` instead of the full
+qualified name. Great Docs also auto-links inline code: if you write `` `col_vals_gt` `` in a
+docstring and that name is a documented symbol, it automatically becomes a clickable link. See
+[Cross-Referencing](cross-referencing.qmd) for the full details.
+
+## Docstrings and Sphinx Compatibility
+
+If your project also publishes Sphinx-based documentation, you may have Sphinx cross-reference
+roles (like `` :py:exc:`ValueError` ``) or RST directives (like `.. versionadded:: 2.0`) in your
+docstrings. Great Docs automatically cleans these up during the build, converting them to readable
+Markdown equivalents. You don't need to maintain two versions of your docstrings.
+
+See [API Documentation: Sphinx & RST Cleanup](api-documentation.qmd#sphinx-rst-cleanup) for
+details on which constructs are handled.
+
+## Next Steps
+
+- [API Documentation](api-documentation.qmd) explains how Great Docs discovers exports, classifies them, and organizes the reference
+- [Cross-Referencing](cross-referencing.qmd) covers `%seealso`, inline interlinks, and code autolinks in depth
+- [Linting](linting.qmd) checks for missing docstrings, malformed directives, and other issues
+- [Configuration](configuration.qmd) covers the `parser` setting and other `great-docs.yml` options

@@ -4,14 +4,10 @@
  * Dark mode:  Parallax starfield with twinkling and quasar glow effects.
  * Light mode: Retrofuturist drifting neon ellipses in a vaporwave palette.
  *
- * Both modes are interactive — moving the pointer steers the focal point.
  * Respects prefers-reduced-motion and pauses when offscreen.
  */
 (function () {
   "use strict";
-
-  /* ── Shared constants ──────────────────────────────────── */
-  const MOUSE_INFLUENCE = 0.12;
 
   /* ── Dark-mode starfield constants ─────────────────────── */
   const STAR_COUNT     = 1000;
@@ -71,7 +67,6 @@
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   let width, height, cx, cy;
-  let mouseX = 0, mouseY = 0;
   let rafId  = null;
   let visible = true;
   let frame  = 0;                // global frame counter for animation
@@ -134,8 +129,8 @@
   }
 
   function drawNebulae() {
-    var ox = (mouseX - cx) * MOUSE_INFLUENCE * 0.5;
-    var oy = (mouseY - cy) * MOUSE_INFLUENCE * 0.5;
+    var ox = 0;
+    var oy = 0;
 
     for (var i = 0; i < nebulae.length; i++) {
       var n = nebulae[i];
@@ -175,8 +170,8 @@
   }
 
   function drawStars() {
-    var ox = cx + (mouseX - cx) * MOUSE_INFLUENCE;
-    var oy = cy + (mouseY - cy) * MOUSE_INFLUENCE;
+    var ox = cx;
+    var oy = cy;
 
     // Draw nebulae first (behind stars)
     drawNebulae();
@@ -570,13 +565,6 @@
     rafId = requestAnimationFrame(loop);
   }
 
-  function onPointerMove(e) {
-    // Only track pointer in dark mode (starfield steering)
-    if (!isDark()) return;
-    mouseX = e.clientX;
-    mouseY = e.clientY;
-  }
-
   /* ── Scroll-based fade ──────────────────────────────────── */
   // Instead of hard-stopping the animation when the hero scrolls away,
   // smoothly fade the canvas opacity to 0 as the hero leaves the viewport.
@@ -616,9 +604,6 @@
   updateScrollFade();
 
   if (!reducedMotion) {
-    document.addEventListener("pointermove", onPointerMove);
-    mouseX = cx;
-    mouseY = cy;
     loop();
   } else {
     draw();

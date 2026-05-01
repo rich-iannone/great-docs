@@ -1,6 +1,6 @@
 # Great Docs
 
-Your Python package deserves a website that looks like you actually care about it. Great Docs turns your docstrings, README, and CLI into a polished documentation site. No templates to wrangle, no config files to debug, it's really great.
+Your Python package deserves a website that looks like you actually care about it. Great Docs turns your docstrings, README, and CLI into a polished documentation site. When you're ready to go further, there's a world of features waiting. Start simple, go deep.
 
 ## Three Commands. One Beautiful Site.
 

@@ -7,62 +7,48 @@ tags: [Getting Started]
 
 # Welcome to Great Docs
 
-Great Docs is a comprehensive documentation site generator for Python packages. It creates beautiful, professional documentation sites with auto-generated API references, smart navigation, and modern styling. Best of all, it requires minimal configuration.
+Great Docs is a documentation site generator for Python packages. Run one command, get a complete documentation site. Customize as much or as little as you want.
 
-## Why Great Docs?
+## Get Up and Running Fast
 
-Creating documentation for Python packages often involves:
+Point Great Docs at your Python package and it does the rest. `great-docs init` scans your codebase, discovers your public API, detects your docstring format, and writes all the configuration for you. Then `great-docs build` produces a full documentation site (landing page, API reference, navigation) ready to preview and deploy.
 
-- Writing configuration files by hand
-- Manually listing every class, function, and method
-- Keeping documentation in sync as your API evolves
-- Wrestling with styling and navigation
+No templates to author. No content pages to write by hand. No build system to learn.
 
-Great Docs eliminates these pain points by:
+## Your Site Looks Great From the Start
 
-- **Auto-discovering your API**: Automatically finds and documents your public classes, functions, and methods
-- **Intelligent organization**: Groups related items together and handles large classes gracefully
-- **Zero configuration**: Works out of the box with sensible defaults
-- **Modern styling**: Professional appearance with responsive design for all devices
+The default site isn't a starting point you'll need to overhaul. It's a polished, modern documentation site right away: dark mode, responsive layout, GitHub integration, structured parameter tables, and source links. Whether your package exposes a handful of functions or a deep class hierarchy, Great Docs figures out how to present it well.
 
-## Key Features
+## Explore a World of Possibilities
 
-### One-Command Setup
+When you're ready for more, there's a lot here:
 
-A single `great-docs init` creates your entire documentation site, including:
+- Narrative user guides and tutorials alongside your API reference
+- Blogs, recipe sections, custom pages, and additional content sections
+- Diagrams, videos, color swatches, and interactive table previews
+- Gradient themes, announcement banners, and custom branding
+- Internationalization across twenty-three languages
 
-- Auto-generated `index.qmd` from your `README.md`
-- Complete API reference configuration
-- Navigation and sidebar setup
-- Styling and post-processing scripts
+Every feature is opt-in. Your site stays clean until you decide to expand it.
 
-### Auto-Generated API Documentation
+## Go as Deep as You Need
 
-Great Docs automatically discovers and documents your package's public API:
+As your project grows, Great Docs keeps up. Publish multiple versions with a version selector. Track API changes across releases. Run the built-in link checker, linter, and proofreader. Generate `llms.txt` for AI tools. Deploy to GitHub Pages in one step.
 
-- Classes with their methods and attributes
-- Functions with parameters and return types
-- Smart categorization and organization
-- Source code links to GitHub
-
-### CLI Documentation
-
-If your package has a Click-based command-line interface, Great Docs can automatically generate reference pages showing the `--help` output for each command.
-
-### User Guide Support
-
-Create narrative documentation alongside your API reference. Just add `.qmd` files to a `user_guide/` directory and Great Docs handles the rest.
+We keep on building the tools you'll need, and they'll be here when the time is right for you.
 
 ## What You'll Learn
 
-This User Guide covers everything you need to know:
+This User Guide covers everything you need to know to build and maintain great documentation sites. Here's what to expect:
 
-1. **Installation** – Getting Great Docs set up
-2. **Quick Start** – Creating your first documentation site
-3. **Configuration** – Customizing behavior via `great-docs.yml`
-4. **API Documentation** – How auto-discovery works and how to customize it
-5. **CLI Documentation** – Documenting Click-based CLIs
-6. **User Guides** – Writing narrative documentation
-7. **Deployment** – Publishing to GitHub Pages
+**Getting started**: Installing Great Docs, creating your first site, authoring `.qmd` files, and understanding the project structure.
+
+**Configuration and theming**: Tuning site behavior through `great-docs.yml`, customizing appearance, setting up cross-references, internationalization, and responsive scaling.
+
+**Site content**: Auto-generated API and CLI references, narrative user guides, custom sections and static pages, blogs, diagrams, videos, tables, color swatches, and more.
+
+**Building and deployment**: Previewing locally, publishing to GitHub Pages, SEO optimization, social cards, and multi-version documentation.
+
+**Quality and maintenance**: Link checking, proofreading, linting, changelogs, community files, page status badges, and tracking API evolution.
 
 Let's get started!

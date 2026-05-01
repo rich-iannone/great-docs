@@ -7702,7 +7702,13 @@ def _stf_skip():
 def test_SCALE_TO_FIT_global_meta_on_all_pages():
     """All user-guide pages should have the global gd-scale-to-fit meta tag."""
     _stf_skip()
-    for page_name in ("global-targeting", "page-override", "manual-div", "width-comparison"):
+    for page_name in (
+        "global-targeting",
+        "page-override",
+        "manual-div",
+        "per-div-min-scale",
+        "width-comparison",
+    ):
         page = _stf_site() / "user-guide" / f"{page_name}.html"
         assert page.exists(), f"Missing page: {page_name}"
         soup = _load_html(page)
@@ -7729,7 +7735,7 @@ def test_SCALE_TO_FIT_page_override_meta_present():
 def test_SCALE_TO_FIT_page_meta_absent_elsewhere():
     """Pages without scale-to-fit frontmatter should NOT have gd-scale-to-fit-page."""
     _stf_skip()
-    for page_name in ("global-targeting", "manual-div", "width-comparison"):
+    for page_name in ("global-targeting", "manual-div", "per-div-min-scale", "width-comparison"):
         page = _stf_site() / "user-guide" / f"{page_name}.html"
         soup = _load_html(page)
         meta = soup.find("meta", attrs={"name": "gd-scale-to-fit-page"})
@@ -7832,7 +7838,13 @@ def test_SCALE_TO_FIT_width_comparison_tables():
 def test_SCALE_TO_FIT_gt_tables_have_gt_class():
     """All GT tables should have the gt_table class."""
     _stf_skip()
-    for page_name in ("global-targeting", "page-override", "manual-div", "width-comparison"):
+    for page_name in (
+        "global-targeting",
+        "page-override",
+        "manual-div",
+        "per-div-min-scale",
+        "width-comparison",
+    ):
         page = _stf_site() / "user-guide" / f"{page_name}.html"
         soup = _load_html(page)
         gt_tables = soup.select("table.gt_table")
@@ -7844,7 +7856,13 @@ def test_SCALE_TO_FIT_gt_tables_no_bootstrap():
     """GT tables should NOT have Bootstrap table-bordered/table-sm classes."""
     _stf_skip()
     bootstrap_classes = {"table-bordered", "table-sm", "table-striped"}
-    for page_name in ("global-targeting", "page-override", "manual-div", "width-comparison"):
+    for page_name in (
+        "global-targeting",
+        "page-override",
+        "manual-div",
+        "per-div-min-scale",
+        "width-comparison",
+    ):
         page = _stf_site() / "user-guide" / f"{page_name}.html"
         soup = _load_html(page)
         for gt in soup.select("table.gt_table"):
@@ -7857,7 +7875,13 @@ def test_SCALE_TO_FIT_gt_tables_no_bootstrap():
 def test_SCALE_TO_FIT_gt_tables_not_responsive_wrapped():
     """GT tables should NOT be inside gd-table-responsive wrappers."""
     _stf_skip()
-    for page_name in ("global-targeting", "page-override", "manual-div", "width-comparison"):
+    for page_name in (
+        "global-targeting",
+        "page-override",
+        "manual-div",
+        "per-div-min-scale",
+        "width-comparison",
+    ):
         page = _stf_site() / "user-guide" / f"{page_name}.html"
         soup = _load_html(page)
         for gt in soup.select("table.gt_table"):
@@ -7883,6 +7907,80 @@ def test_SCALE_TO_FIT_custom_html_widget_rendered():
     assert widget.name == "div", f"Expected div, got {widget.name}"
     text = widget.get_text()
     assert "CustomWidget" in text, "Widget content not rendered"
+
+
+# ── Per-div data-min-scale ───────────────────────────────────────────────────
+
+
+@requires_bs4
+def test_SCALE_TO_FIT_perdiv_page_has_expected_ids():
+    """The per-div-min-scale page should have all three GT table IDs."""
+    _stf_skip()
+    page = _stf_site() / "user-guide" / "per-div-min-scale.html"
+    soup = _load_html(page)
+    for eid in ("perdiv_numeric", "perdiv_keyword", "perdiv_inherit"):
+        el = soup.find(id=eid)
+        assert el is not None, f"Missing element with id={eid}"
+
+
+@requires_bs4
+def test_SCALE_TO_FIT_perdiv_numeric_has_data_attr():
+    """The perdiv_numeric table's .scale-to-fit container should have data-min-scale='0.5'."""
+    _stf_skip()
+    page = _stf_site() / "user-guide" / "per-div-min-scale.html"
+    soup = _load_html(page)
+    gt = soup.find(id="perdiv_numeric")
+    assert gt is not None
+    parent = gt.parent
+    while parent:
+        classes = parent.get("class", [])
+        if "scale-to-fit" in classes:
+            val = parent.get("data-min-scale")
+            assert val == "0.5", f"Expected data-min-scale='0.5', got '{val}'"
+            break
+        parent = parent.parent
+    else:
+        pytest.fail("#perdiv_numeric is not inside a .scale-to-fit container")
+
+
+@requires_bs4
+def test_SCALE_TO_FIT_perdiv_keyword_has_data_attr():
+    """The perdiv_keyword table's .scale-to-fit container should have data-min-scale='mobile'."""
+    _stf_skip()
+    page = _stf_site() / "user-guide" / "per-div-min-scale.html"
+    soup = _load_html(page)
+    gt = soup.find(id="perdiv_keyword")
+    assert gt is not None
+    parent = gt.parent
+    while parent:
+        classes = parent.get("class", [])
+        if "scale-to-fit" in classes:
+            val = parent.get("data-min-scale")
+            assert val == "mobile", f"Expected data-min-scale='mobile', got '{val}'"
+            break
+        parent = parent.parent
+    else:
+        pytest.fail("#perdiv_keyword is not inside a .scale-to-fit container")
+
+
+@requires_bs4
+def test_SCALE_TO_FIT_perdiv_inherit_no_data_attr():
+    """The perdiv_inherit table's .scale-to-fit container should NOT have data-min-scale."""
+    _stf_skip()
+    page = _stf_site() / "user-guide" / "per-div-min-scale.html"
+    soup = _load_html(page)
+    gt = soup.find(id="perdiv_inherit")
+    assert gt is not None
+    parent = gt.parent
+    while parent:
+        classes = parent.get("class", [])
+        if "scale-to-fit" in classes:
+            val = parent.get("data-min-scale")
+            assert val is None, f"Expected no data-min-scale, got '{val}'"
+            break
+        parent = parent.parent
+    else:
+        pytest.fail("#perdiv_inherit is not inside a .scale-to-fit container")
 
 
 # ── Reference pages ──────────────────────────────────────────────────────────

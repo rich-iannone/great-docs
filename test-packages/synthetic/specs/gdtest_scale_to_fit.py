@@ -11,7 +11,10 @@ Focus: Exercises the 3-level scale-to-fit configuration system by rendering
           One page overrides the global selectors so only ``#page_gt`` scales.
        3. **Manual div** (``:::{.scale-to-fit}``):
           One page wraps output in a ``.scale-to-fit`` div manually.
-       4. **No-scale page**: A narrow GT table that matches no selectors,
+       4. **Per-div min-scale** (``:::{.scale-to-fit data-min-scale="0.5"}``):
+          A ``.scale-to-fit`` div with its own ``data-min-scale`` attribute,
+          overriding the global/page threshold for that single element.
+       5. **No-scale page**: A narrow GT table that matches no selectors,
           verifying that tables which don't match aren't affected.
 
        Verification targets:
@@ -19,6 +22,7 @@ Focus: Exercises the 3-level scale-to-fit configuration system by rendering
        - ``gd-scale-to-fit-page`` meta tag present only on page-override page
        - ``.scale-to-fit`` class on auto-targeted containers
        - ``.gd-scale-wrapper`` div inside scaled containers
+       - ``data-min-scale`` attribute on per-div containers
        - Non-targeted elements have no scale-to-fit classes
        - ID-based targeting works (``#wide_gt`` scaled, ``#narrow_gt`` not)
 """
@@ -348,10 +352,95 @@ SPEC = {
             ")\n"
             "```\n"
         ),
-        # ── User guide: Page 4 — Multiple widths comparison ──────────────
+        # ── User guide: Page 4 — Per-div data-min-scale ──────────────────
+        # This page uses :::{.scale-to-fit data-min-scale="..."} to set
+        # per-container min-scale thresholds, overriding the global one.
+        "user_guide/04-per-div-min-scale.qmd": (
+            "---\n"
+            "title: Per-Div Min Scale\n"
+            "---\n"
+            "\n"
+            "## Wide Table with Numeric Threshold\n"
+            "\n"
+            "This table is inside a `.scale-to-fit` div with\n"
+            '`data-min-scale="0.5"`, which overrides the global\n'
+            "`tablet` keyword threshold.\n"
+            "\n"
+            ':::{.scale-to-fit data-min-scale="0.5"}\n'
+            "```{python}\n"
+            "#| echo: false\n"
+            "from great_tables import GT\n"
+            "import pandas as pd\n"
+            "\n"
+            "df = pd.DataFrame({\n"
+            '    f"Col_{i:02d}": [f"val_{r}_{i}" for r in range(4)]\n'
+            "    for i in range(1, 13)\n"
+            "})\n"
+            "\n"
+            "(\n"
+            '    GT(df, id="perdiv_numeric")\n'
+            '    .tab_header(title="Per-Div Numeric Threshold (0.5)")\n'
+            '    .cols_width(**{f"Col_{i:02d}": "110px" for i in range(1, 13)})\n'
+            "    .tab_options(quarto_disable_processing=True)\n"
+            ")\n"
+            "```\n"
+            ":::\n"
+            "\n"
+            "## Wide Table with Keyword Threshold\n"
+            "\n"
+            "This table is inside a `.scale-to-fit` div with\n"
+            '`data-min-scale="mobile"`, so it only scrolls on\n'
+            "viewports at or below 576 px.\n"
+            "\n"
+            ':::{.scale-to-fit data-min-scale="mobile"}\n'
+            "```{python}\n"
+            "#| echo: false\n"
+            "from great_tables import GT\n"
+            "import pandas as pd\n"
+            "\n"
+            "df = pd.DataFrame({\n"
+            '    f"Col_{i:02d}": [f"val_{r}_{i}" for r in range(4)]\n'
+            "    for i in range(1, 13)\n"
+            "})\n"
+            "\n"
+            "(\n"
+            '    GT(df, id="perdiv_keyword")\n'
+            '    .tab_header(title="Per-Div Keyword Threshold (mobile)")\n'
+            '    .cols_width(**{f"Col_{i:02d}": "110px" for i in range(1, 13)})\n'
+            "    .tab_options(quarto_disable_processing=True)\n"
+            ")\n"
+            "```\n"
+            ":::\n"
+            "\n"
+            "## Wide Table without Per-Div Override\n"
+            "\n"
+            "This table uses a plain `.scale-to-fit` div with no\n"
+            "`data-min-scale`, so it inherits the global `tablet` threshold.\n"
+            "\n"
+            ":::{.scale-to-fit}\n"
+            "```{python}\n"
+            "#| echo: false\n"
+            "from great_tables import GT\n"
+            "import pandas as pd\n"
+            "\n"
+            "df = pd.DataFrame({\n"
+            '    f"Col_{i:02d}": [f"val_{r}_{i}" for r in range(4)]\n'
+            "    for i in range(1, 13)\n"
+            "})\n"
+            "\n"
+            "(\n"
+            '    GT(df, id="perdiv_inherit")\n'
+            '    .tab_header(title="Plain Div (inherits global threshold)")\n'
+            '    .cols_width(**{f"Col_{i:02d}": "110px" for i in range(1, 13)})\n'
+            "    .tab_options(quarto_disable_processing=True)\n"
+            ")\n"
+            "```\n"
+            ":::\n"
+        ),
+        # ── User guide: Page 5 — Multiple widths comparison ──────────────
         # Shows tables of 4, 8, 12, and 16 columns side-by-side with a
         # shared class selector for testing class-based targeting.
-        "user_guide/04-width-comparison.qmd": (
+        "user_guide/05-width-comparison.qmd": (
             "---\n"
             "title: Width Comparison\n"
             "---\n"
@@ -421,6 +510,7 @@ SPEC = {
             "global-targeting.html",
             "page-override.html",
             "manual-div.html",
+            "per-div-min-scale.html",
             "width-comparison.html",
         ],
         "reference_pages": [
@@ -456,5 +546,13 @@ SPEC = {
         "manual_div_id": "manual_gt",
         # Manual div page: #unwrapped_gt is NOT inside .scale-to-fit
         "unwrapped_id": "unwrapped_gt",
+        # Per-div min-scale page: element IDs
+        "perdiv_ids": ["perdiv_numeric", "perdiv_keyword", "perdiv_inherit"],
+        # Per-div min-scale page: expected data-min-scale values (None = no attr)
+        "perdiv_min_scales": {
+            "perdiv_numeric": "0.5",
+            "perdiv_keyword": "mobile",
+            "perdiv_inherit": None,
+        },
     },
 }

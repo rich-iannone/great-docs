@@ -205,6 +205,9 @@ tags:
     CI/CD: repeat
     Setup: download
     Tables: table
+    Extensions: puzzle
+    Data: database
+    Versioning: git-compare
 
 # Dark Mode Toggle
 # ----------------

@@ -249,6 +249,72 @@ class TestEvaluateVersionExpr:
         assert evaluate_version_expr(">0.6,<0.8", "dev", vers) is False
         assert evaluate_version_expr(">0.6,<0.8", "0.7", vers) is True
 
+    def test_ref_version_not_in_list_gte(self):
+        """>=0.5 should match 0.9 even when 0.5 is not in the versions list."""
+        vers = parse_versions_config(
+            [
+                {"tag": "dev", "version": "0.10", "prerelease": True},
+                {"tag": "0.9", "latest": True},
+            ]
+        )
+        assert evaluate_version_expr(">=0.5", "0.9", vers) is True
+        assert evaluate_version_expr(">=0.5", "dev", vers) is True
+
+    def test_ref_version_not_in_list_lte(self):
+        """<=0.5 should NOT match 0.9 when 0.5 is absent."""
+        vers = parse_versions_config(
+            [
+                {"tag": "dev", "version": "0.10", "prerelease": True},
+                {"tag": "0.9", "latest": True},
+            ]
+        )
+        assert evaluate_version_expr("<=0.5", "0.9", vers) is False
+        assert evaluate_version_expr("<=0.5", "dev", vers) is False
+
+    def test_ref_version_not_in_list_gt(self):
+        vers = parse_versions_config(
+            [
+                {"tag": "dev", "version": "0.10", "prerelease": True},
+                {"tag": "0.9", "latest": True},
+            ]
+        )
+        assert evaluate_version_expr(">0.5", "0.9", vers) is True
+        assert evaluate_version_expr(">0.9", "0.9", vers) is False
+
+    def test_ref_version_not_in_list_lt(self):
+        vers = parse_versions_config(
+            [
+                {"tag": "dev", "version": "0.10", "prerelease": True},
+                {"tag": "0.9", "latest": True},
+            ]
+        )
+        assert evaluate_version_expr("<0.5", "0.9", vers) is False
+        assert evaluate_version_expr("<1.0", "0.9", vers) is True
+
+    def test_ref_version_not_in_list_exact(self):
+        """Exact match for absent version should fail."""
+        vers = parse_versions_config(
+            [
+                {"tag": "dev", "version": "0.10", "prerelease": True},
+                {"tag": "0.9", "latest": True},
+            ]
+        )
+        assert evaluate_version_expr("=0.5", "0.9", vers) is False
+        assert evaluate_version_expr("=0.9", "0.9", vers) is True
+
+    def test_ref_version_not_in_list_range(self):
+        """Range with one absent endpoint should still work."""
+        vers = parse_versions_config(
+            [
+                {"tag": "dev", "version": "0.10", "prerelease": True},
+                {"tag": "0.9", "latest": True},
+            ]
+        )
+        # >=0.5,<=0.9 should match 0.9
+        assert evaluate_version_expr(">=0.5,<=0.9", "0.9", vers) is True
+        # >=0.5,<0.9 should NOT match 0.9
+        assert evaluate_version_expr(">=0.5,<0.9", "0.9", vers) is False
+
 
 # ---------------------------------------------------------------------------
 # process_version_fences

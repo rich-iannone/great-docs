@@ -41,7 +41,7 @@ We keep on building the tools you'll need, and they'll be here when the time is 
 
 This User Guide covers everything you need to know to build and maintain great documentation sites. Here's what to expect:
 
-**Getting started**: Installing Great Docs, creating your first site, authoring `.qmd` files, and understanding the project structure.
+**Getting started**: Installing Great Docs, creating your first site, authoring `.qmd` files, writing effective docstrings, and understanding the project structure.
 
 **Configuration and theming**: Tuning site behavior through `great-docs.yml`, customizing appearance, setting up cross-references, internationalization, and responsive scaling.
 

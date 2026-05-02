@@ -1377,7 +1377,7 @@ def tbl_preview(
     html = (
         f'<div id="gd-tbl-{uid}" class="gd-tbl-preview" '
         f'style="padding-left: 0px; overflow-x: auto; overflow-y: hidden; '
-        f'width: 100%; max-width: 100%;">\n'
+        f'width: 100%; max-width: 100%; margin-bottom: 1em;">\n'
         f"{css}\n"
         f'<table class="gt_table" data-quarto-disable-processing="true" '
         f'data-quarto-bootstrap="false">\n'

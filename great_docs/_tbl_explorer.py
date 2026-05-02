@@ -1144,7 +1144,7 @@ def tbl_explorer(
     html = (
         f'<div id="gd-tbl-{uid}" class="gd-tbl-explorer" '
         f'style="padding-left: 0px; overflow: hidden; '
-        f'width: 100%; max-width: 100%;">\n'
+        f'width: 100%; max-width: 100%; margin-bottom: 1em;">\n'
         f"{base_css}\n"
         f"{explorer_css}\n"
         f'<script type="application/json" class="gd-tbl-data" '

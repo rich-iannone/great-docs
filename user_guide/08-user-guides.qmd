@@ -6,24 +6,38 @@ tags: [Content]
 
 # User Guides
 
-Beyond API reference documentation, you often need narrative documentation: tutorials, guides, and explanations. Great Docs makes this easy with automatic User Guide support.
+API reference pages are valuable, but they only describe individual functions and classes in
+isolation. For users to truly understand your project, they need narrative documentation:
+tutorials that walk them through real tasks, guides that explain concepts in context, and
+explanations that connect the pieces together. Without this kind of content, users are left to
+figure out the bigger picture on their own.
+
+Great Docs treats user guides as first-class content. When you add a `user_guide/` directory to
+your project, Great Docs automatically generates sidebar navigation, adds a navbar link, applies
+narrative-optimized styling, and keeps everything in sync across builds. You write Quarto Markdown
+files and Great Docs handles the rest.
 
 ## Creating a User Guide
 
-To add a User Guide to your documentation:
+Getting started takes just three steps:
 
-1. Create a `user_guide/` directory in your project root
-2. Add `.qmd` files for each page
-3. Run `great-docs build`
+1. create a `user_guide/` directory in your project root
+2. add `.qmd` files for each page
+3. run `great-docs build`
 
-That's it! Great Docs automatically:
+Great Docs automatically:
 
-- Copies files to `great-docs/user-guide/`
-- Generates sidebar navigation
-- Adds a "User Guide" link to the navbar
-- Organizes pages into sections
+- copies files to `great-docs/user-guide/`
+- generates sidebar navigation
+- adds a "User Guide" link to the navbar
+- organizes pages into sections
+
+No additional configuration is required. As soon as Great Docs finds `.qmd` files in the
+`user_guide/` directory, the User Guide section appears in your site.
 
 ## Directory Structure
+
+A typical project with a User Guide looks like this:
 
 ```{.default filename="Project structure"}
 your-project/
@@ -42,11 +56,14 @@ your-project/
 └── your_package/
 ```
 
-The `user_guide/` directory is the default location. You can use a [custom directory](#custom-user-guide-directory) by setting `user_guide` in `great-docs.yml`.
+The `user_guide/` directory is the default location. You can use a
+[custom directory](#custom-user-guide-directory) by setting `user_guide` in `great-docs.yml`.
 
 ## Page Ordering
 
-Files are sorted alphabetically by filename. Use numeric prefixes to control order:
+The order of pages in the sidebar matters for guiding readers through your content in a logical
+sequence. Files are sorted alphabetically by filename, so numeric prefixes give you full control
+over the ordering:
 
 ```{.default filename="user_guide/"}
 user_guide/
@@ -56,11 +73,17 @@ user_guide/
 └── 03-advanced.qmd        # Fourth
 ```
 
-The prefix is stripped from the title, so `01-installation.qmd` becomes "Installation" in the navigation.
+The prefix is stripped from the title, so `01-installation.qmd` becomes "Installation" in the
+navigation. This means you can reorder pages at any time by renaming files without affecting how
+titles appear in the sidebar.
 
 ## Organizing into Sections
 
-Group related pages into sections using the `guide-section` frontmatter key:
+As your user guide grows, flat lists of pages become hard to navigate. Sections let you group
+related pages together so readers can find what they need and understand how topics relate to each
+other.
+
+The simplest approach is the `guide-section` frontmatter key:
 
 ```{.yaml filename="01-installation.qmd"}
 ---
@@ -83,9 +106,13 @@ User Guide
     └── Customization
 ```
 
+This grouping is purely visual in the sidebar. The pages themselves remain as flat files in the
+`user_guide/` directory.
+
 ### Section Order
 
-Sections appear in the order they're first encountered (based on file sort order). To control section order, ensure the first file in each section has the appropriate prefix:
+Sections appear in the order they're first encountered (based on file sort order). To control
+section order, ensure the first file in each section has the appropriate prefix:
 
 ```{.default filename="user_guide/"}
 user_guide/
@@ -98,7 +125,10 @@ user_guide/
 
 ### Subdirectory-Based Sections
 
-As an alternative to `guide-section` frontmatter, you can organize pages into subdirectories. Each subdirectory becomes a section in the sidebar, with the section title derived from the subdirectory's `index.qmd` title (or the directory name if there is no `index.qmd`):
+For larger user guides, you may prefer organizing pages into actual subdirectories rather than using
+frontmatter. Each
+subdirectory becomes a section in the sidebar, with the section title derived from the
+subdirectory's `index.qmd` title (or the directory name if there is no `index.qmd`):
 
 ```{.default filename="user_guide/"}
 user_guide/
@@ -126,9 +156,13 @@ User Guide
     └── Deployment
 ```
 
-A root-level `index.qmd` is recommended so the "User Guide" navbar link has a landing page. Subdirectory `index.qmd` files provide section titles but don't appear as separate pages in the sidebar. Rather, their title is used as the collapsible section heading.
+A root-level `index.qmd` is recommended so the "User Guide" navbar link has a landing page.
+Subdirectory `index.qmd` files provide section titles but don't appear as separate pages in the
+sidebar. Rather, their title is used as the collapsible section heading.
 
-Subdirectories are sorted alphabetically by directory name. To control the order of sections and pages within them, use numeric prefixes. They are stripped from both directory names and filenames in URLs and navigation:
+Subdirectories are sorted alphabetically by directory name. To control the order of sections and
+pages within them, use numeric prefixes. They are stripped from both directory names and filenames
+in URLs and navigation:
 
 ```{.default filename="user_guide/"}
 user_guide/
@@ -154,15 +188,21 @@ The prefixes control ordering but don't appear in the output:
 
 This pattern gives you full control over section and page order while keeping URLs clean.
 
-The subdirectory approach works well for larger user guides where the directory structure itself communicates the organization, while `guide-section` frontmatter is better suited for flat file layouts.
+The subdirectory approach works well for larger user guides where the directory structure itself
+communicates the organization, while `guide-section` frontmatter is better suited for flat file
+layouts.
 
 ## Writing Pages
 
-User Guide pages are standard Quarto Markdown files, which means you have access to all of Quarto's powerful features for creating rich, interactive documentation. Here are some of the most useful features for writing guides.
+User Guide pages are standard Quarto Markdown files, which means you have access to all of Quarto's
+powerful features for creating rich, interactive documentation. Here are some of the most useful
+features for writing guides.
 
 ### Basic Frontmatter
 
-Every User Guide page needs frontmatter at the top to define its title and section. The `title` appears in the sidebar navigation and as the page heading, while `guide-section` determines which group the page belongs to:
+Every User Guide page needs frontmatter at the top to define its title and section. The `title`
+appears in the sidebar navigation and as the page heading, while `guide-section` determines which
+group the page belongs to:
 
 ```{.yaml filename="your-page.qmd"}
 ---
@@ -173,7 +213,8 @@ guide-section: "Section Name"
 
 ### Code Blocks
 
-Code blocks with syntax highlighting are essential for technical documentation. Specify the language after the opening backticks to enable highlighting:
+Code blocks with syntax highlighting are essential for technical documentation. Specify the language
+after the opening backticks to enable highlighting:
 
 ````markdown
 ```python
@@ -184,19 +225,23 @@ docs.build()
 ```
 ````
 
-Quarto supports syntax highlighting for dozens of languages including Python, JavaScript, TypeScript, R, Bash, YAML, TOML, and many more.
+Quarto supports syntax highlighting for dozens of languages including Python, JavaScript,
+TypeScript, R, Bash, YAML, TOML, and many more.
 
-For Python code that you want to actually execute and show the output, use `{python}` instead of just `python`. You can control execution behavior with hash-pipe options at the top of the code block. Some useful hash-pipe options include:
+For Python code that you want to actually execute and show the output, use `{python}` instead of
+just `python`. You can control execution behavior with hash-pipe options at the top of the code
+block. Some useful hash-pipe options include:
 
-- `#| echo: false` – Hide the code, show only output
-- `#| eval: false` – Show the code but don't run it
-- `#| output: false` – Run the code but hide output
-- `#| warning: false` – Suppress warning messages
-- `#| fig-cap: "Caption"` – Add a caption to figure output
+- `#| echo: false`: hide the code, show only output
+- `#| eval: false`: show the code but don't run it
+- `#| output: false`: run the code but hide output
+- `#| warning: false`: suppress warning messages
+- `#| fig-cap: "Caption"`: add a caption to figure output
 
 ### Tabsets
 
-Tabsets let you present alternative content (like code in multiple languages or instructions for different platforms) without cluttering the page. Readers can click to switch between tabs:
+Tabsets let you present alternative content (like code in multiple languages or instructions for
+different platforms) without cluttering the page. Readers can click to switch between tabs:
 
 ````markdown
 ::: {.panel-tabset}
@@ -216,11 +261,13 @@ console.log("Hello");
 :::
 ````
 
-This is particularly useful for showing installation commands for different operating systems or demonstrating concepts in multiple programming languages.
+This is particularly useful for showing installation commands for different operating systems or
+demonstrating concepts in multiple programming languages.
 
 ### Callouts
 
-Callouts draw attention to important information. Use them sparingly to highlight notes, warnings, or tips that readers shouldn't miss:
+Callouts draw attention to important information. Use them sparingly to highlight notes, warnings,
+or tips that readers shouldn't miss:
 
 ```markdown
 ::: {.callout-note}
@@ -236,11 +283,13 @@ This is a tip.
 :::
 ```
 
-Each callout type has distinct styling. Notes are informational, warnings alert readers to potential issues, and tips offer helpful suggestions.
+Each callout type has distinct styling. Notes are informational, warnings alert readers to potential
+issues, and tips offer helpful suggestions.
 
 ### Images
 
-Visual content like screenshots, diagrams, and architecture charts can greatly improve documentation. Store images in a subdirectory to keep your User Guide organized:
+Visual content like screenshots, diagrams, and architecture charts can greatly improve
+documentation. Store images in a subdirectory to keep your User Guide organized:
 
 ```{.default filename="user_guide/"}
 user_guide/
@@ -249,7 +298,8 @@ user_guide/
     └── screenshot.png
 ```
 
-Reference them in your content using standard Markdown image syntax. The alt text in brackets improves accessibility:
+Reference them in your content using standard Markdown image syntax. The alt text in brackets
+improves accessibility:
 
 ```markdown
 ![Screenshot](images/screenshot.png)
@@ -257,7 +307,8 @@ Reference them in your content using standard Markdown image syntax. The alt tex
 
 ### Cross-References
 
-Link freely between pages to help readers navigate related content. For other User Guide pages, use relative paths:
+Link freely between pages to help readers navigate related content. For other User Guide pages, use
+relative paths:
 
 ```markdown
 See the [Installation](installation.qmd) guide for details.
@@ -273,7 +324,8 @@ These links are validated during the build, so you'll catch broken references ea
 
 ## Asset Directories
 
-Subdirectories that don't contain `.qmd` files are treated as asset directories and copied as-is:
+User guide pages often need supporting files like images, diagrams, or sample data. Any
+subdirectory that doesn't contain `.qmd` files is treated as an asset directory and copied as-is:
 
 ```{.default filename="user_guide/"}
 user_guide/
@@ -285,29 +337,51 @@ user_guide/
     └── example.json
 ```
 
+This means you can reference images and other files using simple relative paths (e.g.,
+`images/screenshot.png`) in your `.qmd` files, and Great Docs will make sure those files are
+available in the built site.
+
 ## User Guide Styling
 
-Great Docs applies different styling to User Guide pages compared to API reference pages, optimizing for the narrative documentation experience. The sidebar filter that helps navigate large APIs is hidden since user guides are typically smaller and have a clear hierarchical structure. Breadcrumb navigation is also removed to provide a cleaner reading experience. The sidebar itself uses section-based navigation that mirrors your `guide-section` organization, making it easy for readers to see where they are in the documentation.
+Because user guides serve a different purpose than API references, Great Docs applies different
+styling to match. The sidebar filter that helps navigate large API listings is hidden since user
+guides are typically smaller and have a clear hierarchical structure. Breadcrumb navigation is also
+removed to provide a cleaner reading experience. The sidebar itself uses section-based navigation
+that mirrors your `guide-section` organization, making it easy for readers to see where they are
+in the guide.
+
+These styling differences are applied automatically. You don't need to configure anything to get
+the narrative-optimized layout.
 
 ## Example: This User Guide
 
-The Great Docs User Guide you're reading uses this exact structure:
+The User Guide you're reading right now is built with Great Docs, using the same features described
+on this page. Here's a representative sample of its structure:
 
-```
+```{.default filename="user_guide/"}
 user_guide/
-├── 00-introduction.qmd      # Getting Started
-├── 01-installation.qmd      # Getting Started
-├── 02-quickstart.qmd        # Getting Started
-├── 03-configuration.qmd     # Core Concepts
-├── 04-api-documentation.qmd # Core Concepts
-├── 05-cli-documentation.qmd # Core Concepts
-├── 06-user-guides.qmd       # Core Concepts
-└── 07-deployment.qmd        # Deployment
+├── 00-introduction.qmd           # Getting Started
+├── 01-installation.qmd           # Getting Started
+├── 02-quickstart.qmd             # Getting Started
+├── 03-authoring-qmd-files.qmd    # Getting Started
+├── 04-writing-docstrings.qmd     # Getting Started
+├── 05-configuration.qmd          # Config & Theming
+├── 06-api-documentation.qmd      # Site Content
+├── 07-cli-documentation.qmd      # Site Content
+├── 08-user-guides.qmd            # Site Content (this page)
+├── ...                           # 26 more pages
+└── 35-keyboard-keys.qmd          # Site Content
 ```
+
+The guide spans 36 pages organized across five sections: Getting Started, Config & Theming, Site
+Content, Build & Deploy, and Quality & Maintenance. Numeric prefixes control page order, and
+`guide-section` frontmatter handles the grouping.
 
 ## Custom User Guide Directory
 
-By default, Great Docs looks for a `user_guide/` directory in your project root. If you need your User Guide source files in a different location (e.g., inside a `docs/` folder or a monorepo subdirectory), you can specify a custom path in `great-docs.yml`:
+By default, Great Docs looks for a `user_guide/` directory in your project root. If you need your
+User Guide source files in a different location (e.g., inside a `docs/` folder or a monorepo
+subdirectory), you can specify a custom path in `great-docs.yml`:
 
 ```{.yaml filename="great-docs.yml"}
 user_guide: docs/guides
@@ -321,10 +395,13 @@ user_guide: content/user-docs
 
 ### Precedence Rules
 
-If both a `user_guide` config option **and** a conventional `user_guide/` directory exist, the config option takes precedence and the `user_guide/` directory is ignored. Great Docs will print a warning to let you know:
+If both a `user_guide` config option **and** a conventional `user_guide/` directory exist, the
+config option takes precedence and the `user_guide/` directory is ignored. Great Docs will print a
+warning to let you know:
 
 ```
-⚠️  Both 'user_guide' config option ('docs/guides') and 'user_guide/' directory exist; using configured path
+⚠️  Both 'user_guide' config option ('docs/guides') and 'user_guide/' directory exist; using
+configured path
 ```
 
 ### Warnings
@@ -339,9 +416,12 @@ In all three cases, the User Guide is skipped and processing continues normally.
 
 ## Tips
 
+These tips cover common patterns and best practices for maintaining user guides as they grow.
+
 ### Keep Source Separate from Output
 
-Whether you use the default `user_guide/` directory or a custom path, Great Docs copies files to `great-docs/user-guide/` during each build, keeping your source separate from generated output.
+Whether you use the default `user_guide/` directory or a custom path, Great Docs copies files to
+`great-docs/user-guide/` during each build, keeping your source separate from generated output.
 
 ### Use Descriptive Titles
 
@@ -356,10 +436,23 @@ guide-section: "Reference"
 
 ### Organize Logically
 
-Group related content into sections that make sense for your users. A common pattern starts with "Getting Started" content that covers installation and quick start guides. This is everything new users need to get up and running. "Core Concepts" sections explain the main features and typical usage patterns. "Advanced" sections dive into complex topics and customization options for power users. Finally, a "Reference" section can house configuration options and troubleshooting guides. Adapt this structure to fit your project's needs.
+Group related content into sections that make sense for your users. A common pattern starts with
+"Getting Started" content that covers installation and quick start guides. This is everything new
+users need to get up and running. "Core Concepts" sections explain the main features and typical
+usage patterns. "Advanced" sections dive into complex topics and customization options for power
+users. Finally, a "Reference" section can house configuration options and troubleshooting guides.
+Adapt this structure to fit your project's needs.
 
 ## Next Steps
 
-User guides give your documentation the narrative depth that API references alone can't provide. With numbered files, frontmatter sections, and automatic sidebar generation, you can build a structured guide that grows alongside your project.
+User guides bring the narrative depth that API references alone can't provide. With numbered files,
+frontmatter sections, and automatic sidebar generation, you can build a structured guide that
+grows alongside your project.
 
-- [Deployment](deployment.qmd) covers publishing your documentation to GitHub Pages
+- [Custom Sections](custom-sections.qmd) explains how to add entirely new sidebar sections beyond
+the User Guide and API reference
+- [Cross-Referencing](cross-referencing.qmd) covers linking between User Guide pages and API
+reference pages
+- [Theming](theming.qmd) lets you customize the look and feel of your entire site, including User
+Guide pages
+- [Deployment](deployment.qmd) covers publishing your finished documentation to GitHub Pages

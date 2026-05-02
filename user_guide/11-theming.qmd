@@ -226,38 +226,44 @@ Great Docs ships with eight gradient presets. Each bar below shows the light-mod
 left and the dark-mode gradient on the right:
 
 ```{=html}
+<style>
+@media (max-width: 576px) {
+  .gd-preset-desc { font-size: 0.72em; }
+  .gd-preset-bar { height: 34px; font-size: 0.6em; }
+}
+</style>
 <div style="display: flex; flex-direction: column; gap: 6px; margin: 1em 0;">
-  <div style="display: flex; border-radius: 6px; overflow: hidden; height: 38px; font-size: 0.88em; font-weight: 500;">
-    <div style="flex: 1; background: linear-gradient(-45deg, #d0ecf9, #e0f4ff, #c5e8f7, #b8e0f5); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #1a1a1a;"><code style="background: none; font-weight: 700; color: inherit;">sky</code>&ensp;Soft sky blues</div>
-    <div style="flex: 1; background: linear-gradient(-45deg, #023e8a, #0077b6, #005f73, #0096c7); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #ffffff;"><code style="background: none; font-weight: 700; color: inherit;">sky</code>&ensp;Soft sky blues</div>
+  <div class="gd-preset-bar" style="display: flex; border-radius: 6px; overflow: hidden; height: 38px; font-size: 0.88em; font-weight: 500;">
+    <div style="flex: 1; background: linear-gradient(-45deg, #d0ecf9, #e0f4ff, #c5e8f7, #b8e0f5); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #1a1a1a;"><code style="background: none; font-weight: 700; color: inherit;">sky</code><span class="gd-preset-desc">&ensp;Soft sky blues</span></div>
+    <div style="flex: 1; background: linear-gradient(-45deg, #023e8a, #0077b6, #005f73, #0096c7); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #ffffff;"><code style="background: none; font-weight: 700; color: inherit;">sky</code><span class="gd-preset-desc">&ensp;Soft sky blues</span></div>
   </div>
-  <div style="display: flex; border-radius: 6px; overflow: hidden; height: 38px; font-size: 0.88em; font-weight: 500;">
-    <div style="flex: 1; background: linear-gradient(-45deg, #ffddc1, #ffe4cc, #fdd0d8, #fbc4d4); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #1a1a1a;"><code style="background: none; font-weight: 700; color: inherit;">peach</code>&ensp;Peach and blush</div>
-    <div style="flex: 1; background: linear-gradient(-45deg, #cc4a1a, #c7760f, #b84a5f, #a33560); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #ffffff;"><code style="background: none; font-weight: 700; color: inherit;">peach</code>&ensp;Peach and blush</div>
+  <div class="gd-preset-bar" style="display: flex; border-radius: 6px; overflow: hidden; height: 38px; font-size: 0.88em; font-weight: 500;">
+    <div style="flex: 1; background: linear-gradient(-45deg, #ffddc1, #ffe4cc, #fdd0d8, #fbc4d4); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #1a1a1a;"><code style="background: none; font-weight: 700; color: inherit;">peach</code><span class="gd-preset-desc">&ensp;Peach and blush</span></div>
+    <div style="flex: 1; background: linear-gradient(-45deg, #cc4a1a, #c7760f, #b84a5f, #a33560); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #ffffff;"><code style="background: none; font-weight: 700; color: inherit;">peach</code><span class="gd-preset-desc">&ensp;Peach and blush</span></div>
   </div>
-  <div style="display: flex; border-radius: 6px; overflow: hidden; height: 38px; font-size: 0.88em; font-weight: 500;">
-    <div style="flex: 1; background: linear-gradient(-45deg, #c4f0e0, #d0e8f5, #e4d4f4, #d8cef0); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #1a1a1a;"><code style="background: none; font-weight: 700; color: inherit;">prism</code>&ensp;Mint, sky, and lavender</div>
-    <div style="flex: 1; background: linear-gradient(-45deg, #048a65, #0c6a8a, #52077d, #2a0978); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #ffffff;"><code style="background: none; font-weight: 700; color: inherit;">prism</code>&ensp;Mint, sky, and lavender</div>
+  <div class="gd-preset-bar" style="display: flex; border-radius: 6px; overflow: hidden; height: 38px; font-size: 0.88em; font-weight: 500;">
+    <div style="flex: 1; background: linear-gradient(-45deg, #c4f0e0, #d0e8f5, #e4d4f4, #d8cef0); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #1a1a1a;"><code style="background: none; font-weight: 700; color: inherit;">prism</code><span class="gd-preset-desc">&ensp;Mint, sky, and lavender</span></div>
+    <div style="flex: 1; background: linear-gradient(-45deg, #048a65, #0c6a8a, #52077d, #2a0978); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #ffffff;"><code style="background: none; font-weight: 700; color: inherit;">prism</code><span class="gd-preset-desc">&ensp;Mint, sky, and lavender</span></div>
   </div>
-  <div style="display: flex; border-radius: 6px; overflow: hidden; height: 38px; font-size: 0.88em; font-weight: 500;">
-    <div style="flex: 1; background: linear-gradient(-45deg, #e8d0f0, #f5d0e0, #f0d4f8, #eac8ee); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #1a1a1a;"><code style="background: none; font-weight: 700; color: inherit;">lilac</code>&ensp;Lilac and pink</div>
-    <div style="flex: 1; background: linear-gradient(-45deg, #561e64, #8b1140, #a02db3, #6e1a7d); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #ffffff;"><code style="background: none; font-weight: 700; color: inherit;">lilac</code>&ensp;Lilac and pink</div>
+  <div class="gd-preset-bar" style="display: flex; border-radius: 6px; overflow: hidden; height: 38px; font-size: 0.88em; font-weight: 500;">
+    <div style="flex: 1; background: linear-gradient(-45deg, #e8d0f0, #f5d0e0, #f0d4f8, #eac8ee); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #1a1a1a;"><code style="background: none; font-weight: 700; color: inherit;">lilac</code><span class="gd-preset-desc">&ensp;Lilac and pink</span></div>
+    <div style="flex: 1; background: linear-gradient(-45deg, #561e64, #8b1140, #a02db3, #6e1a7d); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #ffffff;"><code style="background: none; font-weight: 700; color: inherit;">lilac</code><span class="gd-preset-desc">&ensp;Lilac and pink</span></div>
   </div>
-  <div style="display: flex; border-radius: 6px; overflow: hidden; height: 38px; font-size: 0.88em; font-weight: 500;">
-    <div style="flex: 1; background: linear-gradient(-45deg, #e0e4e8, #eceff1, #dde2e6, #d5dadf); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #1a1a1a;"><code style="background: none; font-weight: 700; color: inherit;">slate</code>&ensp;Cool grays</div>
-    <div style="flex: 1; background: linear-gradient(-45deg, #37474f, #455a64, #3e525e, #263238); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #ffffff;"><code style="background: none; font-weight: 700; color: inherit;">slate</code>&ensp;Cool grays</div>
+  <div class="gd-preset-bar" style="display: flex; border-radius: 6px; overflow: hidden; height: 38px; font-size: 0.88em; font-weight: 500;">
+    <div style="flex: 1; background: linear-gradient(-45deg, #e0e4e8, #eceff1, #dde2e6, #d5dadf); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #1a1a1a;"><code style="background: none; font-weight: 700; color: inherit;">slate</code><span class="gd-preset-desc">&ensp;Cool grays</span></div>
+    <div style="flex: 1; background: linear-gradient(-45deg, #37474f, #455a64, #3e525e, #263238); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #ffffff;"><code style="background: none; font-weight: 700; color: inherit;">slate</code><span class="gd-preset-desc">&ensp;Cool grays</span></div>
   </div>
-  <div style="display: flex; border-radius: 6px; overflow: hidden; height: 38px; font-size: 0.88em; font-weight: 500;">
-    <div style="flex: 1; background: linear-gradient(-45deg, #ffe0c2, #ffedcc, #ffe5b4, #ffd6a8); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #1a1a1a;"><code style="background: none; font-weight: 700; color: inherit;">honey</code>&ensp;Warm cream and apricot</div>
-    <div style="flex: 1; background: linear-gradient(-45deg, #bf360c, #e65100, #ef6c00, #b71c1c); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #ffffff;"><code style="background: none; font-weight: 700; color: inherit;">honey</code>&ensp;Warm cream and apricot</div>
+  <div class="gd-preset-bar" style="display: flex; border-radius: 6px; overflow: hidden; height: 38px; font-size: 0.88em; font-weight: 500;">
+    <div style="flex: 1; background: linear-gradient(-45deg, #ffe0c2, #ffedcc, #ffe5b4, #ffd6a8); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #1a1a1a;"><code style="background: none; font-weight: 700; color: inherit;">honey</code><span class="gd-preset-desc">&ensp;Warm cream and apricot</span></div>
+    <div style="flex: 1; background: linear-gradient(-45deg, #bf360c, #e65100, #ef6c00, #b71c1c); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #ffffff;"><code style="background: none; font-weight: 700; color: inherit;">honey</code><span class="gd-preset-desc">&ensp;Warm cream and apricot</span></div>
   </div>
-  <div style="display: flex; border-radius: 6px; overflow: hidden; height: 38px; font-size: 0.88em; font-weight: 500;">
-    <div style="flex: 1; background: linear-gradient(-45deg, #d8daf0, #dddff5, #d4d0ee, #dad4f2); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #1a1a1a;"><code style="background: none; font-weight: 700; color: inherit;">dusk</code>&ensp;Soft lavender-blue</div>
-    <div style="flex: 1; background: linear-gradient(-45deg, #0d1244, #141b55, #1a0f52, #261560); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #ffffff;"><code style="background: none; font-weight: 700; color: inherit;">dusk</code>&ensp;Soft lavender-blue</div>
+  <div class="gd-preset-bar" style="display: flex; border-radius: 6px; overflow: hidden; height: 38px; font-size: 0.88em; font-weight: 500;">
+    <div style="flex: 1; background: linear-gradient(-45deg, #d8daf0, #dddff5, #d4d0ee, #dad4f2); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #1a1a1a;"><code style="background: none; font-weight: 700; color: inherit;">dusk</code><span class="gd-preset-desc">&ensp;Soft lavender-blue</span></div>
+    <div style="flex: 1; background: linear-gradient(-45deg, #0d1244, #141b55, #1a0f52, #261560); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #ffffff;"><code style="background: none; font-weight: 700; color: inherit;">dusk</code><span class="gd-preset-desc">&ensp;Soft lavender-blue</span></div>
   </div>
-  <div style="display: flex; border-radius: 6px; overflow: hidden; height: 38px; font-size: 0.88em; font-weight: 500;">
-    <div style="flex: 1; background: linear-gradient(-45deg, #ccece8, #d5f0ec, #c4e8e4, #d0f2ee); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #1a1a1a;"><code style="background: none; font-weight: 700; color: inherit;">mint</code>&ensp;Pale aqua</div>
-    <div style="flex: 1; background: linear-gradient(-45deg, #00695c, #00796b, #004d40, #00897b); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #ffffff;"><code style="background: none; font-weight: 700; color: inherit;">mint</code>&ensp;Pale aqua</div>
+  <div class="gd-preset-bar" style="display: flex; border-radius: 6px; overflow: hidden; height: 38px; font-size: 0.88em; font-weight: 500;">
+    <div style="flex: 1; background: linear-gradient(-45deg, #ccece8, #d5f0ec, #c4e8e4, #d0f2ee); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #1a1a1a;"><code style="background: none; font-weight: 700; color: inherit;">mint</code><span class="gd-preset-desc">&ensp;Pale aqua</span></div>
+    <div style="flex: 1; background: linear-gradient(-45deg, #00695c, #00796b, #004d40, #00897b); background-size: 400% 400%; display: flex; align-items: center; padding: 0 14px; color: #ffffff;"><code style="background: none; font-weight: 700; color: inherit;">mint</code><span class="gd-preset-desc">&ensp;Pale aqua</span></div>
   </div>
   <div style="display: flex; gap: 0; font-size: 0.75em; color: #888; margin-top: 2px;">
     <div style="flex: 1; text-align: center;">Light mode</div>

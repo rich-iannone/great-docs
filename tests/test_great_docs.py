@@ -39421,23 +39421,6 @@ def test_video_embed_js_is_iife():
         assert content.rstrip().endswith("})();")
 
 
-def test_video_embed_js_has_youtube_enhancement():
-    """video-embed.js contains YouTube thumbnail placeholder logic."""
-
-    from great_docs.core import GreatDocs
-
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        docs = GreatDocs(project_path=tmp_dir)
-        content = (docs.assets_path / "video-embed.js").read_text(encoding="utf-8")
-
-        assert "enhanceYouTube" in content
-        assert "getYouTubeId" in content
-        assert "gd-video-placeholder" in content
-        assert "gd-video-thumb" in content
-        assert "gd-video-play" in content
-        assert "img.youtube.com" in content
-
-
 def test_video_embed_js_has_lazy_loading():
     """video-embed.js contains IntersectionObserver lazy-loading for non-YouTube iframes."""
 
@@ -39466,85 +39449,8 @@ def test_video_embed_js_has_video_element_enhancement():
         assert '"preload"' in content
 
 
-def test_video_embed_js_youtube_id_extraction():
-    """video-embed.js can extract YouTube IDs from embed URLs."""
-
-    from great_docs.core import GreatDocs
-
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        docs = GreatDocs(project_path=tmp_dir)
-        content = (docs.assets_path / "video-embed.js").read_text(encoding="utf-8")
-
-        # The regex should match both youtube.com and youtube-nocookie.com
-        assert "youtube.com" in content
-        assert "youtube-nocookie.com" in content
-
-
-def test_video_embed_js_accessibility():
-    """video-embed.js includes proper accessibility attributes."""
-
-    from great_docs.core import GreatDocs
-
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        docs = GreatDocs(project_path=tmp_dir)
-        content = (docs.assets_path / "video-embed.js").read_text(encoding="utf-8")
-
-        # Placeholder should have role="button" for screen readers
-        assert '"button"' in content
-
-        # Should support keyboard activation
-        assert '"Enter"' in content
-        assert '" "' in content  # Space key
-
-        # Should have aria-label
-        assert "aria-label" in content
-
-        # Should have tabindex for keyboard focus
-        assert "tabindex" in content
-
-
-def test_video_embed_js_autoplay_on_click():
-    """video-embed.js appends autoplay=1 when loading the player after click."""
-
-    from great_docs.core import GreatDocs
-
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        docs = GreatDocs(project_path=tmp_dir)
-        content = (docs.assets_path / "video-embed.js").read_text(encoding="utf-8")
-
-        assert "autoplay=1" in content
-
-
-def test_video_embed_js_thumbnail_fallback():
-    """video-embed.js falls back from maxresdefault to hqdefault thumbnail."""
-
-    from great_docs.core import GreatDocs
-
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        docs = GreatDocs(project_path=tmp_dir)
-        content = (docs.assets_path / "video-embed.js").read_text(encoding="utf-8")
-
-        assert "maxresdefault" in content
-        assert "hqdefault" in content
-        assert "onerror" in content
-
-
-def test_video_embed_js_play_button_svg():
-    """video-embed.js includes an inline SVG play button."""
-
-    from great_docs.core import GreatDocs
-
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        docs = GreatDocs(project_path=tmp_dir)
-        content = (docs.assets_path / "video-embed.js").read_text(encoding="utf-8")
-
-        assert "PLAY_SVG" in content
-        assert "<svg" in content
-        assert "gd-play-bg" in content
-
-
 def test_scss_has_video_styles():
-    """great-docs.scss contains styling for video containers and placeholders."""
+    """great-docs.scss contains styling for video containers."""
 
     from great_docs.core import GreatDocs
 
@@ -39554,12 +39460,6 @@ def test_scss_has_video_styles():
 
         # Video container border
         assert ".quarto-video" in content
-
-        # Placeholder styles
-        assert ".gd-video-placeholder" in content
-        assert ".gd-video-thumb" in content
-        assert ".gd-video-play" in content
-        assert ".gd-play-bg" in content
 
 
 def test_scss_video_container_has_border():
@@ -39591,20 +39491,6 @@ def test_scss_video_dark_mode():
             "quarto-dark .quarto-video" in content
             or 'data-bs-theme="dark"] .quarto-video' in content
         )
-
-
-def test_scss_video_placeholder_positioning():
-    """The placeholder overlay is positioned absolutely to fill the container."""
-
-    from great_docs.core import GreatDocs
-
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        docs = GreatDocs(project_path=tmp_dir)
-        content = (docs.assets_path / "great-docs.scss").read_text(encoding="utf-8")
-
-        # The placeholder must cover the entire ratio container
-        assert "position: absolute" in content
-        assert "cursor: pointer" in content
 
 
 def test_scss_video_focus_visible():

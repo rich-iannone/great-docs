@@ -7,9 +7,13 @@ versions: ">=0.3"
 
 # Docs Linting
 
+Documentation problems tend to be invisible until someone encounters them: a function with no
+docstring, a cross-reference pointing to a symbol that was renamed, or a directive that's
+misspelled. These issues don't produce build errors, so they can persist across many releases.
+
 Great Docs includes a built-in linter that analyzes your package's public API for documentation
 quality issues. It catches missing docstrings, broken cross-references, inconsistent formatting, and
-malformed directives (before your users ever see them).
+malformed directives before your users ever see them.
 
 ## Basic Usage
 
@@ -60,9 +64,14 @@ When issues are found, they are grouped by check type with clear indicators:
 ❌ 2 error(s), 4 warning(s)
 ```
 
+Errors represent problems that will produce gaps or broken content on the rendered site. Warnings
+flag inconsistencies that are worth investigating but won't break anything.
+
 ## Checks Performed
 
-The linter runs four categories of checks. Each can be run individually or together.
+The linter runs four categories of checks, each targeting a different class of documentation
+problem. All four run by default, and each can be run individually using `--check` (described
+below).
 
 ### Missing Docstrings
 
@@ -74,11 +83,14 @@ Finds public exports and class methods that lack docstrings.
 | `missing-docstring` | Warning | A public method on a documented class has no docstring |
 
 Private methods (names starting with `_`) and constructor dunders (`__init__`, `__new__`) are
-skipped automatically.
+skipped automatically. The linter only flags symbols that would appear (or be expected to appear) in
+the rendered documentation.
 
 ### Broken Cross-References
 
-Validates that `%seealso` directives reference symbols that actually exist in your public API.
+Cross-references that point to nonexistent symbols produce dead links on the rendered site. The
+linter validates that `%seealso` directives reference symbols that actually exist in your public
+API.
 
 | Finding | Severity | Description |
 |---------|----------|-------------|
@@ -97,7 +109,8 @@ def process(data):
 ```
 
 If `validate_input` exists in your public API but `transform_data` does not, the linter reports
-`transform_data` as a broken cross-reference.
+`transform_data` as a broken cross-reference. This is especially useful after renaming or removing
+functions.
 
 ### Style Consistency
 
@@ -118,11 +131,14 @@ The linter detects style by looking for characteristic patterns:
 - **Google**: Section headers with colons (`Args:`, `Returns:`)
 - **Sphinx**: Field markers (`:param x:`, `:returns:`)
 
-Short docstrings without structured sections are not flagged.
+Short docstrings without structured sections are not flagged, since they don't contain enough signal
+to determine a style.
 
 ### Directive Consistency
 
-Checks for malformed or unrecognized Great Docs directives in docstrings.
+Great Docs uses `%`-prefixed directives in docstrings for features like cross-references and
+documentation exclusion. This check catches misspelled or unrecognized directives that would
+otherwise be silently ignored.
 
 | Finding | Severity | Description |
 |---------|----------|-------------|
@@ -131,14 +147,16 @@ Checks for malformed or unrecognized Great Docs directives in docstrings.
 
 Great Docs recognizes these directives:
 
-- `%seealso`: Cross-reference related items (see [Cross-Referencing](cross-referencing.qmd))
-- `%nodoc`: Exclude an item from documentation (see [Writing Docstrings](writing-docstrings.qmd#nodoc-exclude-an-item-from-documentation))
+- `%seealso`: cross-reference related items (see [Cross-Referencing](cross-referencing.qmd))
+- `%nodoc`: exclude an item from documentation (see [Writing Docstrings](writing-docstrings.qmd#nodoc-exclude-an-item-from-documentation))
 
-Any other `%`-prefixed token (e.g., `%deprecated`, `%internal`) is flagged as unknown.
+Any other `%`-prefixed token (e.g., `%deprecated`, `%internal`) is flagged as unknown. If you see a
+false positive, check for typos in the directive name.
 
 ## Running Specific Checks
 
-Use `--check` to run only the checks you need. This option can be repeated:
+When diagnosing a particular class of issue, you can run a subset of checks instead of the full
+suite. Use `--check` to select only the checks you need (this option can be repeated):
 
 ```{.bash filename="Terminal"}
 # Only check for missing docstrings
@@ -160,9 +178,11 @@ Available check names:
 | `style` | Docstring style consistency with configured parser |
 | `directives` | Unknown or malformed `%` directives |
 
+When no `--check` flags are given, all four categories run.
+
 ## JSON Output
 
-For CI/CD integration, use `--json` to get machine-readable output:
+For CI/CD integration or programmatic analysis, use `--json` to get machine-readable output:
 
 ```{.bash filename="Terminal"}
 great-docs lint --json
@@ -215,9 +235,11 @@ great-docs lint --json | jq '.issues[] | select(.severity == "error")'
 great-docs lint --json | jq '.issues | group_by(.check) | map({check: .[0].check, count: length})'
 ```
 
+The JSON format is stable across releases, so you can build tooling around it.
+
 ## Exit Codes
 
-The linter uses exit codes for CI integration:
+The linter uses exit codes to indicate whether action is needed:
 
 | Code | Meaning |
 |------|---------|
@@ -225,9 +247,12 @@ The linter uses exit codes for CI integration:
 | `1` | At least one error was found |
 
 This means you can use `great-docs lint` directly in CI pipelines and it will fail the build only
-when there are errors.
+when there are errors. Warnings appear in the output but do not block the pipeline.
 
 ## CI/CD Integration
+
+Running the linter in CI ensures that documentation quality is enforced on every pull request, not
+just when someone remembers to check.
 
 ### GitHub Actions
 
@@ -296,13 +321,16 @@ Run linting alongside other Great Docs quality tools in CI:
         run: great-docs seo
 ```
 
+Running all four together gives you a comprehensive pre-deployment quality gate.
+
 ## Next Steps
 
 The linter catches structural problems early: missing docstrings, malformed directives, broken
-cross-references, and inconsistencies that would otherwise surface as confusing gaps in the rendered
-site. Run it in CI to enforce documentation quality alongside code quality.
+cross-references, and style inconsistencies that would otherwise surface as confusing gaps in the
+rendered site. Run it in CI to enforce documentation quality alongside code quality.
 
-- [Link Checker](link-checker.qmd) validates that all links resolve correctly
-- [Proofreading](proofreading.qmd) checks spelling, grammar, and style
+- [Link Checker](link-checker.qmd) validates that all links in the built site resolve correctly
+- [Proofreading](proofreading.qmd) checks spelling, grammar, and style in your prose
 - [Writing Docstrings](writing-docstrings.qmd) covers the docstring format and directives that the
 linter validates
+- [SEO Optimization](seo.qmd) audits generated metadata that complements documentation quality

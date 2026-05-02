@@ -29,9 +29,9 @@ Here's a live example:
 {{< video https://www.youtube.com/watch?v=d8-Jyh-NaMw >}}
 
 ::: {.callout-tip}
-## Performance
+## YouTube Controls
 
-YouTube embeds are automatically optimized. Instead of loading the full YouTube player on page load, Great Docs displays a lightweight thumbnail image with a play button. The player loads only when a visitor clicks, which significantly improves page load times (especially on pages with multiple videos).
+YouTube embeds use the standard YouTube player, giving visitors full access to native controls including ad skipping, captions, playback speed, and quality settings.
 :::
 
 ### Start Time

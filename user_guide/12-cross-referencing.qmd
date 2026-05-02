@@ -7,19 +7,36 @@ tags: [Content, Configuration]
 
 # Cross-Referencing
 
-Great Docs provides a linking system called GDLS (Great Docs Linking System) that automatically creates clickable navigation between your API reference pages. GDLS operates at three levels, each adding a different kind of connectivity to your documentation.
+Documentation becomes much more useful when readers can follow connections between related items.
+Without links, someone reading the `encode()` page has no easy way to discover that `decode()`
+exists, or that a higher-level `Pipeline` class ties everything together. Cross-references turn
+isolated pages into a connected web.
 
-The first level is the `%seealso` directive, which adds structured "See Also" sections that link related items together. The second level is inline interlinks, which let you create Markdown-style links to API symbols anywhere in your prose. The third level is code autolinks, which automatically turn inline code references like `` `MyClass` `` into clickable links when they match a documented symbol.
+Great Docs provides a linking system called GDLS (Great Docs Linking System) that automatically
+creates clickable navigation between your API reference pages. GDLS operates at three levels, each
+adding a different kind of connectivity to your documentation.
 
-All three mechanisms resolve against the same `objects.json` inventory that Great Docs generates during the build. To preview which symbols are available for linking before you build, run:
+The first level is the `%seealso` directive, which adds structured "See Also" sections that link
+related items together. The second level is inline interlinks, which let you create Markdown-style
+links to API symbols anywhere in your prose. The third level is code autolinks, which automatically
+turn inline code references like `` `MyClass` `` into clickable links when they match a documented
+symbol.
+
+All three mechanisms resolve against the same `objects.json` inventory that Great Docs generates
+during the build. To preview which symbols are available for linking before you build, run:
 
 ```bash
 great-docs scan
 ```
 
+This is useful for confirming the exact names you can reference in your docstrings.
+
 ## The `%seealso` Directive
 
-The `%seealso` directive adds a "See Also" section to a reference page. Place it anywhere in a docstring with a comma-separated list of related names:
+The most common cross-referencing need is connecting items that serve complementary roles: an
+encoder and a decoder, a reader and a writer, or a class and its factory function. The `%seealso`
+directive handles this by adding a "See Also" section at the bottom of a reference page. Place it
+anywhere in a docstring with a comma-separated list of related names:
 
 ```python
 def encode(data: bytes, encoding: str = "utf-8") -> str:
@@ -30,7 +47,8 @@ def encode(data: bytes, encoding: str = "utf-8") -> str:
     ...
 ```
 
-Great Docs strips the directive from the rendered output and generates a "See Also" section with clickable links at the bottom of the page.
+Great Docs strips the directive from the rendered output and generates a "See Also" section with
+clickable links at the bottom of the page.
 
 Names can reference any exported symbol, including class methods using dotted notation:
 
@@ -46,7 +64,9 @@ class Validator:
 
 ### Adding Descriptions
 
-You can add a short description after each name, separated by a colon. When descriptions are present, the See Also section renders as a list with each link followed by its description. Without descriptions, the links appear as a compact comma-separated line.
+You can add a short description after each name, separated by a colon. When descriptions are
+present, the See Also section renders as a list with each link followed by its description. Without
+descriptions, the links appear as a compact comma-separated line.
 
 ```python
 def load(path: str) -> dict:
@@ -70,7 +90,10 @@ def transform(data: dict) -> dict:
 
 ### NumPy-style See Also Sections
 
-If your docstrings use the NumPy docstring format, you can write a standard See Also section instead of (or in addition to) the `%seealso` directive. Great Docs recognizes this format, preserves the descriptions, and merges it with any `%seealso` entries on the same page. Duplicate references are deduplicated automatically.
+If your docstrings use the NumPy docstring format, you can write a standard See Also section instead
+of (or in addition to) the `%seealso` directive. Great Docs recognizes this format, preserves the
+descriptions, and merges it with any `%seealso` entries on the same page. Duplicate references are
+deduplicated automatically.
 
 ```python
 def connect(host: str, port: int = 5432):
@@ -91,14 +114,22 @@ def connect(host: str, port: int = 5432):
     ...
 ```
 
+Both formats produce the same rendered output. If a page has both a `%seealso` directive and a NumPy
+See Also section, the entries are merged and any duplicates are removed.
+
 ## Inline Interlinks
 
-You can create inline links to other API items anywhere in your docstring text using the interlinks syntax. This is especially useful in class hierarchies and overview docstrings where you want to point readers to related pages. There are several forms:
+Sometimes you need to mention another API item in the middle of a prose explanation rather than in a
+structured "See Also" section. Inline interlinks let you create Markdown-style links to API symbols
+anywhere in your docstring text. This is especially useful in class hierarchies and overview
+docstrings where you want to point readers to related pages. There are several forms:
 
-- Write `` [](`~mypackage.MyClass`) `` to display just `MyClass`. The `~` prefix strips the package path and shows only the short name.
-- Write `` [](`mypackage.MyClass`) `` to display the full path `mypackage.MyClass`.
-- Write `` [see this class](`mypackage.MyClass`) `` to display `see this class` as the link text.
-- Write `` [see this class](`~mypackage.MyClass`) `` to also display `see this class`. When you supply custom link text in the brackets, it is always used as-is regardless of the `~` prefix.
+- write `` [](`~mypackage.MyClass`) `` to display just `MyClass`. The `~` prefix strips the package
+path and shows only the short name
+- write `` [](`mypackage.MyClass`) `` to display the full path `mypackage.MyClass`
+- write `` [see this class](`mypackage.MyClass`) `` to display `see this class` as the link text
+- write `` [see this class](`~mypackage.MyClass`) `` to also display `see this class`; when you
+supply custom link text in the brackets, it is always used as-is regardless of the `~` prefix
 
 Here is an example showing interlinks in practice:
 
@@ -117,11 +148,16 @@ class BaseStore:
     ...
 ```
 
-In the rendered documentation, each interlinks reference becomes a clickable link pointing to the target's reference page. Interlinks work in any part of a docstring: the summary line, extended description, parameter descriptions, notes, or any other section.
+Interlinks work in any part of a docstring: the summary line, extended description, parameter
+descriptions, notes, or any other section. If a reference cannot be resolved (for example, a typo in
+the symbol name), the link text still renders but without a clickable link.
 
 ## Code Autolinks
 
-Great Docs automatically converts inline code in docstrings into clickable links when the code matches a documented API symbol. No special syntax is needed; you use standard backtick code formatting and Great Docs does the rest:
+The first two levels (`%seealso` and interlinks) require you to opt in by writing specific syntax.
+Code autolinks take a different approach: they work automatically with no markup at all. When Great
+Docs encounters inline code in a docstring that matches a documented API symbol, it turns that code
+into a clickable link:
 
 ```python
 class Engine:
@@ -133,11 +169,13 @@ class Engine:
     ...
 ```
 
-In the rendered output, `` `Pipeline` `` and `` `run_pipeline()` `` become clickable links to their respective reference pages.
+In the rendered output, `` `Pipeline` `` and `` `run_pipeline()` `` become clickable links to their
+respective reference pages.
 
 ### Shortening Prefixes
 
-For qualified names, you can control the display text with `~~` prefixes. The double tilde strips everything before the last component of the dotted path:
+For qualified names, you can control the display text with `~~` prefixes. The double tilde strips
+everything before the last component of the dotted path:
 
 | What you write | What renders | What it links to |
 |---|---|---|
@@ -147,11 +185,14 @@ For qualified names, you can control the display text with `~~` prefixes. The do
 | `` `~~mypackage.my_func()` `` | `my_func()` | my_func page |
 | `` `~~.mypackage.MyClass` `` | `.MyClass` | MyClass page |
 
-If the name does not match any documented symbol (e.g., `` `~~unknown_func()` ``), it renders as plain code with no link.
+If the name does not match any documented symbol (e.g., `` `~~unknown_func()` ``), it renders as
+plain code with no link.
 
 ### What Gets Autolinked
 
-Any inline code that looks like an identifier or dotted path is a candidate for autolinking. Parentheses at the end are allowed. Code that contains arguments, spaces, or operators is not linked.
+Any inline code that looks like an identifier or dotted path is a candidate for autolinking.
+Parentheses at the end are allowed. Code that contains arguments, spaces, or operators is not
+linked.
 
 Examples that will be linked (if the name exists in the API):
 
@@ -165,30 +206,76 @@ Examples that will not be linked:
 - `` `a + b` `` (contains operators)
 - `` `-MyClass` `` (starts with an operator)
 
+When in doubt, write the name as you normally would in a docstring. If it resolves, it becomes a
+link; if not, it renders as plain code.
+
+## Parentheses in Cross-References
+
+The three cross-referencing levels handle parentheses differently, so it helps to know the rules:
+
+**`%seealso`**: Write bare names without parentheses. Great Docs automatically appends `()` to
+functions and methods in the rendered "See Also" section based on each symbol's type. Writing
+`%seealso decode, MyClass` produces `decode()` and `MyClass` in the output, with the parentheses
+added only where appropriate.
+
+**Inline interlinks**: The target inside backticks should be the qualified name without parentheses.
+Write `` [](`~mypackage.my_func`) ``, not `` [](`~mypackage.my_func()`) ``.
+
+**Code autolinks**: Trailing `()` are optional and purely cosmetic. Both `` `my_func` `` and
+`` `my_func()` `` resolve to the same page. The parentheses are preserved in the display text but
+stripped during lookup. Use `()` when you want to signal to readers that something is callable:
+
+```python
+class Pipeline:
+    """Chain multiple engines together.
+
+    Call `run()` to execute the pipeline, or inspect `config` for current settings.
+    """
+    ...
+```
+
+In the rendered output, `run()` links to the `run` method page (with parentheses displayed) and
+`config` links to the `config` attribute page (without parentheses).
+
 ### Disabling Autolinks
 
-To prevent a specific piece of inline code from being autolinked, add the `{.gd-no-link}` class after the backtick span:
+To prevent a specific piece of inline code from being autolinked, add the `{.gd-no-link}` class
+after the backtick span:
 
 ```markdown
 The `Config`{.gd-no-link} parameter is a plain dictionary, not the Config class.
 ```
 
-This is useful when a word happens to match a documented symbol but you are referring to something else in context.
+This is useful when a word happens to match a documented symbol but you are referring to something
+else in context. You only need this occasionally; most autolinks are helpful and should be left in
+place.
 
 ## Best Practices for Linking
 
-Cross-references make documentation much more navigable, but a few guidelines help keep them useful rather than distracting.
+Cross-references make documentation much more navigable, but a few guidelines help keep them useful
+rather than distracting.
 
-Use `%seealso` to connect items that serve complementary roles. If `encode()` and `decode()` are a natural pair, linking them together helps readers discover both. For larger groupings, a brief description after each name (using the colon syntax) gives context about why the link is relevant.
+Use `%seealso` to connect items that serve complementary roles. If `encode()` and `decode()` are a
+natural pair, linking them together helps readers discover both. For larger groupings, a brief
+description after each name (using the colon syntax) gives context about why the link is relevant.
 
-Use inline interlinks when you mention another symbol in the middle of a prose explanation. This keeps reading flow natural while still giving readers a path to the referenced page. The shortened form (with `~`) is usually the best choice because fully qualified paths can be long and interrupt the sentence visually.
+Use inline interlinks when you mention another symbol in the middle of a prose explanation. This
+keeps reading flow natural while still giving readers a path to the referenced page. The shortened
+form (with `~`) is usually the best choice because fully qualified paths can be long and interrupt
+the sentence visually.
 
-Code autolinks require no effort on your part, since they happen automatically. But be aware that common words like `Config` or `Data` might match a symbol unexpectedly. If you notice unwanted links in the rendered output, add `{.gd-no-link}` to the specific code span.
+Code autolinks require no effort on your part, since they happen automatically. But be aware that
+common words like `Config` or `Data` might match a symbol unexpectedly. If you notice unwanted links
+in the rendered output, add `{.gd-no-link}` to the specific code span.
 
 ## Next Steps
 
-Cross-references turn a collection of standalone reference pages into a connected web of documentation. Use `%seealso` for structured navigation, interlinks for inline mentions, and let code autolinks handle the rest automatically.
+Cross-references turn a collection of standalone reference pages into a connected web of
+documentation. Use `%seealso` for structured navigation, interlinks for inline mentions, and let
+code autolinks handle the rest automatically.
 
-- [API Documentation](api-documentation.qmd) covers how discovery and organization work
-- [Configuration](configuration.qmd) covers the functional settings in `great-docs.yml`
-- [Theming & Appearance](theming.qmd) covers visual customization options
+- [Writing Docstrings](writing-docstrings.qmd) covers how to write effective docstrings that work
+well with cross-referencing
+- [API Documentation](api-documentation.qmd) covers how API discovery and page organization work
+- [User Guides](user-guides.qmd) explains how to link from User Guide pages to API reference pages
+- [Linting](linting.qmd) can catch broken cross-references during the build

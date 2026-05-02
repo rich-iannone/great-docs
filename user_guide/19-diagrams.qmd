@@ -8,13 +8,23 @@ versions: ">=0.2"
 
 # Diagrams
 
-Great Docs supports Mermaid diagrams directly in your documentation. Mermaid is a JavaScript-based diagramming tool that renders diagrams from text definitions. This means you can create flowcharts, sequence diagrams, class diagrams, and more without needing external image files.
+Some concepts are hard to explain with words alone. Architecture diagrams, workflow charts, and
+sequence diagrams communicate structure and flow far more effectively than prose. But maintaining
+diagrams as image files is fragile: they go out of date, they're hard to diff in version control,
+and they require external tools to edit.
 
-Diagrams work seamlessly in both light and dark mode, automatically adapting their colors for readability.
+Great Docs supports [Mermaid](https://mermaid.js.org/) diagrams directly in your documentation.
+Mermaid renders diagrams from text definitions inside fenced code blocks, so your diagrams live
+alongside your prose in version control and update just as easily. You can create flowcharts,
+sequence diagrams, class diagrams, state diagrams, Gantt charts, and pie charts without needing
+external image files.
+
+Diagrams work seamlessly in both light and dark mode, automatically adapting their colors for
+readability.
 
 ## Basic Usage
 
-To add a mermaid diagram, use a fenced code block with `{mermaid}` as the language identifier:
+To add a Mermaid diagram, use a fenced code block with `{mermaid}` as the language identifier:
 
 ````markdown
 ```{mermaid}
@@ -34,9 +44,14 @@ graph LR
     B -->|No| D[End]
 ```
 
+The diagram is rendered at build time and embedded directly in the page. No JavaScript is needed on
+the reader's side.
+
 ## Flowcharts
 
-Flowcharts are useful for documenting workflows, algorithms, or processes. Use `graph LR` for left-to-right flow or `graph TD` for top-down:
+Flowcharts are the most common diagram type in technical documentation. They're useful for
+documenting workflows, decision trees, or multi-step processes. Use `graph LR` for left-to-right
+flow or `graph TD` for top-down:
 
 ```{mermaid}
 graph TD
@@ -63,7 +78,8 @@ graph LR
 
 ## Sequence Diagrams
 
-Sequence diagrams show interactions between components over time. They're ideal for documenting API flows or system interactions:
+Sequence diagrams show how components interact over time. They're ideal for documenting API call
+flows, request/response cycles, or system interactions where the order of operations matters:
 
 ```{mermaid}
 sequenceDiagram
@@ -81,6 +97,9 @@ sequenceDiagram
     Core-->>CLI: Build complete
     CLI-->>User: Site ready in great-docs/_site/
 ```
+
+The `participant` declarations control the column order. Solid arrows (`->>`) represent calls, and
+dashed arrows (`-->>`) represent returns.
 
 ## Class Diagrams
 
@@ -107,9 +126,13 @@ classDiagram
     GreatDocs --> Config : uses
 ```
 
+Class diagrams support visibility modifiers (`+` public, `-` private, `#` protected) and
+relationship types (inheritance, composition, association).
+
 ## State Diagrams
 
-State diagrams help document state machines or lifecycle stages:
+State diagrams help document state machines, lifecycle stages, or any system where items transition
+between well-defined states:
 
 ```{mermaid}
 stateDiagram-v2
@@ -121,9 +144,11 @@ stateDiagram-v2
     Published --> [*]
 ```
 
+The `[*]` node represents the start and end states.
+
 ## Gantt Charts
 
-Gantt charts can document project timelines or release schedules:
+Gantt charts are useful for documenting project timelines, release schedules, or migration plans:
 
 ```{mermaid}
 gantt
@@ -137,9 +162,11 @@ gantt
         Deployment Guide    :deploy, 2024-02-01, 2024-02-10
 ```
 
+Tasks can be marked as `done`, `active`, or left unmarked for upcoming work.
+
 ## Pie Charts
 
-Simple pie charts for showing proportions:
+Pie charts provide a quick visual summary of proportions:
 
 ```{mermaid}
 pie title Documentation Coverage
@@ -149,19 +176,28 @@ pie title Documentation Coverage
     "CLI Docs" : 10
 ```
 
+Values are automatically converted to percentages.
+
 ## Dark Mode Support
 
-Great Docs automatically adjusts mermaid diagrams for dark mode. Diagrams are displayed in a light background container when dark mode is active, ensuring text and shapes remain clearly readable. No additional configuration is required as diagrams adapt when visitors toggle between light and dark themes.
+Readers who switch between light and dark mode should not have to squint at a bright white diagram
+on a dark background. Great Docs automatically adjusts Mermaid diagrams for dark mode by displaying
+them in a light background container, ensuring text and shapes remain clearly readable. No
+additional configuration is required.
 
 ## Tips for Better Diagrams
 
+Mermaid diagrams are easy to create, but a few practices help keep them clear and maintainable.
+
 ### Keep Diagrams Focused
 
-Each diagram should illustrate one concept. If a diagram becomes too complex, consider breaking it into multiple smaller diagrams.
+Each diagram should illustrate one concept. If a diagram becomes too complex, consider breaking it
+into multiple smaller diagrams.
 
 ### Use Descriptive Labels
 
-Node labels should be self-explanatory. Use action verbs for process steps and clear nouns for entities:
+Node labels should be self-explanatory. Use action verbs for process steps and clear nouns for
+entities:
 
 ```{mermaid}
 graph LR
@@ -195,14 +231,20 @@ graph TD
     C --> D
 ```
 
-## Further Reading
-
-For the complete Mermaid syntax reference, see the [Mermaid documentation](https://mermaid.js.org/intro/). Quarto also provides additional options for diagram sizing and placement in the [Quarto Diagrams guide](https://quarto.org/docs/authoring/diagrams.html).
+For the complete Mermaid syntax reference, see the
+[Mermaid documentation](https://mermaid.js.org/intro/). Quarto also provides additional options for
+diagram sizing and placement in the
+[Quarto Diagrams guide](https://quarto.org/docs/authoring/diagrams.html).
 
 ## Next Steps
 
-Diagrams let you visualize architecture, workflows, and relationships directly in your documentation without external image editors. Mermaid's text-based syntax means diagrams stay in version control and update alongside your prose.
+Mermaid diagrams let you visualize architecture, workflows, and relationships directly in your
+documentation. Because they're defined in text, they stay in version control, diff cleanly, and
+update alongside your prose.
 
-- [Authoring QMD Files](authoring-qmd-files.qmd) covers other content building blocks like callouts, tabsets, and code blocks
+- [Authoring QMD Files](authoring-qmd-files.qmd) covers other content building blocks like callouts,
+tabsets, and code blocks
 - [Videos](videos.qmd) covers embedding YouTube, Vimeo, and Loom content
+- [Cross-Referencing](cross-referencing.qmd) explains how to link diagram pages to API reference
+items
 - [Theming & Appearance](theming.qmd) explains how diagrams inherit your site's color scheme

@@ -8,24 +8,32 @@ versions: ">=0.2"
 
 # SEO Optimization
 
-Great Docs includes comprehensive search engine optimization (SEO) features to help your
-documentation rank well in search results. These features are enabled by default and work
-automatically when you build your site.
+Documentation is only useful if people can find it. When someone searches for how to install your
+package or call a specific function, your docs should appear near the top of the results. Good SEO
+ensures that search engines can crawl, index, and accurately represent your pages.
+
+Great Docs includes comprehensive SEO features that are enabled by default and work automatically
+when you build your site. Sitemaps, canonical URLs, meta descriptions, structured data, and robots
+directives are all generated without any configuration.
 
 ## What's Included
 
 Great Docs generates and injects SEO-related files and metadata automatically:
 
-- `sitemap.xml`: helps search engines discover all your pages
-- `robots.txt`: guides crawler behavior and references your sitemap
-- Canonical URLs**: prevents duplicate content issues
-- Meta descriptions**: provides search result snippets
-- JSON-LD structured data: enables rich search results
-- page title templates: consistent `Page Title | Site Name` format
+- **`sitemap.xml`**: helps search engines discover all your pages
+- **`robots.txt`**: guides crawler behavior and references your sitemap
+- **Canonical URLs**: prevents duplicate content issues
+- **Meta descriptions**: provides search result snippets
+- **JSON-LD structured data**: enables rich search results
+- **Page title templates**: consistent `Page Title | Site Name` format
+
+All of these are generated at build time. You can customize any of them or disable features you
+don't need.
 
 ## Auditing SEO Health
 
-After building your site, run the SEO audit command to check for issues:
+After building your site, you can audit the generated output to verify that all SEO features are in
+place. Run the SEO audit command to check for issues:
 
 ```{.bash filename="Terminal"}
 great-docs seo
@@ -51,6 +59,8 @@ This produces a report like this:
 ✅ All SEO checks passed!
 ```
 
+The audit checks every HTML page in the built site and reports missing or malformed SEO elements.
+
 ### Fixing Issues
 
 Use `--fix` to automatically generate missing SEO files:
@@ -59,7 +69,8 @@ Use `--fix` to automatically generate missing SEO files:
 great-docs seo --fix
 ```
 
-This will create `sitemap.xml` and `robots.txt` if they're missing.
+This creates `sitemap.xml` and `robots.txt` if they're missing and patches any fixable issues in the
+built output.
 
 ### CI Integration
 
@@ -80,7 +91,8 @@ great-docs seo --json
 ```
 
 The command exits with code `1` if critical issues are found, making it easy to fail CI builds on
-SEO problems.
+SEO problems. Pair this with `great-docs lint` and `great-docs links` for a comprehensive
+pre-deployment check.
 
 ## Configuration
 
@@ -126,17 +138,18 @@ seo:
   default_description: null  # Falls back to package description
 ```
 
-Most users won't need to change these defaults as they're optimized for typical Python documentation
-sites.
+Most users won't need to change these defaults. They are optimized for typical Python documentation
+sites, and every feature can be toggled independently.
 
 ## Sitemap Configuration
 
 The sitemap tells search engines about all your pages and how often they change. Great Docs
-generates different priorities and change frequencies based on page type.
+generates different priorities and change frequencies based on page type, so your most important
+content gets crawled first.
 
 ### Page Types
 
-Pages are automatically categorized:
+Pages are automatically categorized based on their path in the built site:
 
 | Type | Example Paths | Default Priority | Default Changefreq |
 |------|---------------|------------------|-------------------|
@@ -145,6 +158,9 @@ Pages are automatically categorized:
 | `reference` | `reference/*.html` | 0.8 | monthly |
 | `changelog` | `changelog.html` | 0.6 | weekly |
 | `default` | Everything else | 0.5 | monthly |
+
+These defaults work well for most projects. The subsections below show how to override them if your
+site has different needs.
 
 ### Customizing Priorities
 
@@ -174,7 +190,8 @@ seo:
 ## Robots.txt Configuration
 
 The `robots.txt` file tells search engine crawlers which pages to index and where to find your
-sitemap.
+sitemap. Great Docs generates one automatically, but you can customize it for more control over
+crawler behavior.
 
 ### Default Behavior
 
@@ -227,8 +244,9 @@ seo:
 
 ## Canonical URLs
 
-Canonical URLs tell search engines which version of a page is the "official" one, preventing
-duplicate content issues when your site is accessible via multiple URLs.
+Canonical URLs tell search engines which version of a page is the "official" one. This prevents
+duplicate content issues when your site is accessible via multiple URLs (for example, with and
+without a trailing slash, or through both a custom domain and `github.io`).
 
 ### Auto-Detection
 
@@ -249,7 +267,8 @@ seo:
     base_url: https://docs.myproject.com/
 ```
 
-The trailing slash is important (Great Docs will add it if missing).
+The trailing slash is important (Great Docs will add it if missing). Every page in the built site
+receives a `<link rel="canonical">` tag pointing to its full URL.
 
 ## Page Titles
 
@@ -282,12 +301,13 @@ seo:
 
 ## Structured Data (JSON-LD)
 
-Great Docs injects [JSON-LD](https://json-ld.org/) structured data into your pages, enabling rich
-search results with additional context about your software.
+Structured data helps search engines understand what your site is about beyond plain text. Great
+Docs injects [JSON-LD](https://json-ld.org/) structured data into your pages, enabling rich search
+results with additional context about your software.
 
 ### What Gets Injected
 
-On the homepage and reference pages, Great Docs adds:
+On the homepage and reference pages, Great Docs adds a schema block like this:
 
 ```json
 {
@@ -325,8 +345,9 @@ seo:
 
 ## Meta Descriptions
 
-Meta descriptions appear in search result snippets. Great Docs automatically generates them from
-your page content.
+Meta descriptions are the short summaries that appear below page titles in search results. A good
+description improves click-through rates because it tells searchers exactly what they'll find on the
+page. Great Docs generates these automatically from your content.
 
 ### Auto-Generation
 
@@ -344,7 +365,7 @@ seo:
   default_description: "Documentation for My Package, a Python library for..."
 ```
 
-If not set, the package description from `pyproject.toml` is used.
+If not set, the package description from `pyproject.toml` is used as a fallback.
 
 ### Page-Level Descriptions
 
@@ -359,7 +380,8 @@ description: "How to install My Package using pip, conda, or from source."
 
 ## Noindex for Internal Pages
 
-Some pages shouldn't appear in search results. Great Docs automatically adds `noindex` directives to
+Not every page belongs in search results. Internal pages, drafts, or experimental features can
+clutter search results and confuse users. Great Docs automatically adds `noindex` directives to
 internal pages like the Skills page.
 
 ### Manual Noindex
@@ -374,6 +396,9 @@ robots: "noindex, nofollow"
 ```
 
 ## Disabling SEO Features
+
+If you handle SEO through other means (for example, a hosting platform that generates sitemaps for
+you), you can disable individual features or all of them at once.
 
 To completely disable SEO generation:
 
@@ -397,6 +422,9 @@ seo:
 ```
 
 ## Best Practices
+
+The automatic features cover the technical foundations. These recommendations help you get the most
+out of them.
 
 ### For Maximum SEO Effectiveness
 
@@ -430,9 +458,10 @@ And ensure your DNS is configured correctly (see
 ## Next Steps
 
 Good SEO makes your documentation discoverable. Great Docs handles the technical foundations
-(sitemaps, canonical URLs, meta tags) automatically, so you can focus on writing clear titles and
-descriptions.
+(sitemaps, canonical URLs, meta tags, structured data) automatically, so you can focus on writing
+clear titles and descriptions that represent your content well.
 
 - [Social Cards](social-cards.qmd) controls how links appear when shared on social platforms
 - [Deployment](deployment.qmd) covers publishing to GitHub Pages with SEO settings applied
+- [Linting](linting.qmd) catches documentation quality issues that can also affect search relevance
 - [Configuration](configuration.qmd) covers all `great-docs.yml` options including SEO settings

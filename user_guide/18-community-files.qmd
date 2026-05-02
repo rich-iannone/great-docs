@@ -7,9 +7,19 @@ tags: [Quality, GitHub]
 
 # Community Files
 
-Great Docs automatically detects standard community files in your project root and integrates them into your documentation site. When found, these files become navigable pages with links in the **Community** section of the homepage's right sidebar.
+Open-source projects rely on more than just code. Files like `CONTRIBUTING.md`,
+`CODE_OF_CONDUCT.md`, and `SECURITY.md` set expectations for how people participate in and interact
+with a project. Most projects already have these files, but they often sit in the repository root
+where casual users never see them.
+
+Great Docs automatically detects these standard community files and turns them into styled pages on
+your documentation site. Each detected file gets its own page and a link in the **Community**
+section of the homepage's right sidebar. No configuration is needed. If the file exists, it becomes
+part of your site.
 
 ## Supported Files
+
+Great Docs recognizes the following community files:
 
 | File | Generated Page | Sidebar Link |
 |------|---------------|--------------|
@@ -17,23 +27,28 @@ Great Docs automatically detects standard community files in your project root a
 | `CODE_OF_CONDUCT.md` | `code-of-conduct.qmd` | "Code of conduct" |
 | `ROADMAP.md` [version-badge new 0.2] | `roadmap.qmd` | "Project roadmap" |
 | `SECURITY.md` [version-badge new 0.3] | `security.qmd` | "Security policy" |
+| `CITATION.cff` | `citation.qmd` | "Citing *package*" |
 
-These files follow the common conventions used by most open-source projects, so if you already have them, they'll work automatically.
+These files follow the common conventions used by most open-source projects, so if you already have
+them, they'll work automatically.
 
 ## How It Works
 
-During `great-docs build`, the following happens for each detected community file:
+During `great-docs build`, each community file goes through a simple pipeline:
 
-1. **Detects the file** – checks for the file in your project root (and `.github/` as a fallback)
-2. **Strips the title** – removes the first `# ` heading line (since Great Docs adds its own title)
-3. **Generates a `.qmd` file** – writes the content to the build directory with appropriate frontmatter
-4. **Adds a sidebar link** – adds an entry to the Community section of the homepage's right margin
+1. **Detects the file** in your project root (and `.github/` as a fallback)
+2. **Strips the title** by removing the first `# ` heading line (since Great Docs adds its own title
+via frontmatter)
+3. **Generates a `.qmd` file** in the build directory with appropriate frontmatter
+4. **Adds a sidebar link** in the Community section of the homepage's right margin
 
-The original Markdown content is preserved, so any formatting, images, or links in your community files carry through to the documentation site.
+The original Markdown content is preserved, so any formatting, images, or links in your community
+files carry through to the documentation site. The generated `.qmd` files are recreated on every
+build, so changes to the source files are always picked up.
 
 ## Example
 
-A project with these files:
+To see how everything comes together, consider a project with these files:
 
 ```
 my-package/
@@ -56,16 +71,19 @@ Community
 ├── Security policy
 ```
 
-Clicking any link navigates to the corresponding page.
+Clicking any link navigates to the corresponding page. If any of these files are missing, the
+corresponding link is simply omitted.
 
 ## ROADMAP.md [version-badge new 0.2]
 
-A `ROADMAP.md` file is ideal for communicating your project's future direction to users and contributors. Common sections include:
+A `ROADMAP.md` file communicates your project's future direction to users and contributors. This
+helps potential contributors understand where they can have the most impact and gives users
+confidence that the project is actively maintained. Common sections include:
 
-- **In Progress** – features currently being developed
-- **Near Term** – planned for the next release cycle
-- **Medium Term** – targeted for upcoming major versions
-- **Long Term** – aspirational features on the horizon
+- **In Progress**: features currently being developed
+- **Near Term**: planned for the next release cycle
+- **Medium Term**: targeted for upcoming major versions
+- **Long Term**: aspirational features on the horizon
 
 ### Example Structure
 
@@ -92,18 +110,20 @@ Brief description...
 
 ::: {.callout-tip}
 ## Keep it forward-looking
-Focus on unshipped features. Shipped features are better documented in your Changelog (auto-generated from GitHub Releases) or release notes.
+Focus on unshipped features. Shipped features are better documented in your Changelog
+(auto-generated from GitHub Releases) or release notes.
 :::
 
 ## CONTRIBUTING.md
 
-The `CONTRIBUTING.md` file tells potential contributors how to get involved. Common sections:
+A clear `CONTRIBUTING.md` lowers the barrier for new contributors. Without one, people who want to
+help may not know where to start or what process to follow. Common sections include:
 
-- Development setup instructions
-- How to run tests
-- Code style guidelines
-- Pull request process
-- Issue reporting guidelines
+- development setup instructions
+- how to run tests
+- code style guidelines
+- pull request process
+- issue reporting guidelines
 
 ### Example Structure
 
@@ -127,11 +147,14 @@ We welcome contributions! Here's how to get started.
 
 ## SECURITY.md [version-badge new 0.3]
 
-A `SECURITY.md` file tells users how to responsibly report security vulnerabilities. GitHub recognizes this file and displays it under the **Security** tab of your repository.
+A `SECURITY.md` file tells users how to responsibly report security vulnerabilities. Without one,
+people who discover a vulnerability may open a public issue, exposing the problem before a fix is
+available. GitHub also recognizes this file and displays it under the **Security** tab of your
+repository.
 
 Great Docs looks for `SECURITY.md` in two locations (in order):
 
-1. Project root (`SECURITY.md`)
+1. project root (`SECURITY.md`)
 2. `.github/` directory (`.github/SECURITY.md`)
 
 ### Example Structure
@@ -158,7 +181,8 @@ and credit you in the release notes.
 
 ### Disabling the Security Page
 
-To detect `SECURITY.md` but not generate a page for it, set `show_security: false` in `great-docs.yml`:
+To detect `SECURITY.md` but not generate a page for it, set `show_security: false` in
+`great-docs.yml`:
 
 ```yaml
 site:
@@ -167,7 +191,9 @@ site:
 
 ## CODE_OF_CONDUCT.md
 
-A code of conduct sets expectations for community behavior and helps create a welcoming environment. Most projects adopt a standard like the [Contributor Covenant](https://www.contributor-covenant.org/).
+A code of conduct sets expectations for community behavior and signals that your project takes a
+welcoming environment seriously. Most projects adopt a standard like the
+[Contributor Covenant](https://www.contributor-covenant.org/) rather than writing one from scratch.
 
 ### Using the Contributor Covenant
 
@@ -179,22 +205,58 @@ curl -o CODE_OF_CONDUCT.md https://www.contributor-covenant.org/version/2/1/code
 
 Then customize the contact email at the bottom of the file.
 
+## CITATION.cff
+
+If your project has a `CITATION.cff` file, Great Docs generates a dedicated citation page
+(`citation.qmd`) and adds a "Citing *package*" link to the Community sidebar. The generated page
+includes a formatted author list, a text citation, and a BibTeX entry, all derived from the
+structured data in the CFF file.
+
+The `CITATION.cff` file is only used for the citation page. Author information displayed elsewhere
+on the site (such as the Developers section of the homepage sidebar) comes from `great-docs.yml`
+first, with `pyproject.toml` as a fallback.
+
+### Example Structure
+
+```{.yaml filename="CITATION.cff"}
+cff-version: 1.2.0
+title: "My Package"
+message: "If you use this software, please cite it as below."
+type: software
+authors:
+  - family-names: Smith
+    given-names: Jane
+    orcid: "https://orcid.org/0000-0002-1234-5678"
+version: 1.0.0
+date-released: "2025-06-15"
+license: MIT
+repository-code: "https://github.com/example/my-package"
+```
+
+If a `repository-code` or `url` field is present, the citation page links back to the `CITATION.cff`
+file on GitHub.
+
 ## `.github/` Directory Fallback
 
-For `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and `SECURITY.md`, Great Docs also checks the `.github/` directory if the file isn't found in the project root. This matches GitHub's own convention for repository-level community health files.
+For `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and `SECURITY.md`, Great Docs checks the `.github/`
+directory if the file isn't found in the project root. This matches GitHub's own convention for
+repository-level community health files, so projects that follow the GitHub standard layout work
+without changes.
 
 ## Fallback Behavior
 
-If a community file doesn't exist, the build continues without error. The corresponding link simply won't appear in the sidebar. You can add community files at any time (they'll be automatically detected on the next build).
-
-## Combining with Citation
-
-Great Docs also auto-detects `CITATION.cff` files. Unlike community files, the citation is displayed as a formatted block in the homepage sidebar (not as a separate page). See [pyproject.toml metadata](#) for details on how citation information is surfaced.
+If a community file doesn't exist, the build continues without error. The corresponding link simply
+won't appear in the sidebar. You can add community files at any time and they'll be automatically
+detected on the next build. This means you can introduce community files gradually as your project
+matures.
 
 ## Next Steps
 
-Community files give your project a professional, welcoming presence. Great Docs detects them automatically, so adding a `CONTRIBUTING.md` or `CODE_OF_CONDUCT.md` to your repo is all it takes to get a styled page in your documentation site.
+Community files give your project a professional, welcoming presence without any configuration.
+Adding a `CONTRIBUTING.md` or `CODE_OF_CONDUCT.md` to your repository is all it takes to get a
+styled page in your documentation site.
 
-- [Changelog](changelog.qmd) covers auto-generated changelog from GitHub Releases
+- [Changelog](changelog.qmd) covers auto-generating a changelog from GitHub Releases
+- [Linting](linting.qmd) helps you catch broken links and other issues in community file pages
+- [SEO & Metadata](seo.qmd) explains how community pages are included in site metadata
 - [Configuration](configuration.qmd) covers all `great-docs.yml` options
-- [Building & Previewing](building.qmd) explains the full build pipeline

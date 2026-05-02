@@ -7,7 +7,15 @@ tags: [CLI, Content]
 
 # CLI Documentation
 
-Great Docs can automatically generate reference documentation for Click-based command-line interfaces. This creates terminal-style pages showing the `--help` output for each command.
+If your Python package includes a command-line interface built with
+[Click](https://click.palletsprojects.com/), Great Docs can generate reference pages for it
+automatically. Each command and subcommand gets its own page showing the full `--help` output in a
+terminal-style format. This means your CLI documentation stays perfectly in sync with your code,
+because the help text is captured directly from Click at build time.
+
+This page covers how to enable CLI documentation, how Great Docs discovers your commands, what the
+generated pages look like, and how to write CLI help text that produces clear, useful reference
+pages.
 
 ## Enabling CLI Documentation
 
@@ -18,26 +26,35 @@ cli:
   enabled: true
 ```
 
-That's it! Great Docs will automatically discover and document your CLI.
+With this single setting, Great Docs handles the rest: it finds your Click commands, captures their
+help output, and generates reference pages during every build. No additional configuration is needed
+for standard project layouts.
 
 ## How It Works
 
-When CLI documentation is enabled, Great Docs:
+When CLI documentation is enabled, Great Docs runs a pipeline that mirrors how it handles API
+documentation: discover, extract, generate, and integrate. Here's what happens during each build:
 
-1. **Finds your CLI** – Looks for Click commands in common locations
-2. **Discovers entry point** – Reads `[project.scripts]` from `pyproject.toml`
-3. **Extracts help text** – Captures `--help` output for each command
-4. **Generates pages** – Creates `.qmd` files in `reference/cli/`
-5. **Updates navigation** – Adds CLI section to the sidebar
+1. **Finds your CLI**: looks for Click commands in common locations
+2. **Discovers entry point**: reads `[project.scripts]` from `pyproject.toml`
+3. **Extracts help text**: captures `--help` output for each command and subcommand
+4. **Generates pages**: creates `.qmd` files in `reference/cli/`
+5. **Updates navigation**: adds a CLI section to the sidebar
+
+The pipeline runs as part of `great-docs build`, so CLI pages are always regenerated from the
+current state of your code. You never need to update them manually.
 
 ## Auto-Discovery
 
-Great Docs searches for Click commands in these locations (in order):
+Most Click-based packages follow a handful of common patterns for where the CLI entry point lives.
+Great Docs checks these locations automatically, so you rarely need to tell it where to look:
 
-1. `your_package.cli` – The most common location
-2. `your_package.__main__` – For `python -m your_package` support
-3. `your_package.main` – Alternative location
-4. Entry point module from `[project.scripts]`
+1. `your_package.cli`: the most common location
+2. `your_package.__main__`: for `python -m your_package` support
+3. `your_package.main`: alternative location
+4. entry point module from `[project.scripts]`
+
+Great Docs tries each location in order and uses the first one that contains a Click command.
 
 ### Entry Point Detection
 
@@ -52,7 +69,8 @@ Great Docs uses `my-cli` as the command name in documentation.
 
 ## Explicit Configuration
 
-For non-standard setups, specify the module and command name:
+If your CLI lives in a non-standard location, or if auto-discovery picks up the wrong command
+object, you can specify the module and command name explicitly in `great-docs.yml`:
 
 ```{.yaml filename="great-docs.yml"}
 cli:
@@ -61,7 +79,15 @@ cli:
   name: app                      # Name of the Click command object
 ```
 
+The `module` value should be the dotted import path to the Python module containing your Click group
+or command. The `name` value is the variable name of the Click command object within that module.
+With explicit configuration, Great Docs skips auto-discovery entirely and goes straight to the
+specified location.
+
 ## Generated Output
+
+Once Great Docs discovers your CLI, it generates a set of reference pages that integrate into the
+existing site navigation. Here's what to expect.
 
 ### Sidebar Structure
 
@@ -102,11 +128,21 @@ The styling mimics a terminal with:
 - Monospace font
 - Proper spacing for readability
 
+The result is a set of browsable reference pages that feel familiar to anyone who has used `--help`
+in a terminal, but with the convenience of being searchable and navigable within your documentation
+site.
+
 ## Writing Good CLI Help
 
-Great Docs displays your Click help text as-is. To get the best documentation:
+The quality of your CLI documentation depends entirely on the help text you write in your Click
+decorators and docstrings. Great Docs displays this text as-is, so investing in clear, descriptive
+help strings pays off directly in the generated pages.
 
 ### Use Descriptive Help Text
+
+Every Click command should have a docstring that explains what it does. The first line becomes the
+short description shown in `--help` listings, and the full text appears on the command's dedicated
+reference page:
 
 ```{.python filename="cli.py"}
 @click.command()
@@ -126,6 +162,9 @@ def build(path, output, verbose):
 
 ### Document All Options
 
+Every `@click.option()` should include a `help=` string. Options without help text appear in the
+reference page but give readers no indication of what they do:
+
 ```{.python filename="cli.py"}
 @click.option(
     "--format",
@@ -136,6 +175,9 @@ def build(path, output, verbose):
 ```
 
 ### Use Click Groups for Subcommands
+
+If your CLI has multiple commands, use a `@click.group()` to organize them. Great Docs generates a
+separate page for each subcommand and links them together in the sidebar:
 
 ```{.python filename="cli.py"}
 @click.group()
@@ -154,9 +196,13 @@ def build():
     ...
 ```
 
+Well-structured Click groups produce the clearest documentation. Each subcommand becomes its own
+page, and the group's docstring serves as the overview for the CLI section.
+
 ## Example: Great Docs CLI
 
-Great Docs itself uses this feature. Its CLI documentation shows:
+Great Docs uses this feature to document its own CLI. The generated pages show how the main command
+and its subcommands appear in the reference section:
 
 **Main command (`great-docs`):**
 
@@ -193,25 +239,35 @@ Options:
   --help        Show this message and exit.
 ```
 
+You can see these pages live in the Great Docs reference section. They are regenerated on every
+build from the actual Click commands, so they always reflect the current set of options and
+subcommands.
+
 ## Styling
 
-CLI documentation uses special styling that:
+CLI reference pages use a distinct visual treatment that sets them apart from API reference pages:
 
-- Disables the sidebar filter (CLIs are usually small)
-- Removes breadcrumb navigation
-- Uses a wider content area on large screens
-- Maintains responsive design on mobile
+- disables the sidebar filter (CLIs are usually small)
+- removes breadcrumb navigation
+- uses a wider content area on large screens
+- maintains responsive design on mobile
+
+These styling choices keep CLI pages clean and focused, matching the terminal-centric nature of the
+content.
 
 ## Troubleshooting
+
+If CLI documentation isn't working as expected, here are the most common issues and how to resolve
+them.
 
 ### CLI Not Detected
 
 If your CLI isn't found:
 
-1. Verify Click is installed
-2. Check the module path is correct
-3. Ensure the Click command is importable
-4. Use explicit configuration:
+1. verify Click is installed
+2. check the module path is correct
+3. ensure the Click command is importable
+4. use explicit configuration:
 
 ```{.yaml filename="great-docs.yml"}
 cli:
@@ -224,13 +280,15 @@ cli:
 
 If commands show minimal help:
 
-1. Add docstrings to your Click functions
-2. Add `help=` to all options
-3. Use `@click.argument()` with proper names
+1. add docstrings to your Click functions
+2. add `help=` to all options
+3. use `@click.argument()` with proper names
 
 ## Next Steps
 
-CLI documentation works best when your Click commands already have good help text and docstrings. Great Docs takes what you've written and turns it into browsable, searchable reference pages that stay in sync with your code.
+CLI documentation works best when your Click commands already have good help text and docstrings.
+Great Docs takes what you've written and turns it into browsable, searchable reference pages that
+stay in sync with your code.
 
 - [User Guides](user-guides.qmd) explains how to add narrative documentation
 - [Deployment](deployment.qmd) covers publishing to GitHub Pages

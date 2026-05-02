@@ -228,7 +228,7 @@ left and the dark-mode gradient on the right:
 ```{=html}
 <style>
 @media (max-width: 576px) {
-  .gd-preset-desc { font-size: 0.72em; }
+  .gd-preset-desc { font-size: 0.6em; }
   .gd-preset-bar { height: 34px; font-size: 0.6em; }
 }
 </style>

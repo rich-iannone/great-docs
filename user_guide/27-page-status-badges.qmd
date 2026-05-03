@@ -51,7 +51,7 @@ display no badge.
 Great Docs ships with five built-in statuses, each with a [Lucide](https://lucide.dev/icons/) icon,
 color, and description:
 
-| Key            | Label          | Icon               | Color   | Description                         |
+| Key            | Label          | Icon                | Color   | Description                         |
 |----------------|----------------|---------------------|---------|-------------------------------------|
 | `new`          | New            | `sparkles`          | Green   | Recently added                      |
 | `updated`      | Updated        | `refresh-cw`        | Blue    | Recently updated                    |

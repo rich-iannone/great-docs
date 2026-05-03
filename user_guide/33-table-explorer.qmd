@@ -131,7 +131,8 @@ Tables are paginated at **20 rows per page** by default. The pagination bar show
 - **First**, **Previous**, **Next**, and **Last** navigation buttons
 - page number buttons with ellipsis for large page counts
 
-The row count updates to reflect any active filters (e.g., "Showing 1–5 of 5 rows (filtered from 24)").
+The row count updates to reflect any active filters (e.g., "Showing 1–5 of 5 rows (filtered from
+24)").
 
 To disable pagination and show all rows at once, set `page_size=0`:
 
@@ -278,18 +279,28 @@ tbl_explorer(
 
 ## Progressive Enhancement
 
+Interactive widgets can be fragile: if JavaScript fails to load or the page is consumed outside a
+browser (RSS readers, email digests, search engine crawlers), readers see nothing. The table
+explorer avoids this problem.
+
 The `tbl_explorer()` output is designed with **progressive enhancement** in mind. The initial HTML
 contains a fully rendered static table (the first page of data) that is readable without JavaScript.
 When JavaScript is available, the static table is enhanced with interactive controls.
 
 This means:
 
-- **RSS feeds and email** — readers see a usable static table
-- **Search engines** — table content is indexable
-- **Accessibility** — the base table works with screen readers
-- **No-JS environments** — content is still visible
+- **RSS feeds and email**: readers see a usable static table
+- **Search engines**: table content is indexable
+- **Accessibility**: the base table works with screen readers
+- **No-JS environments**: content is still visible
+
+Because the static fallback is a real HTML table (not a placeholder), it carries semantic structure
+that assistive technology and search engines can parse directly.
 
 ## Choosing Between `tbl_preview()` and `tbl_explorer()`
+
+Great Docs offers two table display functions that serve different purposes. Use this comparison to
+decide which one fits your page:
 
 | | `tbl_preview()` | `tbl_explorer()` |
 |---|---|---|
@@ -300,7 +311,13 @@ This means:
 | **Large datasets** | Efficient (shows only head + tail) | All data embedded (watch page weight) |
 | **Dark mode** | Full support | Full support |
 
+In general, reach for `tbl_preview()` when you want a quick, lightweight snapshot and
+`tbl_explorer()` when readers need to search, sort, or page through the data.
+
 ## Parameters Reference
+
+All parameters for `tbl_explorer()` are listed below. Every parameter has a sensible default, so in
+most cases you only need to pass the data source itself.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -333,6 +350,7 @@ The table explorer turns static data tables into interactive views with filterin
 pagination, and CSV export. Use it when readers need to search through larger datasets or compare
 specific rows.
 
-- [Table Previews](table-previews.qmd) covers a lighter-weight table display for quick data summaries
+- [Table Previews](table-previews.qmd) covers a lighter-weight table display for quick data
+summaries
 - [Scale-to-Fit](scale-to-fit.qmd) keeps wide tables readable on narrow screens
 - [Configuration](configuration.qmd) covers all `great-docs.yml` options

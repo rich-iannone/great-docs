@@ -350,7 +350,8 @@ label.
 ### Row Numbers
 
 Row numbers appear in a left-hand gutter by default, starting from 0 to match Python, Polars, and
-Pandas 0-based indexing. They reflect the original row positions, even when head/tail splitting is active. To hide them:
+Pandas 0-based indexing. They reflect the original row positions, even when head/tail splitting is
+active. To hide them:
 
 ```{python}
 tbl_preview(
@@ -421,7 +422,8 @@ tbl_preview(
 )
 ```
 
-This minimal style works well for small inline reference tables where the chrome would be distracting.
+This minimal style works well for small inline reference tables where the chrome would be
+distracting.
 
 ### Column Width Control
 

@@ -4,7 +4,7 @@ from typing import Any
 
 
 def enable_tbl_preview(**kwargs: Any) -> None:
-    """Register `tbl_preview` as the default DataFrame display formatter.
+    """Register `tbl_preview()` as the default DataFrame display formatter.
 
     After calling this, any Polars or Pandas DataFrame that is the last expression in a cell (or
     passed to `display()`) will be rendered as a `tbl_preview()` table instead of the library's
@@ -69,7 +69,37 @@ def enable_tbl_preview(**kwargs: Any) -> None:
 
 
 def disable_tbl_preview() -> None:
-    """Remove the `tbl_preview` display formatter and restore defaults."""
+    """Remove the `tbl_preview()` display formatter and restore defaults.
+
+    After calling this, any Polars or Pandas DataFrame will revert to using the library's default
+    HTML representation instead of `tbl_preview()`. This undoes the effect of
+    `enable_tbl_preview()`.
+
+    Returns
+    -------
+    None
+        The formatter is removed as a side effect. IPython suppresses `None` output, so
+        nothing is printed in the cell.
+
+    Examples
+    --------
+    In a notebook or `.qmd` file, first enable the preview formatter:
+
+    ```python
+    import great_docs as gd
+    gd.enable_tbl_preview(n_head=8)
+    ```
+
+    DataFrames now render as `tbl_preview()` tables:
+
+    ```python
+    import pandas as pd
+    pd.read_csv("data.csv")  # rendered as a preview table
+    ```
+
+    Call `disable_tbl_preview()` to revert to the default display:
+
+    ```python
     try:
         ip = _get_ipython()
     except RuntimeError:

@@ -333,14 +333,12 @@ reference:
         - GreatDocs.preview
         - GreatDocs.check_links
 
-    - title: Table Preview
-      desc: Generate styled HTML table previews from any tabular data source
+    - title: Table Preview/Explorer
+      desc: >-
+        Generate styled HTML table previews from any tabular data source with
+        `tbl_preview()`, and explore tables interactively with `tbl_explorer()`.
       contents:
         - tbl_preview
         - enable_tbl_preview
         - disable_tbl_preview
-
-    - title: Table Explorer
-      desc: Generate interactive HTML table explorers with sorting, filtering, and pagination
-      contents:
         - tbl_explorer

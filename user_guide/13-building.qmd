@@ -108,7 +108,7 @@ The `_site/` subdirectory contains the final HTML output. This is the directory 
 
 Everything outside of `_site/` is intermediate Quarto source. You generally do not need to inspect these files, but they can be useful for debugging rendering issues.
 
-## Building from a Remote Repository {#from-repo} [version-badge new 0.11]
+## Building from a Remote Repository [version-badge new 0.11] {#from-repo}
 
 The `--from-repo` flag lets you build documentation for any Git-hosted package without cloning it yourself. Great Docs handles the entire workflow: cloning the repository, creating an isolated virtual environment, installing the package and its dependencies, running the full build pipeline, and copying the finished site to a local directory.
 

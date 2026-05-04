@@ -1323,3 +1323,183 @@ def test_proofread_only_and_ignore_rules(mock_check, mock_run):
             ],
         )
         assert result.exit_code == 0
+
+
+# =========================================================================
+# `great-docs versions` command
+# =========================================================================
+
+
+def test_versions_no_config():
+    """versions command with no versions configured."""
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        Path("pyproject.toml").write_text('[project]\nname = "pkg"\n')
+        Path("great-docs.yml").write_text("{}\n")
+        result = runner.invoke(cli, ["versions", "--project-path", "."])
+        assert result.exit_code == 0
+        assert "No versions configured" in result.output
+
+
+def test_versions_list():
+    """versions command lists configured versions."""
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        Path("pyproject.toml").write_text('[project]\nname = "pkg"\n')
+        Path("great-docs.yml").write_text("versions:\n  - '0.3'\n  - '0.2'\n")
+        result = runner.invoke(cli, ["versions", "--project-path", "."])
+        assert result.exit_code == 0
+        assert "0.3" in result.output
+        assert "0.2" in result.output
+
+
+def test_versions_check_valid():
+    """versions --check succeeds with valid config."""
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        Path("pyproject.toml").write_text('[project]\nname = "pkg"\n')
+        Path("great-docs.yml").write_text("versions:\n  - '0.3'\n  - '0.2'\n")
+        result = runner.invoke(cli, ["versions", "--check", "--project-path", "."])
+        assert result.exit_code == 0
+        assert "version(s) configured" in result.output
+
+
+def test_versions_check_with_prerelease():
+    """versions shows prerelease status."""
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        Path("pyproject.toml").write_text('[project]\nname = "pkg"\n')
+        Path("great-docs.yml").write_text(
+            "versions:\n  - tag: '0.4'\n    label: '0.4 (dev)'\n    prerelease: true\n  - '0.3'\n"
+        )
+        result = runner.invoke(cli, ["versions", "--project-path", "."])
+        assert result.exit_code == 0
+        assert "prerelease" in result.output
+
+
+def test_versions_with_git_ref():
+    """versions shows git_ref as api source."""
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        Path("pyproject.toml").write_text('[project]\nname = "pkg"\n')
+        Path("great-docs.yml").write_text(
+            "versions:\n  - tag: '0.3'\n    label: '0.3'\n    git_ref: v0.3.0\n  - '0.2'\n"
+        )
+        result = runner.invoke(cli, ["versions", "--project-path", "."])
+        assert result.exit_code == 0
+        assert "v0.3.0" in result.output
+
+
+# =========================================================================
+# `great-docs api-snapshot` command
+# =========================================================================
+
+
+@patch("great_docs._api_diff.snapshot_from_griffe")
+@patch("great_docs._api_diff._detect_package_name", return_value="mypkg")
+def test_api_snapshot_head(mock_detect, mock_snap):
+    """api-snapshot with no args snapshots HEAD."""
+    mock_snap_obj = MagicMock()
+    mock_snap_obj.symbol_count = 42
+    mock_snap.return_value = mock_snap_obj
+
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        Path("pyproject.toml").write_text('[project]\nname = "mypkg"\n')
+        result = runner.invoke(cli, ["api-snapshot", "--project-path", "."])
+        assert result.exit_code == 0
+        assert "42 symbols" in result.output
+        mock_snap_obj.save.assert_called_once()
+
+
+@patch("great_docs._api_diff._detect_package_name", return_value=None)
+def test_api_snapshot_no_package(mock_detect):
+    """api-snapshot fails when no package can be detected."""
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        Path("pyproject.toml").write_text("{}")
+        result = runner.invoke(cli, ["api-snapshot", "--project-path", "."])
+        assert result.exit_code != 0
+        assert "Could not detect package name" in result.output
+
+
+@patch("great_docs._api_diff.snapshot_at_tag")
+@patch("great_docs._api_diff._detect_package_name", return_value="mypkg")
+def test_api_snapshot_specific_tag(mock_detect, mock_snap):
+    """api-snapshot with a specific version tag."""
+    mock_snap_obj = MagicMock()
+    mock_snap_obj.symbol_count = 10
+    mock_snap.return_value = mock_snap_obj
+
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        Path("pyproject.toml").write_text('[project]\nname = "mypkg"\n')
+        result = runner.invoke(cli, ["api-snapshot", "v0.2.0", "--project-path", "."])
+        assert result.exit_code == 0
+        assert "10 symbols" in result.output
+
+
+@patch("great_docs._api_diff.list_version_tags", return_value=["v0.1.0", "v0.2.0"])
+@patch("great_docs._api_diff.snapshot_at_tag")
+@patch("great_docs._api_diff._detect_package_name", return_value="mypkg")
+def test_api_snapshot_all_tags(mock_detect, mock_snap, mock_tags):
+    """api-snapshot --all-tags snapshots all versions."""
+    mock_snap_obj = MagicMock()
+    mock_snap_obj.symbol_count = 5
+    mock_snap.return_value = mock_snap_obj
+
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        Path("pyproject.toml").write_text('[project]\nname = "mypkg"\n')
+        result = runner.invoke(cli, ["api-snapshot", "--all-tags", "--project-path", "."])
+        assert result.exit_code == 0
+        assert "Saved" in result.output
+
+
+@patch("great_docs._api_diff.list_version_tags", return_value=[])
+@patch("great_docs._api_diff._detect_package_name", return_value="mypkg")
+def test_api_snapshot_all_tags_no_tags(mock_detect, mock_tags):
+    """api-snapshot --all-tags with no tags exits with error."""
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        Path("pyproject.toml").write_text('[project]\nname = "mypkg"\n')
+        result = runner.invoke(cli, ["api-snapshot", "--all-tags", "--project-path", "."])
+        assert result.exit_code != 0
+        assert "No version tags found" in result.output
+
+
+@patch("great_docs._api_diff.snapshot_from_griffe")
+@patch("great_docs._api_diff._detect_package_name", return_value="mypkg")
+def test_api_snapshot_skip_existing(mock_detect, mock_snap):
+    """api-snapshot skips existing files without --force."""
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        Path("pyproject.toml").write_text('[project]\nname = "mypkg"\n')
+        snap_dir = Path(".great-docs") / "snapshots"
+        snap_dir.mkdir(parents=True)
+        (snap_dir / "dev.json").write_text("{}")
+
+        result = runner.invoke(cli, ["api-snapshot", "--project-path", "."])
+        assert result.exit_code == 0
+        assert "already exists" in result.output
+        mock_snap.assert_not_called()
+
+
+@patch("great_docs._api_diff.snapshot_from_griffe")
+@patch("great_docs._api_diff._detect_package_name", return_value="mypkg")
+def test_api_snapshot_force_overwrite(mock_detect, mock_snap):
+    """api-snapshot --force overwrites existing files."""
+    mock_snap_obj = MagicMock()
+    mock_snap_obj.symbol_count = 3
+    mock_snap.return_value = mock_snap_obj
+
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        Path("pyproject.toml").write_text('[project]\nname = "mypkg"\n')
+        snap_dir = Path(".great-docs") / "snapshots"
+        snap_dir.mkdir(parents=True)
+        (snap_dir / "dev.json").write_text("{}")
+
+        result = runner.invoke(cli, ["api-snapshot", "--force", "--project-path", "."])
+        assert result.exit_code == 0
+        assert "3 symbols" in result.output

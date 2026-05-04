@@ -100,6 +100,15 @@ def disable_tbl_preview() -> None:
     Call `disable_tbl_preview()` to revert to the default display:
 
     ```python
+    gd.disable_tbl_preview()
+    ```
+
+    DataFrames now use the library's default HTML representation again:
+
+    ```python
+    pd.read_csv("data.csv")  # rendered with the default pandas HTML
+    ```
+    """
     try:
         ip = _get_ipython()
     except RuntimeError:

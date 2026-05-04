@@ -13586,11 +13586,65 @@ body-classes: "gd-homepage"
                 pass  # Best-effort cleanup
 
     @staticmethod
+    def preview_site(site_dir: str | Path, port: int = 3000) -> None:
+        """Preview a pre-built documentation site from any directory.
+
+        Starts a local HTTP server and opens the site in the default browser. This is useful for
+        previewing output from `build_from_repo()` or any other pre-built site directory.
+
+        Parameters
+        ----------
+        site_dir
+            Path to the directory containing the built site (must have `index.html`).
+        port
+            The port number for the local HTTP server (default `3000`).
+        """
+        import functools
+        import http.server
+        import socketserver
+        import sys
+        import threading
+        import webbrowser
+
+        site_path = Path(site_dir)
+        index_html = site_path / "index.html"
+
+        if not index_html.exists():
+            print(f"❌ No index.html found in {site_path}")
+            sys.exit(1)
+
+        handler = functools.partial(
+            http.server.SimpleHTTPRequestHandler,
+            directory=str(site_path),
+        )
+        socketserver.TCPServer.allow_reuse_address = True
+
+        try:
+            httpd = socketserver.TCPServer(("", port), handler)
+        except OSError:
+            print(f"❌ Port {port} is already in use. Try a different port.")
+            sys.exit(1)
+
+        url = f"http://localhost:{port}/"
+        print(f"\n🌐 Serving site at {url}")
+        print(f"   Site directory: {site_path}")
+        print("   Press Ctrl+C to stop\n")
+
+        threading.Timer(0.3, webbrowser.open, args=(url,)).start()
+
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            pass
+        finally:
+            httpd.server_close()
+
+    @staticmethod
     def _detect_install_extras(project_dir: Path) -> str:
         """Detect optional dependency groups suitable for a docs build.
 
-        Scans ``pyproject.toml`` for extras like ``dev``, ``docs``, ``test``
-        and returns a comma-separated string (e.g. ``"dev,docs"``).
+        Scans `pyproject.toml` for extras like `dev`, `docs`, `test` and returns a comma-separated
+        string (e.g. `"dev,docs"`).
 
         Parameters
         ----------
@@ -13628,14 +13682,14 @@ body-classes: "gd-homepage"
 
     @staticmethod
     def _inspect_repo_git_needs(clone_dir: Path) -> str:
-        """Inspect a cloned repo's ``great-docs.yml`` to determine git depth needs.
+        """Inspect a cloned repo's `great-docs.yml` to determine git depth needs.
 
         Returns one of three strings indicating how much git history is
         required for the features declared in the config:
 
-        * ``"full"`` — full history needed (versioned docs or page dates).
-        * ``"tags"`` — only tags needed (source-link tag detection).
-        * ``"none"`` — shallow clone is sufficient.
+        * `"full"`: full history needed (versioned docs or page dates).
+        * `"tags"`: only tags needed (source-link tag detection).
+        * `"none"`: shallow clone is sufficient.
 
         Parameters
         ----------
@@ -13645,7 +13699,7 @@ body-classes: "gd-homepage"
         Returns
         -------
         str
-            One of ``"full"``, ``"tags"``, or ``"none"``.
+            One of `"full"`, `"tags"`, or `"none"`.
         """
         config_path = clone_dir / "great-docs.yml"
         if not config_path.exists():

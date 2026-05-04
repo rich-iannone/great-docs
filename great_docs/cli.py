@@ -210,12 +210,40 @@ def init(project_path: str | None, force: bool) -> None:
     is_flag=True,
     help="Build only the latest version (skip historical versions)",
 )
+@click.option(
+    "--from-repo",
+    "from_repo",
+    type=str,
+    default=None,
+    help="Clone a remote Git repository and build its docs (HTTPS or SSH URL)",
+)
+@click.option(
+    "--branch",
+    type=str,
+    default=None,
+    help="Branch or tag to check out when using --from-repo (default: repo default)",
+)
+@click.option(
+    "--output-dir",
+    type=click.Path(file_okay=False, dir_okay=True),
+    default=None,
+    help="Where to copy the built site when using --from-repo (default: ./great-docs/_site)",
+)
+@click.option(
+    "--shallow",
+    is_flag=True,
+    help="Force shallow clone with --from-repo (fastest, but no versioned docs or page dates)",
+)
 def build(
     project_path: str | None,
     watch: bool,
     no_refresh: bool,
     version_filter: str | None,
     latest_only: bool,
+    from_repo: str | None,
+    branch: str | None,
+    output_dir: str | None,
+    shallow: bool,
 ) -> None:
     """Build your documentation site.
 
@@ -243,6 +271,11 @@ def build(
     When multi-version documentation is configured, use --versions to build
     only specific versions, or --latest-only to skip historical versions.
 
+    Use --from-repo to build documentation from a remote Git repository.
+    This clones the repo into a temporary directory, creates an isolated
+    virtual environment, installs the package and great-docs, builds the
+    site, and copies the output to --output-dir (or ./great-docs/_site).
+
     \b
     Examples:
       great-docs build                      # Full build with API refresh
@@ -251,19 +284,52 @@ def build(
       great-docs build --versions 0.3,dev   # Build specific versions only
       great-docs build --latest-only        # Build only the latest version
       great-docs build --project-path ../pkg
+      great-docs build --from-repo https://github.com/owner/pkg.git
+      great-docs build --from-repo git@github.com:owner/pkg.git --branch v1.0
+      great-docs build --from-repo https://github.com/owner/pkg.git --output-dir ./site
+      great-docs build --from-repo https://github.com/owner/pkg.git --shallow
     """
     try:
-        docs = GreatDocs(project_path=project_path)
-        # Parse version filter if provided
-        version_tags = None
-        if version_filter:
-            version_tags = [v.strip() for v in version_filter.split(",") if v.strip()]
-        docs.build(
-            watch=watch,
-            refresh=not no_refresh,
-            version_tags=version_tags,
-            latest_only=latest_only,
-        )
+        if from_repo:
+            # Remote build: clone, install, build, copy output
+            if project_path:
+                click.echo(
+                    "Warning: --project-path is ignored when --from-repo is used",
+                    err=True,
+                )
+            if watch:
+                click.echo("Error: --watch is not supported with --from-repo", err=True)
+                sys.exit(1)
+            version_tags = None
+            if version_filter:
+                version_tags = [v.strip() for v in version_filter.split(",") if v.strip()]
+            GreatDocs.build_from_repo(
+                from_repo,
+                branch=branch,
+                output_dir=output_dir,
+                refresh=not no_refresh,
+                version_tags=version_tags,
+                latest_only=latest_only,
+                shallow=shallow,
+            )
+        else:
+            if branch:
+                click.echo("Warning: --branch is ignored without --from-repo", err=True)
+            if shallow:
+                click.echo("Warning: --shallow is ignored without --from-repo", err=True)
+            if output_dir:
+                click.echo("Warning: --output-dir is ignored without --from-repo", err=True)
+            docs = GreatDocs(project_path=project_path)
+            # Parse version filter if provided
+            version_tags = None
+            if version_filter:
+                version_tags = [v.strip() for v in version_filter.split(",") if v.strip()]
+            docs.build(
+                watch=watch,
+                refresh=not no_refresh,
+                version_tags=version_tags,
+                latest_only=latest_only,
+            )
     except KeyboardInterrupt:
         click.echo("\n👋 Stopped watching")
     except Exception as e:

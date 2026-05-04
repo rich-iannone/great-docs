@@ -24,19 +24,33 @@ def enable_tbl_preview(**kwargs: Any) -> None:
 
     Examples
     --------
-    In a notebook or `.qmd` file:
-
-    ```python
-    import great_docs as gd
-    gd.enable_tbl_preview(n_head=8, n_tail=3)
-    ```
-
-    Now any DataFrame displayed will use `tbl_preview()` automatically:
-
-    ```python
+    ```{python}
     import pandas as pd
-    pd.read_csv("data.csv")  # rendered as a preview table
+    import great_docs as gd
+
+    df = pd.DataFrame({"name": ["Alice", "Bob", "Carol"], "score": [92, 87, 95]})
     ```
+
+    Before enabling, the DataFrame renders with default Pandas HTML:
+
+    ```{python}
+    df
+    ```
+
+    After enabling, the same DataFrame renders as a `tbl_preview()` table:
+
+    ```{python}
+    gd.enable_tbl_preview(n_head=3)
+    df
+    ```
+
+    From this point on, all DataFrames (Pandas, Polars, or otherwise) will render using
+    `tbl_preview()` until `disable_tbl_preview()` is called.
+
+    See Also
+    --------
+    disable_tbl_preview : Remove the formatter and restore default display.
+    tbl_preview : Generate a preview table for a single DataFrame.
     """
     try:
         ip = _get_ipython()
@@ -83,31 +97,34 @@ def disable_tbl_preview() -> None:
 
     Examples
     --------
-    In a notebook or `.qmd` file, first enable the preview formatter:
-
-    ```python
-    import great_docs as gd
-    gd.enable_tbl_preview(n_head=8)
-    ```
-
-    DataFrames now render as `tbl_preview()` tables:
-
-    ```python
+    ```{python}
     import pandas as pd
-    pd.read_csv("data.csv")  # rendered as a preview table
+    import great_docs as gd
+
+    df = pd.DataFrame({"name": ["Alice", "Bob", "Carol"], "score": [92, 87, 95]})
+    gd.enable_tbl_preview(n_head=3)
     ```
 
-    Call `disable_tbl_preview()` to revert to the default display:
+    With the preview formatter active, the DataFrame renders as a `tbl_preview()` table:
 
-    ```python
+    ```{python}
+    df
+    ```
+
+    After disabling, the DataFrame reverts to the default Pandas HTML:
+
+    ```{python}
     gd.disable_tbl_preview()
+    df
     ```
 
-    DataFrames now use the library's default HTML representation again:
+    From this point on, all DataFrames (Pandas, Polars, or otherwise) will render using their
+    native styling until `enable_tbl_preview()` is called again.
 
-    ```python
-    pd.read_csv("data.csv")  # rendered with the default pandas HTML
-    ```
+    See Also
+    --------
+    enable_tbl_preview : Register `tbl_preview()` as the default DataFrame display formatter.
+    tbl_preview : Generate a preview table for a single DataFrame.
     """
     try:
         ip = _get_ipython()

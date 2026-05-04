@@ -306,3 +306,96 @@ def test_build_shallow_ignored_without_from_repo():
         with patch.object(GreatDocs, "build") as mock_build:
             result = runner.invoke(cli, ["build", "--shallow", "--project-path", "."])
         assert "--shallow is ignored" in result.output
+
+
+# ── --preview flag tests ──────────────────────────────────────────────────────
+
+
+def test_build_preview_calls_preview_site():
+    """--preview after --from-repo calls preview_site with the output dir."""
+    runner = CliRunner()
+    with (
+        patch.object(GreatDocs, "build_from_repo") as mock_bfr,
+        patch.object(GreatDocs, "preview_site") as mock_preview,
+    ):
+        result = runner.invoke(
+            cli,
+            [
+                "build",
+                "--from-repo",
+                "https://github.com/x/y.git",
+                "--output-dir",
+                "/tmp/out",
+                "--preview",
+            ],
+        )
+        assert result.exit_code == 0
+        mock_bfr.assert_called_once()
+        mock_preview.assert_called_once_with("/tmp/out")
+
+
+def test_build_preview_default_output_dir():
+    """--preview without --output-dir uses the default site path."""
+    runner = CliRunner()
+    with (
+        patch.object(GreatDocs, "build_from_repo") as mock_bfr,
+        patch.object(GreatDocs, "preview_site") as mock_preview,
+    ):
+        result = runner.invoke(
+            cli,
+            ["build", "--from-repo", "https://github.com/x/y.git", "--preview"],
+        )
+        assert result.exit_code == 0
+        mock_preview.assert_called_once()
+        site_arg = mock_preview.call_args[0][0]
+        assert site_arg.endswith("great-docs/_site")
+
+
+def test_build_preview_ignored_without_from_repo():
+    """--preview without --from-repo emits a warning."""
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        Path("pyproject.toml").write_text('[project]\nname = "x"\n')
+        Path("great-docs.yml").write_text("name: x\n")
+        with patch.object(GreatDocs, "build") as mock_build:
+            result = runner.invoke(cli, ["build", "--preview", "--project-path", "."])
+        assert "--preview is ignored" in result.output
+
+
+# ── preview --site-dir tests ─────────────────────────────────────────────────
+
+
+def test_preview_site_dir():
+    """preview --site-dir calls preview_site with the given path."""
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        Path("mysite").mkdir()
+        (Path("mysite") / "index.html").write_text("<html></html>")
+        site_path = str(Path("mysite").resolve())
+        with patch.object(GreatDocs, "preview_site") as mock_preview:
+            result = runner.invoke(cli, ["preview", "--site-dir", site_path])
+            mock_preview.assert_called_once_with(site_path, port=3000)
+
+
+def test_preview_site_dir_project_path_warning():
+    """preview --site-dir with --project-path emits a warning."""
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        Path("mysite").mkdir()
+        (Path("mysite") / "index.html").write_text("<html></html>")
+        Path("proj").mkdir()
+        site_path = str(Path("mysite").resolve())
+        proj_path = str(Path("proj").resolve())
+        with patch.object(GreatDocs, "preview_site"):
+            result = runner.invoke(
+                cli,
+                ["preview", "--site-dir", site_path, "--project-path", proj_path],
+            )
+            assert "--project-path is ignored" in result.output
+
+
+def test_preview_site_missing_index():
+    """preview_site exits when index.html is missing."""
+    with tempfile.TemporaryDirectory() as tmp:
+        with pytest.raises(SystemExit):
+            GreatDocs.preview_site(tmp)

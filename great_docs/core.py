@@ -13357,6 +13357,327 @@ body-classes: "gd-homepage"
         finally:
             os.chdir(original_dir)
 
+    @classmethod
+    def build_from_repo(
+        cls,
+        repo_url: str,
+        *,
+        branch: str | None = None,
+        output_dir: str | None = None,
+        refresh: bool = True,
+        version_tags: list[str] | None = None,
+        latest_only: bool = False,
+        shallow: bool = False,
+    ) -> Path:
+        """
+        Clone a remote repository and build its documentation site.
+
+        This is a convenience method for building documentation from a separate repository. It
+        handles cloning, creating a temporary virtual environment, installing the package, building
+        the docs, and copying the output.
+
+        After the initial shallow clone, the target's `great-docs.yml` is inspected so the git
+        history depth can be adapted automatically:
+
+        * `versions:` is non-empty -> full unshallow + fetch tags (versioned builds check out
+        multiple tags).
+        * `site.show_dates: true` -> full unshallow (page-creation dates need `git log` history).
+        * Otherwise, only `git fetch --tags` (enough for source-link tag detection).
+
+        Pass `shallow=True` to skip all post-clone fetching (fastest, but git-history features will
+        be degraded).
+
+        Parameters
+        ----------
+        repo_url
+            Git URL of the repository to clone (HTTPS or SSH).
+        branch
+            Branch, tag, or commit to check out. If `None`, uses the repository's default branch.
+        output_dir
+            Directory to copy the built site into. If `None`, defaults to `./great-docs/_site` in
+            the current working directory.
+        refresh
+            If `True` (default), re-discover package exports before building.
+        version_tags
+            If provided, only build these specific version tags.
+        latest_only
+            If `True`, build only the latest version.
+        shallow
+            If `True`, force a shallow clone (`--depth=1`) with no additional history fetching.
+            Fastest option, but versioned docs, page metadata dates, and tag-based source links will
+            not work.
+
+        Returns
+        -------
+        Path
+            Absolute path to the directory containing the built site.
+
+        Examples
+        --------
+        Build docs from a remote repository:
+
+        ```python
+        from great_docs import GreatDocs
+
+        site_dir = GreatDocs.build_from_repo(
+            "https://github.com/posit-dev/great-tables.git",
+            branch="main",
+            output_dir="./my-site",
+        )
+        ```
+        """
+        import subprocess
+        import sys
+        import tempfile
+        import venv
+
+        if output_dir is None:
+            output_path = Path.cwd() / "great-docs" / "_site"
+        else:
+            output_path = Path(output_dir).resolve()
+
+        tmpdir = tempfile.mkdtemp(prefix="great-docs-remote-")
+        clone_dir = Path(tmpdir) / "repo"
+        venv_dir = Path(tmpdir) / "venv"
+
+        try:
+            # ── 1. Clone the repository (shallow first) ────────────────
+            print(f"📦 Cloning {repo_url}...")
+            clone_cmd = ["git", "clone", "--depth=1"]
+            if branch:
+                clone_cmd += ["--branch", branch]
+            clone_cmd += [repo_url, str(clone_dir)]
+            result = subprocess.run(clone_cmd, capture_output=True, text=True)
+            if result.returncode != 0:
+                raise RuntimeError(
+                    f"git clone failed (exit {result.returncode}):\n{result.stderr.strip()}"
+                )
+
+            # ── 1b. Inspect great-docs.yml and deepen history if needed ─
+            if not shallow:
+                needs = cls._inspect_repo_git_needs(clone_dir)
+                if needs == "full":
+                    print("   Fetching full history (versioned docs / page dates)...")
+                    subprocess.run(
+                        ["git", "fetch", "--unshallow"],
+                        cwd=str(clone_dir),
+                        capture_output=True,
+                        text=True,
+                    )
+                    subprocess.run(
+                        ["git", "fetch", "--tags"],
+                        cwd=str(clone_dir),
+                        capture_output=True,
+                        text=True,
+                    )
+                elif needs == "tags":
+                    print("   Fetching tags for source link detection...")
+                    subprocess.run(
+                        ["git", "fetch", "--tags"],
+                        cwd=str(clone_dir),
+                        capture_output=True,
+                        text=True,
+                    )
+            print("   Cloned to temporary directory")
+
+            # ── 2. Create temporary virtual environment ────────────────
+            print("🐍 Creating temporary virtual environment...")
+            venv.create(str(venv_dir), with_pip=True, clear=True)
+
+            if sys.platform == "win32":
+                venv_python = venv_dir / "Scripts" / "python.exe"
+                venv_pip = venv_dir / "Scripts" / "pip.exe"
+            else:
+                venv_python = venv_dir / "bin" / "python"
+                venv_pip = venv_dir / "bin" / "pip"
+
+            # ── 3. Install great-docs into the temp venv ───────────────
+            print("📥 Installing great-docs into temporary environment...")
+            result = subprocess.run(
+                [str(venv_pip), "install", "great-docs"],
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode != 0:
+                # Fall back to installing from the current source tree if
+                # the PyPI package is not available (e.g. during development)
+                src_root = Path(__file__).resolve().parent.parent
+                result = subprocess.run(
+                    [str(venv_pip), "install", str(src_root)],
+                    capture_output=True,
+                    text=True,
+                )
+                if result.returncode != 0:
+                    raise RuntimeError(f"Failed to install great-docs:\n{result.stderr.strip()}")
+
+            # ── 4. Install the target package ──────────────────────────
+            print("📥 Installing target package...")
+            # Try installing with optional dev/docs extras first
+            install_cmd = [str(venv_pip), "install", "-e"]
+            extras = cls._detect_install_extras(clone_dir)
+            if extras:
+                install_cmd.append(f"{clone_dir}[{extras}]")
+            else:
+                install_cmd.append(str(clone_dir))
+            result = subprocess.run(install_cmd, capture_output=True, text=True)
+            if result.returncode != 0:
+                # Retry without extras
+                result = subprocess.run(
+                    [str(venv_pip), "install", "-e", str(clone_dir)],
+                    capture_output=True,
+                    text=True,
+                )
+                if result.returncode != 0:
+                    raise RuntimeError(
+                        f"Failed to install target package:\n{result.stderr.strip()}"
+                    )
+
+            # ── 5. Build docs using the temp venv's great-docs ─────────
+            print("🔨 Building documentation...")
+            if sys.platform == "win32":
+                gd_cli = venv_dir / "Scripts" / "great-docs.exe"
+            else:
+                gd_cli = venv_dir / "bin" / "great-docs"
+
+            build_cmd = [str(gd_cli), "build", "--project-path", str(clone_dir)]
+            if not refresh:
+                build_cmd.append("--no-refresh")
+            if version_tags:
+                build_cmd.extend(["--versions", ",".join(version_tags)])
+            if latest_only:
+                build_cmd.append("--latest-only")
+
+            # Pass through GITHUB_TOKEN / GH_TOKEN and PATH
+            build_env = os.environ.copy()
+            build_env["VIRTUAL_ENV"] = str(venv_dir)
+            build_env["PATH"] = (
+                str(venv_dir / ("Scripts" if sys.platform == "win32" else "bin"))
+                + os.pathsep
+                + build_env.get("PATH", "")
+            )
+
+            result = subprocess.run(
+                build_cmd,
+                env=build_env,
+                cwd=str(clone_dir),
+            )
+            if result.returncode != 0:
+                raise RuntimeError(f"great-docs build failed (exit {result.returncode})")
+
+            # ── 6. Copy built site to output directory ─────────────────
+            site_dir = clone_dir / "great-docs" / "_site"
+            if not site_dir.exists():
+                raise RuntimeError(f"Build completed but _site/ directory not found at {site_dir}")
+
+            print(f"📂 Copying built site to {output_path}...")
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            if output_path.exists():
+                shutil.rmtree(output_path)
+            shutil.copytree(site_dir, output_path)
+
+            print(f"✅ Site built successfully: {output_path}")
+            return output_path
+
+        finally:
+            # ── 7. Clean up temporary directory ────────────────────────
+            try:
+                shutil.rmtree(tmpdir)
+            except Exception:
+                pass  # Best-effort cleanup
+
+    @staticmethod
+    def _detect_install_extras(project_dir: Path) -> str:
+        """Detect optional dependency groups suitable for a docs build.
+
+        Scans ``pyproject.toml`` for extras like ``dev``, ``docs``, ``test``
+        and returns a comma-separated string (e.g. ``"dev,docs"``).
+
+        Parameters
+        ----------
+        project_dir
+            Path to the cloned project root.
+
+        Returns
+        -------
+        str
+            Comma-separated extras string, or empty string if none found.
+        """
+        pyproject = project_dir / "pyproject.toml"
+        if not pyproject.exists():
+            return ""
+
+        try:
+            import tomllib
+        except ImportError:  # pragma: no cover
+            try:
+                import tomli as tomllib  # type: ignore[no-redef]
+            except ImportError:
+                return ""
+
+        try:
+            with open(pyproject, "rb") as f:
+                data = tomllib.load(f)
+        except Exception:
+            return ""
+
+        opt_deps = data.get("project", {}).get("optional-dependencies", {})
+        # Prioritize groups likely to contain docs/dev deps
+        candidates = ["dev", "docs", "doc", "all"]
+        found = [c for c in candidates if c in opt_deps]
+        return ",".join(found)
+
+    @staticmethod
+    def _inspect_repo_git_needs(clone_dir: Path) -> str:
+        """Inspect a cloned repo's ``great-docs.yml`` to determine git depth needs.
+
+        Returns one of three strings indicating how much git history is
+        required for the features declared in the config:
+
+        * ``"full"`` — full history needed (versioned docs or page dates).
+        * ``"tags"`` — only tags needed (source-link tag detection).
+        * ``"none"`` — shallow clone is sufficient.
+
+        Parameters
+        ----------
+        clone_dir
+            Path to the cloned repository root.
+
+        Returns
+        -------
+        str
+            One of ``"full"``, ``"tags"``, or ``"none"``.
+        """
+        config_path = clone_dir / "great-docs.yml"
+        if not config_path.exists():
+            return "none"
+
+        try:
+            from yaml12 import read_yaml
+
+            with open(config_path, "r", encoding="utf-8") as f:
+                cfg = read_yaml(f) or {}
+        except Exception:
+            return "none"
+
+        # Versioned docs require checking out multiple tags → full history
+        versions = cfg.get("versions", [])
+        if versions:
+            return "full"
+
+        # Page metadata dates need git log for first-commit detection
+        site = cfg.get("site", {})
+        if isinstance(site, dict) and site.get("show_dates"):
+            return "full"
+
+        # Source links benefit from tags for _detect_git_ref()
+        source = cfg.get("source", {})
+        if isinstance(source, dict):
+            # If a branch is explicitly set, tags aren't needed for detection
+            if source.get("branch"):
+                return "none"
+
+        return "tags"
+
     def preview(self, port: int = 3000) -> None:
         """
         Preview the documentation site locally.

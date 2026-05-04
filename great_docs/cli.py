@@ -261,16 +261,8 @@ def build(
     and builds the documentation site. The build directory is ephemeral and
     should not be committed to version control.
 
-    \b
-    1. Creates great-docs/ directory with all assets
-    2. Copies user guide files from project root
-    3. Generates index.qmd from README.md
-    4. Refreshes API reference configuration (discovers API changes)
-    5. Generates llms.txt and llms-full.txt for AI/LLM indexing
-    6. Creates source links to GitHub
-    7. Generates CLI reference pages (if enabled)
-    8. Generates API reference pages
-    9. Runs Quarto to render the final HTML site in great-docs/_site/
+    Use --project-path to point to a project in a different directory.
+    Use --watch to automatically rebuild when source files change.
 
     Use --no-refresh to skip API discovery for faster rebuilds when your
     package's public API hasn't changed.
@@ -282,6 +274,9 @@ def build(
     This clones the repo into a temporary directory, creates an isolated
     virtual environment, installs the package and great-docs, builds the
     site, and copies the output to --output-dir (or ./great-docs/_site).
+
+    Add --preview to automatically start a local server after a --from-repo
+    build completes, opening the site in your browser.
 
     \b
     Examples:

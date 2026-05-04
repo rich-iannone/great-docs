@@ -16,6 +16,12 @@ def enable_tbl_preview(**kwargs: Any) -> None:
         Keyword arguments forwarded to `tbl_preview()` (e.g., `n_head=10`, `show_all=True`,
         `show_dimensions=False`).
 
+    Returns
+    -------
+    None
+        The formatter is registered as a side effect. IPython suppresses `None` output, so
+        nothing is printed in the cell.
+
     Examples
     --------
     In a notebook or `.qmd` file:

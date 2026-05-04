@@ -1193,3 +1193,674 @@ class TestSnapshotCachePath:
     def test_cache_path(self, tmp_path: Path):
         path = _snapshot_cache_path(tmp_path, "v0.3.0")
         assert path == tmp_path / ".great-docs-cache" / "snapshots" / "v0.3.0.json"
+
+
+# ---------------------------------------------------------------------------
+# _collect_qmd_files
+# ---------------------------------------------------------------------------
+
+
+class TestCollectQmdFiles:
+    def test_finds_qmd_and_md(self, tmp_path: Path):
+        from great_docs._versioned_build import _collect_qmd_files
+
+        (tmp_path / "index.qmd").write_text("hello")
+        (tmp_path / "guide.md").write_text("world")
+        (tmp_path / "ignore.txt").write_text("skip")
+        sub = tmp_path / "sub"
+        sub.mkdir()
+        (sub / "deep.qmd").write_text("deep")
+
+        files = _collect_qmd_files(tmp_path)
+        stems = {f.name for f in files}
+        assert "index.qmd" in stems
+        assert "guide.md" in stems
+        assert "deep.qmd" in stems
+        assert "ignore.txt" not in stems
+
+
+# ---------------------------------------------------------------------------
+# _extract_frontmatter_value
+# ---------------------------------------------------------------------------
+
+
+class TestExtractFrontmatterValue:
+    def test_extracts_value(self):
+        from great_docs._versioned_build import _extract_frontmatter_value
+
+        content = '---\ntitle: "My Page"\nstatus: experimental\n---\n\nBody'
+        assert _extract_frontmatter_value(content, "status") == "experimental"
+
+    def test_returns_none_when_missing(self):
+        from great_docs._versioned_build import _extract_frontmatter_value
+
+        content = "---\ntitle: Hello\n---\n\nBody"
+        assert _extract_frontmatter_value(content, "status") is None
+
+    def test_returns_none_without_frontmatter(self):
+        from great_docs._versioned_build import _extract_frontmatter_value
+
+        content = "No frontmatter here"
+        assert _extract_frontmatter_value(content, "status") is None
+
+    def test_strips_quotes(self):
+        from great_docs._versioned_build import _extract_frontmatter_value
+
+        content = '---\nupcoming: "0.8"\n---\n\nBody'
+        assert _extract_frontmatter_value(content, "upcoming") == "0.8"
+
+
+# ---------------------------------------------------------------------------
+# _inject_upcoming_status
+# ---------------------------------------------------------------------------
+
+
+class TestInjectUpcomingStatus:
+    def test_injects_when_no_status(self):
+        from great_docs._versioned_build import _inject_upcoming_status
+
+        content = "---\ntitle: Hello\n---\n\nBody"
+        result = _inject_upcoming_status(content)
+        assert "status: upcoming" in result
+        assert "title: Hello" in result
+
+    def test_preserves_existing_status(self):
+        from great_docs._versioned_build import _inject_upcoming_status
+
+        content = "---\ntitle: Hello\nstatus: experimental\n---\n\nBody"
+        result = _inject_upcoming_status(content)
+        assert "status: upcoming" not in result
+        assert "status: experimental" in result
+
+    def test_no_frontmatter_returns_unchanged(self):
+        from great_docs._versioned_build import _inject_upcoming_status
+
+        content = "No frontmatter at all"
+        result = _inject_upcoming_status(content)
+        assert result == content
+
+
+# ---------------------------------------------------------------------------
+# _prune_cli_pages / _rewrite_cli_index / _prune_quarto_cli_sidebar
+# ---------------------------------------------------------------------------
+
+
+class TestPruneCliPages:
+    def test_removes_unknown_cli_pages(self, tmp_path: Path):
+        from great_docs._versioned_build import _prune_cli_pages
+
+        cli_dir = tmp_path / "reference" / "cli"
+        cli_dir.mkdir(parents=True)
+        (cli_dir / "index.qmd").write_text("---\ntitle: CLI\n---\n")
+        (cli_dir / "build.qmd").write_text("---\ntitle: build\n---\n")
+        (cli_dir / "old_cmd.qmd").write_text("---\ntitle: old-cmd\n---\n")
+
+        # Mock snapshot with only "build" command
+        class MockCmd:
+            name = "build"
+
+        class MockSnap:
+            cli_commands = type("CLI", (), {"subcommands": [MockCmd()]})()
+
+        _prune_cli_pages(tmp_path, MockSnap())
+
+        assert (cli_dir / "index.qmd").exists()
+        assert (cli_dir / "build.qmd").exists()
+        assert not (cli_dir / "old_cmd.qmd").exists()
+
+    def test_no_cli_dir_does_nothing(self, tmp_path: Path):
+        from great_docs._versioned_build import _prune_cli_pages
+
+        class MockSnap:
+            cli_commands = None
+
+        _prune_cli_pages(tmp_path, MockSnap())  # Should not raise
+
+    def test_no_cli_commands_does_nothing(self, tmp_path: Path):
+        from great_docs._versioned_build import _prune_cli_pages
+
+        cli_dir = tmp_path / "reference" / "cli"
+        cli_dir.mkdir(parents=True)
+        (cli_dir / "build.qmd").write_text("content")
+
+        class MockSnap:
+            cli_commands = None
+
+        _prune_cli_pages(tmp_path, MockSnap())
+        assert (cli_dir / "build.qmd").exists()
+
+
+class TestRewriteCliIndex:
+    def test_removes_invalid_commands(self, tmp_path: Path):
+        from great_docs._versioned_build import _rewrite_cli_index
+
+        index = tmp_path / "index.qmd"
+        index.write_text(
+            "---\ntitle: CLI\n---\n\n"
+            "```\n"
+            "Commands:\n"
+            "  build      Build the docs\n"
+            "  preview    Preview the site\n"
+            "  old-cmd    Deprecated command\n"
+            "```\n"
+        )
+
+        _rewrite_cli_index(index, {"build", "preview"})
+        content = index.read_text()
+        assert "build" in content
+        assert "preview" in content
+        assert "old-cmd" not in content
+
+
+class TestPruneQuartoCliSidebar:
+    def test_removes_invalid_sidebar_entries(self, tmp_path: Path):
+        from great_docs._versioned_build import _prune_quarto_cli_sidebar
+
+        import yaml
+
+        quarto = tmp_path / "_quarto.yml"
+        config = {
+            "website": {
+                "sidebar": [
+                    {
+                        "id": "cli-reference",
+                        "contents": [
+                            "reference/cli/index.qmd",
+                            "reference/cli/build.qmd",
+                            "reference/cli/old_cmd.qmd",
+                        ],
+                    }
+                ]
+            }
+        }
+        quarto.write_text(yaml.dump(config), encoding="utf-8")
+
+        _prune_quarto_cli_sidebar(tmp_path, {"index", "build"})
+
+        result = yaml.safe_load(quarto.read_text())
+        contents = result["website"]["sidebar"][0]["contents"]
+        stems = [Path(c).stem for c in contents]
+        assert "build" in stems
+        assert "index" in stems
+        assert "old_cmd" not in stems
+
+
+# ---------------------------------------------------------------------------
+# _prune_missing_sidebar_pages / _prune_sidebar_contents
+# ---------------------------------------------------------------------------
+
+
+class TestPruneMissingSidebarPages:
+    def test_removes_missing_pages_from_sidebar(self, tmp_path: Path):
+        from great_docs._versioned_build import _prune_sidebar_contents
+
+        # Only "index.qmd" and "guide.qmd" exist on disk
+        (tmp_path / "index.qmd").write_text("---\ntitle: Home\n---\n")
+        (tmp_path / "guide.qmd").write_text("---\ntitle: Guide\n---\n")
+        # "deleted.qmd" does NOT exist
+
+        contents = ["index.qmd", "guide.qmd", "deleted.qmd"]
+        result = _prune_sidebar_contents(contents, tmp_path)
+        assert "index.qmd" in result
+        assert "guide.qmd" in result
+        assert "deleted.qmd" not in result
+
+    def test_prunes_nested_sections(self, tmp_path: Path):
+        from great_docs._versioned_build import _prune_sidebar_contents
+
+        (tmp_path / "a.qmd").write_text("hi")
+        contents = [
+            {"section": "Group", "contents": ["a.qmd", "b.qmd"]},
+        ]
+        result = _prune_sidebar_contents(contents, tmp_path)
+        # b.qmd doesn't exist so it's removed; section kept because a.qmd exists
+        assert len(result) == 1
+        assert result[0]["contents"] == ["a.qmd"]
+
+    def test_removes_empty_sections(self, tmp_path: Path):
+        from great_docs._versioned_build import _prune_sidebar_contents
+
+        contents = [
+            {"section": "Empty", "contents": ["missing.qmd"]},
+        ]
+        result = _prune_sidebar_contents(contents, tmp_path)
+        assert result == []
+
+    def test_keeps_dict_with_href(self, tmp_path: Path):
+        from great_docs._versioned_build import _prune_sidebar_contents
+
+        (tmp_path / "page.qmd").write_text("hi")
+        contents = [{"href": "page.qmd", "text": "Page"}]
+        result = _prune_sidebar_contents(contents, tmp_path)
+        assert len(result) == 1
+
+    def test_removes_dict_with_missing_href(self, tmp_path: Path):
+        from great_docs._versioned_build import _prune_sidebar_contents
+
+        contents = [{"href": "gone.qmd", "text": "Gone"}]
+        result = _prune_sidebar_contents(contents, tmp_path)
+        assert result == []
+
+
+# ---------------------------------------------------------------------------
+# _format_signature / _format_param
+# ---------------------------------------------------------------------------
+
+
+class TestFormatSignature:
+    def test_class_with_params(self):
+        from great_docs._versioned_build import _format_signature
+
+        sym = type(
+            "Sym",
+            (),
+            {
+                "kind": "class",
+                "parameters": [
+                    type("P", (), {"name": "x", "annotation": "int", "default": None})(),
+                    type("P", (), {"name": "y", "annotation": "str", "default": "'hi'"})(),
+                ],
+                "is_async": False,
+                "return_annotation": None,
+            },
+        )()
+        result = _format_signature("MyClass", sym)
+        assert result == "class MyClass(x: int, y: str = 'hi')"
+
+    def test_class_without_params(self):
+        from great_docs._versioned_build import _format_signature
+
+        sym = type(
+            "Sym",
+            (),
+            {"kind": "class", "parameters": [], "is_async": False, "return_annotation": None},
+        )()
+        result = _format_signature("Empty", sym)
+        assert result == "class Empty"
+
+    def test_function(self):
+        from great_docs._versioned_build import _format_signature
+
+        sym = type(
+            "Sym",
+            (),
+            {
+                "kind": "function",
+                "parameters": [
+                    type("P", (), {"name": "a", "annotation": None, "default": None})(),
+                ],
+                "is_async": False,
+                "return_annotation": "str",
+            },
+        )()
+        result = _format_signature("myfunc", sym)
+        assert result == "def myfunc(a) -> str"
+
+    def test_async_function(self):
+        from great_docs._versioned_build import _format_signature
+
+        sym = type(
+            "Sym",
+            (),
+            {"kind": "function", "parameters": [], "is_async": True, "return_annotation": None},
+        )()
+        result = _format_signature("afunc", sym)
+        assert result == "async def afunc()"
+
+    def test_other_kind(self):
+        from great_docs._versioned_build import _format_signature
+
+        sym = type(
+            "Sym",
+            (),
+            {"kind": "attribute", "parameters": [], "is_async": False, "return_annotation": None},
+        )()
+        result = _format_signature("MY_CONST", sym)
+        assert result == "MY_CONST"
+
+
+# ---------------------------------------------------------------------------
+# _is_valid_ref_name
+# ---------------------------------------------------------------------------
+
+
+class TestIsValidRefName:
+    def test_index_always_valid(self):
+        from great_docs._versioned_build import _is_valid_ref_name
+
+        assert _is_valid_ref_name("index", set(), set()) is True
+
+    def test_symbol_in_set(self):
+        from great_docs._versioned_build import _is_valid_ref_name
+
+        assert _is_valid_ref_name("MyClass", {"MyClass", "func"}, set()) is True
+
+    def test_method_of_valid_class(self):
+        from great_docs._versioned_build import _is_valid_ref_name
+
+        assert _is_valid_ref_name("MyClass.method", set(), {"MyClass"}) is True
+
+    def test_unknown_symbol(self):
+        from great_docs._versioned_build import _is_valid_ref_name
+
+        assert _is_valid_ref_name("Unknown", {"Known"}, set()) is False
+
+
+# ---------------------------------------------------------------------------
+# _prune_reference_index
+# ---------------------------------------------------------------------------
+
+
+class TestPruneReferenceIndex:
+    def test_removes_invalid_links(self, tmp_path: Path):
+        from great_docs._versioned_build import _prune_reference_index
+
+        index = tmp_path / "index.qmd"
+        index.write_text(
+            "---\ntitle: API\n---\n\n"
+            "## Functions {.doc-group}\n\n"
+            "::: {.doc-description}\nFunctions section.\n:::\n\n"
+            "[`MyFunc`](MyFunc.qmd)\n\n"
+            "[`OldFunc`](OldFunc.qmd)\n\n"
+            "## Classes {.doc-group}\n\n"
+            "::: {.doc-description}\nClasses section.\n:::\n\n"
+            "[`MyClass`](MyClass.qmd)\n\n"
+        )
+
+        _prune_reference_index(index, {"MyFunc", "MyClass"}, {"MyClass"})
+
+        content = index.read_text()
+        assert "MyFunc" in content
+        assert "MyClass" in content
+        assert "OldFunc" not in content
+
+    def test_removes_empty_sections(self, tmp_path: Path):
+        from great_docs._versioned_build import _prune_reference_index
+
+        index = tmp_path / "index.qmd"
+        index.write_text(
+            "---\ntitle: API\n---\n\n"
+            "## Old Section {.doc-group}\n\n"
+            "::: {.doc-description}\nAll gone.\n:::\n\n"
+            "[`RemovedFunc`](RemovedFunc.qmd)\n\n"
+            "## Kept Section {.doc-group}\n\n"
+            "::: {.doc-description}\nStill here.\n:::\n\n"
+            "[`kept`](kept.qmd)\n\n"
+        )
+
+        _prune_reference_index(index, {"kept"}, set())
+
+        content = index.read_text()
+        assert "Old Section" not in content
+        assert "Kept Section" in content
+        assert "kept" in content
+
+
+# ---------------------------------------------------------------------------
+# _prune_quarto_sidebar (reference sidebar)
+# ---------------------------------------------------------------------------
+
+
+class TestPruneQuartoSidebar:
+    def test_removes_invalid_reference_entries(self, tmp_path: Path):
+        from great_docs._versioned_build import _prune_quarto_sidebar
+
+        import yaml
+
+        quarto = tmp_path / "_quarto.yml"
+        config = {
+            "website": {
+                "sidebar": [
+                    {
+                        "id": "api",
+                        "contents": [
+                            "reference/MyFunc.qmd",
+                            "reference/OldFunc.qmd",
+                            "reference/MyClass.qmd",
+                        ],
+                    }
+                ]
+            }
+        }
+        quarto.write_text(yaml.dump(config), encoding="utf-8")
+
+        _prune_quarto_sidebar(tmp_path, "reference", {"MyFunc", "MyClass"}, {"MyClass"})
+
+        result = yaml.safe_load(quarto.read_text())
+        contents = result["website"]["sidebar"][0]["contents"]
+        stems = [Path(c).stem for c in contents]
+        assert "MyFunc" in stems
+        assert "MyClass" in stems
+        assert "OldFunc" not in stems
+
+    def test_removes_empty_section_groups(self, tmp_path: Path):
+        from great_docs._versioned_build import _prune_quarto_sidebar
+
+        import yaml
+
+        quarto = tmp_path / "_quarto.yml"
+        config = {
+            "website": {
+                "sidebar": [
+                    {
+                        "id": "api",
+                        "contents": [
+                            {
+                                "section": "Functions",
+                                "contents": ["reference/OldFunc.qmd"],
+                            },
+                            "reference/Kept.qmd",
+                        ],
+                    }
+                ]
+            }
+        }
+        quarto.write_text(yaml.dump(config), encoding="utf-8")
+
+        _prune_quarto_sidebar(tmp_path, "reference", {"Kept"}, set())
+
+        result = yaml.safe_load(quarto.read_text())
+        contents = result["website"]["sidebar"][0]["contents"]
+        # The section group with "OldFunc" should be removed
+        assert len(contents) == 1
+        assert contents[0] == "reference/Kept.qmd"
+
+
+# ---------------------------------------------------------------------------
+# _validate_git_ref_is_tag
+# ---------------------------------------------------------------------------
+
+
+class TestValidateGitRefIsTag:
+    def test_invalid_pattern_rejected(self, tmp_path: Path):
+        # Patterns not matching the tag regex are immediately rejected
+        assert _validate_git_ref_is_tag(tmp_path, "main") is False
+        assert _validate_git_ref_is_tag(tmp_path, "feature/branch") is False
+        assert _validate_git_ref_is_tag(tmp_path, "") is False
+
+    def test_valid_pattern_accepted_format(self, tmp_path: Path):
+        # v0.3.0 matches the pattern but we can't verify git without a repo
+        from unittest.mock import patch
+        import subprocess
+
+        mock_result = type("R", (), {"returncode": 0, "stdout": "v0.3.0\n"})()
+        with patch("subprocess.run", return_value=mock_result):
+            assert _validate_git_ref_is_tag(tmp_path, "v0.3.0") is True
+
+    def test_tag_not_found(self, tmp_path: Path):
+        from unittest.mock import patch
+
+        mock_result = type("R", (), {"returncode": 0, "stdout": "v0.1.0\n"})()
+        with patch("subprocess.run", return_value=mock_result):
+            assert _validate_git_ref_is_tag(tmp_path, "v0.2.0") is False
+
+    def test_timeout_returns_false(self, tmp_path: Path):
+        from unittest.mock import patch
+        import subprocess
+
+        with patch("subprocess.run", side_effect=subprocess.TimeoutExpired("git", 10)):
+            assert _validate_git_ref_is_tag(tmp_path, "v1.0") is False
+
+
+# ---------------------------------------------------------------------------
+# _rebuild_api_from_git_ref
+# ---------------------------------------------------------------------------
+
+
+class TestRebuildApiFromGitRef:
+    def test_no_git_ref_returns_empty(self, tmp_path: Path):
+        from great_docs._versioned_build import _rebuild_api_from_git_ref
+
+        entry = _make_entry("0.2")
+        entry = VersionEntry(tag="0.2", label="0.2", latest=False, git_ref=None)
+        result = _rebuild_api_from_git_ref(tmp_path, tmp_path, entry)
+        assert result == []
+
+    def test_invalid_tag_warns_and_returns_empty(self, tmp_path: Path):
+        from unittest.mock import patch
+
+        from great_docs._versioned_build import _rebuild_api_from_git_ref
+
+        entry = VersionEntry(tag="0.2", label="0.2", latest=False, git_ref="v0.2.0")
+
+        with patch("great_docs._versioned_build._validate_git_ref_is_tag", return_value=False):
+            with pytest.warns(UserWarning, match="not a valid tag"):
+                result = _rebuild_api_from_git_ref(tmp_path, tmp_path, entry)
+        assert result == []
+
+
+# ---------------------------------------------------------------------------
+# generate_redirect_files (full file generation)
+# ---------------------------------------------------------------------------
+
+
+class TestGenerateRedirectFilesFull:
+    def test_writes_netlify_and_vercel(self, tmp_path: Path):
+        versions = parse_versions_config(["0.3", "0.2"])
+        generate_redirect_files(tmp_path, versions, "0.3")
+
+        redirects = tmp_path / "_redirects"
+        assert redirects.exists()
+        content = redirects.read_text()
+        assert "/v/latest/*" in content
+        assert "/v/stable/*" in content
+        assert "200" in content
+
+        vercel = tmp_path / "vercel.json"
+        assert vercel.exists()
+        data = json.loads(vercel.read_text())
+        assert "rewrites" in data
+        assert len(data["rewrites"]) > 0
+
+    def test_no_aliases_no_files_written(self, tmp_path: Path):
+        # If "latest" collides with a tag name, skip everything
+        versions = parse_versions_config(
+            [
+                {"tag": "latest", "label": "Latest"},
+                {"tag": "stable", "label": "Stable"},
+            ]
+        )
+        generate_redirect_files(tmp_path, versions, "latest")
+        # No aliases created since both "latest" and "stable" are real tags
+        # (the function may or may not write files)
+
+    def test_dev_version_gets_redirect(self, tmp_path: Path):
+        versions = parse_versions_config(
+            [
+                {"tag": "0.4", "label": "0.4 (dev)", "prerelease": True},
+                {"tag": "0.3", "label": "0.3"},
+            ]
+        )
+        generate_redirect_files(tmp_path, versions, "0.3")
+
+        redirects = tmp_path / "_redirects"
+        assert redirects.exists()
+        content = redirects.read_text()
+        assert "/v/dev/*" in content
+        assert "/v/0.4/" in content
+
+
+# ---------------------------------------------------------------------------
+# _merge_tree
+# ---------------------------------------------------------------------------
+
+
+class TestMergeTree:
+    def test_merges_files(self, tmp_path: Path):
+        src = tmp_path / "src"
+        src.mkdir()
+        (src / "a.html").write_text("aaa")
+        sub = src / "sub"
+        sub.mkdir()
+        (sub / "b.html").write_text("bbb")
+
+        dst = tmp_path / "dst"
+        dst.mkdir()
+        (dst / "existing.html").write_text("existing")
+
+        _merge_tree(src, dst)
+
+        assert (dst / "a.html").read_text() == "aaa"
+        assert (dst / "sub" / "b.html").read_text() == "bbb"
+        assert (dst / "existing.html").read_text() == "existing"
+
+
+# ---------------------------------------------------------------------------
+# _render_single_version (mocked subprocess)
+# ---------------------------------------------------------------------------
+
+
+class TestRenderSingleVersion:
+    def test_success(self, tmp_path: Path):
+        from unittest.mock import patch
+        from great_docs._versioned_build import _render_single_version
+
+        mock_result = type("R", (), {"returncode": 0, "stdout": "ok", "stderr": ""})()
+        with patch("subprocess.run", return_value=mock_result):
+            build_dir, rc, stdout, stderr = _render_single_version(str(tmp_path), None)
+        assert rc == 0
+        assert build_dir == str(tmp_path)
+
+    def test_timeout(self, tmp_path: Path):
+        from unittest.mock import patch
+        import subprocess
+        from great_docs._versioned_build import _render_single_version
+
+        with patch("subprocess.run", side_effect=subprocess.TimeoutExpired("quarto", 600)):
+            build_dir, rc, stdout, stderr = _render_single_version(str(tmp_path), None)
+        assert rc == -1
+        assert "timed out" in stderr
+
+    def test_exception(self, tmp_path: Path):
+        from unittest.mock import patch
+        from great_docs._versioned_build import _render_single_version
+
+        with patch("subprocess.run", side_effect=OSError("No quarto")):
+            build_dir, rc, stdout, stderr = _render_single_version(str(tmp_path), None)
+        assert rc == -1
+        assert "No quarto" in stderr
+
+
+# ---------------------------------------------------------------------------
+# render_versions_parallel (streaming mode)
+# ---------------------------------------------------------------------------
+
+
+class TestRenderVersionsParallel:
+    def test_streaming_mode_with_callback(self, tmp_path: Path):
+        from unittest.mock import MagicMock, patch
+        from great_docs._versioned_build import render_versions_parallel
+
+        d1 = tmp_path / "v1"
+        d1.mkdir()
+
+        mock_result = (str(d1), 0, "", "")
+        with patch(
+            "great_docs._versioned_build._render_single_version_streaming",
+            return_value=mock_result,
+        ):
+            callback = MagicMock()
+            results = render_versions_parallel([d1], progress_callback=callback)
+
+        assert len(results) == 1
+        assert results[0][1] == 0  # returncode

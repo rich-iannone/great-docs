@@ -234,6 +234,12 @@ def init(project_path: str | None, force: bool) -> None:
     is_flag=True,
     help="Force shallow clone with --from-repo (fastest, but no versioned docs or page dates)",
 )
+@click.option(
+    "--preview",
+    "preview_after",
+    is_flag=True,
+    help="Start a preview server after building with --from-repo",
+)
 def build(
     project_path: str | None,
     watch: bool,
@@ -244,6 +250,7 @@ def build(
     branch: str | None,
     output_dir: str | None,
     shallow: bool,
+    preview_after: bool,
 ) -> None:
     """Build your documentation site.
 
@@ -288,6 +295,7 @@ def build(
       great-docs build --from-repo git@github.com:owner/pkg.git --branch v1.0
       great-docs build --from-repo https://github.com/owner/pkg.git --output-dir ./site
       great-docs build --from-repo https://github.com/owner/pkg.git --shallow
+      great-docs build --from-repo https://github.com/owner/pkg.git --preview
     """
     try:
         if from_repo:
@@ -312,6 +320,9 @@ def build(
                 latest_only=latest_only,
                 shallow=shallow,
             )
+            if preview_after:
+                site_path = output_dir or str(Path.cwd() / "great-docs" / "_site")
+                GreatDocs.preview_site(site_path)
         else:
             if branch:
                 click.echo("Warning: --branch is ignored without --from-repo", err=True)
@@ -319,6 +330,8 @@ def build(
                 click.echo("Warning: --shallow is ignored without --from-repo", err=True)
             if output_dir:
                 click.echo("Warning: --output-dir is ignored without --from-repo", err=True)
+            if preview_after:
+                click.echo("Warning: --preview is ignored without --from-repo", err=True)
             docs = GreatDocs(project_path=project_path)
             # Parse version filter if provided
             version_tags = None
@@ -379,7 +392,13 @@ def uninstall(project_path: str | None) -> None:
     show_default=True,
     help="Port for the local preview server",
 )
-def preview(project_path: str | None, port: int) -> None:
+@click.option(
+    "--site-dir",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    default=None,
+    help="Path to a pre-built site directory to serve (bypasses project detection)",
+)
+def preview(project_path: str | None, port: int, site_dir: str | None) -> None:
     """Preview your documentation locally.
 
     Starts a local HTTP server and opens the built documentation site in your
@@ -388,14 +407,26 @@ def preview(project_path: str | None, port: int) -> None:
     The site is served from great-docs/_site/. Use 'great-docs build' to
     rebuild if you've made changes.
 
+    Use --site-dir to preview a site from any directory (e.g. output from
+    a --from-repo build).
+
     \b
     Examples:
       great-docs preview                    # Preview on port 3000
       great-docs preview --port 8080        # Preview on port 8080
+      great-docs preview --site-dir /tmp/weathervault-site
     """
     try:
-        docs = GreatDocs(project_path=project_path)
-        docs.preview(port=port)
+        if site_dir:
+            if project_path:
+                click.echo(
+                    "Warning: --project-path is ignored when --site-dir is used",
+                    err=True,
+                )
+            GreatDocs.preview_site(site_dir, port=port)
+        else:
+            docs = GreatDocs(project_path=project_path)
+            docs.preview(port=port)
     except KeyboardInterrupt:
         click.echo("\n👋 Server stopped")
     except Exception as e:

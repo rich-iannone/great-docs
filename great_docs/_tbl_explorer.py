@@ -1043,6 +1043,11 @@ def tbl_explorer(
         page_size=0,
     )
     ```
+
+    See Also
+    --------
+    tbl_preview: A simpler table preview widget for quick looks at datasets without interactive
+    controls or pagination.
     """
     import warnings
 

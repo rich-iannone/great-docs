@@ -1309,6 +1309,10 @@ def tbl_preview(
     ```{python}
     tbl_preview(df, show_dimensions=False, show_dtypes=False, show_row_numbers=False)
     ```
+
+    See Also
+    --------
+    tbl_explorer: Launch an interactive table explorer for deeper data investigation.
     """
     if not show_all and n_head + n_tail > limit:
         raise ValueError(

@@ -210,12 +210,47 @@ def init(project_path: str | None, force: bool) -> None:
     is_flag=True,
     help="Build only the latest version (skip historical versions)",
 )
+@click.option(
+    "--from-repo",
+    "from_repo",
+    type=str,
+    default=None,
+    help="Clone a remote Git repository and build its docs (HTTPS or SSH URL)",
+)
+@click.option(
+    "--branch",
+    type=str,
+    default=None,
+    help="Branch or tag to check out when using --from-repo (default: repo default)",
+)
+@click.option(
+    "--output-dir",
+    type=click.Path(file_okay=False, dir_okay=True),
+    default=None,
+    help="Where to copy the built site when using --from-repo (default: ./great-docs/_site)",
+)
+@click.option(
+    "--shallow",
+    is_flag=True,
+    help="Force shallow clone with --from-repo (fastest, but no versioned docs or page dates)",
+)
+@click.option(
+    "--preview",
+    "preview_after",
+    is_flag=True,
+    help="Start a preview server after building with --from-repo",
+)
 def build(
     project_path: str | None,
     watch: bool,
     no_refresh: bool,
     version_filter: str | None,
     latest_only: bool,
+    from_repo: str | None,
+    branch: str | None,
+    output_dir: str | None,
+    shallow: bool,
+    preview_after: bool,
 ) -> None:
     """Build your documentation site.
 
@@ -226,22 +261,22 @@ def build(
     and builds the documentation site. The build directory is ephemeral and
     should not be committed to version control.
 
-    \b
-    1. Creates great-docs/ directory with all assets
-    2. Copies user guide files from project root
-    3. Generates index.qmd from README.md
-    4. Refreshes API reference configuration (discovers API changes)
-    5. Generates llms.txt and llms-full.txt for AI/LLM indexing
-    6. Creates source links to GitHub
-    7. Generates CLI reference pages (if enabled)
-    8. Generates API reference pages
-    9. Runs Quarto to render the final HTML site in great-docs/_site/
+    Use --project-path to point to a project in a different directory.
+    Use --watch to automatically rebuild when source files change.
 
     Use --no-refresh to skip API discovery for faster rebuilds when your
     package's public API hasn't changed.
 
     When multi-version documentation is configured, use --versions to build
     only specific versions, or --latest-only to skip historical versions.
+
+    Use --from-repo to build documentation from a remote Git repository.
+    This clones the repo into a temporary directory, creates an isolated
+    virtual environment, installs the package and great-docs, builds the
+    site, and copies the output to --output-dir (or ./great-docs/_site).
+
+    Add --preview to automatically start a local server after a --from-repo
+    build completes, opening the site in your browser.
 
     \b
     Examples:
@@ -251,19 +286,58 @@ def build(
       great-docs build --versions 0.3,dev   # Build specific versions only
       great-docs build --latest-only        # Build only the latest version
       great-docs build --project-path ../pkg
+      great-docs build --from-repo https://github.com/owner/pkg.git
+      great-docs build --from-repo git@github.com:owner/pkg.git --branch v1.0
+      great-docs build --from-repo https://github.com/owner/pkg.git --output-dir ./site
+      great-docs build --from-repo https://github.com/owner/pkg.git --shallow
+      great-docs build --from-repo https://github.com/owner/pkg.git --preview
     """
     try:
-        docs = GreatDocs(project_path=project_path)
-        # Parse version filter if provided
-        version_tags = None
-        if version_filter:
-            version_tags = [v.strip() for v in version_filter.split(",") if v.strip()]
-        docs.build(
-            watch=watch,
-            refresh=not no_refresh,
-            version_tags=version_tags,
-            latest_only=latest_only,
-        )
+        if from_repo:
+            # Remote build: clone, install, build, copy output
+            if project_path:
+                click.echo(
+                    "Warning: --project-path is ignored when --from-repo is used",
+                    err=True,
+                )
+            if watch:
+                click.echo("Error: --watch is not supported with --from-repo", err=True)
+                sys.exit(1)
+            version_tags = None
+            if version_filter:
+                version_tags = [v.strip() for v in version_filter.split(",") if v.strip()]
+            GreatDocs.build_from_repo(
+                from_repo,
+                branch=branch,
+                output_dir=output_dir,
+                refresh=not no_refresh,
+                version_tags=version_tags,
+                latest_only=latest_only,
+                shallow=shallow,
+            )
+            if preview_after:
+                site_path = output_dir or str(Path.cwd() / "great-docs" / "_site")
+                GreatDocs.preview_site(site_path)
+        else:
+            if branch:
+                click.echo("Warning: --branch is ignored without --from-repo", err=True)
+            if shallow:
+                click.echo("Warning: --shallow is ignored without --from-repo", err=True)
+            if output_dir:
+                click.echo("Warning: --output-dir is ignored without --from-repo", err=True)
+            if preview_after:
+                click.echo("Warning: --preview is ignored without --from-repo", err=True)
+            docs = GreatDocs(project_path=project_path)
+            # Parse version filter if provided
+            version_tags = None
+            if version_filter:
+                version_tags = [v.strip() for v in version_filter.split(",") if v.strip()]
+            docs.build(
+                watch=watch,
+                refresh=not no_refresh,
+                version_tags=version_tags,
+                latest_only=latest_only,
+            )
     except KeyboardInterrupt:
         click.echo("\n👋 Stopped watching")
     except Exception as e:
@@ -313,7 +387,13 @@ def uninstall(project_path: str | None) -> None:
     show_default=True,
     help="Port for the local preview server",
 )
-def preview(project_path: str | None, port: int) -> None:
+@click.option(
+    "--site-dir",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    default=None,
+    help="Path to a pre-built site directory to serve (bypasses project detection)",
+)
+def preview(project_path: str | None, port: int, site_dir: str | None) -> None:
     """Preview your documentation locally.
 
     Starts a local HTTP server and opens the built documentation site in your
@@ -322,14 +402,26 @@ def preview(project_path: str | None, port: int) -> None:
     The site is served from great-docs/_site/. Use 'great-docs build' to
     rebuild if you've made changes.
 
+    Use --site-dir to preview a site from any directory (e.g. output from
+    a --from-repo build).
+
     \b
     Examples:
       great-docs preview                    # Preview on port 3000
       great-docs preview --port 8080        # Preview on port 8080
+      great-docs preview --site-dir /tmp/weathervault-site
     """
     try:
-        docs = GreatDocs(project_path=project_path)
-        docs.preview(port=port)
+        if site_dir:
+            if project_path:
+                click.echo(
+                    "Warning: --project-path is ignored when --site-dir is used",
+                    err=True,
+                )
+            GreatDocs.preview_site(site_dir, port=port)
+        else:
+            docs = GreatDocs(project_path=project_path)
+            docs.preview(port=port)
     except KeyboardInterrupt:
         click.echo("\n👋 Server stopped")
     except Exception as e:

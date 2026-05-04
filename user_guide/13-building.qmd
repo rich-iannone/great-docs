@@ -108,6 +108,56 @@ The `_site/` subdirectory contains the final HTML output. This is the directory 
 
 Everything outside of `_site/` is intermediate Quarto source. You generally do not need to inspect these files, but they can be useful for debugging rendering issues.
 
+## Building from a Remote Repository {#from-repo}
+
+The `--from-repo` flag lets you build documentation for any Git-hosted package without cloning it yourself. Great Docs handles the entire workflow: cloning the repository, creating an isolated virtual environment, installing the package and its dependencies, running the full build pipeline, and copying the finished site to a local directory.
+
+```{.bash filename="Terminal"}
+great-docs build --from-repo https://github.com/owner/package.git
+```
+
+The built site is copied to `./great-docs/_site/` by default. Use `--output-dir` to put it somewhere else:
+
+```{.bash filename="Terminal"}
+great-docs build --from-repo https://github.com/owner/package.git --output-dir /tmp/my-site
+```
+
+### Branch or Tag
+
+By default the repository's default branch is cloned. Use `--branch` to check out a specific branch or tag:
+
+```{.bash filename="Terminal"}
+great-docs build --from-repo https://github.com/owner/package.git --branch v2.0.0
+```
+
+### Clone Depth
+
+Great Docs inspects the target project's `great-docs.yml` to decide how much Git history to fetch. If the project uses multi-version docs or page dates, a full clone is performed automatically. Otherwise a lightweight tag-only clone is used.
+
+Use `--shallow` to force a minimal `--depth 1` clone. This is the fastest option but disables versioned documentation and page dates:
+
+```{.bash filename="Terminal"}
+great-docs build --from-repo https://github.com/owner/package.git --shallow
+```
+
+### Previewing After Build
+
+Add `--preview` to start a local server and open the site in your browser as soon as the build finishes:
+
+```{.bash filename="Terminal"}
+great-docs build --from-repo https://github.com/owner/package.git --preview
+```
+
+### Previewing a Previously Built Site
+
+If you have already built a site with `--from-repo` (or received a site directory from someone else), use `great-docs preview --site-dir` to serve it without any project context:
+
+```{.bash filename="Terminal"}
+great-docs preview --site-dir /tmp/my-site
+```
+
+This starts the same local HTTP server and opens your browser, just like the regular `great-docs preview` command.
+
 ## Using the Python API
 
 In addition to the CLI, you can drive the build programmatically:

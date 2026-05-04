@@ -20,14 +20,17 @@ def enable_tbl_preview(**kwargs: Any) -> None:
     --------
     In a notebook or `.qmd` file:
 
-    .. code-block:: python
+    ```python
+    import great_docs as gd
+    gd.enable_tbl_preview(n_head=8, n_tail=3)
+    ```
 
-        import great_docs as gd
-        gd.enable_tbl_preview(n_head=8, n_tail=3)
+    Now any DataFrame displayed will use `tbl_preview()` automatically:
 
-        # Now any DataFrame displayed will use tbl_preview() automatically:
-        import pandas as pd
-        pd.read_csv("data.csv")  # → rendered as a preview table
+    ```python
+    import pandas as pd
+    pd.read_csv("data.csv")  # rendered as a preview table
+    ```
     """
     try:
         ip = _get_ipython()

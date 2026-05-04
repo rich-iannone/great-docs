@@ -1759,3 +1759,186 @@ class TestDefensiveStepTiming:
         output = stream.getvalue()
         assert "<0.1s" in output
         assert "Unexpected failure" in output
+
+
+# =========================================================================
+# MultiProgressBar
+# =========================================================================
+
+
+class TestMultiProgressBar:
+    """Tests for MultiProgressBar (parallel version rendering progress)."""
+
+    def test_init_and_labels(self):
+        from great_docs._build_log import MultiProgressBar
+
+        stream = io.StringIO()
+        mpb = MultiProgressBar(
+            labels=["v0.1", "v0.2", "v0.3"],
+            colors=Colors(force_color=False),
+            stream=stream,
+        )
+        assert mpb._n == 3
+        assert mpb._labels == ["v0.1", "v0.2", "v0.3"]
+        assert mpb._totals == [1, 1, 1]
+        assert mpb._currents == [0, 0, 0]
+
+    def test_set_total(self):
+        from great_docs._build_log import MultiProgressBar
+
+        stream = io.StringIO()
+        mpb = MultiProgressBar(
+            labels=["a", "b"],
+            colors=Colors(force_color=False),
+            stream=stream,
+        )
+        mpb.set_total(0, 10)
+        mpb.set_total(1, 20)
+        assert mpb._totals == [10, 20]
+
+    def test_set_total_minimum_one(self):
+        from great_docs._build_log import MultiProgressBar
+
+        stream = io.StringIO()
+        mpb = MultiProgressBar(
+            labels=["a"],
+            colors=Colors(force_color=False),
+            stream=stream,
+        )
+        mpb.set_total(0, 0)
+        assert mpb._totals[0] == 1
+
+    def test_update_ci_mode(self):
+        """Non-TTY stream gets CI-style percentage output."""
+        from great_docs._build_log import MultiProgressBar
+
+        stream = io.StringIO()
+        mpb = MultiProgressBar(
+            labels=["build"],
+            colors=Colors(force_color=False),
+            stream=stream,
+        )
+        mpb.set_total(0, 10)
+
+        # Update to 10% — should emit
+        mpb.update(0, 1)
+        output = stream.getvalue()
+        assert "10%" in output
+
+        # Update to 50% — should emit
+        mpb.update(0, 5)
+        output = stream.getvalue()
+        assert "50%" in output
+
+    def test_update_marks_slot_finished(self):
+        from great_docs._build_log import MultiProgressBar
+
+        stream = io.StringIO()
+        mpb = MultiProgressBar(
+            labels=["slot1"],
+            colors=Colors(force_color=False),
+            stream=stream,
+        )
+        mpb.set_total(0, 5)
+        mpb.update(0, 5)
+        assert 0 in mpb._finished_slots
+
+    def test_render_slot_in_progress(self):
+        from great_docs._build_log import MultiProgressBar
+
+        stream = io.StringIO()
+        mpb = MultiProgressBar(
+            labels=["v0.3"],
+            colors=Colors(force_color=False),
+            stream=stream,
+        )
+        mpb.set_total(0, 10)
+        mpb._currents[0] = 5
+
+        slot_str = mpb._render_slot(0)
+        assert "v0.3" in slot_str
+        assert "5/10" in slot_str
+        assert "50%" in slot_str
+
+    def test_render_slot_finished(self):
+        from great_docs._build_log import MultiProgressBar
+
+        stream = io.StringIO()
+        mpb = MultiProgressBar(
+            labels=["v0.2"],
+            colors=Colors(force_color=False),
+            stream=stream,
+        )
+        mpb.set_total(0, 10)
+        mpb._currents[0] = 10
+        mpb._finished_slots.add(0)
+
+        slot_str = mpb._render_slot(0)
+        assert "v0.2" in slot_str
+        assert "100%" in slot_str
+
+    def test_finish_idempotent(self):
+        from great_docs._build_log import MultiProgressBar
+
+        stream = io.StringIO()
+        mpb = MultiProgressBar(
+            labels=["a"],
+            colors=Colors(force_color=False),
+            stream=stream,
+        )
+        mpb.finish()
+        mpb.finish()  # Should not raise
+        assert mpb._all_finished is True
+
+    def test_tty_mode_redraws(self):
+        """TTY stream uses ANSI escape sequences for redraws."""
+        from great_docs._build_log import MultiProgressBar
+
+        class FakeTTY(io.StringIO):
+            def isatty(self):
+                return True
+
+        stream = FakeTTY()
+        mpb = MultiProgressBar(
+            labels=["v1", "v2"],
+            colors=Colors(force_color=False),
+            stream=stream,
+        )
+        mpb.set_total(0, 10)
+        mpb.set_total(1, 10)
+
+        mpb.update(0, 3)
+        output = stream.getvalue()
+        # Should contain slot labels
+        assert "v1" in output
+        assert "v2" in output
+
+    def test_tty_finish_clears(self):
+        """finish() on a TTY with drawn content emits escape codes."""
+        from great_docs._build_log import MultiProgressBar
+
+        class FakeTTY(io.StringIO):
+            def isatty(self):
+                return True
+
+        stream = FakeTTY()
+        mpb = MultiProgressBar(
+            labels=["a", "b"],
+            colors=Colors(force_color=False),
+            stream=stream,
+        )
+        mpb.set_total(0, 5)
+        mpb.update(0, 2)  # Force a draw
+        mpb.finish()
+
+        output = stream.getvalue()
+        # Should have escape codes for cursor movement
+        assert "\033[" in output
+
+    def test_multi_progress_from_build_log(self):
+        """BuildLog.multi_progress() returns a properly configured MultiProgressBar."""
+        stream = io.StringIO()
+        log = BuildLog(stream=stream, force_color=False)
+        mpb = log.multi_progress(["slot_a", "slot_b"])
+        assert mpb._n == 2
+        assert mpb._labels == ["slot_a", "slot_b"]

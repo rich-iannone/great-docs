@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-import yaml
+from yaml12 import read_yaml
 
 
 def _ext_dir() -> Path:
@@ -21,14 +21,14 @@ class TestKeysExtensionFiles:
 
     def test_extension_yml_declares_shortcode(self):
         ext_yml = _ext_dir() / "_extension.yml"
-        data = yaml.safe_load(ext_yml.read_text())
+        data = read_yaml(ext_yml)
         assert "contributes" in data
         assert "shortcodes" in data["contributes"]
         assert "keys.lua" in data["contributes"]["shortcodes"]
 
     def test_extension_yml_metadata(self):
         ext_yml = _ext_dir() / "_extension.yml"
-        data = yaml.safe_load(ext_yml.read_text())
+        data = read_yaml(ext_yml)
         assert data["title"] == "Keyboard Keys"
         assert data["author"] == "Great Docs"
         assert "version" in data

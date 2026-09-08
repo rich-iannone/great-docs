@@ -552,7 +552,7 @@ def _check_stale_versions(project_root: Path, result: LintResult) -> None:
         where X is very old
       - `upcoming: "X"` frontmatter where X is already released
     """
-    import yaml
+    from yaml12 import read_yaml
 
     # Load great-docs.yml for versions list and optional lint config
     config_path = project_root / "great-docs.yml"
@@ -560,7 +560,7 @@ def _check_stale_versions(project_root: Path, result: LintResult) -> None:
         return
 
     try:
-        raw_config = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+        raw_config = read_yaml(config_path) or {}
     except Exception:
         return
 

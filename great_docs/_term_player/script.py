@@ -157,10 +157,10 @@ def load_script(path: str | Path) -> Script:
     Script
         Parsed script object.
     """
-    import yaml
+    from yaml12 import read_yaml
 
     p = Path(path)
-    data = yaml.safe_load(p.read_text(encoding="utf-8"))
+    data = read_yaml(p)
     if not isinstance(data, dict):
         return Script()
 

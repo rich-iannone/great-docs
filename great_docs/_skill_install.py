@@ -65,12 +65,7 @@ def _parse_frontmatter(content: str) -> tuple[dict, str]:
 
     Returns (frontmatter_dict, body_text).
     """
-    try:
-        from py_yaml12 import loads as parse_yaml
-    except ImportError:  # pragma: no cover
-        import yaml
-
-        parse_yaml = yaml.safe_load  # type: ignore[assignment]
+    from yaml12 import parse_yaml
 
     normalized = content.lstrip()
     if not normalized.startswith("---"):
@@ -673,16 +668,9 @@ def _stamp_install_metadata(content: str, pkg_version: str) -> str:
     metadata["content_hash"] = _content_hash(content)
 
     # Re-serialize frontmatter
-    try:
-        from py_yaml12 import dumps as format_yaml
-    except ImportError:  # pragma: no cover
-        import yaml
-
-        format_yaml = yaml.dump  # type: ignore[assignment]
+    from yaml12 import format_yaml
 
     fm_text = format_yaml(fm)
-    if isinstance(fm_text, bytes):
-        fm_text = fm_text.decode("utf-8")  # pragma: no cover
     return f"---\n{fm_text.rstrip()}\n---\n\n{body}"
 
 

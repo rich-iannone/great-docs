@@ -2709,10 +2709,7 @@ class GreatDocs:
         if not quarto_yml.is_file():
             return
 
-        import yaml
-
-        with open(quarto_yml, encoding="utf-8") as f:
-            config = yaml.safe_load(f)
+        config = read_yaml(quarto_yml)
 
         if "format" not in config or "html" not in config.get("format", {}):
             return  # pragma: no cover
@@ -2749,8 +2746,7 @@ class GreatDocs:
         else:
             entries.append(inline_entry)  # pragma: no cover
 
-        with open(quarto_yml, "w", encoding="utf-8") as f:
-            yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+        write_yaml(config, quarto_yml)
 
     @staticmethod
     def _tag_slug(tag_name: str) -> str:
@@ -2938,10 +2934,7 @@ class GreatDocs:
         if not quarto_yml.is_file():
             return
 
-        import yaml
-
-        with open(quarto_yml, encoding="utf-8") as f:
-            config = yaml.safe_load(f)
+        config = read_yaml(quarto_yml)
 
         if "format" not in config or "html" not in config.get("format", {}):
             return  # pragma: no cover
@@ -2976,8 +2969,7 @@ class GreatDocs:
         else:
             entries.append(inline_entry)
 
-        with open(quarto_yml, "w", encoding="utf-8") as f:
-            yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+        write_yaml(config, quarto_yml)
 
     def _process_page_statuses(self) -> bool:
         """
@@ -11434,6 +11426,11 @@ anchor-sections: true
         else:
             # Always explicitly set parser for clarity
             api_ref_config["parser"] = "numpy"
+
+        api_ref_config["callable_signatures"] = {
+            "style": self._config.callable_signatures_style,
+            "wrap": self._config.callable_signatures_wrap,
+        }
 
         # Get jupyter kernel from great-docs.yml config (defaults to python3)
         jupyter_kernel = self._config.jupyter

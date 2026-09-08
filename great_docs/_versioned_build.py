@@ -354,9 +354,9 @@ def _prune_quarto_cli_sidebar(dest_dir: Path, valid_stems: set[str]) -> None:
         return
 
     try:
-        import yaml
+        from yaml12 import read_yaml, write_yaml
 
-        content = yaml.safe_load(quarto_yml.read_text(encoding="utf-8"))
+        content = read_yaml(quarto_yml)
         if not content:
             return
 
@@ -382,13 +382,7 @@ def _prune_quarto_cli_sidebar(dest_dir: Path, valid_stems: set[str]) -> None:
             break
 
         if modified:
-            yaml.dump(
-                content,
-                quarto_yml.open("w", encoding="utf-8"),
-                default_flow_style=False,
-                sort_keys=False,
-                allow_unicode=True,
-            )
+            write_yaml(content, quarto_yml)
     except Exception:  # pragma: no cover
         pass  # pragma: no cover
 
@@ -985,9 +979,9 @@ def _prune_quarto_sidebar(dest_dir: Path, section: str, valid_symbols: set[str])
         return
 
     try:
-        import yaml
+        from yaml12 import read_yaml, write_yaml
 
-        content = yaml.safe_load(quarto_yml.read_text(encoding="utf-8"))
+        content = read_yaml(quarto_yml)
         if not content:
             return
 
@@ -1050,13 +1044,7 @@ def _prune_quarto_sidebar(dest_dir: Path, section: str, valid_symbols: set[str])
                 modified = True
 
         if modified:
-            yaml.dump(
-                content,
-                quarto_yml.open("w", encoding="utf-8"),
-                default_flow_style=False,
-                sort_keys=False,
-                allow_unicode=True,
-            )
+            write_yaml(content, quarto_yml)
     except Exception:  # pragma: no cover
         pass  # pragma: no cover
 

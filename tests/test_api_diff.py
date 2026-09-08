@@ -1957,11 +1957,10 @@ def test_python_bridge_exists():
 
 
 def test_extension_yml_declares_shortcode():
-    import yaml
+    from yaml12 import read_yaml
 
     ext_yml = _ext_dir() / "_extension.yml"
-    with open(ext_yml) as f:
-        data = yaml.safe_load(f)
+    data = read_yaml(ext_yml)
 
     assert "contributes" in data
     assert "shortcodes" in data["contributes"]
@@ -3864,7 +3863,7 @@ def test_read_cli_module_yaml_parse_exception():
 
     with (
         patch("great_docs._api_diff.subprocess.run", side_effect=fake_run),
-        patch("yaml.safe_load", side_effect=Exception("yaml parse error")),
+        patch("yaml12.parse_yaml", side_effect=Exception("yaml parse error")),
     ):
         result = _read_cli_module_at_tag(Path("/project"), "v1.0", "mypkg")
 

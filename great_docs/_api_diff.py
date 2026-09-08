@@ -828,9 +828,9 @@ def _read_cli_module_at_tag(
             else:
                 # great-docs.yml — simple yaml parse
                 try:
-                    import yaml
+                    from yaml12 import parse_yaml
 
-                    data = yaml.safe_load(content) or {}
+                    data = parse_yaml(content) or {}
                     cli_cfg = data.get("cli", {})
                     if cli_cfg.get("enabled"):
                         return cli_cfg.get("module")

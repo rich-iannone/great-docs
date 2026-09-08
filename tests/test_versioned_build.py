@@ -1516,7 +1516,7 @@ class TestRewriteCliIndex:
 
 class TestPruneQuartoCliSidebar:
     def test_removes_invalid_sidebar_entries(self, tmp_path: Path):
-        import yaml
+        from yaml12 import format_yaml, parse_yaml
 
         from great_docs._versioned_build import _prune_quarto_cli_sidebar
 
@@ -1535,11 +1535,11 @@ class TestPruneQuartoCliSidebar:
                 ]
             }
         }
-        quarto.write_text(yaml.dump(config), encoding="utf-8")
+        quarto.write_text(format_yaml(config), encoding="utf-8")
 
         _prune_quarto_cli_sidebar(tmp_path, {"index", "build"})
 
-        result = yaml.safe_load(quarto.read_text())
+        result = parse_yaml(quarto.read_text())
         contents = result["website"]["sidebar"][0]["contents"]
         stems = [Path(c).stem for c in contents]
         assert "build" in stems
@@ -1785,7 +1785,7 @@ class TestPruneReferenceIndex:
 
 class TestPruneQuartoSidebar:
     def test_removes_invalid_reference_entries(self, tmp_path: Path):
-        import yaml
+        from yaml12 import format_yaml, parse_yaml
 
         from great_docs._versioned_build import _prune_quarto_sidebar
 
@@ -1804,11 +1804,11 @@ class TestPruneQuartoSidebar:
                 ]
             }
         }
-        quarto.write_text(yaml.dump(config), encoding="utf-8")
+        quarto.write_text(format_yaml(config), encoding="utf-8")
 
         _prune_quarto_sidebar(tmp_path, "reference", {"MyFunc", "MyClass"})
 
-        result = yaml.safe_load(quarto.read_text())
+        result = parse_yaml(quarto.read_text())
         contents = result["website"]["sidebar"][0]["contents"]
         stems = [Path(c).stem for c in contents]
         assert "MyFunc" in stems
@@ -1816,7 +1816,7 @@ class TestPruneQuartoSidebar:
         assert "OldFunc" not in stems
 
     def test_removes_empty_section_groups(self, tmp_path: Path):
-        import yaml
+        from yaml12 import format_yaml, parse_yaml
 
         from great_docs._versioned_build import _prune_quarto_sidebar
 
@@ -1837,11 +1837,11 @@ class TestPruneQuartoSidebar:
                 ]
             }
         }
-        quarto.write_text(yaml.dump(config), encoding="utf-8")
+        quarto.write_text(format_yaml(config), encoding="utf-8")
 
         _prune_quarto_sidebar(tmp_path, "reference", {"Kept"})
 
-        result = yaml.safe_load(quarto.read_text())
+        result = parse_yaml(quarto.read_text())
         contents = result["website"]["sidebar"][0]["contents"]
         # The section group with "OldFunc" should be removed
         assert len(contents) == 1
@@ -2572,7 +2572,7 @@ class TestPruneReferenceIndexDefinitionList:
 class TestPruneQuartoSidebarSubPath:
     def test_keeps_sub_paths(self, tmp_path: Path):
         """Sub-paths like reference/cli/build.qmd are kept (not pruned)."""
-        import yaml
+        from yaml12 import format_yaml, parse_yaml
 
         from great_docs._versioned_build import _prune_quarto_sidebar
 
@@ -2591,29 +2591,29 @@ class TestPruneQuartoSidebarSubPath:
                 ]
             }
         }
-        quarto.write_text(yaml.dump(config), encoding="utf-8")
+        quarto.write_text(format_yaml(config), encoding="utf-8")
 
         _prune_quarto_sidebar(tmp_path, "reference", {"MyFunc"})
 
-        result = yaml.safe_load(quarto.read_text())
+        result = parse_yaml(quarto.read_text())
         contents = result["website"]["sidebar"][0]["contents"]
         assert "reference/MyFunc.qmd" in contents
         assert "reference/cli/build.qmd" in contents  # sub-path kept
         assert "reference/Removed.qmd" not in contents
 
     def test_no_matching_sidebar_does_nothing(self, tmp_path: Path):
-        import yaml
+        from yaml12 import format_yaml, parse_yaml
 
         from great_docs._versioned_build import _prune_quarto_sidebar
 
         quarto = tmp_path / "_quarto.yml"
         config = {"website": {"sidebar": [{"id": "other", "contents": ["guide.qmd"]}]}}
-        quarto.write_text(yaml.dump(config), encoding="utf-8")
+        quarto.write_text(format_yaml(config), encoding="utf-8")
 
         _prune_quarto_sidebar(tmp_path, "reference", {"func"})
 
         # File should be unchanged since no sidebar matches
-        result = yaml.safe_load(quarto.read_text())
+        result = parse_yaml(quarto.read_text())
         assert result["website"]["sidebar"][0]["contents"] == ["guide.qmd"]
 
     def test_no_quarto_yml_does_nothing(self, tmp_path: Path):
@@ -3600,7 +3600,7 @@ class TestPreprocessVersionGitRef:
 
 class TestPruneQuartoSidebarNestedSectionGroup:
     def test_removes_empty_section_group(self, tmp_path: Path):
-        import yaml
+        from yaml12 import format_yaml, parse_yaml
 
         from great_docs._versioned_build import _prune_quarto_sidebar
 
@@ -3624,18 +3624,18 @@ class TestPruneQuartoSidebarNestedSectionGroup:
                 ]
             }
         }
-        quarto.write_text(yaml.dump(config), encoding="utf-8")
+        quarto.write_text(format_yaml(config), encoding="utf-8")
 
         _prune_quarto_sidebar(tmp_path, "reference", {"kept"})
 
-        result = yaml.safe_load(quarto.read_text())
+        result = parse_yaml(quarto.read_text())
         contents = result["website"]["sidebar"][0]["contents"]
         # The section group should be entirely removed since all its entries are invalid
         assert len(contents) == 1
         assert contents[0] == "reference/kept.qmd"
 
     def test_partially_prunes_section_group(self, tmp_path: Path):
-        import yaml
+        from yaml12 import format_yaml, parse_yaml
 
         from great_docs._versioned_build import _prune_quarto_sidebar
 
@@ -3658,11 +3658,11 @@ class TestPruneQuartoSidebarNestedSectionGroup:
                 ]
             }
         }
-        quarto.write_text(yaml.dump(config), encoding="utf-8")
+        quarto.write_text(format_yaml(config), encoding="utf-8")
 
         _prune_quarto_sidebar(tmp_path, "reference", {"kept"})
 
-        result = yaml.safe_load(quarto.read_text())
+        result = parse_yaml(quarto.read_text())
         contents = result["website"]["sidebar"][0]["contents"]
         assert len(contents) == 1
         section = contents[0]
@@ -4167,7 +4167,7 @@ class TestPruneQuartoCliSidebarEdges:
         _prune_quarto_cli_sidebar(tmp_path, {"index"})
 
     def test_non_cli_sidebar_skipped(self, tmp_path: Path):
-        import yaml
+        from yaml12 import format_yaml, parse_yaml
 
         from great_docs._versioned_build import _prune_quarto_cli_sidebar
 
@@ -4179,13 +4179,13 @@ class TestPruneQuartoCliSidebarEdges:
                 ]
             }
         }
-        quarto.write_text(yaml.dump(config), encoding="utf-8")
+        quarto.write_text(format_yaml(config), encoding="utf-8")
         _prune_quarto_cli_sidebar(tmp_path, {"index"})
-        result = yaml.safe_load(quarto.read_text())
+        result = parse_yaml(quarto.read_text())
         assert len(result["website"]["sidebar"][0]["contents"]) == 2
 
     def test_dict_item_in_contents_kept(self, tmp_path: Path):
-        import yaml
+        from yaml12 import format_yaml, parse_yaml
 
         from great_docs._versioned_build import _prune_quarto_cli_sidebar
 
@@ -4204,9 +4204,9 @@ class TestPruneQuartoCliSidebarEdges:
                 ]
             }
         }
-        quarto.write_text(yaml.dump(config), encoding="utf-8")
+        quarto.write_text(format_yaml(config), encoding="utf-8")
         _prune_quarto_cli_sidebar(tmp_path, {"index"})
-        result = yaml.safe_load(quarto.read_text())
+        result = parse_yaml(quarto.read_text())
         contents = result["website"]["sidebar"][0]["contents"]
         has_dict = any(isinstance(c, dict) for c in contents)
         assert has_dict

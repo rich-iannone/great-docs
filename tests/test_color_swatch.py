@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 import pytest
-import yaml
+from yaml12 import read_yaml
 
 
 def _ext_dir() -> Path:
@@ -37,7 +37,7 @@ class TestColorSwatchExtensionFiles:
 
     def test_extension_yml_declares_shortcode(self):
         ext_yml = _ext_dir() / "_extension.yml"
-        data = yaml.safe_load(ext_yml.read_text())
+        data = read_yaml(ext_yml)
         assert "contributes" in data
         assert "shortcodes" in data["contributes"]
         assert "color-swatch.lua" in data["contributes"]["shortcodes"]

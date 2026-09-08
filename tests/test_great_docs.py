@@ -34175,10 +34175,10 @@ def _make_function_page(name="my_func"):
 
 def _front_matter_title(rendered: str) -> str:
     """Return the parsed YAML front-matter title, format-independent."""
-    import re, yaml
+    import re
 
     m = re.match(r"^---\n(.*?)\n---\n", rendered, re.DOTALL)
-    return yaml.safe_load(m.group(1)).get("title", "") if m else ""
+    return parse_yaml(m.group(1)).get("title", "") if m else ""
 
 
 def _make_class_page_with_members(name="MyClass"):
@@ -43159,10 +43159,7 @@ def test_add_section_sidebar_with_sidebar_groups():
             sidebar_groups=sidebar_groups,
         )
 
-        import yaml as pyyaml
-
-        with open(quarto_yml, encoding="utf-8") as f:
-            config = pyyaml.safe_load(f)
+        config = read_yaml(quarto_yml)
 
         sidebars = config["website"]["sidebar"]
         recipe_sidebar = next((s for s in sidebars if s.get("id") == "recipes"), None)
@@ -43209,10 +43206,7 @@ def test_add_section_sidebar_with_sidebar_groups_ungrouped_pages():
             sidebar_groups=sidebar_groups,
         )
 
-        import yaml as pyyaml
-
-        with open(quarto_yml, encoding="utf-8") as f:
-            config = pyyaml.safe_load(f)
+        config = read_yaml(quarto_yml)
 
         sidebars = config["website"]["sidebar"]
         guide_sidebar = next((s for s in sidebars if s.get("id") == "guides"), None)

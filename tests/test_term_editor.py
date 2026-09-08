@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import yaml
+from yaml12 import parse_yaml
 import pytest
 
 from great_docs._term_player.editor import _build_editor_data, _serialize_script
@@ -180,7 +180,7 @@ class TestSerializeScript:
             "snippets": [],
         }
         yaml_str = _serialize_script(script_data, "demo.termshow")
-        parsed = yaml.safe_load(yaml_str)
+        parsed = parse_yaml(yaml_str)
         assert parsed["source"] == "demo.termshow"
         assert parsed["settings"]["window_chrome"] == "colorful"
         assert "prompt" not in parsed["settings"]
@@ -202,7 +202,7 @@ class TestSerializeScript:
             "snippets": [],
         }
         yaml_str = _serialize_script(script_data, "demo.termshow")
-        parsed = yaml.safe_load(yaml_str)
+        parsed = parse_yaml(yaml_str)
         assert parsed["settings"]["prompt"] == "❯"
         assert "prompt_pattern" not in parsed["settings"]
 
@@ -221,7 +221,7 @@ class TestSerializeScript:
             "snippets": [],
         }
         yaml_str = _serialize_script(script_data, "demo.termshow")
-        parsed = yaml.safe_load(yaml_str)
+        parsed = parse_yaml(yaml_str)
         assert parsed["settings"]["prompt"] == "→"
         assert parsed["settings"]["prompt_pattern"] == r"^\$ "
 
@@ -240,7 +240,7 @@ class TestSerializeScript:
             "snippets": [],
         }
         yaml_str = _serialize_script(script_data, "demo.termshow")
-        parsed = yaml.safe_load(yaml_str)
+        parsed = parse_yaml(yaml_str)
         assert parsed["settings"]["font_family"] == "JetBrains Mono"
 
     def test_font_family_comma_list(self):
@@ -258,7 +258,7 @@ class TestSerializeScript:
             "snippets": [],
         }
         yaml_str = _serialize_script(script_data, "demo.termshow")
-        parsed = yaml.safe_load(yaml_str)
+        parsed = parse_yaml(yaml_str)
         assert parsed["settings"]["font_family"] == "JetBrains Mono, Fira Code, monospace"
 
     def test_speed_non_default_serialized(self):
@@ -276,7 +276,7 @@ class TestSerializeScript:
             "snippets": [],
         }
         yaml_str = _serialize_script(script_data, "demo.termshow")
-        parsed = yaml.safe_load(yaml_str)
+        parsed = parse_yaml(yaml_str)
         assert parsed["settings"]["speed"] == 2.0
 
     def test_speed_default_omitted(self):
@@ -294,7 +294,7 @@ class TestSerializeScript:
             "snippets": [],
         }
         yaml_str = _serialize_script(script_data, "demo.termshow")
-        parsed = yaml.safe_load(yaml_str)
+        parsed = parse_yaml(yaml_str)
         assert "speed" not in parsed["settings"]
 
     def test_chapters_serialized_sorted(self):
@@ -315,7 +315,7 @@ class TestSerializeScript:
             "snippets": [],
         }
         yaml_str = _serialize_script(script_data, "demo.termshow")
-        parsed = yaml.safe_load(yaml_str)
+        parsed = parse_yaml(yaml_str)
         assert parsed["chapters"][0]["label"] == "First"
         assert parsed["chapters"][1]["label"] == "Second"
 
@@ -336,7 +336,7 @@ class TestSerializeScript:
             ],
         }
         yaml_str = _serialize_script(script_data, "demo.termshow")
-        parsed = yaml.safe_load(yaml_str)
+        parsed = parse_yaml(yaml_str)
         assert parsed["snippets"][0]["match"] == r"\$ (.+)"
         assert parsed["snippets"][0]["label"] == "cmd"
 
@@ -367,7 +367,7 @@ class TestSerializeScript:
             ],
         }
         yaml_str = _serialize_script(script_data, "rec.termshow")
-        parsed = yaml.safe_load(yaml_str)
+        parsed = parse_yaml(yaml_str)
         s = parsed["settings"]
         assert s["speed"] == 3.0
         assert s["window_chrome"] == "simple"
@@ -395,7 +395,7 @@ class TestSerializeScript:
             "snippets": [],
         }
         yaml_str = _serialize_script(script_data, "x.termshow")
-        parsed = yaml.safe_load(yaml_str)
+        parsed = parse_yaml(yaml_str)
         assert parsed["source"] == "x.termshow"
         # No chapters/annotations/cuts/snippets keys when empty
         assert parsed.get("chapters") is None
@@ -405,7 +405,7 @@ class TestSerializeScript:
 
 
 # ---------------------------------------------------------------------------
-# Round-trip: _build_editor_data → _serialize_script → yaml.safe_load
+# Round-trip: _build_editor_data → _serialize_script → parse_yaml
 # ---------------------------------------------------------------------------
 
 
@@ -422,7 +422,7 @@ class TestEditorRoundTrip:
         )
         data = _build_editor_data(_make_recording(), script)
         yaml_str = _serialize_script(data["script"], "demo.termshow")
-        parsed = yaml.safe_load(yaml_str)
+        parsed = parse_yaml(yaml_str)
         s = parsed["settings"]
         assert s["speed"] == 1.5
         assert s["window_chrome"] == "simple"
@@ -434,7 +434,7 @@ class TestEditorRoundTrip:
         script = _make_script(prompt=None, prompt_pattern=None)
         data = _build_editor_data(_make_recording(), script)
         yaml_str = _serialize_script(data["script"], "demo.termshow")
-        parsed = yaml.safe_load(yaml_str)
+        parsed = parse_yaml(yaml_str)
         assert "prompt" not in parsed["settings"]
         assert "prompt_pattern" not in parsed["settings"]
 
@@ -442,7 +442,7 @@ class TestEditorRoundTrip:
         script = _make_script(font_family="JetBrains Mono, Fira Code, monospace")
         data = _build_editor_data(_make_recording(), script)
         yaml_str = _serialize_script(data["script"], "demo.termshow")
-        parsed = yaml.safe_load(yaml_str)
+        parsed = parse_yaml(yaml_str)
         assert parsed["settings"]["font_family"] == "JetBrains Mono, Fira Code, monospace"
 
     def test_full_round_trip(self):
@@ -462,7 +462,7 @@ class TestEditorRoundTrip:
         )
         data = _build_editor_data(_make_recording(), script)
         yaml_str = _serialize_script(data["script"], "demo.termshow")
-        parsed = yaml.safe_load(yaml_str)
+        parsed = parse_yaml(yaml_str)
 
         assert parsed["settings"]["prompt"] == ">"
         assert parsed["settings"]["font_family"] == "Menlo"
@@ -549,7 +549,7 @@ class TestSerializeScriptMissingBranches:
             {"time": 2.0, "duration": 3.0, "text": "echo hello", "match": "", "label": ""},
         ]
         result = _serialize_script(data, "demo.termshow")
-        parsed = yaml.safe_load(result)
+        parsed = parse_yaml(result)
         assert parsed["snippets"][0]["text"] == "echo hello"
         assert "match" not in result or "match: ''" not in result
 

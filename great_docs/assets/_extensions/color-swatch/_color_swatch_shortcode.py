@@ -327,10 +327,10 @@ def compute_contrast_info(hex_str: str) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 try:
-    import yaml as _yaml
+    from yaml12 import parse_yaml as _parse_yaml_raw
 
     def _parse_yaml(text: str) -> list[dict[str, Any]]:
-        data = _yaml.safe_load(text)
+        data = _parse_yaml_raw(text)
         if isinstance(data, list):
             return data
         return []

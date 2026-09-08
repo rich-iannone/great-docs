@@ -601,10 +601,10 @@ class TestShortcodeExtensionFiles:
         assert (self._ext_dir() / "_tbl_preview_shortcode.py").exists()
 
     def test_extension_yml_declares_shortcode(self):
-        import yaml
+        from yaml12 import read_yaml
 
         ext_yml = self._ext_dir() / "_extension.yml"
-        config = yaml.safe_load(ext_yml.read_text())
+        config = read_yaml(ext_yml)
         shortcodes = config.get("contributes", {}).get("shortcodes", [])
         assert "tbl-preview.lua" in shortcodes
 

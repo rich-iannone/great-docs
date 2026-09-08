@@ -2460,10 +2460,10 @@ def inject_page_metadata():
                 if content.startswith("---"):
                     parts = content.split("---", 2)
                     if len(parts) >= 3:
-                        import yaml
+                        from yaml12 import parse_yaml
 
                         try:
-                            frontmatter = yaml.safe_load(parts[1]) or {}
+                            frontmatter = parse_yaml(parts[1]) or {}
                         except Exception:
                             pass
             except Exception:
@@ -3348,9 +3348,9 @@ for html_file in glob.glob("_site/**/*.html", recursive=True):
         parts = qmd_content.split("---", 2)
         if len(parts) < 3:
             continue
-        import yaml
+        from yaml12 import parse_yaml
 
-        fm = yaml.safe_load(parts[1]) or {}
+        fm = parse_yaml(parts[1]) or {}
     except Exception:
         continue
 

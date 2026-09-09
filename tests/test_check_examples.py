@@ -35,6 +35,11 @@ from great_docs._check_examples import (
 )
 from great_docs.cli import cli
 
+requires_quarto = pytest.mark.skipif(
+    _check_quarto_available() is not None,
+    reason="Quarto is not installed",
+)
+
 
 # ===================================================================
 # extract_cells — basic parsing
@@ -388,6 +393,7 @@ class TestCellSelection:
         assert len(cells_sent) == 1
         assert cells_sent[0].source == "z = 3"
 
+    @requires_quarto
     def test_cell_selection_e2e(self, tmp_path):
         (tmp_path / "page.qmd").write_text(textwrap.dedent("""\
             ```{python}
@@ -601,6 +607,7 @@ class TestDetectPackage:
 
 
 class TestCheckQuartoAvailable:
+    @requires_quarto
     def test_quarto_available(self):
         err = _check_quarto_available()
         assert err is None
@@ -775,6 +782,7 @@ class TestBuildDocstringQmd:
 # ===================================================================
 
 
+@requires_quarto
 class TestRenderPageWithQuarto:
     def test_passing_page(self, tmp_path):
         qmd = tmp_path / "good.qmd"
@@ -835,6 +843,7 @@ class TestRenderPageWithQuarto:
 # ===================================================================
 
 
+@requires_quarto
 class TestRunPage:
     def test_passing_page(self, tmp_path):
         qmd = tmp_path / "test.qmd"
@@ -1247,6 +1256,7 @@ class TestLogContent:
         assert "Err: msg" in content
         assert "Full traceback:" not in content
 
+    @requires_quarto
     def test_log_e2e_real_error(self, tmp_path):
         (tmp_path / "page.qmd").write_text(textwrap.dedent("""\
             ```{python}
@@ -1265,6 +1275,7 @@ class TestLogContent:
         assert "page.qmd | Cell 1" in content
         assert "KeyError" in content
 
+    @requires_quarto
     def test_log_e2e_multiple_failures(self, tmp_path):
         (tmp_path / "a.qmd").write_text("```{python}\n1/0\n```\n")
         (tmp_path / "b.qmd").write_text(
@@ -1523,6 +1534,7 @@ class TestCheckExamplesOrchestrator:
 # ===================================================================
 
 
+@requires_quarto
 class TestCheckExamplesParallel:
     def _write_qmd(self, path, content):
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -1755,6 +1767,7 @@ class TestCheckExamplesCLI:
         )
         assert result.exit_code == 0
 
+    @requires_quarto
     def test_cli_parallel(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
         self._write_qmd(tmp_path / "a.qmd", "```{python}\nx = 1\n```\n")
@@ -1766,6 +1779,7 @@ class TestCheckExamplesCLI:
         assert result.exit_code == 0
         assert "2 passed" in result.output
 
+    @requires_quarto
     def test_cli_jobs(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
         self._write_qmd(tmp_path / "a.qmd", "```{python}\nx = 1\n```\n")
@@ -1956,6 +1970,7 @@ class TestCheckExamplesCLI:
         data = json.loads(result.output)
         assert "summary" in data
 
+    @requires_quarto
     def test_cli_parallel_timeout_verbose(self, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
         (tmp_path / "a.qmd").write_text("```{python}\nx = 1\n```\n")
@@ -2066,6 +2081,7 @@ class TestCheckExamplesCLI:
 # ===================================================================
 
 
+@requires_quarto
 class TestEndToEnd:
     """Full integration tests that use real Quarto rendering."""
 
@@ -2316,6 +2332,7 @@ class TestPageOptedOutEdgeCases:
 # ===================================================================
 
 
+@requires_quarto
 class TestExecutionEdgeCases:
     """Edge cases for Quarto-based execution."""
 
@@ -2569,6 +2586,7 @@ class TestOrchestratorEdgeCases:
         assert result.pages_checked == 0
         mock_render.assert_not_called()
 
+    @requires_quarto
     def test_many_cells_e2e(self, tmp_path):
         lines = []
         for i in range(20):
